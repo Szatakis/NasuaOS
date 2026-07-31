@@ -15,7 +15,7 @@
 #include "rtc/driver.h"
 #include "timer/driver.h"
 #include "uart/driver.h"
-#include "usb/driver.h"
-#include "video/driver.h"
+#include "usb/driver.hpp"
+#include "video/driver.hpp"
 
 #endif // DRIVERS_H

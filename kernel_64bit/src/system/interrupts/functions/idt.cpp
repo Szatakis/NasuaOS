@@ -1,5 +1,6 @@
-#include "idt.h"
-#include "isr.h"
+#include "idt.hpp"
+
+#include "isr.hpp"
 
 #include "system/drivers/uart/driver.h"
 #include "kernel/include/logger/logger.hpp"

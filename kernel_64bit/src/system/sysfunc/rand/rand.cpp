@@ -1,3 +1,5 @@
+#include "rand.hpp"
+
 static unsigned long next_random = 1;
 
 static inline unsigned long long read_tsc(void) {

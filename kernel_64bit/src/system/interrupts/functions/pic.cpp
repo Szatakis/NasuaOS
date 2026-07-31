@@ -1,4 +1,4 @@
-#include "pic.h"
+#include "pic.hpp"
 #include "system/drivers/apic/driver.h"
 
 #include "libs/asm/asm.h"

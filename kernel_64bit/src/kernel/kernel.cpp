@@ -2,8 +2,8 @@
 #include <cstddef>
 #include <limine.h>
 
-#include "system/drivers/drivers.h"
-#include "system/interrupts/interrupts.h"
+#include "system/drivers/drivers.hpp"
+#include "system/interrupts/interrupts.hpp"
 #include "system/filesystem/clawfs.hpp"
 
 #include "applications/shell/commands.hpp"

@@ -1,4 +1,4 @@
-#include "page_fault.h"
+#include "page_fault.hpp"
 
 #include "system/drivers/memory/driver.h"
 

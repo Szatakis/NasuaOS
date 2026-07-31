@@ -1,17 +1,18 @@
 #include "../driver.h"
-#include "../../uart/driver.h"
 
-#include "system/drivers/drivers.h"
-#include "system/interrupts/interrupts.h"
+#include "system/drivers/drivers.hpp"
+#include "system/interrupts/interrupts.hpp"
 #include "applications/shell/commands.hpp"
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
+
 #include "libs/libc/libc.h"
 #include "libs/asm/asm.h"
-#include "system/sysfunc/command_history/history.h"
+
+#include "system/sysfunc/command_history/history.hpp"
 #include "system/gui/gui.hpp"
-#include "applications/applications.h"
-#include "system/vars/info_vars/info_vars.h"
+#include "applications/applications.hpp"
+#include "system/vars/info_vars/info_vars.hpp"
 
 char command_buffer[64];
 size_t cmd_idx = 0;

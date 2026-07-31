@@ -1,4 +1,5 @@
-#include "history.h"
+#include "history.hpp"
+
 #include "libs/libc/libc.h"
 
 constexpr size_t HISTORY_SIZE = 10;

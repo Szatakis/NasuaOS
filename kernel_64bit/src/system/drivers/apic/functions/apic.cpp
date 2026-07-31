@@ -1,9 +1,9 @@
 #include "../driver.h"
-#include "system/interrupts/interrupts.h"
+#include "system/interrupts/interrupts.hpp"
 
 #include <limine.h>
 
-#include "system/interrupts/functions/pic.h"
+#include "system/interrupts/functions/pic.hpp"
 #include "system/drivers/memory/driver.h"
 
 #include "libs/asm/asm.h"

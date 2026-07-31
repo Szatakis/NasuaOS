@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <limine.h>
 
-#include "../../video/driver.h"
+#include "../../video/driver.hpp"
 #include "libs/asm/asm.h"
 #include "applications/shell/commands.hpp"
 

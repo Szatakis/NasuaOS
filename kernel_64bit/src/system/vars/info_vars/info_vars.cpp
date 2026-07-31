@@ -1,4 +1,4 @@
-#include "info_vars.h"
+#include "info_vars.hpp"
 
 char current_path[256] = "/home";
 char user_name[16] = "user";

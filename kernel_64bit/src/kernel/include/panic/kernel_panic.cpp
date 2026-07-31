@@ -3,7 +3,7 @@
 #include "libs/libc/libc.h"
 #include "libs/asm/asm.h"
 
-#include "system/drivers/video/driver.h"
+#include "system/drivers/video/driver.hpp"
 #include "system/drivers/cpu/driver.h"
 #include "system/drivers/timer/driver.h"
 

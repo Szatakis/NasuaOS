@@ -1,4 +1,4 @@
-#include "madt.h"
+#include "madt.hpp"
 #include <limine.h>
 
 #include "system/drivers/uart/driver.h"

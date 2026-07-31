@@ -1,4 +1,4 @@
-#include "../driver.h"
+#include "../driver.hpp"
 
 #include "system/fonts/font8x8.h"
 #include "system/fonts/font10x10.h"
@@ -12,7 +12,7 @@
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/gui.hpp"
 
-#include "system/sysfunc/notification_manager/notification_manager.h"
+#include "system/sysfunc/notification_manager/notification_manager.hpp"
 
 // ---------------- HELPERS ----------------
 

@@ -8,18 +8,18 @@
 #include "libs/libc/libc.h"
 #include "screen.h"
 
-#include "applications/applications.h"
+#include "applications/applications.hpp"
 #include "functions/functions.hpp"
 
-#include "system/drivers/drivers.h"
-#include "system/vars/info_vars/info_vars.h"
+#include "system/drivers/drivers.hpp"
+#include "system/vars/info_vars/info_vars.hpp"
 
 #include "kernel/include/panic/kernel_panic.hpp"
 #include "kernel/include/logger/logger.hpp"
 
 #include "system/filesystem/clawfs.hpp"
 
-#include "system/sysfunc/rand/rand.h"
+#include "system/sysfunc/rand/rand.hpp"
 
 #include "libs/asm/asm.h"
 

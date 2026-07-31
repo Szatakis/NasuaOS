@@ -1,4 +1,4 @@
-#include "../driver.h"
+#include "../driver.hpp"
 
 #include "system/drivers/mouse/driver.h"
 #include "system/gui/vars/colors.hpp"

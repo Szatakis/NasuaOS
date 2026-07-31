@@ -2,7 +2,7 @@
 
 #include "libs/libc/libc.h"
 
-#include "../../video/driver.h"
+#include "system/drivers/video/driver.hpp"
 
 #include "system/drivers/timer/driver.h"
 

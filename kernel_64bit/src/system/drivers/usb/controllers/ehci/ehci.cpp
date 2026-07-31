@@ -1,2 +1,2 @@
-#include "ehci.h"
-#include "../../driver.h"
+#include "ehci.hpp"
+#include "../../driver.hpp"

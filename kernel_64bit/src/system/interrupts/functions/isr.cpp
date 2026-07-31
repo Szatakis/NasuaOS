@@ -1,7 +1,7 @@
-#include "isr.h"
-#include "pic.h"
+#include "isr.hpp"
 
-#include "page_fault.h"
+#include "pic.hpp"
+#include "page_fault.hpp"
 
 #include "system/drivers/uart/driver.h"
 #include "system/drivers/timer/driver.h"

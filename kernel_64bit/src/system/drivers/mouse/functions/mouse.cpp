@@ -1,5 +1,4 @@
 #include "../driver.h"
-#include "system/drivers/video/driver.h"
 
 int32_t mouse_x = 200;
 int32_t mouse_y = 145;
