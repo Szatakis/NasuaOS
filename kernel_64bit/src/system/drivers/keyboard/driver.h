@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <cstddef>
 
-void print_sc(uint8_t scancode);
+void print_sc(uint8_t scancode); //Prints keyboard scancode to UART
 
-void handle_keyboard();
+void handle_keyboard(); // Handle keyboard inputs
 
 extern bool shift_pressed;
 extern bool extended_scancode;

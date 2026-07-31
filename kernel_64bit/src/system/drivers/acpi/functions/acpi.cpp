@@ -12,9 +12,7 @@ extern "C" volatile struct limine_rsdp_request rsdp_request;
 extern "C" volatile struct limine_hhdm_request hhdm_request;
 
 
-// ===================== //
-// GLOBAL ACPI VARIABLES //
-// ===================== //
+// GLOBAL ACPI VARIABLES
 
 static uint32_t SMI_CMD = 0;
 static uint8_t ACPI_ENABLE = 0;
@@ -30,9 +28,7 @@ static uint16_t SLP_EN = (1 << 13);
 static uint16_t SCI_EN = (1 << 0);
 
 
-// ===================== //
-// ACPI STRUCTURES       //
-// ===================== //
+// ACPI STRUCTURES
 
 struct __attribute__((packed)) ACPISDTHeader
 {
@@ -145,9 +141,7 @@ struct __attribute__((packed)) FADT
 };
 
 
-// ===================== //
-// HELPERS               //
-// ===================== //
+// HELPERS
 static void* phys_to_virt(uint64_t addr)
 {
     if (!addr)
@@ -180,9 +174,7 @@ static bool acpi_sig(const char* a, const char* b)
 }
 
 
-// ===================== //
-// AML PARSER            //
-// ===================== //
+// AML PARSER
 static uint16_t parse_aml_element(uint8_t** ptr)
 {
     uint8_t op = **ptr;
@@ -231,9 +223,7 @@ static uint16_t parse_aml_element(uint8_t** ptr)
 }
 
 
-// ===================== //
-// FIND _S5_             //
-// ===================== //
+// FIND _S5_
 static bool parse_s5_from_aml(uint8_t* aml, uint32_t length)
 {
     for(uint32_t i = 0; i < length - 5; i++)
@@ -278,9 +268,7 @@ static bool parse_s5_from_aml(uint8_t* aml, uint32_t length)
 }
 
 
-// ===================== //
-// TABLE SEARCH          //
-// ===================== //
+// TABLE SEARCH
 
 static void* find_table(ACPISDTHeader* root, const char* name)
 {
@@ -346,11 +334,7 @@ static void* find_table(ACPISDTHeader* root, const char* name)
 }
 
 
-
-
-// ===================== //
-// ACPI INIT             //
-// ===================== //
+// ACPI INIT
 
 bool acpi_init()
 {
@@ -408,9 +392,7 @@ bool acpi_init()
     }
 
 
-    // ===================== //
-    // FIND FACP              //
-    // ===================== //
+    // FIND FACP
     FADT* facp = (FADT*)find_table(root,"FACP");
 
     if(!facp)
@@ -421,9 +403,7 @@ bool acpi_init()
 
     print("ACPI: FACP found\n");
 
-    // ===================== //
-    // PM1 CONTROL BLOCK      //
-    // ===================== //
+    // PM1 CONTROL BLOCK
     if(facp->header.Length >= 148 && facp->X_PM1aControlBlock.Address != 0 && facp->X_PM1aControlBlock.AddressSpace == 0)
     {
         PM1a_CNT = (uint32_t)facp->X_PM1aControlBlock.Address;
@@ -454,9 +434,7 @@ bool acpi_init()
     print("\n");
 
 
-    // ===================== //
-    // DSDT                  //
-    // ===================== //
+    // DSDT
     uint64_t dsdt_addr;
 
     if(facp->header.Length >= 148 && facp->X_Dsdt != 0)
@@ -491,9 +469,7 @@ bool acpi_init()
     }
 
 
-    // ===================== //
-    // SSDT SEARCH            //
-    // ===================== //
+    // SSDT SEARCH
     uint32_t entries;
 
 
@@ -556,9 +532,7 @@ bool acpi_init()
 }
 
 
-// ===================== //
-// ACPI ENABLE           //
-// ===================== //
+// ACPI ENABLE
 
 static bool acpi_enable()
 {
@@ -610,9 +584,7 @@ static bool acpi_enable()
 }
 
 
-// ===================== //
-// SHUTDOWN              //
-// ===================== //
+// SHUTDOWN
 
 void acpi_shutdown()
 {
@@ -669,9 +641,7 @@ void acpi_shutdown()
 }
 
 
-// ===================== //
-// REBOOT                //
-// ===================== //
+// REBOOT
 
 void acpi_reboot()
 {

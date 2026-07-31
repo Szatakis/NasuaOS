@@ -5,8 +5,7 @@
 #include "apic/driver.h"
 #include "audio/driver.h"
 #include "cpu/driver.h"
-#include "disk/ata/driver.h"
-#include "disk/ahci/driver.h"
+#include "disk/driver.h"
 #include "hpet/driver.h"
 #include "keyboard/driver.h"
 #include "memory/driver.h"
@@ -18,6 +17,5 @@
 #include "uart/driver.h"
 #include "usb/driver.h"
 #include "video/driver.h"
-#include "pcspeaker/driver.h"
 
 #endif // DRIVERS_H

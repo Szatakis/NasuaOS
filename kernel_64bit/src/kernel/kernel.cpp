@@ -40,6 +40,26 @@ volatile limine_mp_request mp_request = {
     .flags = 0
 };
 
+void iqu_init()
+{
+    Uart::init();
+
+    init_cpu_cores();
+    storage_init();
+    memory_init();
+    paging_init();
+    pmm_init();
+    vmm_init();
+    heap_init();
+    interrupts_controller_init();
+    idt_init();
+    pit_init();
+
+    asm volatile("sti");
+
+    image_init();
+}
+
 // ---------------- LIMINE ----------------
 
 namespace {
@@ -84,22 +104,7 @@ extern "C" void kmain()
     init_backbuffer(fb->width, fb->height, fb->pitch);
     init_text_buffer();
 
-    Uart::init();
-
-    init_cpu_cores();
-    storage_init();
-    memory_init();
-    paging_init();
-    pmm_init();
-    vmm_init();
-    heap_init();
-    interrupts_controller_init();
-    idt_init();
-    pit_init();
-
-    asm volatile("sti");
-
-    image_init();
+    iqu_init();
 
     // Main loop
     for (;;) 

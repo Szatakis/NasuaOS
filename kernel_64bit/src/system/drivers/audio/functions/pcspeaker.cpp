@@ -1,3 +1,5 @@
+#include "../driver.h"
+
 #include "libs/asm/asm.h"
 #include "system/drivers/timer/driver.h"
 

@@ -5,9 +5,9 @@
 #include <stdbool.h>
 
 
-bool acpi_init();
-void acpi_shutdown();
-void acpi_reboot();
+bool acpi_init(); // Inits ACPI
+void acpi_shutdown(); //Shutdowns PC
+void acpi_reboot(); // Reboots PC
 
 
 #endif

@@ -14,11 +14,11 @@
 
 #define IA32_APIC_BASE_MSR 0x1B
 
-// Domyslny adres LAPIC (zgodny z IA32_APIC_BASE MSR w wiekszosci
-// systemow) - uzywany tylko jako fallback jesli MSR zwroci 0.
+// Default LAPIC  addres (compatibile with IA32_APIC_BASE MSR in most of the systems) 
+// used only as fallback if MSR returns 0.
 #define LAPIC_BASE_PHYS_DEFAULT 0xFEE00000ULL
 
-// Rejestry LAPIC (offsety od bazy)
+// Registers LAPIC (offsets of the base)
 #define LAPIC_REG_ID        0x20
 #define LAPIC_REG_TPR       0x80
 #define LAPIC_REG_EOI       0xB0
@@ -26,7 +26,7 @@
 
 #define LAPIC_SVR_ENABLE    0x100
 
-// Rejestry IOAPIC
+// Registers IOAPIC
 #define IOAPIC_REG_IOREGSEL 0x00
 #define IOAPIC_REG_IOWIN    0x10
 #define IOAPIC_REG_REDTBL   0x10
@@ -43,7 +43,7 @@ static uint64_t g_ioapic_base_phys = 0;
 static uint32_t g_ioapic_pin_irq0 = 0;
 
 
-// ---------------- Pomocnicze: HHDM / MMIO ----------------
+// ---------------- Helpers: HHDM / MMIO ----------------
 
 static inline uint64_t hhdm_offset()
 {
@@ -274,13 +274,13 @@ void ioapic_init()
     Uart::puts("[IOAPIC] Initializing...\n");
     log(INFO,"IOAPIC","Initializing...");
 
-    // zamaskuj wszystkie 24 linie IRQ na starcie
+    // mask all 24 lines IRQ on start
     for(uint8_t irq = 0; irq < 24; irq++)
     {
         ioapic_mask_irq(irq);
     }
 
-    // IRQ0 (PIT) -> wektor 32, na pin wyznaczony z MADT
+    // IRQ0 (PIT) -> vector 32, on pin choosed by MADT
     ioapic_set_irq((uint8_t)g_ioapic_pin_irq0, 32, lapic_get_id());
 
     Uart::puts("[IOAPIC] IRQ0 -> vector 32 (pin: ");
@@ -293,7 +293,7 @@ void ioapic_init()
 }
 
 
-// ---------------- Wybor kontrolera przerwan ----------------
+// ---------------- Choose interrupts controller ----------------
 
 bool apic_is_active()
 {

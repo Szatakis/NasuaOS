@@ -1,7 +1,7 @@
 #include "clawfs.h"
 #include "system/drivers/video/driver.h"
 #include "libs/libc/libc.h"
-#include "system/drivers/disk/ata/driver.h"
+#include "system/drivers/disk/driver.h"
 #include "applications/shell/commands.h"
 #include "system/drivers/memory/driver.h"
 
