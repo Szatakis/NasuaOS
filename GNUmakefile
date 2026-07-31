@@ -446,6 +446,6 @@ clean:
 
 .PHONY: distclean
 distclean:
-	$(MAKE) -C kernel_32bit clean
+	$(MAKE) -C kernel_32bit distclean
 	$(MAKE) -C kernel_64bit distclean
 	rm -rf iso_root *.iso *.hdd limine-binary edk2-bins

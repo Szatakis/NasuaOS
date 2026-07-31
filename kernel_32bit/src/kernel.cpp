@@ -252,13 +252,6 @@ void halt()
 }
 
 
-void version()
-{
-    print("NasuaOS 32bit"
-          "Version: 0.1");
-}
-
-
 void shell()
 {
     while(true)
@@ -300,7 +293,10 @@ void shell()
         }
         else if(strcmp(buffer,"version"))
         {
-            version();
+            print(
+                "NasuaOS 32bit\n"
+                "Version: 0.1\n\n"
+            );
         }
         else
         {
