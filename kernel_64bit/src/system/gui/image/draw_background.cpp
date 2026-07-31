@@ -3,7 +3,7 @@
 #include "system/gui/gui.hpp"
 #include "system/gui/vars/colors.hpp"
 #include "system/drivers/video/driver.hpp"
-#include "system/drivers/memory/driver.h"
+#include "system/drivers/memory/driver.hpp"
 
 
 static uint32_t* background_buffer = nullptr;

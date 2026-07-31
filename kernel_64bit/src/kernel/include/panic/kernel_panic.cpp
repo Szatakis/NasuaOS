@@ -4,8 +4,8 @@
 #include "libs/asm/asm.h"
 
 #include "system/drivers/video/driver.hpp"
-#include "system/drivers/cpu/driver.h"
-#include "system/drivers/timer/driver.h"
+#include "system/drivers/cpu/driver.hpp"
+#include "system/drivers/timer/driver.hpp"
 
 #define PANIC_WIDTH 45
 #define CHAR_WIDTH 8

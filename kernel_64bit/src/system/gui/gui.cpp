@@ -2,9 +2,9 @@
 
 #include "./icons/icons.hpp"
 #include "system/drivers/video/driver.hpp"
-#include "system/drivers/memory/driver.h"
-#include "system/drivers/keyboard/driver.h"
-#include "system/drivers/mouse/driver.h"
+#include "system/drivers/memory/driver.hpp"
+#include "system/drivers/keyboard/driver.hpp"
+#include "system/drivers/mouse/driver.hpp"
 #include "./vars/colors.hpp"
 
 extern limine_framebuffer* fb;

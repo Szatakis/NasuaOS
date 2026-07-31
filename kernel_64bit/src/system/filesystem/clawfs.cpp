@@ -3,9 +3,9 @@
 
 #include "libs/libc/libc.h"
 
-#include "system/drivers/disk/driver.h"
+#include "system/drivers/disk/driver.hpp"
 #include "applications/shell/commands.hpp"
-#include "system/drivers/memory/driver.h"
+#include "system/drivers/memory/driver.hpp"
 
 // --- Funkcje pomocnicze ---
 

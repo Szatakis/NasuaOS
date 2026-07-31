@@ -1,4 +1,4 @@
-#include "../driver.h"
+#include "../driver.hpp"
 #include <stdint.h>
 #include <stddef.h>
 #include <limine.h>

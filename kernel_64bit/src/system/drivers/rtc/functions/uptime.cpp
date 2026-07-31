@@ -1,10 +1,10 @@
-#include "../driver.h"
+#include "../driver.hpp"
 
 #include "libs/libc/libc.h"
 
 #include "system/drivers/video/driver.hpp"
 
-#include "system/drivers/timer/driver.h"
+#include "system/drivers/timer/driver.hpp"
 
 
 void print_uptime()

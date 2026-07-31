@@ -1,7 +1,7 @@
 #include "madt.hpp"
 #include <limine.h>
 
-#include "system/drivers/uart/driver.h"
+#include "system/drivers/uart/driver.hpp"
 #include "kernel/include/logger/logger.hpp"
 
 extern volatile limine_rsdp_request rsdp_request;

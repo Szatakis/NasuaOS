@@ -1,8 +1,8 @@
 #include "page_fault.hpp"
 
-#include "system/drivers/memory/driver.h"
+#include "system/drivers/memory/driver.hpp"
 
-#include "system/drivers/uart/driver.h"
+#include "system/drivers/uart/driver.hpp"
 #include "kernel/include/logger/logger.hpp"
 
 static uint64_t read_cr2()

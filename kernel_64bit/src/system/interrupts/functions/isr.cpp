@@ -3,8 +3,8 @@
 #include "pic.hpp"
 #include "page_fault.hpp"
 
-#include "system/drivers/uart/driver.h"
-#include "system/drivers/timer/driver.h"
+#include "system/drivers/uart/driver.hpp"
+#include "system/drivers/timer/driver.hpp"
 
 #include "libs/asm/asm.h"
 

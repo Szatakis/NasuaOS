@@ -6,8 +6,8 @@
 #include "system/fonts/font16x16.h"
 
 #include "system/gui/icons/icons.hpp"
-#include "system/drivers/rtc/driver.h"
-#include "system/drivers/mouse/driver.h"
+#include "system/drivers/rtc/driver.hpp"
+#include "system/drivers/mouse/driver.hpp"
 
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/gui.hpp"

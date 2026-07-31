@@ -1,6 +1,6 @@
 #include "../driver.hpp"
 
-#include "system/drivers/mouse/driver.h"
+#include "system/drivers/mouse/driver.hpp"
 #include "system/gui/vars/colors.hpp"
 
 extern const char arrow_cursor[][CURSOR_W];
