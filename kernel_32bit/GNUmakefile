@@ -36,6 +36,14 @@ BIN := $(BIN_DIR)/kernel_32bit
 
 .PHONY: all
 all: $(BIN)
+
+ifeq ($(filter $(ARCH),aarch32 loongarch32 riscv32 x86_32),)
+    $(error Architecture $(ARCH) not supported)
+endif
+ifeq ($(ARCH), loongarch32)
+	$(error $(ARCH) not support 32bit mode)
+endif
+
 $(BIN): $(OBJ) linker.lds
 	@mkdir -p $(BIN_DIR)
 	$(LD) $(LDFLAGS) -T linker.lds -o $@ $(OBJ)

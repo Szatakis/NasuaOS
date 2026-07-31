@@ -242,6 +242,34 @@ bool strcmp(const char* a,const char* b)
     return *a==0 && *b==0;
 }
 
+void reboot()
+{
+    uint8_t status;
+
+    // Czekaj aż kontroler będzie gotowy
+    do
+    {
+        asm volatile(
+            "inb $0x64, %0"
+            : "=a"(status)
+        );
+    } while (status & 0x02);
+
+    // Wyślij komendę resetu CPU
+    asm volatile(
+        "movb $0xFE, %%al\n"
+        "outb %%al, $0x64"
+        :
+        :
+        : "ax"
+    );
+
+    // Jeśli reset się nie uda
+    while (true)
+    {
+        asm volatile("hlt");
+    }
+}
 
 void halt()
 {
@@ -268,6 +296,7 @@ void shell()
                 "info\n"
                 "fetch\n"
                 "version\n"
+                "reboot\n"
                 "halt\n\n"
             );
         }
@@ -297,6 +326,10 @@ void shell()
                 "NasuaOS 32bit\n"
                 "Version: 0.1\n\n"
             );
+        }
+        else if(strcmp(buffer,"reboot"))
+        {
+            reboot();
         }
         else
         {
