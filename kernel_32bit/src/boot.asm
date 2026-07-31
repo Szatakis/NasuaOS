@@ -9,12 +9,11 @@ header:
     dd -(0x1BADB002)
 
 section .text
-global _kstart
+global _kmain
 extern kmain
 
-_kstart:
+_kmain:
     cli
-
     mov esp, stack_top
 
     call kmain
