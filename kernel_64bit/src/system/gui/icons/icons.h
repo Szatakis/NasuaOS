@@ -5,11 +5,14 @@
 #include "system/drivers/video/driver.h"
 #include "../vars/colors.h"
 
+// Taskbar Icons
 extern const uint32_t start_icon[1024];
 extern const uint32_t start_icon_hover[1024];
 extern const uint32_t notification_icon[1024];
 extern const uint32_t notification_icon_h[1024];
 extern const uint32_t speaker_icon[1024];
+
+// Start Menu Icons
 extern const uint32_t shutdown_icon[1024];
 extern const uint32_t reboot_icon[1024];
 

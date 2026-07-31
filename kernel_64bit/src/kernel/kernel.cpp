@@ -13,7 +13,7 @@
 #include "system/gui/gui.h"
 
 #include "kernel/include/logger/logger.hpp"
-#include "kernel/include/panic/kernel_panic.h"
+#include "kernel/include/panic/kernel_panic.hpp"
 
 #include "libs/libc/libc.h"
 #include "libs/asm/asm.h"

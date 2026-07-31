@@ -14,7 +14,7 @@
 #include "system/drivers/drivers.h"
 #include "system/vars/info_vars/info_vars.h"
 
-#include "kernel/include/panic/kernel_panic.h"
+#include "kernel/include/panic/kernel_panic.hpp"
 #include "kernel/include/logger/logger.hpp"
 
 #include "system/filesystem/clawfs.h"

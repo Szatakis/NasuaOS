@@ -52,9 +52,7 @@ section .text
 %endmacro
 
 
-; ==========================
 ; DEFAULT INTERRUPT
-; ==========================
 
 isr_default:
     cli
@@ -63,9 +61,7 @@ isr_default:
 
     jmp isr_common
 
-; ==========================
 ; DIVIDE ERROR (#DE)
-; ==========================
 
 isr_divide_error:
     cli
@@ -74,9 +70,7 @@ isr_divide_error:
 
     jmp isr_common
 
-; ==========================
 ; PAGE FAULT (#PF)
-; ==========================
 
 isr_page_fault:
     cli
@@ -84,9 +78,7 @@ isr_page_fault:
 
     jmp isr_common
 
-; ==========================
 ; IRQ0 PIT
-; ==========================
 
 irq0:
     push 0
@@ -94,9 +86,7 @@ irq0:
 
     jmp isr_common
 
-; ==========================
-; LAPIC SPURIOUS INTERRUPT (wektor 0xFF)
-; ==========================
+; LAPIC SPURIOUS INTERRUPT (vector 0xFF)
 
 isr_spurious:
     push 0
@@ -104,9 +94,7 @@ isr_spurious:
 
     jmp isr_common
 
-; ==========================
 ; COMMON HANDLER
-; ==========================
 
 isr_common:
     cld
