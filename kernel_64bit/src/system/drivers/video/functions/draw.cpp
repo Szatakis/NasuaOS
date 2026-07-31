@@ -5,12 +5,12 @@
 #include "system/fonts/font12x12.h"
 #include "system/fonts/font16x16.h"
 
-#include "system/gui/icons/icons.h"
+#include "system/gui/icons/icons.hpp"
 #include "system/drivers/rtc/driver.h"
 #include "system/drivers/mouse/driver.h"
 
-#include "system/gui/vars/colors.h"
-#include "system/gui/gui.h"
+#include "system/gui/vars/colors.hpp"
+#include "system/gui/gui.hpp"
 
 #include "system/sysfunc/notification_manager/notification_manager.h"
 

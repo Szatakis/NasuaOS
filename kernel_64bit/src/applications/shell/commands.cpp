@@ -4,12 +4,12 @@
 #include <stddef.h>
 #include <limine.h>
 
-#include "commands.h"
+#include "commands.hpp"
 #include "libs/libc/libc.h"
 #include "screen.h"
 
 #include "applications/applications.h"
-#include "functions/functions.h"
+#include "functions/functions.hpp"
 
 #include "system/drivers/drivers.h"
 #include "system/vars/info_vars/info_vars.h"
@@ -17,7 +17,7 @@
 #include "kernel/include/panic/kernel_panic.hpp"
 #include "kernel/include/logger/logger.hpp"
 
-#include "system/filesystem/clawfs.h"
+#include "system/filesystem/clawfs.hpp"
 
 #include "system/sysfunc/rand/rand.h"
 

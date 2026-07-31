@@ -1,8 +1,8 @@
 #include "../../driver.h"
-#include "window.h"
+#include "window.hpp"
 
 #include "system/drivers/video/driver.h"
-#include "system/gui/vars/colors.h"
+#include "system/gui/vars/colors.hpp"
 
 #define MAX_WINDOWS 10
 

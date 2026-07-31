@@ -1,4 +1,4 @@
-#include "colors.h"
+#include "colors.hpp"
 
 const char* CMD_TEXT_WHITE  = "\x1B[w";
 const char* CMD_TEXT_RED    = "\x1B[r";

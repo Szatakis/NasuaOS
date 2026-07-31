@@ -1,5 +1,5 @@
 #include "../driver.h"
-#include "system/filesystem/clawfs.h"
+#include "system/filesystem/clawfs.hpp"
 #include "libs/asm/asm.h"
 
 static uint64_t total_storage_bytes = 0;

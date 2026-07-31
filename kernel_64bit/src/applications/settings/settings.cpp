@@ -1,4 +1,4 @@
-#include "settings.h"
+#include "settings.hpp"
 
 void draw_settings(window_struct* win)
 {

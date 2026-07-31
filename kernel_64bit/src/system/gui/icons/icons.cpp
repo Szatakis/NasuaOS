@@ -1,4 +1,4 @@
-#include "icons.h"
+#include "icons.hpp"
 
 // Taskbar
 const uint32_t start_icon[1024] = {

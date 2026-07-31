@@ -3,13 +3,13 @@
 
 #include "system/drivers/drivers.h"
 #include "system/interrupts/interrupts.h"
-#include "applications/shell/commands.h"
-#include "system/gui/vars/colors.h"
-#include "system/gui/icons/icons.h"
+#include "applications/shell/commands.hpp"
+#include "system/gui/vars/colors.hpp"
+#include "system/gui/icons/icons.hpp"
 #include "libs/libc/libc.h"
 #include "libs/asm/asm.h"
 #include "system/sysfunc/command_history/history.h"
-#include "system/gui/gui.h"
+#include "system/gui/gui.hpp"
 #include "applications/applications.h"
 #include "system/vars/info_vars/info_vars.h"
 

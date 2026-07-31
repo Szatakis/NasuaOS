@@ -4,13 +4,13 @@
 
 #include "system/drivers/drivers.h"
 #include "system/interrupts/interrupts.h"
-#include "system/filesystem/clawfs.h"
+#include "system/filesystem/clawfs.hpp"
 
-#include "applications/shell/commands.h"
+#include "applications/shell/commands.hpp"
 
-#include "system/gui/vars/colors.h"
-#include "system/gui/icons/icons.h"
-#include "system/gui/gui.h"
+#include "system/gui/vars/colors.hpp"
+#include "system/gui/icons/icons.hpp"
+#include "system/gui/gui.hpp"
 
 #include "kernel/include/logger/logger.hpp"
 #include "kernel/include/panic/kernel_panic.hpp"

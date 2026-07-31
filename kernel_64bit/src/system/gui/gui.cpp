@@ -1,11 +1,11 @@
-#include "gui.h"
+#include "gui.hpp"
 
-#include "./icons/icons.h"
+#include "./icons/icons.hpp"
 #include "system/drivers/video/driver.h"
 #include "system/drivers/memory/driver.h"
 #include "system/drivers/keyboard/driver.h"
 #include "system/drivers/mouse/driver.h"
-#include "./vars/colors.h"
+#include "./vars/colors.hpp"
 
 extern limine_framebuffer* fb;
 

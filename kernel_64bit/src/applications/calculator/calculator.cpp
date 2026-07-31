@@ -1,7 +1,8 @@
-#include "calculator.h"
+#include "calculator.hpp"
 
-#include "system/gui/gui.h"
-#include "system/gui/vars/colors.h"
+#include "system/gui/gui.hpp"
+#include "system/gui/vars/colors.hpp"
+
 #include "libs/libc/libc.h"
 
 

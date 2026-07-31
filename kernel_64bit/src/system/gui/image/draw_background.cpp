@@ -1,7 +1,7 @@
-#include "background.h"
+#include "background.hpp"
 
-#include "system/gui/gui.h"
-#include "system/gui/vars/colors.h"
+#include "system/gui/gui.hpp"
+#include "system/gui/vars/colors.hpp"
 #include "system/drivers/video/driver.h"
 #include "system/drivers/memory/driver.h"
 

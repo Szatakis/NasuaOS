@@ -1,6 +1,6 @@
-#include "terminal.h"
+#include "terminal.hpp"
 
-#include "../shell/commands.h"
+#include "../shell/commands.hpp"
 
 bool is_empty_or_whitespace(const char* str) {
     if (str == nullptr || *str == '\0') {

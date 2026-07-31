@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "system/drivers/video/driver.h"
-#include "../vars/colors.h"
+#include "../vars/colors.hpp"
 
 // Taskbar Icons
 extern const uint32_t start_icon[1024];

@@ -1,6 +1,7 @@
 #include "../../driver.h"
-#include "system/gui/vars/colors.h"
-#include "applications/shell/commands.h"
+
+#include "system/gui/vars/colors.hpp"
+#include "applications/shell/commands.hpp"
 
 // Deklaracja funkcji inicjalizującej bufor terminala z pliku tekstowego
 extern void init_terminal_buffer();

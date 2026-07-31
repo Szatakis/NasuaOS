@@ -1,5 +1,5 @@
-#include "suaedit.h"
-#include "suascript/suascript.h"
+#include "suaedit.hpp"
+#include "suascript/suascript.hpp"
 
 void draw_suaedit(window_struct* win)
 {

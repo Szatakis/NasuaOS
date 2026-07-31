@@ -5,7 +5,7 @@
 
 #include "../../video/driver.h"
 #include "libs/asm/asm.h"
-#include "applications/shell/commands.h"
+#include "applications/shell/commands.hpp"
 
 
 extern "C" volatile struct limine_rsdp_request rsdp_request;

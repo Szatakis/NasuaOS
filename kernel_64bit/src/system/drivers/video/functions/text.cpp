@@ -1,11 +1,12 @@
 #include "../driver.h"
+
 #include "system/fonts/font8x8.h"
 #include "system/fonts/font10x10.h"
 #include "system/fonts/font12x12.h"
 #include "system/fonts/font16x16.h"
-#include "system/gui/vars/colors.h"
+#include "system/gui/vars/colors.hpp"
 
-#include "applications/shell/commands.h"
+#include "applications/shell/commands.hpp"
 #include "system/drivers/keyboard/driver.h"
 #include "system/drivers/uart/driver.h"
 

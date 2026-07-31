@@ -1,8 +1,8 @@
-#include "clawfs.h"
+#include "clawfs.hpp"
 #include "system/drivers/video/driver.h"
 #include "libs/libc/libc.h"
 #include "system/drivers/disk/driver.h"
-#include "applications/shell/commands.h"
+#include "applications/shell/commands.hpp"
 #include "system/drivers/memory/driver.h"
 
 // --- Funkcje pomocnicze ---

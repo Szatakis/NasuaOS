@@ -1,5 +1,5 @@
-#include "icons.h"
-#include "system/gui/gui.h"
+#include "icons.hpp"
+#include "system/gui/gui.hpp"
 
 bool start_hover = false;
 
