@@ -1,3 +1,5 @@
+.SUFFIXES:
+
 ARCH ?= x86_32
 
 AS := nasm
@@ -32,11 +34,11 @@ OBJ := \
 
 BIN := $(BIN_DIR)/kernel_32bit
 
+.PHONY: all
 all: $(BIN)
-
-$(BIN): $(OBJ) linker.ld
+$(BIN): $(OBJ) linker.lds
 	@mkdir -p $(BIN_DIR)
-	$(LD) $(LDFLAGS) -T linker.ld -o $@ $(OBJ)
+	$(LD) $(LDFLAGS) -T linker.lds -o $@ $(OBJ)
 
 $(OBJ_DIR)/boot.o: src/boot.asm
 	@mkdir -p $(OBJ_DIR)
@@ -46,10 +48,10 @@ $(OBJ_DIR)/kernel.o: src/kernel.cpp
 	@mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+.PHONY: clean
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
+.PHONY: distclean
 distclean:
 	rm -rf obj-* bin-*
-
-.PHONY: all clean distclean
