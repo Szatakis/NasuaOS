@@ -2,11 +2,8 @@
 
 
 volatile uint16_t* vga = (uint16_t*)0xB8000;
-
 uint32_t cursor = 0;
 char buffer[128];
-
-
 
 const char keymap[128] =
 {
@@ -51,7 +48,9 @@ void putchar(char c)
         cursor = ((cursor / 80) + 1) * 80;
 
         if(cursor >= 80 * 25)
+        {
             scroll_screen();
+        }
 
         return;
     }
@@ -125,29 +124,18 @@ void keyboard_init()
 
     do
     {
-        asm volatile(
-            "inb $0x64, %0"
-            :"=a"(status)
-        );
+        asm volatile("inb $0x64, %0" :"=a"(status));
 
     }while(status & 2);
 
 
     uint8_t cmd = 0xAE;
 
-    asm volatile(
-        "outb %0,$0x64"
-        :
-        :"a"(cmd)
-    );
-
+    asm volatile("outb %0,$0x64" : :"a"(cmd));
 
     uint8_t enable = 0xF4;
 
-    asm volatile(
-        "outb %0,$0x60"
-        :
-        :"a"(enable)
+    asm volatile("outb %0,$0x60" : :"a"(enable)
     );
 }
 
@@ -159,20 +147,14 @@ uint8_t read_scancode()
 
     while(true)
     {
-        asm volatile(
-            "inb $0x64,%0"
-            :"=a"(status)
-        );
+        asm volatile("inb $0x64,%0" :"=a"(status));
 
 
         if(status & 1)
         {
             uint8_t code;
 
-            asm volatile(
-                "inb $0x60,%0"
-                :"=a"(code)
-            );
+            asm volatile("inb $0x60,%0" :"=a"(code));
 
             return code;
         }
@@ -233,7 +215,9 @@ bool strcmp(const char* a,const char* b)
     while(*a && *b)
     {
         if(*a!=*b)
+        {
             return false;
+        }
 
         a++;
         b++;
@@ -246,16 +230,13 @@ void reboot()
 {
     uint8_t status;
 
-    // Czekaj aż kontroler będzie gotowy
+    // Wait for controller to be ready
     do
     {
-        asm volatile(
-            "inb $0x64, %0"
-            : "=a"(status)
-        );
+        asm volatile("inb $0x64, %0" : "=a"(status));
     } while (status & 0x02);
 
-    // Wyślij komendę resetu CPU
+    // Send CPU reset cmd
     asm volatile(
         "movb $0xFE, %%al\n"
         "outb %%al, $0x64"
@@ -264,7 +245,7 @@ void reboot()
         : "ax"
     );
 
-    // Jeśli reset się nie uda
+    // If reboot fail fallback
     while (true)
     {
         asm volatile("hlt");
@@ -343,7 +324,6 @@ extern "C" void kmain()
 {
     disable_cursor();
     keyboard_init();
-
     fetch();
 
 

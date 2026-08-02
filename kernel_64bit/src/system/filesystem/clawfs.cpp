@@ -1,11 +1,12 @@
 #include "clawfs.hpp"
+
 #include "system/drivers/video/driver.hpp"
+#include "system/drivers/disk/driver.hpp"
+#include "system/drivers/memory/driver.hpp"
+
+#include "applications/shell/commands.hpp"
 
 #include "libs/libc/libc.h"
-
-#include "system/drivers/disk/driver.hpp"
-#include "applications/shell/commands.hpp"
-#include "system/drivers/memory/driver.hpp"
 
 // --- Funkcje pomocnicze ---
 

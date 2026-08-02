@@ -1,7 +1,7 @@
 #pragma once
+#include <limine.h>
 #include <cstddef>
 #include <cstdint>
-#include <limine.h>
 
 extern limine_framebuffer* fb;
 

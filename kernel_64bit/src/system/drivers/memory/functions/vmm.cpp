@@ -1,8 +1,5 @@
 #include "../driver.hpp"
 
-#include "system/drivers/uart/driver.hpp"
-#include "kernel/include/logger/logger.hpp"
-
 
 static uint64_t* pml4 = nullptr;
 

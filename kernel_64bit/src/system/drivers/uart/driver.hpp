@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+
 #include "libs/asm/asm.h"
 
 class Uart {

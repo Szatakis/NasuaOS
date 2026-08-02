@@ -1,8 +1,5 @@
 #include "../driver.hpp"
 
-#include "system/drivers/uart/driver.hpp"
-#include "kernel/include/logger/logger.hpp"
-
 
 #define HEAP_START 0xFFFF900000000000ULL
 #define PAGE_SIZE 4096

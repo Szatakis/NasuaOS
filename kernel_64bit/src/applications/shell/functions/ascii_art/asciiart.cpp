@@ -1,7 +1,8 @@
 #include "asciiart.hpp"
-#include "libs/libc/libc.h"
+
 #include "system/drivers/video/driver.hpp"
 
+#include "libs/libc/libc.h"
 
 static const char* font[][5] =
 {

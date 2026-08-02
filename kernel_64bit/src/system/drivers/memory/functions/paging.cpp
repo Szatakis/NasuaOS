@@ -1,7 +1,5 @@
 #include "../driver.hpp"
 
-#include "system/drivers/uart/driver.hpp"
-#include "kernel/include/logger/logger.hpp"
 
 extern volatile limine_hhdm_request hhdm_request;
 

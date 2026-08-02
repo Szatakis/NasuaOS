@@ -1,15 +1,13 @@
 #include "../driver.hpp"
-#include "system/interrupts/interrupts.hpp"
-
 #include <limine.h>
 
-#include "system/interrupts/functions/pic.hpp"
 #include "system/drivers/memory/driver.hpp"
+#include "system/drivers/uart/driver.hpp"
+#include "system/interrupts/interrupts.hpp"
+
+#include "kernel/include/logger/logger.hpp"
 
 #include "libs/asm/asm.h"
-
-#include "system/drivers/uart/driver.hpp"
-#include "kernel/include/logger/logger.hpp"
 
 
 #define IA32_APIC_BASE_MSR 0x1B

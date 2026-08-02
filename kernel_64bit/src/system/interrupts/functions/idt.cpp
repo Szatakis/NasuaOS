@@ -1,8 +1,8 @@
 #include "idt.hpp"
 
 #include "isr.hpp"
-
 #include "system/drivers/uart/driver.hpp"
+
 #include "kernel/include/logger/logger.hpp"
 
 extern "C" void irq0();

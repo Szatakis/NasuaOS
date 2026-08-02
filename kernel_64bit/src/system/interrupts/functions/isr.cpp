@@ -2,7 +2,6 @@
 
 #include "pic.hpp"
 #include "page_fault.hpp"
-
 #include "system/drivers/uart/driver.hpp"
 #include "system/drivers/timer/driver.hpp"
 

@@ -1,6 +1,7 @@
 #include "../../driver.hpp"
 
 #include "system/gui/vars/colors.hpp"
+
 #include "applications/shell/commands.hpp"
 
 // Deklaracja funkcji inicjalizującej bufor terminala z pliku tekstowego

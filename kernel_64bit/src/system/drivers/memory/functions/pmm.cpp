@@ -1,8 +1,5 @@
 #include "../driver.hpp"
 
-#include "system/drivers/uart/driver.hpp"
-#include "kernel/include/logger/logger.hpp"
-
 
 extern volatile limine_memmap_request memmap_request;
 

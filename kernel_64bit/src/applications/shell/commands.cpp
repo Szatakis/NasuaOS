@@ -5,28 +5,28 @@
 #include <limine.h>
 
 #include "commands.hpp"
-#include "libs/libc/libc.h"
 #include "screen.h"
+
+#include "system/drivers/drivers.hpp"
+
+#include "kernel/include/panic/kernel_panic.hpp"
+#include "kernel/include/logger/logger.hpp"
+#include "system/sysfunc/rand/rand.hpp"
 
 #include "applications/applications.hpp"
 #include "functions/functions.hpp"
 
-#include "system/drivers/drivers.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
-
-#include "kernel/include/panic/kernel_panic.hpp"
-#include "kernel/include/logger/logger.hpp"
 
 #include "system/filesystem/clawfs.hpp"
 
-#include "system/sysfunc/rand/rand.hpp"
-
+#include "libs/libc/libc.h"
 #include "libs/asm/asm.h"
 
 extern uint32_t current_text_color;
 extern bool debug_mode;
 
-// --- GŁÓWNA FUNKCJA SHELLA ---
+// Main shell function
 
 void execute_command(const char *cmd) 
 {

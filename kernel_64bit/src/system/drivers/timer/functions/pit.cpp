@@ -1,11 +1,12 @@
 #include "../driver.hpp"
 
 #include "system/interrupts/functions/pic.hpp"
+#include "system/drivers/uart/driver.hpp"
+#include "system/drivers/video/driver.hpp"
+
+#include "kernel/include/logger/logger.hpp"
 
 #include "libs/asm/asm.h"
-#include "system/drivers/uart/driver.hpp"
-#include "kernel/include/logger/logger.hpp"
-#include "system/drivers/video/driver.hpp"
 
 
 #define PIT_CHANNEL0 0x40

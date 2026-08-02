@@ -1,10 +1,11 @@
 #include "pic.hpp"
+
 #include "system/drivers/apic/driver.hpp"
+#include "system/drivers/uart/driver.hpp"
+
+#include "kernel/include/logger/logger.hpp"
 
 #include "libs/asm/asm.h"
-
-#include "system/drivers/uart/driver.hpp"
-#include "kernel/include/logger/logger.hpp"
 
 
 #define PIC1_COMMAND 0x20

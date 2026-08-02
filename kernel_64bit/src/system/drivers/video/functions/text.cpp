@@ -1,5 +1,8 @@
 #include "../driver.hpp"
 
+#include "system/drivers/keyboard/driver.hpp"
+#include "system/drivers/uart/driver.hpp"
+
 #include "system/fonts/font8x8.h"
 #include "system/fonts/font10x10.h"
 #include "system/fonts/font12x12.h"
@@ -7,8 +10,6 @@
 #include "system/gui/vars/colors.hpp"
 
 #include "applications/shell/commands.hpp"
-#include "system/drivers/keyboard/driver.hpp"
-#include "system/drivers/uart/driver.hpp"
 
 #include "libs/libc/libc.h"
 

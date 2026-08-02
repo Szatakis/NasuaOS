@@ -6,6 +6,10 @@
 #include <cstdint>
 #include <cstddef>
 
+#include "system/drivers/uart/driver.hpp"
+
+#include "kernel/include/logger/logger.hpp"
+
 void memory_init();
 uint64_t memory_used();
 const char* memory_total();

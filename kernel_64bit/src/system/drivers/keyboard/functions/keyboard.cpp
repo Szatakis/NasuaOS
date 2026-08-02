@@ -2,17 +2,19 @@
 
 #include "system/drivers/drivers.hpp"
 #include "system/interrupts/interrupts.hpp"
+
 #include "applications/shell/commands.hpp"
+#include "system/sysfunc/command_history/history.hpp"
+
+#include "applications/applications.hpp"
+
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
+#include "system/gui/gui.hpp"
+#include "system/vars/info_vars/info_vars.hpp"
 
 #include "libs/libc/libc.h"
 #include "libs/asm/asm.h"
-
-#include "system/sysfunc/command_history/history.hpp"
-#include "system/gui/gui.hpp"
-#include "applications/applications.hpp"
-#include "system/vars/info_vars/info_vars.hpp"
 
 char command_buffer[64];
 size_t cmd_idx = 0;

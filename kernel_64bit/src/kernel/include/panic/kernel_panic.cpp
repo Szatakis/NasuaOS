@@ -1,11 +1,11 @@
 #include "kernel_panic.hpp"
 
-#include "libs/libc/libc.h"
-#include "libs/asm/asm.h"
-
 #include "system/drivers/video/driver.hpp"
 #include "system/drivers/cpu/driver.hpp"
 #include "system/drivers/timer/driver.hpp"
+
+#include "libs/libc/libc.h"
+#include "libs/asm/asm.h"
 
 #define PANIC_WIDTH 45
 #define CHAR_WIDTH 8

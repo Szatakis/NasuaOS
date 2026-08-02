@@ -3,9 +3,11 @@
 #include <stddef.h>
 #include <limine.h>
 
-#include "../../video/driver.hpp"
-#include "libs/asm/asm.h"
+#include "system/drivers/video/driver.hpp"
+
 #include "applications/shell/commands.hpp"
+
+#include "libs/asm/asm.h"
 
 
 extern "C" volatile struct limine_rsdp_request rsdp_request;
