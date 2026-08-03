@@ -1,26 +1,41 @@
 .SUFFIXES:
 
-ARCH ?= x86_32
-
 AS := nasm
-LD := ld
+LD := lld-link
 
-OBJ_DIR := obj-$(ARCH)
-BIN_DIR := bin-$(ARCH)
 
-OBJ := $(OBJ_DIR)/boot.o
-BIN := $(BIN_DIR)/shell
+OBJ_DIR := obj-x86_64
+BIN_DIR := bin-x86_64
+
+
+OBJ := $(OBJ_DIR)/boot.obj
+EFI := $(BIN_DIR)/uefi_shell.efi
+
 
 .PHONY: all
-all: $(BIN)
+all: $(EFI)
 
-$(BIN): $(OBJ) linker.lds
+
+
+$(EFI): $(OBJ)
 	@mkdir -p $(BIN_DIR)
-	$(LD) -m elf_i386 -T linker.lds -o $@ $(OBJ)
 
-$(OBJ_DIR)/boot.o: src/boot.asm
+	$(LD) \
+		/subsystem:efi_application \
+		/entry:_start \
+		/out:$@ \
+		$<
+
+
+
+$(OBJ): src/boot.asm
 	@mkdir -p $(OBJ_DIR)
-	$(AS) -f elf32 $< -o $@
+
+	$(AS) \
+		-f win64 \
+		$< \
+		-o $@
+
 
 .PHONY: clean
 clean:

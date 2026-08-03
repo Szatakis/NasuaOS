@@ -81,6 +81,7 @@ ifeq ($(IS_WSL),1)
 	$(QEMU_X86_64) \
 		-M pc \
 		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-x86_64.fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=C:\\wsl_target\\edk2-bins\\vars-x86_64.fd \
 		-cdrom C:\\wsl_target\\$(IMAGE_NAME).iso \
 		-drive id=$(FS_NAME),file=C:\\wsl_target\\$(FS_NAME).img,format=raw,if=none \
 		-device ide-hd,drive=$(FS_NAME),bus=ide.0,unit=0 \
@@ -89,6 +90,7 @@ ifeq ($(IS_WSL),1)
 		-serial stdio \
 		-audiodev sdl,id=snd0 \
 		-machine pcspk-audiodev=snd0 \
+		-global isa-debugcon.iobase=0x402 \
 		$(QEMUFLAGS)
 else
 	$(QEMU_X86_64) \
@@ -362,25 +364,26 @@ kernel_32bit:
 utilities:
 	$(MAKE) -C utilities/hdt ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/ram_test ARCH=$(SUB_ARCH)
-	$(MAKE) -C utilities/uefi_setup ARCH=$(SUB_ARCH)
-	$(MAKE) -C utilities/uefi_shell ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/uefi_setup ARCH=$(ARCH)
+	$(MAKE) -C utilities/uefi_shell ARCH=$(ARCH)
 
 
 $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities
 	rm -rf iso_root
 	mkdir -p iso_root/boot
 	mkdir -p iso_root/boot/utils
+	mkdir -p iso_root/EFI/BOOT
+	mkdir -p iso_root/EFI/utils
 	cp -v kernel_64bit/bin-$(ARCH)/kernel_64bit iso_root/boot/
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
 	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
 	cp -v utilities/ram_test/bin-$(SUB_ARCH)/memtest iso_root/boot/utils
-	cp -v utilities/uefi_setup/bin-$(SUB_ARCH)/fwsetup iso_root/boot/utils
-	cp -v utilities/uefi_shell/bin-$(SUB_ARCH)/shell iso_root/boot/utils
+	cp -v utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi iso_root/EFI/utils
+	cp -v utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi iso_root/EFI/utils
 	mkdir -p iso_root/boot/limine
 	cp -v limine.conf iso_root/boot/limine/
 	mkdir -p iso_root/boot/assets/images
 	cp -v documentation/images/background.png iso_root/boot/assets/images/
-	mkdir -p iso_root/EFI/BOOT
 ifeq ($(ARCH),x86_64)
 	cp -v limine-binary/limine-bios.sys limine-binary/limine-bios-cd.bin limine-binary/limine-uefi-cd.bin iso_root/boot/limine/
 	cp -v limine-binary/BOOTX64.EFI iso_root/EFI/BOOT/
@@ -421,7 +424,7 @@ ifeq ($(ARCH),loongarch64)
 endif
 	rm -rf iso_root
 
-$(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit
+$(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit utilities
 	rm -f $(IMAGE_NAME).hdd
 	dd if=/dev/zero bs=1M count=0 seek=64 of=$(IMAGE_NAME).hdd
 ifeq ($(ARCH),x86_64)
@@ -431,9 +434,15 @@ else
 	PATH=$$PATH:/usr/sbin:/sbin sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00
 endif
 	mformat -i $(IMAGE_NAME).hdd@@1M
-	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine ::/boot/assets ::/boot/assets/images
+	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/EFI/utils ::/boot ::/boot/utils ::/boot/limine ::/boot/assets ::/boot/assets/images
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_64bit/bin-$(ARCH)/kernel_64bit ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit ::/boot
+
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/ram_test/bin-$(SUB_ARCH)/memtest ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi ::/EFI/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi ::/EFI/utils
+
 	mcopy -i $(IMAGE_NAME).hdd@@1M documentation/images/background.png ::/boot/assets/images
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine.conf ::/boot/limine
 ifeq ($(ARCH),x86_64)

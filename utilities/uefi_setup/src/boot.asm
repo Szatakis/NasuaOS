@@ -1,44 +1,62 @@
-[bits 32]
+[bits 64]
 
-section .multiboot
-align 4
-
-    dd 0x1BADB002
-    dd 0
-    dd -(0x1BADB002)
-
-section .text
 global _start
 
+section .text
+
 _start:
-    cli
 
-    mov esp, stack_top
+    ; RDX = EFI_SYSTEM_TABLE
 
-    mov edi, 0xB8000
-    mov esi, message
+    mov rbx, rdx
 
-.print:
-    lodsb
-    test al, al
-    jz .hang
 
-    mov ah, 0x0F
-    stosw
-    jmp .print
+    ; EFI_SYSTEM_TABLE->ConOut
+    ; offset 0x40
 
-.hang:
+    mov rcx, [rbx+0x40]
+
+
+    ; ConOut->OutputString
+    ; offset 0x08
+
+    mov rax, [rcx+0x08]
+
+
+    ; argument 2 = CHAR16*
+
+    lea rdx, [message]
+
+
+    call rax
+
+
+hang:
+
     hlt
-    jmp .hang
+    jmp hang
 
-section .rodata
 
-message db "Hello World!", 0
 
-section .bss
-align 16
+section .data
 
-stack:
-    resb 4096
+message:
 
-stack_top:
+    dw 'N'
+    dw 'a'
+    dw 's'
+    dw 'u'
+    dw 'a'
+    dw 'O'
+    dw 'S'
+    dw ' '
+    dw 'F'
+    dw 'W'
+    dw 'S'
+    dw 'e'
+    dw 't'
+    dw 'u'
+    dw 'p'
+    dw 13
+    dw 10
+    dw 0
