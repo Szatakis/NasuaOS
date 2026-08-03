@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+//Debug vars
+bool safe_mode = false;
 
 volatile uint16_t* vga = (uint16_t*)0xB8000;
 uint32_t cursor = 0;
@@ -226,6 +228,28 @@ bool strcmp(const char* a,const char* b)
     return *a==0 && *b==0;
 }
 
+bool contains(const char* text,const char* find)
+{
+    while(*text)
+    {
+        const char* a=text;
+        const char* b=find;
+
+        while(*a && *b && *a==*b)
+        {
+            a++;
+            b++;
+        }
+
+        if(*b==0)
+            return true;
+
+        text++;
+    }
+
+    return false;
+}
+
 void reboot()
 {
     uint8_t status;
@@ -320,12 +344,17 @@ void shell()
 }
 
 
-extern "C" void kmain()
+extern "C" void kmain(char* cmdline)
 {
     disable_cursor();
     keyboard_init();
     fetch();
 
+    if(contains(cmdline,"safe_mode=enabled"))
+    {
+        print("\nSAFE MODE ENABLED\n\n");
+        safe_mode = true;
+    }
 
     shell();
 }

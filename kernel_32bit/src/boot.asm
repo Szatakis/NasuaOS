@@ -14,7 +14,12 @@ extern kmain
 
 _kmain:
     cli
+
     mov esp, stack_top
+
+    ; EBX = multiboot info
+    mov eax, [ebx + 16]
+    push eax
 
     call kmain
 

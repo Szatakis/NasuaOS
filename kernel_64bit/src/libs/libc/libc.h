@@ -22,3 +22,4 @@ void to_hex8(uint8_t value, char* out);
 uint32_t parse_hex(const char* str);
 char* strtok(char* str, const char* delim);
 char* strrchr(const char* str, int c);
+bool find_in_string(const char* str, const char* target);

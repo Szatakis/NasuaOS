@@ -383,6 +383,7 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities
 	cp -v limine.conf iso_root/boot/limine/
 	mkdir -p iso_root/boot/assets/images
 	cp -v documentation/images/background.png iso_root/boot/assets/images/
+	cp -v utilities/boot_config.txt iso_root/boot
 ifeq ($(ARCH),x86_64)
 	cp -v limine-binary/limine-bios.sys limine-binary/limine-bios-cd.bin limine-binary/limine-uefi-cd.bin iso_root/boot/limine/
 	cp -v limine-binary/BOOTX64.EFI iso_root/EFI/BOOT/
@@ -436,6 +437,8 @@ endif
 	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/EFI/utils ::/boot ::/boot/utils ::/boot/limine ::/boot/assets ::/boot/assets/images
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_64bit/bin-$(ARCH)/kernel_64bit ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit ::/boot
+
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_config.txt ::/boot
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/ram_test/bin-$(SUB_ARCH)/memtest ::/boot/utils

@@ -354,3 +354,21 @@ char* strrchr(const char* str, int c) {
     }
     return (char*)last;
 }
+
+bool find_in_string(const char* str, const char* target) 
+{
+    if (!str || !target) return false;
+    for (std::size_t i = 0; str[i] != '\0'; ++i) 
+    {
+        std::size_t j = 0;
+        while (target[j] != '\0' && str[i + j] == target[j]) 
+        {
+            j++;
+        }
+        if (target[j] == '\0') 
+        {
+            return true;
+        }
+    }
+    return false;
+}

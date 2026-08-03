@@ -25,6 +25,7 @@
 
 extern uint32_t current_text_color;
 extern bool debug_mode;
+extern bool safe_mode;
 
 // Main shell function
 
@@ -167,9 +168,9 @@ void execute_command(const char *cmd)
             print("    --val \"0xHEX\"                    - (Required) Value byte to write\n");
             print(" -asciiart                           - Convert text into large ASCII banner\n");
             print("    --text \"string\"                  - (Required) Text to transform\n");
-            print(" -mkdir                             - Create a new directory\n");
+            print(" -mkdir                              - Create a new directory\n");
             print("    --dir_name \"name\"                - (Required) Name of the new directory\n");
-
+            print(" -safe_mode                          - Enable safe mode for system debugging\n");
 
 
 
@@ -1348,6 +1349,12 @@ void execute_command(const char *cmd)
             print_error("Syntax error!\n");
             print_info("Usage: rm --name \"name\" --type \"file|dir\"\n");
         }
+    }
+    // 30. Command: safe_mode
+    else if(cmd_name_len == 9 && strncmp(cmd, "safe_mode", 9))
+    {
+        print_info("SAFE MODE ENABLED\n");
+        safe_mode = true;
     }
 
 

@@ -18,6 +18,11 @@
 #include "libs/libc/libc.h"
 #include "libs/asm/asm.h"
 
+// DEBUG VARS
+bool debug_mode = false;
+bool safe_mode = false;
+bool kernel_panicked = false;
+
 __attribute__((used, section(".limine_requests")))
 volatile limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST_ID,
@@ -40,6 +45,42 @@ volatile limine_mp_request mp_request = {
     .flags = 0
 };
 
+// LIMINE
+namespace {
+    __attribute__((used, section(".limine_requests")))
+    volatile std::uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
+
+    __attribute__((used, section(".limine_requests")))
+    volatile limine_framebuffer_request framebuffer_request = 
+    {
+        .id = LIMINE_FRAMEBUFFER_REQUEST_ID,
+        .revision = 0,
+        .response = nullptr
+    };
+
+    __attribute__((used, section(".limine_requests_start")))
+    volatile std::uint64_t limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
+
+    __attribute__((used, section(".limine_requests_end")))
+    volatile std::uint64_t limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
+
+    __attribute__((used, section(".limine_requests")))
+    volatile limine_bootloader_info_request bootloader_info_request = {
+        .id = LIMINE_BOOTLOADER_INFO_REQUEST_ID,
+        .revision = 0,
+        .response = nullptr
+    };
+
+    __attribute__((used, section(".limine_requests")))
+    volatile limine_module_request module_request = {
+        .id = LIMINE_MODULE_REQUEST_ID,
+        .revision = 0,
+        .response = nullptr,
+        .internal_module_count = 0,
+        .internal_modules = nullptr
+    };
+}
+
 void iqu_init()
 {
     Uart::init();
@@ -58,37 +99,15 @@ void iqu_init()
     asm volatile("sti");
 
     image_init();
+
+    if(safe_mode) {
+        execute_command("safe_mode");
+        Uart::puts("SAFE MODE ENABLED\n");
+    }
 }
 
-// ---------------- LIMINE ----------------
-
-namespace {
-    __attribute__((used, section(".limine_requests")))
-    volatile std::uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
-
-    __attribute__((used, section(".limine_requests")))
-    volatile limine_framebuffer_request framebuffer_request = 
-    {
-        .id = LIMINE_FRAMEBUFFER_REQUEST_ID,
-        .revision = 0,
-        .response = nullptr
-    };
-
-    __attribute__((used, section(".limine_requests_start")))
-    volatile std::uint64_t limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
-
-    __attribute__((used, section(".limine_requests_end")))
-    volatile std::uint64_t limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
-}
-
-// ---------------- DEBUG VARS ----------------
-
-bool debug_mode = false;
-bool kernel_panicked = false;
-
-// ---------------- KMAIN ----------------
-
-extern "C" void kmain() 
+// Initializers
+void pre_check()
 {
     if (!LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision)) 
     {
@@ -99,6 +118,26 @@ extern "C" void kmain()
     {
         hcf();
     }
+
+    if (module_request.response != nullptr) 
+    {
+        for (std::uint64_t i = 0; i < module_request.response->module_count; ++i) 
+        {
+            struct limine_file* file = module_request.response->modules[i];
+
+            if (find_in_string(file->path, "boot_config.txt")) 
+            {
+                safe_mode = true;
+                break;
+            }
+        }
+    }
+}
+
+// KMAIN
+extern "C" void kmain() 
+{
+    pre_check();
 
     fb = framebuffer_request.response->framebuffers[0];
     init_backbuffer(fb->width, fb->height, fb->pitch);
@@ -133,8 +172,7 @@ extern "C" void kmain()
     }
 }
 
-// ---------------- CRT ----------------
-
+// CRT
 extern "C" {
     int __cxa_atexit(void (*)(void*), void*, void*) { return 0; }
     void __cxa_pure_virtual() { hcf(); }
