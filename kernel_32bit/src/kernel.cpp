@@ -21,6 +21,7 @@ struct multiboot_info {
 
 //Debug vars
 bool safe_mode = false;
+bool debug_mode = false;
 
 volatile uint16_t* vga = (uint16_t*)0xB8000;
 uint32_t cursor = 0;
@@ -368,12 +369,21 @@ extern "C" void kmain(struct multiboot_info* mbi)
     keyboard_init();
     fetch();
 
-    if (mbi->flags & (1 << 3))
+    uint32_t count = mbi->mods_count;
+    struct multiboot_module* mods = (struct multiboot_module*)mbi->mods_addr;
+
+    for (uint32_t i = 0; i < count; i++) 
     {
-        if (mbi->mods_count > 0)
+        const char* data = (char*)mods[i].mod_start;
+        if(contains(data, "SAFE_MODE"))
         {
-            print("SAFE MODE ENABLED\n");
+            print("Safe mode ON\n");
             safe_mode = true;
+        }
+        if(contains(data, "DEBUG"))
+        {
+            print("Debug mode ON\n");
+            debug_mode = true;
         }
     }
 

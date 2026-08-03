@@ -100,9 +100,15 @@ void iqu_init()
 
     image_init();
 
-    if(safe_mode) {
+    if(safe_mode) 
+    {
         execute_command("safe_mode");
         Uart::puts("SAFE MODE ENABLED\n");
+    }
+    if(debug_mode)
+    {
+        execute_command("debug --on");
+        Uart::puts("DEBUG MODE ENABLED");
     }
 }
 
@@ -125,10 +131,21 @@ void pre_check()
         {
             struct limine_file* file = module_request.response->modules[i];
 
-            if (find_in_string(file->path, "safe_mode.txt")) 
+            if (find_in_string(file->path, "boot_config.txt"))
             {
-                safe_mode = true;
-                break;
+                const char* content = (const char*)file->address;
+
+                if (content != nullptr)
+                {
+                    if (find_in_string(content, "SAFE_MODE"))
+                    {
+                        safe_mode = true;
+                    }
+                    if (find_in_string(content, "DEBUG"))
+                    {
+                        debug_mode = true;
+                    }
+                }
             }
         }
     }

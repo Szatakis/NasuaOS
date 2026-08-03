@@ -1353,7 +1353,7 @@ void execute_command(const char *cmd)
     // 30. Command: safe_mode
     else if(cmd_name_len == 9 && strncmp(cmd, "safe_mode", 9))
     {
-        print_info("SAFE MODE ENABLED\n");
+        print_info("Safe mode ON\n");
         safe_mode = true;
     }
 
