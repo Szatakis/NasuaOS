@@ -358,11 +358,24 @@ kernel_64bit: kernel_64bit/.deps-obtained
 kernel_32bit:
 	$(MAKE) -C kernel_32bit ARCH=$(SUB_ARCH)
 
-$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit
+.PHONY: utilities
+utilities:
+	$(MAKE) -C utilities/hdt ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/ram_test ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/uefi_setup ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/uefi_shell ARCH=$(SUB_ARCH)
+
+
+$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities
 	rm -rf iso_root
 	mkdir -p iso_root/boot
+	mkdir -p iso_root/boot/utils
 	cp -v kernel_64bit/bin-$(ARCH)/kernel_64bit iso_root/boot/
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
+	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
+	cp -v utilities/ram_test/bin-$(SUB_ARCH)/memtest iso_root/boot/utils
+	cp -v utilities/uefi_setup/bin-$(SUB_ARCH)/fwsetup iso_root/boot/utils
+	cp -v utilities/uefi_shell/bin-$(SUB_ARCH)/shell iso_root/boot/utils
 	mkdir -p iso_root/boot/limine
 	cp -v limine.conf iso_root/boot/limine/
 	mkdir -p iso_root/boot/assets/images
@@ -442,10 +455,22 @@ endif
 clean:
 	$(MAKE) -C kernel_32bit clean
 	$(MAKE) -C kernel_64bit clean
+
+	$(MAKE) -C utilities/hdt clean
+	$(MAKE) -C utilities/ram_test clean
+	$(MAKE) -C utilities/uefi_setup clean
+	$(MAKE) -C utilities/uefi_shell clean
+
 	rm -rf iso_root $(IMAGE_NAME).iso $(IMAGE_NAME).hdd
 
 .PHONY: distclean
 distclean:
 	$(MAKE) -C kernel_32bit distclean
 	$(MAKE) -C kernel_64bit distclean
+
+	$(MAKE) -C utilities/hdt distclean
+	$(MAKE) -C utilities/ram_test distclean
+	$(MAKE) -C utilities/uefi_setup distclean
+	$(MAKE) -C utilities/uefi_shell distclean
+
 	rm -rf iso_root *.iso *.hdd limine-binary edk2-bins
