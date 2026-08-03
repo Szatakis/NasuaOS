@@ -17,9 +17,7 @@ _kmain:
 
     mov esp, stack_top
 
-    ; EBX = multiboot info
-    mov eax, [ebx + 16]
-    push eax
+    push ebx
 
     call kmain
 

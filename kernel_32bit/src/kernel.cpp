@@ -1,5 +1,24 @@
 #include <stdint.h>
 
+// Definicje struktur Multiboot 1
+struct multiboot_module {
+    uint32_t mod_start;
+    uint32_t mod_end;
+    uint32_t cmdline;
+    uint32_t pad;
+};
+
+struct multiboot_info {
+    uint32_t flags;
+    uint32_t mem_lower;
+    uint32_t mem_upper;
+    uint32_t boot_device;
+    uint32_t cmdline;
+    uint32_t mods_count;  // Liczba modułów
+    uint32_t mods_addr;   // Adres tablicy modułów
+    // Dalsze pola są nieistotne dla modułów
+};
+
 //Debug vars
 bool safe_mode = false;
 
@@ -343,17 +362,19 @@ void shell()
     }
 }
 
-
-extern "C" void kmain(char* cmdline)
+extern "C" void kmain(struct multiboot_info* mbi)
 {
     disable_cursor();
     keyboard_init();
     fetch();
 
-    if(contains(cmdline,"safe_mode=enabled"))
+    if (mbi->flags & (1 << 3))
     {
-        print("\nSAFE MODE ENABLED\n\n");
-        safe_mode = true;
+        if (mbi->mods_count > 0)
+        {
+            print("SAFE MODE ENABLED\n");
+            safe_mode = true;
+        }
     }
 
     shell();

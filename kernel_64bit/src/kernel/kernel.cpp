@@ -125,7 +125,7 @@ void pre_check()
         {
             struct limine_file* file = module_request.response->modules[i];
 
-            if (find_in_string(file->path, "boot_config.txt")) 
+            if (find_in_string(file->path, "safe_mode.txt")) 
             {
                 safe_mode = true;
                 break;
