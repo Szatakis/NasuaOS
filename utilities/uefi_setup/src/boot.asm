@@ -5,43 +5,33 @@ global _start
 section .text
 
 _start:
-
-    ; RDX = EFI_SYSTEM_TABLE
-
     mov rbx, rdx
-
-
-    ; EFI_SYSTEM_TABLE->ConOut
-    ; offset 0x40
 
     mov rcx, [rbx+0x40]
 
-
-    ; ConOut->OutputString
-    ; offset 0x08
+    mov rsi, rcx
 
     mov rax, [rcx+0x08]
 
-
-    ; argument 2 = CHAR16*
-
+    mov rcx, rsi                 
+    
     lea rdx, [message]
 
-
+    sub rsp, 32
     call rax
+    add rsp, 32
+
+    jmp hang
 
 
 hang:
-
     hlt
     jmp hang
-
 
 
 section .data
 
 message:
-
     dw 'N'
     dw 'a'
     dw 's'

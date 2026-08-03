@@ -90,7 +90,6 @@ ifeq ($(IS_WSL),1)
 		-serial stdio \
 		-audiodev sdl,id=snd0 \
 		-machine pcspk-audiodev=snd0 \
-		-global isa-debugcon.iobase=0x402 \
 		$(QEMUFLAGS)
 else
 	$(QEMU_X86_64) \
