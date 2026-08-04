@@ -366,23 +366,30 @@ utilities:
 	$(MAKE) -C utilities/uefi_setup ARCH=$(ARCH)
 	$(MAKE) -C utilities/uefi_shell ARCH=$(ARCH)
 
+.PHONY: fs_sys
+fs_sys:
+	$(MAKE) -C utilities/rootfs
 
-$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities
+$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys
 	rm -rf iso_root
+
 	mkdir -p iso_root/boot
 	mkdir -p iso_root/boot/utils
+	mkdir -p iso_root/boot/limine
 	mkdir -p iso_root/EFI/BOOT
-	mkdir -p iso_root/EFI/utils
+	mkdir -p iso_root/system
+	mkdir -p iso_root/system/assets
+	mkdir -p iso_root/system/assets/images
+
 	cp -v kernel_64bit/bin-$(ARCH)/kernel_64bit iso_root/boot/
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
 	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
 	cp -v utilities/ram_test/bin-$(SUB_ARCH)/memtest iso_root/boot/utils
-	cp -v utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi iso_root/EFI/utils
-	cp -v utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi iso_root/EFI/utils
-	mkdir -p iso_root/boot/limine
+	cp -v utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi iso_root/boot/utils
+	cp -v utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi iso_root/boot/utils
+	cp -v utilities/rootfs/rootfs.img iso_root/system
 	cp -v limine.conf iso_root/boot/limine/
-	mkdir -p iso_root/boot/assets/images
-	cp -v documentation/images/background.png iso_root/boot/assets/images/
+	cp -v documentation/images/background.png iso_root/system/assets/images/
 	cp -v boot_config.txt iso_root/boot
 ifeq ($(ARCH),x86_64)
 	cp -v limine-binary/limine-bios.sys limine-binary/limine-bios-cd.bin limine-binary/limine-uefi-cd.bin iso_root/boot/limine/
@@ -424,17 +431,18 @@ ifeq ($(ARCH),loongarch64)
 endif
 	rm -rf iso_root
 
-$(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit utilities
+$(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys
 	rm -f $(IMAGE_NAME).hdd
-	dd if=/dev/zero bs=1M count=0 seek=64 of=$(IMAGE_NAME).hdd
+	dd if=/dev/zero bs=1M count=0 seek=256 of=$(IMAGE_NAME).hdd
 ifeq ($(ARCH),x86_64)
 	PATH=$$PATH:/usr/sbin:/sbin sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00 -m 1
 	./limine-binary/limine bios-install $(IMAGE_NAME).hdd
 else
 	PATH=$$PATH:/usr/sbin:/sbin sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00
 endif
-	mformat -i $(IMAGE_NAME).hdd@@1M
-	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/EFI/utils ::/boot ::/boot/utils ::/boot/limine ::/boot/assets ::/boot/assets/images
+	mformat -F -h 2048 -i $(IMAGE_NAME).hdd@@1M
+	
+	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/EFI/utils ::/boot ::/boot/utils ::/boot/limine ::/system ::/system/assets ::/system/assets/images
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_64bit/bin-$(ARCH)/kernel_64bit ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit ::/boot
 
@@ -442,10 +450,11 @@ endif
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/ram_test/bin-$(SUB_ARCH)/memtest ::/boot/utils
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi ::/EFI/utils
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi ::/EFI/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi ::/boot/utils
 
-	mcopy -i $(IMAGE_NAME).hdd@@1M documentation/images/background.png ::/boot/assets/images
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/rootfs/rootfs.img ::/system
+	mcopy -i $(IMAGE_NAME).hdd@@1M documentation/images/background.png ::/system/assets/images
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine.conf ::/boot/limine
 ifeq ($(ARCH),x86_64)
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine-binary/limine-bios.sys ::/boot/limine
@@ -472,6 +481,8 @@ clean:
 	$(MAKE) -C utilities/uefi_setup clean
 	$(MAKE) -C utilities/uefi_shell clean
 
+	$(MAKE) -C utilities/rootfs clean
+
 	rm -rf iso_root $(IMAGE_NAME).iso $(IMAGE_NAME).hdd
 
 .PHONY: distclean
@@ -483,5 +494,7 @@ distclean:
 	$(MAKE) -C utilities/ram_test distclean
 	$(MAKE) -C utilities/uefi_setup distclean
 	$(MAKE) -C utilities/uefi_shell distclean
+
+	$(MAKE) -C utilities/rootfs distclean
 
 	rm -rf iso_root *.iso *.hdd limine-binary edk2-bins
