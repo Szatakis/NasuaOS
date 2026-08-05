@@ -1,0 +1,11 @@
+/hdt/obj-*
+/hdt/bin-*
+
+/ram_test/obj-*
+/ram_test/bin-*
+
+/uefi_setup/obj-*
+/uefi_setup/bin-*
+
+/uefi_shell/obj-*
+/uefi_shell/bin-*
