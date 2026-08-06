@@ -8,16 +8,134 @@ struct multiboot_module {
     uint32_t pad;
 };
 
-struct multiboot_info {
+struct multiboot_info
+{
     uint32_t flags;
+
     uint32_t mem_lower;
     uint32_t mem_upper;
+
     uint32_t boot_device;
     uint32_t cmdline;
-    uint32_t mods_count;  // Liczba modułów
-    uint32_t mods_addr;   // Adres tablicy modułów
-    // Dalsze pola są nieistotne dla modułów
+
+    uint32_t mods_count;
+    uint32_t mods_addr;
+
+    uint32_t syms[4];
+
+    uint32_t mmap_length;
+    uint32_t mmap_addr;
+
+    uint32_t drives_length;
+    uint32_t drives_addr;
+
+    uint32_t config_table;
+
+    uint32_t boot_loader_name;
+
+    uint32_t apm_table;
+
+    uint32_t vbe_control_info;
+    uint32_t vbe_mode_info;
+    uint16_t vbe_mode;
+    uint16_t vbe_interface_seg;
+    uint16_t vbe_interface_off;
+    uint16_t vbe_interface_len;
+} __attribute__((packed));
+
+struct multiboot_vbe
+{
+    uint32_t control_info;
+    uint32_t mode_info;
+    uint16_t mode;
+    uint16_t interface_seg;
+    uint16_t interface_off;
+    uint16_t interface_len;
 };
+
+struct vbe_mode_info
+{
+    uint16_t attributes;
+    uint8_t winA;
+    uint8_t winB;
+    uint16_t granularity;
+    uint16_t winsize;
+    uint16_t segmentA;
+    uint16_t segmentB;
+    uint32_t realFctPtr;
+    uint16_t pitch;
+
+    uint16_t width;
+    uint16_t height;
+
+    uint8_t wChar;
+    uint8_t yChar;
+    uint8_t planes;
+    uint8_t bpp;
+    uint8_t banks;
+    uint8_t memoryModel;
+    uint8_t bankSize;
+    uint8_t imagePages;
+    uint8_t reserved0;
+
+    uint8_t redMask;
+    uint8_t redPosition;
+
+    uint8_t greenMask;
+    uint8_t greenPosition;
+
+    uint8_t blueMask;
+    uint8_t bluePosition;
+
+    uint8_t reservedMask;
+    uint8_t reservedPosition;
+
+    uint8_t directColorAttributes;
+
+    uint32_t framebuffer;
+
+} __attribute__((packed));
+
+uint32_t syms1;
+uint32_t syms2;
+uint32_t syms3;
+uint32_t syms4;
+
+uint32_t mmap_length;
+uint32_t mmap_addr;
+
+uint32_t drives_length;
+uint32_t drives_addr;
+
+uint32_t config_table;
+
+uint32_t boot_loader_name;
+
+uint32_t apm_table;
+
+multiboot_vbe* vbe;
+
+uint32_t* framebuffer = nullptr;
+
+uint32_t screen_width = 0;
+uint32_t screen_height = 0;
+uint32_t screen_pitch = 0;
+
+bool graphics_init(multiboot_info* mbi)
+{
+    if (!(mbi->flags & (1 << 11)))
+        return false;
+
+    auto mode = (vbe_mode_info*)(uintptr_t)mbi->vbe_mode_info;
+
+    framebuffer = (uint32_t*)(uintptr_t)mode->framebuffer;
+
+    screen_width = mode->width;
+    screen_height = mode->height;
+    screen_pitch = mode->pitch / 4;
+
+    return true;
+}
 
 //Debug vars
 bool safe_mode = false;
@@ -385,10 +503,13 @@ void shell()
     }
 }
 
-extern "C" void kmain(struct multiboot_info* mbi)
+extern "C" void kmain(multiboot_info* mbi)
 {
+    graphics_init(mbi);
+
     disable_cursor();
     keyboard_init();
+
     fetch();
 
     hck_debug(mbi);
