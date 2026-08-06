@@ -1,12 +1,12 @@
 .SUFFIXES:
 
+ARCH ?= x86_64
+
 AS := nasm
 LD := lld-link
 
-
-OBJ_DIR := obj-x86_64
-BIN_DIR := bin-x86_64
-
+OBJ_DIR := obj-$(ARCH)
+BIN_DIR := bin-$(ARCH)
 
 OBJ := $(OBJ_DIR)/boot.obj
 EFI := $(BIN_DIR)/uefi_shell.efi
@@ -14,8 +14,6 @@ EFI := $(BIN_DIR)/uefi_shell.efi
 
 .PHONY: all
 all: $(EFI)
-
-
 
 $(EFI): $(OBJ)
 	@mkdir -p $(BIN_DIR)
@@ -25,7 +23,6 @@ $(EFI): $(OBJ)
 		/entry:_start \
 		/out:$@ \
 		$<
-
 
 
 $(OBJ): src/boot.asm

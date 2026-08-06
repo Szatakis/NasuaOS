@@ -476,12 +476,7 @@ clean:
 	$(MAKE) -C kernel_32bit clean
 	$(MAKE) -C kernel_64bit clean
 
-	$(MAKE) -C utilities/hdt clean
-	$(MAKE) -C utilities/ram_test clean
-	$(MAKE) -C utilities/uefi_setup clean
-	$(MAKE) -C utilities/uefi_shell clean
-
-	$(MAKE) -C utilities/rootfs clean
+	$(MAKE) -C utilities clean
 
 	rm -rf iso_root $(IMAGE_NAME).iso $(IMAGE_NAME).hdd
 
@@ -490,11 +485,6 @@ distclean:
 	$(MAKE) -C kernel_32bit distclean
 	$(MAKE) -C kernel_64bit distclean
 
-	$(MAKE) -C utilities/hdt distclean
-	$(MAKE) -C utilities/ram_test distclean
-	$(MAKE) -C utilities/uefi_setup distclean
-	$(MAKE) -C utilities/uefi_shell distclean
-
-	$(MAKE) -C utilities/rootfs distclean
+	$(MAKE) -C utilities distclean
 
 	rm -rf iso_root *.iso *.hdd limine-binary edk2-bins
