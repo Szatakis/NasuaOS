@@ -1,51 +1,71 @@
 [bits 32]
 
 section .multiboot
-align 4
+align 8
 
-MBALIGN equ 1<<0
-MEMINFO equ 1<<1
-VIDEO   equ 1<<2
+header_start:
 
-FLAGS equ MBALIGN | MEMINFO | VIDEO
-MAGIC equ 0x1BADB002
-CHECKSUM equ -(MAGIC + FLAGS)
+dd 0xE85250D6        ; magic multiboot2
+dd 0                ; architecture i386
+dd header_end - header_start
+dd -(0xE85250D6 + 0 + (header_end - header_start))
 
-dd MAGIC
-dd FLAGS
-dd CHECKSUM
 
-; graphics fields
-dd 0
-dd 0
-dd 0
-dd 0
-dd 1280
-dd 720
-dd 32
+; framebuffer request
+align 8
+dw 5                ; framebuffer tag
+dw 0
+dd 20
+dd 1280             ; width
+dd 720              ; height
+dd 32               ; depth
+
+
+; end tag
+align 8
+dw 0
+dw 0
+dd 8
+
+
+header_end:
+
 
 section .text
-global _kmain
+
+global _start
 extern kmain
 
-_kmain:
 
-    cli
+_start:
 
-    mov esp, stack_top
+cli
 
-    push ebx
 
-    call kmain
+mov esp, stack_top
+
+
+push ebx        ; multiboot info
+
+
+call kmain
+
+
 
 .hang:
-    hlt
-    jmp .hang
+
+hlt
+jmp .hang
+
+
 
 section .bss
+
 align 16
 
 stack:
-    resb 4096
+
+resb 16384
+
 
 stack_top:

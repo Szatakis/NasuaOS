@@ -1,28 +1,39 @@
-ENTRY(_kmain)
+ENTRY(_start)
+
 
 SECTIONS
 {
-    . = 0x100000;
 
-    .text :
-    {
-        *(.multiboot)
-        *(.text*)
-    }
+. = 1M;
 
-    .rodata :
-    {
-        *(.rodata*)
-    }
 
-    .data :
-    {
-        *(.data*)
-    }
+.text :
+{
+    *(.multiboot)
+    *(.text*)
+}
 
-    .bss :
-    {
-        *(COMMON)
-        *(.bss*)
-    }
+
+
+.rodata :
+{
+    *(.rodata*)
+}
+
+
+
+.data :
+{
+    *(.data*)
+}
+
+
+
+.bss :
+{
+    *(COMMON)
+    *(.bss*)
+}
+
+
 }

@@ -1,13 +1,17 @@
 .SUFFIXES:
 
+
 ARCH ?= x86_32
+
 
 AS := nasm
 CC := g++
 LD := g++
 
+
 OBJ_DIR := obj-$(ARCH)
 BIN_DIR := bin-$(ARCH)
+
 
 CFLAGS := \
 	-m32 \
@@ -23,38 +27,68 @@ CFLAGS := \
 	-mno-sse \
 	-mno-sse2
 
+
 LDFLAGS := \
 	-m32 \
 	-nostdlib \
 	-no-pie
 
-OBJ := \
-	$(OBJ_DIR)/boot.o \
-	$(OBJ_DIR)/kernel.o
 
-BIN := $(BIN_DIR)/kernel_32bit
+TARGET := $(BIN_DIR)/kernel_32bit
+
+
+# wszystkie pliki źródłowe
+CPP_SRC := $(shell find src -type f -name "*.cpp")
+C_SRC   := $(shell find src -type f -name "*.c")
+ASM_SRC := $(shell find src -type f -name "*.asm")
+
+
+SRC := $(CPP_SRC) $(C_SRC) $(ASM_SRC)
+
+
+# zamiana src/x.cpp -> obj-x86_32/x.o
+OBJ := $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(CPP_SRC)) \
+       $(patsubst %.c,$(OBJ_DIR)/%.o,$(C_SRC)) \
+       $(patsubst %.asm,$(OBJ_DIR)/%.o,$(ASM_SRC))
+
+
 
 .PHONY: all
-all: $(BIN)
+all: $(TARGET)
+
+
 
 ifeq ($(filter $(ARCH),aarch32 loongarch32 riscv32 x86_32),)
-    $(error Architecture $(ARCH) not supported)
+	$(error Architecture $(ARCH) not supported)
 endif
-ifeq ($(ARCH), loongarch32)
+
+
+ifeq ($(ARCH),loongarch32)
 	$(error $(ARCH) not support 32bit mode)
 endif
 
-$(BIN): $(OBJ) linker-scripts/x86_32.lds
+$(TARGET): $(OBJ) linker-scripts/x86_32.lds
 	@mkdir -p $(BIN_DIR)
-	$(LD) $(LDFLAGS) -T linker-scripts/x86_32.lds -o $@ $(OBJ)
+	$(LD) $(LDFLAGS) \
+		-T linker-scripts/x86_32.lds \
+		-o $@ \
+		$(OBJ)
 
-$(OBJ_DIR)/boot.o: src/boot.asm
-	@mkdir -p $(OBJ_DIR)
+# C++
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# C
+$(OBJ_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# ASM
+$(OBJ_DIR)/%.o: %.asm
+	@mkdir -p $(dir $@)
 	$(AS) -f elf32 $< -o $@
 
-$(OBJ_DIR)/kernel.o: src/kernel.cpp
-	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:

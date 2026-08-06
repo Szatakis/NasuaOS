@@ -62,7 +62,7 @@ The long-term goal is to create a modern, lightweight operating system capable o
 - ATA PIO storage driver
 - SATA storage driver (in plans)
 - PS/2 keyboard
-- USB keyboar (in plans)
+- USB keyboard (in plans)
 - Framebuffer graphics
 - Desktop environment (minimal)
 - Built-in shell
