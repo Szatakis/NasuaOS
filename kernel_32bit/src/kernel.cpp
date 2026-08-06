@@ -305,6 +305,28 @@ void halt()
 }
 
 
+void hck_debug(struct multiboot_info* mbi)
+{
+    uint32_t count = mbi->mods_count;
+    struct multiboot_module* mods = (struct multiboot_module*)mbi->mods_addr;
+
+    for (uint32_t i = 0; i < count; i++) 
+    {
+        const char* data = (char*)mods[i].mod_start;
+        if(contains(data, "SAFE_MODE"))
+        {
+            print("Safe mode ON\n");
+            safe_mode = true;
+        }
+        if(contains(data, "DEBUG"))
+        {
+            print("Debug mode ON\n");
+            debug_mode = true;
+        }
+    }
+}
+
+
 void shell()
 {
     while(true)
@@ -369,23 +391,7 @@ extern "C" void kmain(struct multiboot_info* mbi)
     keyboard_init();
     fetch();
 
-    uint32_t count = mbi->mods_count;
-    struct multiboot_module* mods = (struct multiboot_module*)mbi->mods_addr;
-
-    for (uint32_t i = 0; i < count; i++) 
-    {
-        const char* data = (char*)mods[i].mod_start;
-        if(contains(data, "SAFE_MODE"))
-        {
-            print("Safe mode ON\n");
-            safe_mode = true;
-        }
-        if(contains(data, "DEBUG"))
-        {
-            print("Debug mode ON\n");
-            debug_mode = true;
-        }
-    }
+    hck_debug(mbi);
 
     shell();
 }

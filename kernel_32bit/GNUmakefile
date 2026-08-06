@@ -44,9 +44,9 @@ ifeq ($(ARCH), loongarch32)
 	$(error $(ARCH) not support 32bit mode)
 endif
 
-$(BIN): $(OBJ) linker.lds
+$(BIN): $(OBJ) linker-scripts/x86_32.lds
 	@mkdir -p $(BIN_DIR)
-	$(LD) $(LDFLAGS) -T linker.lds -o $@ $(OBJ)
+	$(LD) $(LDFLAGS) -T linker-scripts/x86_32.lds -o $@ $(OBJ)
 
 $(OBJ_DIR)/boot.o: src/boot.asm
 	@mkdir -p $(OBJ_DIR)
