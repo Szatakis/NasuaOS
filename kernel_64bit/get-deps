@@ -9,19 +9,19 @@ cd "$srcdir"
 
 rm -f .deps-obtained
 
-rm -rf temp
+rm -rf temp-files
 
 git clone --depth 1 \
     --branch main \
     https://github.com/Szatakis/NasuaOS-Bootloader.git \
-    temp
+    temp-files
 
-cp -r temp/freestanding-c-hdrs .
-cp -r temp/freestanding-cxx-hdrs .
-cp -r temp/cc-runtime .
-cp -r temp/limine-protocol .
+cp -r temp-files/freestanding-c-hdrs .
+cp -r temp-files/freestanding-cxx-hdrs .
+cp -r temp-files/cc-runtime .
+cp -r temp-files/limine-protocol .
 
-rm -rf temp
+rm -rf temp-files-files
 
 touch .deps-obtained
 
