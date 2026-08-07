@@ -373,13 +373,15 @@ fs_sys:
 $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys
 	rm -rf iso_root
 
+	mkdir -p iso_root/EFI/
+	mkdir -p iso_root/EFI/BOOT
 	mkdir -p iso_root/boot
 	mkdir -p iso_root/boot/utils
 	mkdir -p iso_root/boot/limine
-	mkdir -p iso_root/EFI/BOOT
 	mkdir -p iso_root/system
 	mkdir -p iso_root/system/assets
 	mkdir -p iso_root/system/assets/images
+	mkdir -p iso_root/system/assets/fonts
 
 	cp -v kernel_64bit/bin-$(ARCH)/kernel_64bit iso_root/boot/
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
@@ -443,7 +445,7 @@ else
 endif
 	mformat -F -h 2048 -i $(IMAGE_NAME).hdd@@1M
 	
-	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/EFI/utils ::/boot ::/boot/utils ::/boot/limine ::/system ::/system/assets ::/system/assets/images
+	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/EFI/utils ::/boot ::/boot/utils ::/boot/limine ::/system ::/system/assets ::/system/assets/images ::/system/assets/fonts
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_64bit/bin-$(ARCH)/kernel_64bit ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit ::/boot
 
