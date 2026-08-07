@@ -147,6 +147,22 @@ void pre_check()
                     }
                 }
             }
+            else if (find_in_string(file->path, "boot_config_sf.txt"))
+            {
+                const char* content = (const char*)file->address;
+
+                if (content != nullptr)
+                {
+                    if (find_in_string(content, "SAFE_MODE"))
+                    {
+                        safe_mode = true;
+                    }
+                    if (find_in_string(content, "DEBUG"))
+                    {
+                        debug_mode = true;
+                    }
+                }
+            }
         }
     }
 }

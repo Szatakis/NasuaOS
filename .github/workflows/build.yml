@@ -10,6 +10,7 @@ on:
       - "utillities/**"
       - "config.mk"
       - "boot_config.txt"
+      - "boot_config_sf.txt"
       - "GNUmakefile"
       - "limine.conf"
   workflow_dispatch:
