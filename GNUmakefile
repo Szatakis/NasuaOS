@@ -433,7 +433,7 @@ endif
 
 $(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys
 	rm -f $(IMAGE_NAME).hdd
-	dd if=/dev/zero bs=1M count=0 seek=256 of=$(IMAGE_NAME).hdd
+	dd if=/dev/zero bs=1M count=0 seek=96 of=$(IMAGE_NAME).hdd
 ifeq ($(ARCH),x86_64)
 	PATH=$$PATH:/usr/sbin:/sbin sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00 -m 1
 	./limine-binary/limine bios-install $(IMAGE_NAME).hdd
