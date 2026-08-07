@@ -1,6 +1,5 @@
 .SUFFIXES:
 
-
 ARCH ?= x86_32
 
 
@@ -26,7 +25,6 @@ CFLAGS := \
 	-Wextra \
 	-mno-sse \
 	-mno-sse2
-
 
 LDFLAGS := \
 	-m32 \

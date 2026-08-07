@@ -7,7 +7,9 @@ on:
     paths:
       - "kernel_32bit/**"
       - "kernel_64bit/**"
+      - "utillities/**"
       - "config.mk"
+      - "boot_config.txt"
       - "GNUmakefile"
       - "limine.conf"
   workflow_dispatch:
@@ -55,7 +57,7 @@ jobs:
           mkdir release
 
           cp $(find . -name "*.iso" | head -n 1) release/NasuaOS.iso
-          cp $(find . -name "*.hdd" | head -n 1) release/NasuaOS.hdd
+          #cp $(find . -name "*.hdd" | head -n 1) release/NasuaOS.hdd #removed for now
 
           cd release
 
