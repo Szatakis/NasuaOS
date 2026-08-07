@@ -1,5 +1,12 @@
 #include "../driver.hpp"
 
+#include "../../video/driver.hpp"
+
+extern uint32_t input_pos;
+extern uint32_t cursor_x;
+extern uint32_t cursor_y;
+extern char input_buffer[128];
+
 const char keymap[128] =
 {
     0,27,
@@ -85,4 +92,82 @@ uint8_t read_scancode()
         }
 
     }
+}
+
+void backspace()
+{
+    if(input_pos == 0)
+        return;
+
+
+    input_pos--;
+
+    if(cursor_x >= CHAR_WIDTH)
+    {
+        cursor_x -= CHAR_WIDTH;
+    }
+
+
+    clear_char(
+        cursor_x,
+        cursor_y
+    );
+}
+
+void read_line()
+{
+
+    input_pos = 0;
+
+
+    while(true)
+    {
+
+        uint8_t sc = read_scancode();
+
+
+        if(sc & 0x80)
+            continue;
+
+
+
+        if(sc == 0x1C)
+        {
+            input_buffer[input_pos]=0;
+
+            putchar('\n');
+
+            return;
+        }
+
+
+
+        if(sc == 0x0E)
+        {
+            backspace();
+            continue;
+        }
+
+
+
+        char c = keymap[sc];
+
+
+        if(c)
+        {
+
+            if(input_pos < 127)
+            {
+
+                input_buffer[input_pos++] = c;
+
+
+                putchar(c);
+
+            }
+
+        }
+
+    }
+
 }

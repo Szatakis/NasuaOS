@@ -60,15 +60,10 @@ ifeq ($(filter $(ARCH),aarch32 loongarch32 riscv32 x86_32),)
 	$(error Architecture $(ARCH) not supported)
 endif
 
-
-ifeq ($(ARCH),loongarch32)
-	$(error $(ARCH) not support 32bit mode)
-endif
-
-$(TARGET): $(OBJ) linker-scripts/x86_32.lds
+$(TARGET): $(OBJ) linker-scripts/$(ARCH).lds
 	@mkdir -p $(BIN_DIR)
 	$(LD) $(LDFLAGS) \
-		-T linker-scripts/x86_32.lds \
+		-T linker-scripts/$(ARCH).lds \
 		-o $@ \
 		$(OBJ)
 

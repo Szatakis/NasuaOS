@@ -86,3 +86,17 @@ void clear_cursor()
     }
 }
 
+void clear_char(uint32_t x,uint32_t y)
+{
+    for(uint32_t yy=0; yy<CHAR_HEIGHT; yy++)
+    {
+        for(uint32_t xx=0; xx<CHAR_WIDTH; xx++)
+        {
+            put_pixel(
+                x+xx,
+                y+yy,
+                background_color
+            );
+        }
+    }
+}
