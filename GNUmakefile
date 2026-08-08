@@ -1,4 +1,4 @@
--include config.mk
+-include .config/kernel_config.mk
 
 # Nuke built-in rules.
 .SUFFIXES:
@@ -378,6 +378,7 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	mkdir -p iso_root/boot
 	mkdir -p iso_root/boot/utils
 	mkdir -p iso_root/boot/limine
+	mkdir -p iso_root/config
 	mkdir -p iso_root/system
 	mkdir -p iso_root/system/assets
 	mkdir -p iso_root/system/assets/images
@@ -390,10 +391,12 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	cp -v utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi iso_root/boot/utils
 	cp -v utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi iso_root/boot/utils
 	cp -v utilities/rootfs/rootfs.img iso_root/system
-	cp -v limine.conf iso_root/boot/limine/
+	cp -v .config/limine.conf iso_root/boot/limine/
 	cp -v documentation/images/background.png iso_root/system/assets/images/
-	cp -v boot_config.txt iso_root/boot
-	cp -v boot_config_sf.txt iso_root/boot
+	cp -v documentation/images/background_dark.png iso_root/system/assets/images/
+	cp -v .config/boot_config.txt iso_root/boot
+	cp -v .config/boot_config_sf.txt iso_root/boot
+	cp -v .config/defaults.txt iso_root/config
 ifeq ($(ARCH),x86_64)
 	cp -v limine-binary/limine-bios.sys limine-binary/limine-bios-cd.bin limine-binary/limine-uefi-cd.bin iso_root/boot/limine/
 	cp -v limine-binary/BOOTX64.EFI iso_root/EFI/BOOT/
@@ -445,12 +448,13 @@ else
 endif
 	mformat -F -h 2048 -i $(IMAGE_NAME).hdd@@1M
 	
-	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/EFI/utils ::/boot ::/boot/utils ::/boot/limine ::/system ::/system/assets ::/system/assets/images ::/system/assets/fonts
+	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/EFI/utils ::/boot ::/boot/utils ::/boot/limine ::/config ::/system ::/system/assets ::/system/assets/images ::/system/assets/fonts
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_64bit/bin-$(ARCH)/kernel_64bit ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit ::/boot
 
-	mcopy -i $(IMAGE_NAME).hdd@@1M boot_config.txt ::/boot
-	mcopy -i $(IMAGE_NAME).hdd@@1M boot_config_sf.txt ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config.txt ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_sf.txt ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M .config/defaults.txt ::/config
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/ram_test/bin-$(SUB_ARCH)/memtest ::/boot/utils
@@ -459,7 +463,8 @@ endif
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/rootfs/rootfs.img ::/system
 	mcopy -i $(IMAGE_NAME).hdd@@1M documentation/images/background.png ::/system/assets/images
-	mcopy -i $(IMAGE_NAME).hdd@@1M limine.conf ::/boot/limine
+	mcopy -i $(IMAGE_NAME).hdd@@1M documentation/images/background_dark.png ::/system/assets/images
+	mcopy -i $(IMAGE_NAME).hdd@@1M .config/limine.conf ::/boot/limine
 ifeq ($(ARCH),x86_64)
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine-binary/limine-bios.sys ::/boot/limine
 	mcopy -i $(IMAGE_NAME).hdd@@1M limine-binary/BOOTX64.EFI ::/EFI/BOOT
