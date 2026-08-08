@@ -5,6 +5,11 @@
 
 BOOTLOADER_REPO=https://github.com/Szatakis/NasuaOS-Bootloader/raw/main
 
+LIMINE_TEMPLATE := .config/config_generator/limine.conf.template
+DEFAULTS_CONFIG := .config/defaults.txt
+LIMINE_GENERATOR := .config/config_generator/generate_conf.py
+GENERATED_LIMINE := .config/limine.conf
+
 # Target architecture to build for. Default to x86_64.
 ARCH ?= x86_64
 SUB_ARCH ?= x86_32
@@ -61,6 +66,13 @@ HOST_CFLAGS := -g -O2 -pipe
 HOST_CPPFLAGS :=
 HOST_LDFLAGS :=
 HOST_LIBS :=
+
+.PHONY: generate-limine
+generate-limine: $(GENERATED_LIMINE)
+
+$(GENERATED_LIMINE): $(DEFAULTS_CONFIG) $(LIMINE_TEMPLATE) $(LIMINE_GENERATOR)
+	rm -f $(GENERATED_LIMINE)
+	python3 $(LIMINE_GENERATOR)
 
 .PHONY: all
 all: $(IMAGE_NAME).iso
@@ -370,7 +382,7 @@ utilities:
 fs_sys:
 	$(MAKE) -C utilities/rootfs
 
-$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys
+$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys $(GENERATED_LIMINE)
 	rm -rf iso_root
 
 	mkdir -p iso_root/EFI/
@@ -437,7 +449,7 @@ ifeq ($(ARCH),loongarch64)
 endif
 	rm -rf iso_root
 
-$(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys
+$(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys $(GENERATED_LIMINE)
 	rm -f $(IMAGE_NAME).hdd
 	dd if=/dev/zero bs=1M count=0 seek=96 of=$(IMAGE_NAME).hdd
 ifeq ($(ARCH),x86_64)

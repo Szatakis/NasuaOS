@@ -16,6 +16,7 @@ Install the following tools before building:
 - LLD
 - NASM
 - Mtools
+- Python 3
 - QEMU *(optional, recommended for testing (best 10.2.50))*
 
 ## Clone the Repository
@@ -61,6 +62,7 @@ sudo apt install \
     lld \
     nasm \
     mtools \
+    python3 \
     qemu-system-x86
 ```
 

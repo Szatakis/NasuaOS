@@ -1,17 +1,18 @@
-timeout: 5
-default_entry: NasuaOS 64-bit
+timeout: {TIMEOUT}
+default_entry: {DEFAULT_ENTRY}
 interface_branding: NasuaOS
 
 interface_help_hidden: yes
 
 # Debug
-verbose: yes
 
-interface_resolution: 1280x720
+verbose: {VERBOSE}
+
+interface_resolution: {RESOLUTION}
 
 term_font: boot():/system/assets/fonts/font.F16
 
-wallpaper: boot():/system/assets/images/background.png
+wallpaper: boot():{WALLPAPER}
 wallpaper_style: stretched
 
 /NasuaOS 32-bit
@@ -20,7 +21,7 @@ wallpaper_style: stretched
     module_path: boot():/system/rootfs.img
     module_path: boot():/boot/boot_config.txt
     module_path: boot():/config/defaults.txt
-    resolution: 1280x720
+    resolution: {RESOLUTION}
     comment: Basic console-only environment
 
 /NasuaOS 64-bit
@@ -30,7 +31,7 @@ wallpaper_style: stretched
     module_path: boot():/boot/boot_config.txt
     module_path: boot():/config/defaults.txt
     module_path: boot():/system/assets/images/background_dark.png
-    resolution: 1280x720
+    resolution: {RESOLUTION}
     comment: Full operating system with graphical interface (recommended)
 
 /Advanced Options
