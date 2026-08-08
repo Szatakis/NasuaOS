@@ -10,8 +10,6 @@ verbose: {VERBOSE}
 
 interface_resolution: {RESOLUTION}
 
-term_font: boot():/system/assets/fonts/font.F16
-
 wallpaper: boot():{WALLPAPER}
 wallpaper_style: stretched
 
@@ -21,6 +19,7 @@ wallpaper_style: stretched
     module_path: boot():/system/rootfs.img
     module_path: boot():/boot/boot_config.txt
     module_path: boot():/config/defaults.txt
+    module_path: boot():/system/assets/images/background_dark.png
     resolution: {RESOLUTION}
     comment: Basic console-only environment
 
@@ -41,6 +40,7 @@ wallpaper_style: stretched
         module_path: boot():/system/rootfs.img
         module_path: boot():/boot/boot_config.txt
         module_path: boot():/boot/boot_config_sf.txt
+        module_path: boot():/system/assets/images/background_dark.png
         comment: Boot into a 32bit safe mode environment for troubleshooting
 
     //Safe mode 64-bit
