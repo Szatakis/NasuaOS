@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 
 
-# Folder, w którym znajduje się ten skrypt
 BASE_DIR = Path(__file__).resolve().parent
 
 DEFAULTS = BASE_DIR / "../defaults.txt"
@@ -51,9 +50,6 @@ def bool_to_limine(value):
 
 
 def main():
-
-    print("==> Reading configuration...")
-
     if not DEFAULTS.exists():
         print(f"ERROR: missing {DEFAULTS}")
         sys.exit(1)
@@ -123,9 +119,6 @@ def main():
         template,
         encoding="utf-8"
     )
-
-    print(f"Generated {OUTPUT}")
-
 
 if __name__ == "__main__":
     main()

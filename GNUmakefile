@@ -40,7 +40,6 @@ define PREPARE_WSL
 
 	@if [ ! -f /mnt/c/wsl_target/$(FS_NAME).img ]; then \
 		dd if=/dev/zero of=/mnt/c/wsl_target/$(FS_NAME).img bs=1M count=2048 2>/dev/null; \
-		echo "-> Created virtual disk"; \
 	fi
 
 	@cp $(IMAGE_NAME).iso /mnt/c/wsl_target/$(IMAGE_NAME).iso
