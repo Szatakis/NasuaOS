@@ -718,7 +718,7 @@ void execute_command(const char *cmd)
             print_error("Syntax error!\n");
 
             print_info("Usage:\n");
-            print("  logs\n");
+            print("  logs --show\n");
             print("  logs --clear\n");
             print("  logs --level \"INFO|WARN|ERROR|DEBUG\"\n");
             print("  logs --subsystem \"name\"\n");

@@ -18,3 +18,14 @@ void cpu_delay(uint64_t count)
         asm volatile("nop");
     }
 }
+
+
+// Delay
+
+void delay(uint64_t count)
+{
+    while (count--)
+    {
+        asm volatile("pause");
+    }
+}

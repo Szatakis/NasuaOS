@@ -101,6 +101,9 @@ ifeq ($(IS_WSL),1)
 		-serial stdio \
 		-audiodev sdl,id=snd0 \
 		-machine pcspk-audiodev=snd0 \
+		-device piix3-usb-uhci \
+    	-device ich9-usb-ehci1 \
+    	-device qemu-xhci \
 		$(QEMUFLAGS)
 else
 	$(QEMU_X86_64) \

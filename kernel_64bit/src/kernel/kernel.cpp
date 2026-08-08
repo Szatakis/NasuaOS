@@ -98,6 +98,8 @@ void iqu_init()
 
     asm volatile("sti");
 
+    pci_init();
+
     image_init();
 
     if(safe_mode) 
