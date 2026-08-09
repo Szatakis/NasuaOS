@@ -62,3 +62,13 @@ wallpaper_style: stretched
             protocol: multiboot2
             path: boot():/boot/utils/hdt
             comment: Launch Hardware Detection Tool (HDT) to view system information
+
+        ///Disk Tools
+            protocol: multiboot2
+            path: boot():/boot/utils/disk_tools
+            comment: Disk Tools
+        
+        ///System Information
+            protocol: multiboot2
+            path: boot():/boot/utils/sys_info
+            comment: Information abaout system
