@@ -8,13 +8,7 @@
 
 #include "libs/libc/libc.h"
 
-// --- Funkcje pomocnicze ---
-
-void memclear(void* ptr, size_t size) {
-    uint8_t* p = (uint8_t*)ptr;
-    for(size_t i = 0; i < size; i++) p[i] = 0;
-}
-
+// Funkcje pomocnicze
 char* next_path_token(char* str, const char* delim) {
     static char* backup_str = nullptr;
     if (str != nullptr) backup_str = str;
@@ -35,7 +29,7 @@ char* next_path_token(char* str, const char* delim) {
     return start;
 }
 
-// --- Logika systemu plików ---
+// Logika systemu plików
 
 uint32_t find_entry_in_dir(uint32_t dir_sector, const char* name, CLAWFSEntry* out_entry) {
     uint8_t buffer[512];
@@ -85,14 +79,14 @@ void setup_entry(CLAWFSEntry* e, const char* name, uint32_t type, uint32_t secto
 }
 
 void clawfs_format() {
-    // 1. Nagłówek
+    // Nagłówek
     uint8_t buffer[512] = {0};
     CLAWFSHeader* header = (CLAWFSHeader*)buffer;
     memcpy(header->signature, "CLAWFS", 6);
     header->version = CLAWFS_VERSION;
     disk_write_sector(CLAWFS_START_LBA, buffer);
 
-    // 2. Root (101)
+    // Root (101)
     uint8_t root_buffer[512] = {0};
     CLAWFSEntry* entries = (CLAWFSEntry*)root_buffer;
     setup_entry(&entries[0], "bin", CLAWFS_DIRECTORY, 102);
@@ -103,7 +97,7 @@ void clawfs_format() {
     setup_entry(&entries[5], "var", CLAWFS_DIRECTORY, 107);
     disk_write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
 
-    // 3. Podstruktura
+    // Podstruktura
     clawfs_create_file_in("/bin", "kernel_bin");
     clawfs_mkdir("/home", "user");
     clawfs_mkdir("/home", "root");

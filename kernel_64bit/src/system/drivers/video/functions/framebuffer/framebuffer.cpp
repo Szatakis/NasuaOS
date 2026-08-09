@@ -5,7 +5,6 @@
 #include "applications/shell/commands.hpp"
 
 // Deklaracja funkcji inicjalizującej bufor terminala z pliku tekstowego
-extern void init_terminal_buffer();
 
 limine_framebuffer* fb = nullptr;
 

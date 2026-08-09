@@ -117,7 +117,7 @@ static void replace_current_command(const char* new_cmd)
 {
     for (size_t i = 0; i < cmd_idx; i++) 
     {
-        delete_last_char();
+        delete_last_char(8);
     }
 
     strcpy(command_buffer, new_cmd);
@@ -285,7 +285,7 @@ void handle_keyboard()
             if (cmd_idx > 0) 
             {
                 cmd_idx--;
-                delete_last_char();
+                delete_last_char(8);
             }
 
             return;

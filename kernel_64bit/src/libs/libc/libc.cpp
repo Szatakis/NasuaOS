@@ -372,3 +372,8 @@ bool find_in_string(const char* str, const char* target)
     }
     return false;
 }
+
+void memclear(void* ptr, size_t size) {
+    uint8_t* p = (uint8_t*)ptr;
+    for(size_t i = 0; i < size; i++) p[i] = 0;
+}

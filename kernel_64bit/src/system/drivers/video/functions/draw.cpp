@@ -14,7 +14,7 @@
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/gui.hpp"
 
-// ---------------- HELPERS ----------------
+// HELPERS
 
 static inline void put_pixel(size_t x, size_t y, uint32_t color) 
 {
@@ -28,7 +28,7 @@ static inline void put_pixel(size_t x, size_t y, uint32_t color)
     bb_ptr[y * pitch + x] = color;
 }
 
-// ---------------- FONT 8x8 ----------------
+// FONT 8x8
 void draw_char8(unsigned char c, size_t x, size_t y, uint32_t color) 
 {
     for (int row = 0; row < 8; row++) 
@@ -45,7 +45,7 @@ void draw_char8(unsigned char c, size_t x, size_t y, uint32_t color)
     }
 }
 
-// ---------------- FONT 10x10 ----------------
+// FONT 10x10
 void draw_char10(unsigned char c, size_t x, size_t y, uint32_t color) 
 {
     for (int row = 0; row < 10; row++) 
@@ -62,7 +62,7 @@ void draw_char10(unsigned char c, size_t x, size_t y, uint32_t color)
     }
 }
 
-// ---------------- FONT 12x12 ----------------
+// FONT 12x12
 void draw_char12(unsigned char c, size_t x, size_t y, uint32_t color) 
 {
     for (int row = 0; row < 12; row++) 
@@ -79,7 +79,7 @@ void draw_char12(unsigned char c, size_t x, size_t y, uint32_t color)
     }
 }
 
-// ---------------- FONT 16x16 ----------------
+// FONT 16x16
 void draw_char16(unsigned char c, size_t x, size_t y, uint32_t color) 
 {
     for (int row = 0; row < 16; row++) 
@@ -159,7 +159,7 @@ void update_time()
     char time_buf[9];
     char date_buf[11];
 
-    // ---------------- TIME HH:MM:SS ----------------
+    // TIME HH:MM:SS
     time_buf[0] = '0' + (time.hour / 10);
     time_buf[1] = '0' + (time.hour % 10);
     time_buf[2] = ':';
@@ -170,7 +170,7 @@ void update_time()
     time_buf[7] = '0' + (time.second % 10);
     time_buf[8] = '\0';
 
-    // ---------------- DATE DD-MM-YYYY ----------------
+    // DATE DD-MM-YYYY
     date_buf[0] = '0' + (time.day / 10);
     date_buf[1] = '0' + (time.day % 10);
     date_buf[2] = '-';
@@ -187,7 +187,7 @@ void update_time()
     size_t text_x = fb->width - 105;
     size_t start_y = fb->height - bar_h_scaled + 2;
 
-    // ---------------- DRAW ----------------
+    // DRAW
     print_at8(time_buf, text_x, start_y + 8, COLOR_WHITE);
     print_at8(date_buf, text_x, start_y + 20, COLOR_WHITE);
 }

@@ -323,7 +323,7 @@ void print_at16(const char* str, size_t x, size_t y, uint32_t color)
     }
 }
 
-void delete_last_char() 
+void delete_last_char(size_t font_size) 
 {
     if (text_col > 0) 
     {
@@ -333,7 +333,7 @@ void delete_last_char()
     {
         text_row--;
 
-        size_t max_cols = fb->width / (8 + FONT_SPACING_W);
+        size_t max_cols = fb->width / (font_size + FONT_SPACING_W);
         text_col = (max_cols < TEXT_COLS) ? max_cols - 1 : TEXT_COLS - 1;
         text_buffer[text_row][text_col].ch = ' ';
     }

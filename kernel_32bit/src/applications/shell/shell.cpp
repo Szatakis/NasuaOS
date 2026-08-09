@@ -46,7 +46,7 @@ void shell()
     {
         print(
             "NasuaOS 32bit\n"
-            "Version: 0.1\n\n"
+            "Version: 0.07\n\n"
         );
     }
     else if(strcmp(input_buffer,"reboot"))

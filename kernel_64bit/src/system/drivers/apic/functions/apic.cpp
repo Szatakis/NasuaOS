@@ -41,7 +41,7 @@ static uint64_t g_ioapic_base_phys = 0;
 static uint32_t g_ioapic_pin_irq0 = 0;
 
 
-// ---------------- Helpers: HHDM / MMIO ----------------
+// Helpers: HHDM / MMIO
 
 static inline uint64_t hhdm_offset()
 {
@@ -109,7 +109,7 @@ static void ioapic_write(uint8_t reg, uint32_t value)
 }
 
 
-// ---------------- CPUID ----------------
+// CPUID
 
 bool apic_available()
 {
@@ -127,7 +127,7 @@ bool apic_available()
 }
 
 
-// ---------------- Local APIC: base MSR ----------------
+// Local APIC: base MSR
 
 uint64_t apic_read_base()
 {
@@ -216,7 +216,7 @@ void apic_disable()
 }
 
 
-// ---------------- Local APIC: init / EOI ----------------
+// Local APIC: init / EOI
 
 void lapic_init()
 {
@@ -244,7 +244,7 @@ static uint32_t lapic_get_id()
 }
 
 
-// ---------------- I/O APIC ----------------
+// I/O APIC
 
 void ioapic_mask_irq(uint8_t irq)
 {
@@ -291,7 +291,7 @@ void ioapic_init()
 }
 
 
-// ---------------- Choose interrupts controller ----------------
+// Choose interrupts controller
 
 bool apic_is_active()
 {

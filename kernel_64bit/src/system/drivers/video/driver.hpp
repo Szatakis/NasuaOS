@@ -35,7 +35,7 @@ void print_at10(const char* str, size_t x, size_t y, uint32_t color);
 void print_at12(const char* str, size_t x, size_t y, uint32_t color);
 void print_at16(const char* str, size_t x, size_t y, uint32_t color);
 
-void delete_last_char();
+void delete_last_char(size_t font_size);
 
 void handle_mouse();
 

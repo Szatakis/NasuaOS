@@ -11,17 +11,14 @@ extern limine_framebuffer* fb;
 
 bool last_start_hover = false;
 
+const int panel_width = 45;
 const uint32_t menu_w = 300;
 const uint32_t menu_h = 400;
 uint32_t menu_x = 0;
 uint32_t menu_y = 0;
-const int panel_width = 45;
 
 extern bool start_hover;
 extern bool is_menu_start_open;
-extern void draw_rect(int x1, int y1, int x2, int y2, uint32_t color);
-extern bool is_mouse_over_start(int mouse_x, int mouse_y);
-extern void draw_start_menu_system_icons(int x, int y);
 
 void draw_start_menu_f(int x, int y, int w, int h) 
 {
@@ -50,6 +47,7 @@ void open_start_menu()
     {
         return;
     }
+
     is_menu_start_open = true;
 }
 

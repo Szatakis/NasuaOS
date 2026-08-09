@@ -1453,3 +1453,7 @@ const uint32_t suaedit_icon[1024] = {
     0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000
     
 };
+
+const uint32_t task_manager_icon[1024] = {
+
+};

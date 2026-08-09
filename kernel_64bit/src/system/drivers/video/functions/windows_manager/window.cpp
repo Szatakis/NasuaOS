@@ -4,11 +4,9 @@
 
 #include "system/gui/vars/colors.hpp"
 
-#define MAX_WINDOWS 10
+#define MAX_WINDOWS 13
 
 window_struct* active_window = nullptr;
-
-extern void fill_block(size_t x, size_t y, uint32_t color, size_t size_x, size_t size_y);
 
 static window_struct* window_list[MAX_WINDOWS];
 static int window_count = 0;
