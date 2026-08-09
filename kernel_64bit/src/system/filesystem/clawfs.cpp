@@ -101,10 +101,10 @@ void clawfs_format() {
     clawfs_create_file_in("/bin", "kernel_bin");
     clawfs_mkdir("/home", "user");
     clawfs_mkdir("/home", "root");
-    clawfs_mkdir("/home/user", "Desktop");
-    clawfs_mkdir("/home/user", "Documets");
-    clawfs_mkdir("/home/user", "Images");
-    clawfs_mkdir("/home/user", "Videos");
+    clawfs_mkdir("/home/user", "desktop");
+    clawfs_mkdir("/home/user", "Documents");
+    clawfs_mkdir("/home/user", "images");
+    clawfs_mkdir("/home/user", "videos");
     
     print_info("Format complete.\n");
 }
