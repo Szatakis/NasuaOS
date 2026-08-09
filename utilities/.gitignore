@@ -1,8 +1,8 @@
 /hdt/obj-*
 /hdt/bin-*
 
-/ram_test/obj-*
-/ram_test/bin-*
+/hd_test/obj-*
+/hd_test/bin-*
 
 /uefi_setup/obj-*
 /uefi_setup/bin-*

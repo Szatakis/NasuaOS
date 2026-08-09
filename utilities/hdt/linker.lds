@@ -6,7 +6,10 @@ SECTIONS
 
     .text :
     {
-        *(.multiboot)
+        . = ALIGN(8);
+
+        KEEP(*(.multiboot))
+
         *(.text*)
     }
 
@@ -22,7 +25,16 @@ SECTIONS
 
     .bss :
     {
-        *(.bss*)
+        . = ALIGN(16);
+
         *(COMMON)
+        *(.bss*)
+    }
+
+    /DISCARD/ :
+    {
+        *(.eh_frame)
+        *(.comment)
+        *(.note*)
     }
 }

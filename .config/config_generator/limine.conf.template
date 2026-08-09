@@ -53,13 +53,13 @@ wallpaper_style: stretched
         comment: Boot into a 64bit safe mode environment for troubleshooting
 
     // Utilities
-        ///RAM Test
-            protocol: multiboot
-            path: boot():/boot/utils/memtest
+        ///Hardware Test
+            protocol: multiboot2
+            path: boot():/boot/utils/hdtest
             comment: Run RAM test utility
 
         ///Hardware Detecion Tool
-            protocol: multiboot
+            protocol: multiboot2
             path: boot():/boot/utils/hdt
             comment: Launch Hardware Detection Tool (HDT) to view system information
 

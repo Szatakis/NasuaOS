@@ -6,9 +6,13 @@ SECTIONS
 
     kernel_start = .;
 
+    .multiboot :
+    {
+        KEEP(*(.multiboot))
+    }
+
     .text :
     {
-        *(.multiboot)
         *(.text*)
     }
 
@@ -24,8 +28,8 @@ SECTIONS
 
     .bss :
     {
-        *(.bss*)
         *(COMMON)
+        *(.bss*)
     }
 
     kernel_end = .;
