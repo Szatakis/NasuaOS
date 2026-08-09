@@ -62,13 +62,3 @@ wallpaper_style: stretched
             protocol: multiboot2
             path: boot():/boot/utils/hdt
             comment: Launch Hardware Detection Tool (HDT) to view system information
-
-        ///System Setup
-            protocol: multiboot2
-            path: boot():/boot/utils/system_setup
-            comment: Launch system setup utility
-
-        ///UEFI Shell
-            protocol: efi_chainload
-            path: boot():/boot/utils/uefi_shell.efi
-            comment: Launch UEFI shell

@@ -377,8 +377,6 @@ kernel_32bit:
 utilities:
 	$(MAKE) -C utilities/hdt ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/hd_test ARCH=$(SUB_ARCH)
-	$(MAKE) -C utilities/system_setup ARCH=$(SUB_ARCH)
-	$(MAKE) -C utilities/uefi_shell ARCH=$(ARCH)
 
 .PHONY: fs_sys
 fs_sys:
@@ -402,8 +400,6 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
 	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
 	cp -v utilities/hd_test/bin-$(SUB_ARCH)/hdtest iso_root/boot/utils
-	cp -v utilities/system_setup/bin-$(SUB_ARCH)/system_setup iso_root/boot/utils
-	cp -v utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi iso_root/boot/utils
 	cp -v utilities/rootfs/rootfs.img iso_root/system
 	cp -v .config/limine.conf iso_root/boot/limine/
 	cp -v documentation/images/background.png iso_root/system/assets/images/
@@ -474,8 +470,6 @@ endif
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hd_test/bin-$(SUB_ARCH)/hdtest ::/boot/utils
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/system_setup/bin-$(SUB_ARCH)/system_setup ::/boot/utils
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi ::/boot/utils
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/rootfs/rootfs.img ::/system
 	mcopy -i $(IMAGE_NAME).hdd@@1M documentation/images/background.png ::/system/assets/images
