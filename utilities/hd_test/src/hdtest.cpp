@@ -86,6 +86,7 @@ static constexpr uint32_t COLOR_GREEN  = 0x0000FF00;
 static constexpr uint32_t COLOR_BLUE   = 0x000000FF;
 static constexpr uint32_t COLOR_YELLOW = 0x00FFFF00;
 static constexpr uint32_t COLOR_CYAN   = 0x0000FFFF;
+static constexpr uint32_t COLOR_GRAY   = 0x00303030;
 
 
 // Test counters
@@ -162,7 +163,6 @@ static void put_pixel(uint32_t x, uint32_t y, uint32_t color)
     }
 
     uint8_t* base = reinterpret_cast<uint8_t*>(framebuffer);
-
     uint32_t* pixel = reinterpret_cast<uint32_t*>(base + y * framebuffer_pitch + x * 4);
 
     *pixel = color;
@@ -184,6 +184,23 @@ static void clear_screen(uint32_t color)
         for (uint32_t x = 0; x < framebuffer_width; ++x)
         {
             pixels[x] = color;
+        }
+    }
+}
+
+
+static void clear_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color)
+{
+    if (framebuffer == nullptr)
+    {
+        return;
+    }
+
+    for (uint32_t yy = 0; yy < height; ++yy)
+    {
+        for (uint32_t xx = 0; xx < width; ++xx)
+        {
+            put_pixel(x + xx, y + yy, color);
         }
     }
 }
@@ -213,7 +230,6 @@ static void draw_char(char character, uint32_t x, uint32_t y, uint32_t color)
 static void newline()
 {
     cursor_x = 0;
-
     cursor_y += FONT_HEIGHT + 2;
 
     if (cursor_y + FONT_HEIGHT >= framebuffer_height)
@@ -306,6 +322,7 @@ static void print_hex(uint32_t value)
     }
 }
 
+
 static void print_dec(uint32_t value)
 {
     if (value == 0)
@@ -369,13 +386,13 @@ static bool init_framebuffer(uint32_t mbi_addr)
         multiboot_tag* tag = reinterpret_cast<multiboot_tag*>(current);
 
 
-        if (tag->type ==MULTIBOOT_TAG_TYPE_END)
+        if (tag->type == MULTIBOOT_TAG_TYPE_END)
         {
             break;
         }
 
 
-        if (tag->type ==MULTIBOOT_TAG_TYPE_FRAMEBUFFER)
+        if (tag->type == MULTIBOOT_TAG_TYPE_FRAMEBUFFER)
         {
             multiboot_tag_framebuffer* fb = reinterpret_cast<multiboot_tag_framebuffer*>(current);
 
@@ -389,8 +406,7 @@ static bool init_framebuffer(uint32_t mbi_addr)
                 return false;
             }
 
-            if (fb->framebuffer_addr >
-                0xFFFFFFFFULL)
+            if (fb->framebuffer_addr > 0xFFFFFFFFULL)
             {
                 return false;
             }
@@ -406,8 +422,7 @@ static bool init_framebuffer(uint32_t mbi_addr)
         }
 
 
-        uint32_t next =
-            (tag->size + 7) & ~7;
+        uint32_t next = (tag->size + 7) & ~7;
 
         current += next;
     }
@@ -439,23 +454,26 @@ static void add_protected_range(uint64_t start, uint64_t end)
     }
 
     protected_ranges[protected_range_count].start = start;
-
     protected_ranges[protected_range_count].end = end;
 
     ++protected_range_count;
 }
 
+
 // Test a RAM range
 static bool test_ram_range(uint32_t start, uint32_t end, uint32_t& error_address)
 {
     start += 3;
+
     start &= ~3U;
 
     end &= ~3U;
 
 
     if (start >= end)
+    {
         return true;
+    }
 
 
     volatile uint32_t* memory = reinterpret_cast<volatile uint32_t*>(static_cast<uintptr_t>(start));
@@ -495,7 +513,8 @@ static bool test_ram_range(uint32_t start, uint32_t end, uint32_t& error_address
         }
     }
 
-    // 0xFFFFFFFF
+
+    // Pattern 0xFFFFFFFF
     for (uint32_t i = 0; i < words; ++i)
     {
         memory[i] = 0xFFFFFFFF;
@@ -512,7 +531,8 @@ static bool test_ram_range(uint32_t start, uint32_t end, uint32_t& error_address
         }
     }
 
-    // 0x00000000
+
+    // Pattern 0x00000000
     for (uint32_t i = 0; i < words; ++i)
     {
         memory[i] = 0x00000000;
@@ -553,6 +573,98 @@ static bool test_ram_range(uint32_t start, uint32_t end, uint32_t& error_address
 }
 
 
+// RAM progress
+static void draw_ram_progress(uint64_t tested, uint64_t total, uint32_t progress_y)
+{
+    if (framebuffer == nullptr)
+    {
+        return;
+    }
+
+    if (total == 0)
+    {
+        return;
+    }
+
+
+    /*
+     * Do not use 64-bit division here.
+     *
+     * This prevents the linker from requiring
+     * __udivdi3 in the 32-bit kernel.
+     */
+
+    uint32_t tested_mb = static_cast<uint32_t>(tested >> 20);
+    uint32_t total_mb = static_cast<uint32_t>(total >> 20);
+
+
+    if (total_mb == 0)
+    {
+        total_mb = 1;
+    }
+
+    uint32_t percent = (tested_mb * 100) / total_mb;
+
+    if (percent > 100)
+    {
+        percent = 100;
+    }
+
+
+    const uint32_t x = 10;
+    const uint32_t text_y = progress_y;
+    const uint32_t bar_y = progress_y + 14;
+    const uint32_t bar_width = 500;
+    const uint32_t bar_height = 12;
+
+
+    /*
+     * Clear only the RAM progress area.
+     *
+     * Previous hardware test results are above this
+     * area and will not be touched.
+     */
+
+    clear_rect(0, progress_y, framebuffer_width, 32, COLOR_BLACK);
+
+
+    uint32_t old_x = cursor_x;
+    uint32_t old_y = cursor_y;
+
+
+    // Progress text
+    cursor_x = x;
+    cursor_y = text_y;
+
+
+    print_color("Testing RAM: ", COLOR_YELLOW);
+    print_dec(tested_mb);
+    print(" / ");
+    print_dec(total_mb);
+    print(" MB   ");
+    print_dec(percent);
+    print("%");
+
+
+    // Progress bar background
+    clear_rect(x, bar_y, bar_width, bar_height, COLOR_GRAY);
+
+
+    // Progress bar
+    uint32_t filled = (bar_width * percent) / 100;
+
+    if (filled > 0)
+    {
+        clear_rect(x, bar_y, filled, bar_height, COLOR_GREEN);
+    }
+
+
+    // Restore cursor
+    cursor_x = old_x;
+    cursor_y = old_y;
+}
+
+
 // Full RAM test using Multiboot memory map
 static bool test_all_ram(uint32_t mbi_addr)
 {
@@ -562,12 +674,14 @@ static bool test_all_ram(uint32_t mbi_addr)
     uint8_t* end = mbi + total_size;
 
 
-    bool found_ram = false;
+    // Calculate total RAM
+    uint64_t total_ram = 0;
+    current = mbi + 8;
+
 
     while (current < end)
     {
         multiboot_tag* tag = reinterpret_cast<multiboot_tag*>(current);
-
 
         if (tag->type == MULTIBOOT_TAG_TYPE_END)
         {
@@ -581,19 +695,153 @@ static bool test_all_ram(uint32_t mbi_addr)
             uint8_t* entry_ptr = current + sizeof(multiboot_tag_mmap);
             uint8_t* mmap_end = current + mmap->size;
 
+            while (entry_ptr < mmap_end)
+            {
+                multiboot_mmap_entry* entry = reinterpret_cast<multiboot_mmap_entry*>(entry_ptr);
+
+
+                if (entry->type == 1 && entry->len != 0)
+                {
+                    uint64_t start = entry->addr;
+                    uint64_t end_addr = entry->addr + entry->len;
+
+                    /*
+                        32-bit kernel.
+                    
+                        Only RAM below 4 GB can be tested.
+                    */
+
+                    if (start < 0x100000000ULL)
+                    {
+                        uint64_t limit = end_addr;
+
+
+                        if (limit > 0x100000000ULL)
+                        {
+                            limit = 0x100000000ULL;
+                        }
+
+
+                        uint64_t pos = start;
+
+
+                        while (pos < limit)
+                        {
+                            uint64_t next = limit;
+                            bool skipped = false;
+
+                            // Protected ranges
+                            for (uint32_t i = 0; i < protected_range_count; ++i)
+                            {
+                                uint64_t p_start = protected_ranges[i].start;
+                                uint64_t p_end = protected_ranges[i].end;
+
+
+                                if (pos >= p_start && pos < p_end)
+                                {
+                                    pos = p_end;
+
+                                    skipped = true;
+
+                                    break;
+                                }
+
+
+                                if (p_start > pos && p_start < next)
+                                {
+                                    next = p_start;
+                                }
+                            }
+
+
+                            if (skipped)
+                            {
+                                continue;
+                            }
+
+
+                            if (next <= pos)
+                            {
+                                break;
+                            }
+
+
+                            total_ram += next - pos;
+                            pos = next;
+                        }
+                    }
+                }
+
+                entry_ptr += mmap->entry_size;
+            }
+        }
+
+
+        uint32_t next = (tag->size + 7) & ~7;
+
+        current += next;
+    }
+
+
+    if (total_ram == 0)
+    {
+        return false;
+    }
+
+
+    // RAM test
+
+    uint64_t tested_ram = 0;
+    bool found_ram = false;
+
+
+    /*
+        Test RAM in 16 MB chunks.
+    
+        This gives us regular progress updates without
+        making the test unnecessarily slow.
+    */
+
+    const uint64_t CHUNK_SIZE = 16ULL * 1024ULL * 1024ULL;
+
+
+    /*
+        Save the position where the RAM test starts.
+    
+        The progress bar will only use this area.
+    */
+
+    uint32_t progress_y = cursor_y;
+
+    draw_ram_progress(0, total_ram, progress_y);
+
+    current = mbi + 8;
+
+
+    while (current < end)
+    {
+        multiboot_tag* tag = reinterpret_cast<multiboot_tag*>(current);
+
+
+        if (tag->type == MULTIBOOT_TAG_TYPE_END)
+        {
+            break;
+        }
+
+        if (tag->type == MULTIBOOT_TAG_TYPE_MMAP)
+        {
+            multiboot_tag_mmap* mmap = reinterpret_cast<multiboot_tag_mmap*>(current);
+            uint8_t* entry_ptr = current + sizeof(multiboot_tag_mmap);
+            uint8_t* mmap_end = current + mmap->size;
+
 
             while (entry_ptr < mmap_end)
             {
                 multiboot_mmap_entry* entry = reinterpret_cast<multiboot_mmap_entry*>(entry_ptr);
 
-                /*
-                 * type 1 = available RAM
-                 */
-
                 if (entry->type == 1 && entry->len != 0)
                 {
                     uint64_t start = entry->addr;
-
                     uint64_t end_addr = entry->addr + entry->len;
 
                     if (start < 0x100000000ULL)
@@ -606,17 +854,16 @@ static bool test_all_ram(uint32_t mbi_addr)
                         }
 
 
-                        uint64_t test_start = start;
-                        uint64_t test_end = limit;
-                        uint64_t pos = test_start;
+                        uint64_t pos = start;
 
-
-                        while (pos < test_end)
+                        while (pos < limit)
                         {
-                            uint64_t next = test_end;
+                            uint64_t next = limit;
+
                             bool skipped = false;
 
 
+                            // Protected ranges
                             for (uint32_t i = 0; i < protected_range_count; ++i)
                             {
                                 uint64_t p_start = protected_ranges[i].start;
@@ -641,43 +888,73 @@ static bool test_all_ram(uint32_t mbi_addr)
                                 continue;
                             }
 
-
                             if (next <= pos)
                             {
                                 break;
                             }
 
 
-                            /*
-                                32-bit range.
-                            */
+                            uint64_t range_pos = pos;
 
-                            uint32_t a = static_cast<uint32_t>(pos);
-                            uint32_t b = static_cast<uint32_t>(next);
-
-
-                            if (a < b)
+                            while (range_pos < next)
                             {
-                                uint32_t error = 0;
+                                uint64_t chunk_end = range_pos + CHUNK_SIZE;
 
 
-                                if (!test_ram_range(a, b, error))
+                                if (chunk_end > next)
                                 {
-                                    print_color("RAM ERROR at ", COLOR_RED);
-                                    print_hex(error);
-                                    print("\n");
-
-                                    return false;
+                                    chunk_end = next;
                                 }
 
-                                found_ram = true;
+
+                                uint32_t a = static_cast<uint32_t>(range_pos);
+                                uint32_t b = static_cast<uint32_t>(chunk_end);
+
+
+                                if (a < b)
+                                {
+                                    uint32_t error = 0;
+
+                                    if (!test_ram_range(a, b, error))
+                                    {
+                                        /*
+                                            RAM error.
+                                        */
+
+                                        uint32_t old_x = cursor_x;
+                                        uint32_t old_y = cursor_y;
+
+                                        cursor_x = 10;
+                                        cursor_y = progress_y + 32;
+
+
+                                        print_color("RAM ERROR at ", COLOR_RED);
+                                        print_hex(error);
+                                        print("\n");
+
+
+                                        cursor_x = old_x;
+                                        cursor_y = old_y;
+
+
+                                        return false;
+                                    }
+
+
+                                    found_ram = true;
+                                    tested_ram += chunk_end - range_pos;
+
+
+                                    draw_ram_progress(tested_ram, total_ram, progress_y);
+                                }
+
+                                range_pos = chunk_end;
                             }
 
                             pos = next;
                         }
                     }
                 }
-
 
                 entry_ptr += mmap->entry_size;
             }
@@ -689,6 +966,26 @@ static bool test_all_ram(uint32_t mbi_addr)
         current += next;
     }
 
+
+    // 100%
+    draw_ram_progress(total_ram, total_ram, progress_y);
+
+
+    /*
+     * Move cursor below the progress bar.
+     *
+     * This means the summary will never overwrite
+     * the RAM progress display.
+     */
+
+    cursor_x = 0;
+    cursor_y = progress_y + 32;
+
+
+    if (cursor_y + FONT_HEIGHT >= framebuffer_height)
+    {
+        cursor_y = progress_y;
+    }
 
     return found_ram;
 }
@@ -730,18 +1027,21 @@ static void print_cpu_vendor()
 
     char vendor[13];
 
-    vendor[0]  = ebx & 0xFF;
-    vendor[1]  = (ebx >> 8) & 0xFF;
-    vendor[2]  = (ebx >> 16) & 0xFF;
-    vendor[3]  = (ebx >> 24) & 0xFF;
 
-    vendor[4]  = edx & 0xFF;
-    vendor[5]  = (edx >> 8) & 0xFF;
-    vendor[6]  = (edx >> 16) & 0xFF;
-    vendor[7]  = (edx >> 24) & 0xFF;
+    vendor[0] = ebx & 0xFF;
+    vendor[1] = (ebx >> 8) & 0xFF;
+    vendor[2] = (ebx >> 16) & 0xFF;
+    vendor[3] = (ebx >> 24) & 0xFF;
 
-    vendor[8]  = ecx & 0xFF;
-    vendor[9]  = (ecx >> 8) & 0xFF;
+
+    vendor[4] = edx & 0xFF;
+    vendor[5] = (edx >> 8) & 0xFF;
+    vendor[6] = (edx >> 16) & 0xFF;
+    vendor[7] = (edx >> 24) & 0xFF;
+
+
+    vendor[8] = ecx & 0xFF;
+    vendor[9] = (ecx >> 8) & 0xFF;
     vendor[10] = (ecx >> 16) & 0xFF;
     vendor[11] = (ecx >> 24) & 0xFF;
 
@@ -759,7 +1059,7 @@ static bool test_rdtsc()
 {
     uint64_t a = rdtsc();
 
-    for (volatile uint32_t i = 0; i < 1000;++i)
+    for (volatile uint32_t i = 0; i < 1000; ++i)
     {
     }
 
@@ -805,7 +1105,7 @@ static bool test_pci()
     {
         for (uint8_t device = 0; device < 32; ++device)
         {
-            uint16_t vendor = pci_read16( static_cast<uint8_t>(bus), device, 0, 0);
+            uint16_t vendor = pci_read16(static_cast<uint8_t>(bus), device, 0, 0);
 
 
             if (vendor == 0xFFFF)
@@ -901,12 +1201,11 @@ static bool test_framebuffer()
     framebuffer[0] = 0x00FFFFFF;
     framebuffer[middle] = 0x00FFFFFF;
 
-
     bool ok = framebuffer[0] == 0x00FFFFFF && framebuffer[middle] == 0x00FFFFFF;
-
 
     framebuffer[0] = old1;
     framebuffer[middle] = old2;
+
 
     return ok;
 }
@@ -941,18 +1240,18 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     extern uint8_t kernel_start;
     extern uint8_t kernel_end;
 
+
     /*
         Kernel.
     */
     add_protected_range(reinterpret_cast<uint32_t>(&kernel_start), reinterpret_cast<uint32_t>(&kernel_end));
 
+
     /*
         Multiboot2 information.
     */
-
     uint8_t* mbi = reinterpret_cast<uint8_t*>(static_cast<uintptr_t>(mbi_addr));
     uint32_t mbi_size = *reinterpret_cast<uint32_t*>(mbi);
-
 
     add_protected_range(mbi_addr, static_cast<uint64_t>(mbi_addr) + mbi_size);
 
@@ -960,7 +1259,6 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     /*
         Framebuffer.
     */
-
     if (framebuffer != nullptr)
     {
         uint64_t fb_start = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(framebuffer));
@@ -973,13 +1271,10 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     // Screen
     clear_screen(COLOR_BLACK);
 
-    cursor_x = 20;
-    cursor_y = 20;
+    cursor_x = 0;
+    cursor_y = 10;
 
-    print_color("NasuaOS Hardware Diagnostic Test\n", COLOR_GREEN);
-
-    print("\n");
-
+    print_color("NasuaOS Hardware Diagnostic Test\n\n", COLOR_GREEN);
 
     // Multiboot2
     test_ok("Multiboot2");
@@ -994,7 +1289,6 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     {
         test_fail("Framebuffer");
     }
-
 
     print("Resolution: ");
 
@@ -1080,9 +1374,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
 
 
     // RAM
-    print("\n");
-
-    print_color("Testing ALL available RAM...\n", COLOR_YELLOW);
+    print_color("\nTesting ALL available RAM...\n", COLOR_YELLOW);
     print("This may take a while.\n\n");
 
     if (test_all_ram(mbi_addr))
@@ -1096,13 +1388,15 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
 
 
     // Summary
-    print_color("\n==============================\n",COLOR_CYAN);
-    print_color("          SUMMARY\n",COLOR_CYAN);
-    print_color("==============================\n",COLOR_CYAN);
+    print_color("\n==============================\n", COLOR_CYAN);
+    print_color("          SUMMARY\n", COLOR_CYAN);
+    print_color("==============================\n", COLOR_CYAN);
+
 
     print("Tests passed: ");
     print_dec(tests_passed);
     print("\n");
+
 
     print("Tests failed: ");
     print_dec(tests_failed);

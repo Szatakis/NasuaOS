@@ -148,7 +148,7 @@ static void print(const char* text, uint32_t color)
 
         if (c == '\n')
         {
-            cursor_x = 16;
+            cursor_x = 0;
             cursor_y += 12;
 
             continue;
@@ -160,7 +160,7 @@ static void print(const char* text, uint32_t color)
 
         if (cursor_x + 8 >= fb_width)
         {
-            cursor_x = 16;
+            cursor_x = 0;
             cursor_y += 12;
         }
     }
@@ -387,7 +387,6 @@ static void detect_long_mode()
     asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000001));
 
     print_bool(edx & (1 << 29));
-
     print("\n", COLOR_WHITE);
 }
 
@@ -501,17 +500,10 @@ static void memory_info(uint32_t mb_info)
 // PCI
 static uint32_t pci_read(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset)
 {
-    uint32_t address =
-        (1U << 31) |
-        ((uint32_t)bus << 16) |
-        ((uint32_t)device << 11) |
-        ((uint32_t)function << 8) |
-        (offset & 0xFC);
+    uint32_t address = (1U << 31) | ((uint32_t)bus << 16) | ((uint32_t)device << 11) | ((uint32_t)function << 8) | (offset & 0xFC);
 
     asm volatile("outl %0, %1" : : "a"(address), "Nd"((uint16_t)0xCF8));
-
     uint32_t result;
-
     asm volatile("inl %1, %0" : "=a"(result) : "Nd"((uint16_t)0xCFC));
 
     return result;
@@ -538,24 +530,15 @@ static void pci_info()
                     continue;
                 }
 
-
                 uint16_t vendor = id & 0xFFFF;
-
                 uint16_t device_id = id >> 16;
 
-
                 print("PCI ", COLOR_GRAY);
-
                 print_hex32((bus << 16) | (device << 8) | function);
-
                 print(": ", COLOR_GRAY);
-
                 print_hex32(vendor);
-
                 print(":", COLOR_WHITE);
-
                 print_hex32(device_id);
-
                 print("\n", COLOR_WHITE);
 
                 found++;
@@ -583,9 +566,7 @@ static void framebuffer_info()
 
     print("Resolution: ", COLOR_GRAY);
     print_dec(fb_width);
-
     print("x", COLOR_WHITE);
-
     print_dec(fb_height);
 
     print("\nBPP: ", COLOR_GRAY);
@@ -622,35 +603,26 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
 
     // Clear screen
     clear_screen(COLOR_BLACK);
-
-
-    cursor_x = 16;
-    cursor_y = 16;
+    cursor_x = 0;
+    cursor_y = 10;
 
 
     // Header
     print("NASUAOS HARDWARE DETECTION TOOL\n", COLOR_GREEN);
-    print("HDT v2.0 | Multiboot2 | x86_32\n", COLOR_GRAY);
     print("========================================\n", COLOR_BLUE);
-
 
     // Framebuffer
     framebuffer_info();
 
-
     // CPU
     cpu_info();
-
     detect_long_mode();
-
 
     // Memory
     memory_info(mb_info);
 
-
     // PCI
     pci_info();
-
 
     // Finished
     print("\n========================================\n", COLOR_BLUE);
