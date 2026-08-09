@@ -19,7 +19,7 @@ struct CLAWFSEntry
 {
     char name[28];
     uint32_t type;
-    uint32_t data_sector; // TO JEST TO NOWE POLE
+    uint32_t data_sector;
     uint32_t entry_count; 
 } __attribute__((packed));
 

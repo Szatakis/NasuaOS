@@ -79,7 +79,7 @@ void setup_entry(CLAWFSEntry* e, const char* name, uint32_t type, uint32_t secto
 }
 
 void clawfs_format() {
-    // Nagłówek
+    // Header
     uint8_t buffer[512] = {0};
     CLAWFSHeader* header = (CLAWFSHeader*)buffer;
     memcpy(header->signature, "CLAWFS", 6);
@@ -97,7 +97,7 @@ void clawfs_format() {
     setup_entry(&entries[5], "var", CLAWFS_DIRECTORY, 107);
     disk_write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
 
-    // Podstruktura
+    // Substructure
     clawfs_create_file_in("/bin", "kernel_bin");
     clawfs_mkdir("/home", "user");
     clawfs_mkdir("/home", "root");
@@ -206,7 +206,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
             if(strcmp(entries[i].name, name) == 0 &&
                entries[i].type == type)
             {
-                // sprawdzenie czy folder jest pusty
+                // check if folder is empty
                 if(type == CLAWFS_DIRECTORY)
                 {
                     uint8_t dir_buffer[512];
@@ -225,7 +225,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
                 }
 
 
-                // usunięcie wpisu
+                // delete register
                 memclear(&entries[i], sizeof(CLAWFSEntry));
 
                 disk_write_sector(parent_sector, buffer);
