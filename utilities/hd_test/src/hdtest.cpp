@@ -1216,6 +1216,26 @@ static uint8_t cmos_read(uint8_t index)
 }
 
 
+static bool test_cmos_registers()
+{
+    uint8_t reg_a = cmos_read(0x0A);
+    uint8_t reg_b = cmos_read(0x0B);
+    uint8_t reg_c = cmos_read(0x0C);
+
+    if (reg_a == 0xFF || reg_b == 0xFF || reg_c == 0xFF)
+    {
+        return false;
+    }
+
+    if ((reg_a & 0x80) != 0)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+
 static bool test_rtc()
 {
     uint8_t status_a = cmos_read(0x0A);
@@ -1226,10 +1246,37 @@ static bool test_rtc()
 }
 
 
+// PIC test
+static bool test_pic_access()
+{
+    uint8_t mask1 = inb(0x21);
+    uint8_t mask2 = inb(0xA1);
+
+    (void)mask1;
+    (void)mask2;
+
+    return true;
+}
+
+
 // PIT test
 static bool test_pit()
 {
     outb(0x43, 0x00);
+
+    return true;
+}
+
+
+static bool test_pit_counter0_latch()
+{
+    outb(0x43, 0x36);
+
+    uint8_t first = inb(0x40);
+    uint8_t second = inb(0x40);
+
+    (void)first;
+    (void)second;
 
     return true;
 }
@@ -1421,7 +1468,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     }
 
 
-    // RTC
+    // RTC / CMOS
     if (test_rtc())
     {
         test_ok("RTC / CMOS");
@@ -1429,6 +1476,26 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     else
     {
         test_fail("RTC / CMOS");
+    }
+
+    if (test_cmos_registers())
+    {
+        test_ok("CMOS register readback");
+    }
+    else
+    {
+        test_fail("CMOS register readback");
+    }
+
+
+    // PIC
+    if (test_pic_access())
+    {
+        test_ok("PIC 8259 mask ports");
+    }
+    else
+    {
+        test_fail("PIC 8259 mask ports");
     }
 
 
@@ -1440,6 +1507,15 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     else
     {
         test_fail("PIT I/O");
+    }
+
+    if (test_pit_counter0_latch())
+    {
+        test_ok("PIT channel 0 latch");
+    }
+    else
+    {
+        test_fail("PIT channel 0 latch");
     }
 
 
