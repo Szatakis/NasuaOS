@@ -2,13 +2,13 @@
 
 void Uart::init() 
 {
-    outb(COM1_PORT + 1, 0x00);    // Wyłącz przerwania
-    outb(COM1_PORT + 3, 0x80);    // Włącz DLAB
+    outb(COM1_PORT + 1, 0x00);    // Turn OFF interrupts
+    outb(COM1_PORT + 3, 0x80);    // Turn ON DLAB
     outb(COM1_PORT + 0, 0x01);    // 115200 baud (low byte)
     outb(COM1_PORT + 1, 0x00);    // (high byte)
-    outb(COM1_PORT + 3, 0x03);    // 8 bitów, brak parzystości, 1 bit stopu
-    outb(COM1_PORT + 2, 0xC7);    // Włącz i wyczyść FIFO
-    outb(COM1_PORT + 4, 0x0B);    // IRQs włączone, RTS/DSR ustawione
+    outb(COM1_PORT + 3, 0x03);    // 8 bits, non transparency, 1 bit stop
+    outb(COM1_PORT + 2, 0xC7);    // Turn ON and clear FIFO
+    outb(COM1_PORT + 4, 0x0B);    // IRQs turn ON, RTS/DSR set
 }
 
 void Uart::putc(char c) 

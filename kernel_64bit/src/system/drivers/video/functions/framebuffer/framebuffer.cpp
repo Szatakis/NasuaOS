@@ -4,8 +4,6 @@
 
 #include "applications/shell/commands.hpp"
 
-// Deklaracja funkcji inicjalizującej bufor terminala z pliku tekstowego
-
 limine_framebuffer* fb = nullptr;
 
 // Backbuffer: static allocation for double buffering
@@ -32,15 +30,14 @@ size_t get_backbuffer_pitch()
     return backbuffer_pitch;
 }
 
-// Skopiowanie całego backbuffera do fizycznego framebuffera (VRAM)
+// Copy backbuffer to physical framebuffer (VRAM)
 void render_frame() 
 {
     if (!fb || !fb->address) return;
 
     uint32_t* fb_ptr = (uint32_t*)fb->address;
-    size_t fb_pitch = fb->pitch / 4; // Pitch fizycznego ekranu w pikselach
+    size_t fb_pitch = fb->pitch / 4;
 
-    // Optymalizacja: Kopiujemy całe linie pamięci zamiast pojedynczych pikseli
     for (size_t y = 0; y < backbuffer_height; y++) 
     {
         __builtin_memcpy(
@@ -51,12 +48,10 @@ void render_frame()
     }
 }
 
-// Czyszczenie pamięci roboczej ekranu oraz wirtualnego bufora konsoli
 void clear_screen() 
 {
     if (!fb) return;
 
-    // 2. Wypełnienie całego backbuffera jednolitym kolorem tła systemu
     uint32_t* bb_ptr = backbuffer;
     uint32_t bg_color = COLOR_NASUA_BG;
 

@@ -1,20 +1,7 @@
 #include "terminal.hpp"
 
 #include "../shell/commands.hpp"
-
-bool is_empty_or_whitespace(const char* str) {
-    if (str == nullptr || *str == '\0') {
-        return true; 
-    }
-    while (*str) {
-        // Ręczne sprawdzenie białych znaków: spacja, tabulacja, nowa linia, powrót karetki
-        if (*str != ' ' && *str != '\t' && *str != '\n' && *str != '\r') {
-            return false; // Znaleziono rzeczywisty znak komendy
-        }
-        str++;
-    }
-    return true; 
-}
+#include "libs/libc/libc.h"
 
 struct terminal_state 
 {

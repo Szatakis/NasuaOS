@@ -66,7 +66,7 @@ RtcTime get_rtc_time()
         time.year   = bcd_to_binary(time.year);
     }
 
-    // Obsługa formatu 12-godzinnego (jeśli bit 1 w Register B jest wyłączony)
+    // Support for 12 hour format (if bit 1 in B register is active)
     if (!(regB & 0x02) && (time.hour & 0x80)) 
     {
         time.hour = ((time.hour & 0x7F) + 12) % 24;
@@ -109,13 +109,13 @@ void set_rtc_time(RtcTime time)
 
 bool is_rtc_battery_ok(void) 
 {
-    // Wybieramy Register D (0x0D)
+    // Chose register D
     outb(RTC_CMOS_ADDRESS, RTC_REGISTER_D);
     
-    // Odczytujemy stan rejestru
+    // Read status
     uint8_t regD = inb(RTC_CMOS_DATA);
     
-    // Bit 7 (0x80) to VRT (Valid RAM and Time). 
-    // Jeśli jest ustawiony, bateria działa poprawnie.
+    // Bit 7 (0x80) is VRT (Valid RAM and Time). 
+    // If bit true battery good
     return (regD & 0x80) != 0;
 }

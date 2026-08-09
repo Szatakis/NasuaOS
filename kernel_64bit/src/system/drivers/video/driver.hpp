@@ -83,9 +83,9 @@ typedef struct window_struct {
     bool visible;
     bool focused;
 
-    bool is_dragging;    // Czy okno jest aktualnie przeciągane
-    int drag_offset_x;   // Odległość X myszy od lewego rogu okna
-    int drag_offset_y;   // Odległość Y myszy od górnego rogu okna
+    bool is_dragging;    // If window is draged
+    int drag_offset_x;   // Distance X from left side of the window
+    int drag_offset_y;   // Distance Y from top of the window
 
     void* userdata;
 
@@ -114,9 +114,7 @@ window_button get_window_button(window_struct* window, int mouse_x, int mouse_y)
 void handle_window_mouse_click(int mouse_x, int mouse_y);
 
 void register_window(window_struct* window);
-// Wyrejestrowuje okno (np. przy zamknięciu 'X')
 void unregister_window(window_struct* window);
-// Rysuje wszystkie zarejestrowane okna (WYWOŁAJ TO CO KLATKĘ)
 void draw_windows();
 void update_windows_positions(int current_mouse_x, int current_mouse_y);
 

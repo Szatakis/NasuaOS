@@ -8,7 +8,7 @@
 
 #include "libs/libc/libc.h"
 
-// Funkcje pomocnicze
+// Helpers
 char* next_path_token(char* str, const char* delim) {
     static char* backup_str = nullptr;
     if (str != nullptr) backup_str = str;
@@ -29,7 +29,7 @@ char* next_path_token(char* str, const char* delim) {
     return start;
 }
 
-// Logika systemu plików
+// Logic of filesystem
 
 uint32_t find_entry_in_dir(uint32_t dir_sector, const char* name, CLAWFSEntry* out_entry) {
     uint8_t buffer[512];
@@ -45,7 +45,7 @@ uint32_t find_entry_in_dir(uint32_t dir_sector, const char* name, CLAWFSEntry* o
     return 0;
 }
 
-uint32_t next_free_sector = 106; // Zaczynamy od 106, bo 102-105 zajęte przez root
+uint32_t next_free_sector = 106; // Star from 106 because 102-105 is ocupaited by root
 uint32_t get_next_free_sector() { return next_free_sector++; }
 
 uint32_t get_sector_by_path(const char* path) {
@@ -69,7 +69,7 @@ uint32_t get_sector_by_path(const char* path) {
 }
 
 void setup_entry(CLAWFSEntry* e, const char* name, uint32_t type, uint32_t sector) {
-    memclear(e->name, 28); // WAŻNE: Czyścimy całe pole nazwy!
+    memclear(e->name, 28);
     strcpy(e->name, name);
     e->type = type;
     e->data_sector = sector;

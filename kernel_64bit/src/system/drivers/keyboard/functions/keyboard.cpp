@@ -157,14 +157,14 @@ void handle_keyboard()
         print_sc(scancode);
     }
 
-    // Obsługa prefiksu rozszerzonego
+    // Extended scancode support
     if (scancode == 0xE0) 
     {
         extended_scancode = true;
         return; 
     }
 
-    // Przetwarzanie kodów rozszerzonych
+    // Handling extended scancode
     if (extended_scancode) 
     {
         extended_scancode = false;
@@ -226,7 +226,7 @@ void handle_keyboard()
             } 
             else 
             {
-                // RUCH MYSZĄ
+                // Mouse moving
                 int speed = 5;
 
                 if (scancode == 0x48 && mouse_y >= speed)
@@ -251,7 +251,7 @@ void handle_keyboard()
         return; 
     }
 
-    // Normalne puszczenie klawisza (Break Code)
+    // Break Code
     if (scancode & 0x80) 
     {
         uint8_t rel = scancode & 0x7F;

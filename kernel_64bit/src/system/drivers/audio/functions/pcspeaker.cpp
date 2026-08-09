@@ -17,7 +17,7 @@ void pc_speaker_on(uint32_t frequency)
     
     uint32_t divisor = PIT_FREQ / frequency;
 
-    // ustaw kanał 2 PIT
+    // set channel 2 PIT
     outb(0x43, 0xB6);
 
     // low byte

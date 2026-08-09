@@ -99,6 +99,7 @@ void iqu_init()
     asm volatile("sti");
 
     pci_init();
+    usb_init();
 
     image_init();
 

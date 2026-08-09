@@ -67,7 +67,7 @@ void execute_command(const char *cmd)
             }
         }
 
-        int page = 1; // domyślna strona
+        int page = 1; // default page
 
         const char* page_flag = strstr(args, "--page ");
 
@@ -331,7 +331,7 @@ void execute_command(const char *cmd)
             // format "--set ": "DD.MM.YYYY HH:MM:SS"
             const char* date_ptr = set_flag + 6;
 
-            // Walidation to (DD.MM.YYYY HH:MM:SS to dokładnie 19 znaków)
+            // Walidation to (DD.MM.YYYY HH:MM:SS)
             if (strlen(date_ptr) < 19 || date_ptr[2] != '.' || date_ptr[5] != '.' || date_ptr[10] != ' ' || date_ptr[13] != ':' || date_ptr[16] != ':') 
             {
                 print_error("Syntax error!\n");
@@ -510,14 +510,14 @@ void execute_command(const char *cmd)
     
         cpu_get_brand(cpu_name);
 
-        // 1. Section: Software
+        // Section: Software
         print_info("Software information\n");
         print_line("System Version: ", "NasuaOS 0.07");
         print_line("Kernel Version: ", "0.03\n\n");
 
         print_info("Hardware information\n");
 
-        // 2. Section: Hardware
+        // Section: Hardware
         print_line("CPU:            ", cpu_name);
         print_line_mb("Total RAM:      ", memory_total());
         print_numeric("Used RAM:       ", memory_used());
@@ -987,7 +987,7 @@ void execute_command(const char *cmd)
             int n2 = atoi(num2_buf);
             int result = 0;
 
-            // Doing calculations
+            // Calculations
             if (strncmp(op_buf, "add", 3)) 
             {
                 result = n1 + n2;
@@ -1210,38 +1210,37 @@ void execute_command(const char *cmd)
     // 27. Command: cd
     else if(cmd_name_len == 2 && strncmp(cmd, "cd", 2))
     {
-        // 1. Obsługa "cd" bez argumentów (powrót do home lub wyświetlenie ścieżki)
+        // Handling cd without arguments return to home
         if (args[0] == '\0') {
             strcpy(current_path, "/home");
         }
-        // 2. Obsługa "cd ~"
+        // Handling "cd ~"
         else if (strcmp(args, "~") == 0) {
             strcpy(current_path, "/home");
         }
-        // 3. Obsługa "cd .."
+        // Handling "cd .."
         else if (strcmp(args, "..") == 0) {
             char* last_slash = strrchr(current_path, '/');
             if (last_slash != nullptr && last_slash != current_path) {
-                *last_slash = '\0'; // Ucinamy ścieżkę do ostatniego slasha
+                *last_slash = '\0';
             } else {
                 strcpy(current_path, "/");
             }
         }
-        // 4. Obsługa zmiany katalogu (np. cd /bin lub cd Szatakis)
+        // Handling changing directory
         else {
             char new_path[256];
         
-            // Jeśli ścieżka zaczyna się od "/", traktuj jako absolutną
+            // If path start with '/' handle as absolute
             if (args[0] == '/') {
                 strcpy(new_path, args);
             } else {
-                // Jeśli relatywna, sklej z obecną ścieżką
                 strcpy(new_path, current_path);
                 if (strcmp(new_path, "/") != 0) strcat(new_path, "/");
                 strcat(new_path, args);
             }
 
-            // Sprawdź czy folder istnieje (korzystając z Twojego FS)
+            // Check if path exists
             if (get_sector_by_path(new_path) != 0) {
                 strcpy(current_path, new_path);
             }    
@@ -1309,7 +1308,7 @@ void execute_command(const char *cmd)
             char type_buf[16] = {0};
             int i = 0;
 
-            // Parsowanie --name
+            // Parsing --name
             const char* name_arg = name_flag + 7;
             if (*name_arg == '"') {
                 name_arg++;
@@ -1319,7 +1318,7 @@ void execute_command(const char *cmd)
             }
             name_buf[i] = '\0';
 
-            // Parsowanie --type
+            // Parsing --type
             const char* type_arg = type_flag + 7;
             i = 0;
             if (*type_arg == '"') {
@@ -1330,7 +1329,7 @@ void execute_command(const char *cmd)
             }
             type_buf[i] = '\0';
 
-            // Wybór typu
+            // Chossing type
             int type = -1;
             if (strcmp(type_buf, "file") == 0) {
                 type = CLAWFS_FILE;

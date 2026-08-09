@@ -21,7 +21,7 @@ void register_window(window_struct* window)
             return;
         }
     }
-    window->is_dragging = false; // Inicjalizacja flagi bezpieczeństwa
+    window->is_dragging = false; // Init safty flag
     window_list[window_count++] = window;
 
     active_window = window;
@@ -44,7 +44,7 @@ void unregister_window(window_struct* window)
     }
 }
 
-// Funkcja pomocnicza: przenosi okno na sam koniec tablicy (na wierzch ekranu)
+// Helpers
 void bring_window_to_front(int index)
 {
     if(index < 0 || index >= window_count)
@@ -80,8 +80,7 @@ void send_key_to_window(char key)
     }
 }
 
-// NOWA FUNKCJA: Aktualizuje pozycje przeciąganych okien na podstawie aktualnej pozycji myszy.
-// WYWOŁAJ TO W KAŻDEJ KLATCE! (Zaraz na początku pętli, przed rysowaniem)
+// Updates windows positions
 void update_windows_positions(int current_mouse_x, int current_mouse_y) 
 {
     for (int i = 0; i < window_count; i++) 
@@ -92,7 +91,7 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
             win->pos_x = current_mouse_x - win->drag_offset_x;
             win->pos_y = current_mouse_y - win->drag_offset_y;
             
-            // Opcjonalnie: zabezpieczenie, żeby okno nie uciekło całkowicie pod pasek zadań
+            // Taskbar protection
             if (fb) 
             {
                 if (win->pos_y > (int)fb->height - 50) 
@@ -104,27 +103,26 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
     }
 }
 
-// ZMODYFIKOWANA FUNKCJA: Obsługuje kliknięcia, włączanie i wyłączanie przeciągania (drag)
+// Windows clicks
 void handle_window_mouse_click(int mouse_x, int mouse_y) 
 {
-    // KROK 1: Sprawdzamy najpierw, czy JAKIEKOLWIEK okno jest już przeciągane. 
-    // Jeśli tak, kliknięcie oznacza "puść okno".
     for (int i = window_count - 1; i >= 0; i--) 
     {
         if (window_list[i]->visible && window_list[i]->is_dragging) 
         {
             window_list[i]->is_dragging = false;
-            return; // Upuściliśmy okno, kończymy obsługę kliknięcia
+            return;
         }
     }
 
-    // KROK 2: Jeśli żadne okno nie było ciągnięte, szukamy okna do kliknięcia
     for (int i = window_count - 1; i >= 0; i--) 
     {
         window_struct* win = window_list[i];
-        if (!win->visible) continue;
+        if (!win->visible) 
+        {
+            continue;
+        }
 
-        // Sprawdzamy czy kliknięto w 3 ikony kontrolne (X, [], -)
         window_button btn = get_window_button(win, mouse_x, mouse_y);
 
         if (btn == BUTTON_CLOSE) 
@@ -143,12 +141,11 @@ void handle_window_mouse_click(int mouse_x, int mouse_y)
             return;
         }
         
-        // KROK 3: Jeśli mysz jest na pasku tytułowym, ale NIE na ikonach -> Zaczynamy przeciąganie!
         if (is_mouse_over_window_title(win, mouse_x, mouse_y)) 
         {
-            bring_window_to_front(i);            // Wysuwamy okno na sam wierzch
-            win->is_dragging = true;              // Aktywujemy drag
-            win->drag_offset_x = mouse_x - win->pos_x; // Zapamiętujemy odległość od krawędzi okna
+            bring_window_to_front(i);
+            win->is_dragging = true;
+            win->drag_offset_x = mouse_x - win->pos_x;
             win->drag_offset_y = mouse_y - win->pos_y;
             return;
         }
@@ -173,7 +170,6 @@ void handle_window_mouse_click(int mouse_x, int mouse_y)
     }
 }
 
-// --- Reszta Twoich funkcji rysujących i pomocniczych (draw_window, itp.) pozostaje bez zmian ---
 void draw_windows() 
 {
     for (int i = 0; i < window_count; i++) 
@@ -228,7 +224,7 @@ void draw_window(window_struct* window)
         print_at8("X", button_x + 42, button_y, COLOR_WHITE);
     }
 
-    // narysuj zawartość okna
+    // Draw window
     if (window->draw_content) 
     {
         window->draw_content(window);
@@ -281,7 +277,7 @@ window_button get_window_button(window_struct* window, int mouse_x, int mouse_y)
     return BUTTON_NONE;
 }
 
-// Zwraca true, jeśli myszka unosi się nad jakimkolwiek widocznym oknem
+// Returns true if mouse is over any window
 bool is_mouse_over_any_window(int mouse_x, int mouse_y) 
 {
     for (int i = 0; i < window_count; i++) 

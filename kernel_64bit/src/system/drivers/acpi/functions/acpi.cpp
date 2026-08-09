@@ -83,7 +83,7 @@ struct __attribute__((packed)) GAS
 };
 
 
-// Pełniejszy FADT
+// FADT
 struct __attribute__((packed)) FADT
 {
     ACPISDTHeader header;
@@ -235,7 +235,7 @@ static bool parse_s5_from_aml(uint8_t* aml, uint32_t length)
             uint8_t* ptr = &aml[i+4];
 
 
-            // musi być NameOp
+            // Must be NameOp
             if(*ptr != 0x12)
             {
                 continue;
@@ -544,7 +544,7 @@ static bool acpi_enable()
         return false;
     }
 
-    // ACPI już aktywne
+    // ACPI is alredy active
 
     if((inw((uint16_t)PM1a_CNT) & SCI_EN) != 0)
     {
@@ -564,7 +564,7 @@ static bool acpi_enable()
     outb((uint16_t)SMI_CMD, ACPI_ENABLE);
 
 
-    // czekamy aż BIOS przejmie ACPI
+    // Wait for BIOS to handle ACPI
 
     for(int i = 0; i < 300; i++)
     {

@@ -24,3 +24,4 @@ char* strtok(char* str, const char* delim);
 char* strrchr(const char* str, int c);
 bool find_in_string(const char* str, const char* target);
 void memclear(void* ptr, size_t size);
+bool is_empty_or_whitespace(const char* str);
