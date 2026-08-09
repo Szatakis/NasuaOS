@@ -7,7 +7,7 @@ SUB_ARCH ?= x86_32
 clean:
 	$(MAKE) -C hdt clean
 	$(MAKE) -C hd_test clean
-	$(MAKE) -C uefi_setup clean
+	$(MAKE) -C system_setup clean
 	$(MAKE) -C uefi_shell clean
 	$(MAKE) -C rootfs clean
 
@@ -15,6 +15,6 @@ clean:
 distclean:
 	$(MAKE) -C hdt distclean
 	$(MAKE) -C hd_test distclean
-	$(MAKE) -C uefi_setup distclean
+	$(MAKE) -C system_setup clean
 	$(MAKE) -C uefi_shell distclean
 	$(MAKE) -C rootfs distclean

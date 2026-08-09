@@ -377,7 +377,7 @@ kernel_32bit:
 utilities:
 	$(MAKE) -C utilities/hdt ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/hd_test ARCH=$(SUB_ARCH)
-	$(MAKE) -C utilities/uefi_setup ARCH=$(ARCH)
+	$(MAKE) -C utilities/system_setup ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/uefi_shell ARCH=$(ARCH)
 
 .PHONY: fs_sys
@@ -402,7 +402,7 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
 	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
 	cp -v utilities/hd_test/bin-$(SUB_ARCH)/hdtest iso_root/boot/utils
-	cp -v utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi iso_root/boot/utils
+	cp -v utilities/system_setup/bin-$(SUB_ARCH)/system_setup iso_root/boot/utils
 	cp -v utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi iso_root/boot/utils
 	cp -v utilities/rootfs/rootfs.img iso_root/system
 	cp -v .config/limine.conf iso_root/boot/limine/
@@ -410,6 +410,7 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	cp -v documentation/images/background_dark.png iso_root/system/assets/images/
 	cp -v .config/boot_config.txt iso_root/boot
 	cp -v .config/boot_config_sf.txt iso_root/boot
+	cp -v .config/boot_config_rc.txt iso_root/boot
 	cp -v .config/defaults.txt iso_root/config
 ifeq ($(ARCH),x86_64)
 	cp -v limine-binary/limine-bios.sys limine-binary/limine-bios-cd.bin limine-binary/limine-uefi-cd.bin iso_root/boot/limine/
@@ -468,11 +469,12 @@ endif
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config.txt ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_sf.txt ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_rc.txt ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M .config/defaults.txt ::/config
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hd_test/bin-$(SUB_ARCH)/hdtest ::/boot/utils
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_setup/bin-$(ARCH)/fwsetup.efi ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/system_setup/bin-$(SUB_ARCH)/system_setup ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/uefi_shell/bin-$(ARCH)/uefi_shell.efi ::/boot/utils
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/rootfs/rootfs.img ::/system

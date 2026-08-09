@@ -4,8 +4,8 @@
 /hd_test/obj-*
 /hd_test/bin-*
 
-/uefi_setup/obj-*
-/uefi_setup/bin-*
+/system_setup/obj-*
+/system_setup/bin-*
 
 /uefi_shell/obj-*
 /uefi_shell/bin-*
