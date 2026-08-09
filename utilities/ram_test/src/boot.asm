@@ -16,17 +16,14 @@ global _start
 
 
 _start:
-
     cli
 
     mov esp, stack_top
 
-
-    ; start testu = za kernelem
     mov edi, kernel_end
 
 
-    ; wyrównanie do 4KB
+    ; to 4KB
     add edi, 4095
     and edi, 0xFFFFF000
 
@@ -34,7 +31,7 @@ _start:
     mov [test_start], edi
 
 
-    ; 8 MiB / 4 bajty
+    ; 8 MiB / 4 bajts
     mov ecx, (8*1024*1024)/4
 
 
@@ -52,8 +49,7 @@ write_loop:
     loop write_loop
 
 
-
-    ; reset adresu
+    ; reset adrress
 
     mov edi,[test_start]
 
@@ -77,10 +73,6 @@ read_loop:
 
     loop read_loop
 
-
-
-; sukces
-
     mov esi,msg_ok
     call print
 
@@ -94,7 +86,7 @@ error:
     call print
 
 
-    ; pokaż adres błędu
+    ; show error address
 
     mov eax,edi
     call print_hex
@@ -102,10 +94,8 @@ error:
 
 
 halt:
-
     hlt
     jmp halt
-
 
 
 ; PRINT STRING VGA
@@ -117,7 +107,6 @@ print:
 
 
 print_loop:
-
     lodsb
 
     test al,al
@@ -133,7 +122,6 @@ print_loop:
 
 
 print_done:
-
     mov [cursor],edi
 
     ret
@@ -143,7 +131,6 @@ print_done:
 ; PRINT HEX EAX
 
 print_hex:
-
     push eax
     push ecx
     push edx
@@ -153,7 +140,6 @@ print_hex:
 
 
 hex_loop:
-
     rol eax,4
 
     mov edx,eax
@@ -168,12 +154,10 @@ hex_loop:
 
 
 number:
-
     add edx,'0'
 
 
 output:
-
     mov edi,[cursor]
     add edi,0xB8000
 
