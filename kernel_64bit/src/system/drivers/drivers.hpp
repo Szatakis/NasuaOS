@@ -6,6 +6,7 @@
 #include "audio/driver.hpp"
 #include "cpu/driver.hpp"
 #include "disk/driver.hpp"
+#include "ethernet/driver.hpp"
 #include "hpet/driver.hpp"
 #include "keyboard/driver.hpp"
 #include "memory/driver.hpp"
@@ -17,5 +18,6 @@
 #include "uart/driver.hpp"
 #include "usb/driver.hpp"
 #include "video/driver.hpp"
+#include "wifi/driver.hpp"
 
 #endif // DRIVERS_H
