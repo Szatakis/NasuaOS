@@ -497,6 +497,23 @@ static void memory_info(uint32_t mb_info)
 }
 
 
+// I/O helpers
+static inline void outb(uint16_t port, uint8_t value)
+{
+    asm volatile("outb %0, %1" : : "a"(value), "Nd"(port));
+}
+
+
+static inline uint8_t inb(uint16_t port)
+{
+    uint8_t value;
+
+    asm volatile("inb %1, %0" : "=a"(value) : "Nd"(port));
+
+    return value;
+}
+
+
 // PCI
 static uint32_t pci_read(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset)
 {
@@ -507,6 +524,75 @@ static uint32_t pci_read(uint8_t bus, uint8_t device, uint8_t function, uint8_t 
     asm volatile("inl %1, %0" : "=a"(result) : "Nd"((uint16_t)0xCFC));
 
     return result;
+}
+
+
+static void keyboard_controller_enable()
+{
+    while (inb(0x64) & 0x02)
+    {
+        asm volatile("hlt");
+    }
+
+    outb(0x64, 0xAE);
+
+    while (inb(0x64) & 0x02)
+    {
+        asm volatile("hlt");
+    }
+
+    while (inb(0x64) & 0x01)
+    {
+        (void)inb(0x60);
+    }
+}
+
+
+static bool keyboard_data_ready()
+{
+    uint8_t status = inb(0x64);
+
+    if ((status & 0x01) == 0)
+    {
+        return false;
+    }
+
+    uint8_t scancode = inb(0x60);
+    (void)scancode;
+
+    return true;
+}
+
+
+static void reboot_system()
+{
+    asm volatile("cli");
+
+    while (inb(0x64) & 0x02)
+    {
+        asm volatile("hlt");
+    }
+
+    outb(0x64, 0xFE);
+
+    for (;;)
+    {
+        asm volatile("hlt");
+    }
+}
+
+
+static void wait_for_reboot_key()
+{
+    print("\nPress any key to reboot...\n", COLOR_GRAY);
+
+    for (;;)
+    {
+        if (keyboard_data_ready())
+        {
+            reboot_system();
+        }
+    }
 }
 
 
@@ -601,6 +687,8 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
         return;
     }
 
+    keyboard_controller_enable();
+
     // Clear screen
     clear_screen(COLOR_BLACK);
     cursor_x = 0;
@@ -628,6 +716,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     print("\n========================================\n", COLOR_BLUE);
     print("Hardware detection complete.\n", COLOR_GREEN);
 
+    wait_for_reboot_key();
 
     for (;;)
     {

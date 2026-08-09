@@ -349,6 +349,76 @@ static void print_dec(uint32_t value)
 }
 
 
+// Reboot helpers
+static void keyboard_controller_enable()
+{
+    while (inb(0x64) & 0x02)
+    {
+        asm volatile ("hlt");
+    }
+
+    outb(0x64, 0xAE);
+
+    while (inb(0x64) & 0x02)
+    {
+        asm volatile ("hlt");
+    }
+
+    while (inb(0x64) & 0x01)
+    {
+        (void)inb(0x60);
+    }
+}
+
+
+static bool keyboard_data_ready()
+{
+    uint8_t status = inb(0x64);
+
+    if ((status & 0x01) == 0)
+    {
+        return false;
+    }
+
+    uint8_t scan = inb(0x60);
+    (void)scan;
+
+    return true;
+}
+
+
+static void soft_reboot()
+{
+    asm volatile ("cli");
+
+    while (inb(0x64) & 0x02)
+    {
+        asm volatile ("hlt");
+    }
+
+    outb(0x64, 0xFE);
+
+    for (;;)
+    {
+        asm volatile ("hlt");
+    }
+}
+
+
+static void wait_for_any_key_to_reboot()
+{
+    print_color("\nPress any key to reboot...\n", COLOR_YELLOW);
+
+    for (;;)
+    {
+        if (keyboard_data_ready())
+        {
+            soft_reboot();
+        }
+    }
+}
+
+
 // Test result
 static void test_ok(const char* name)
 {
@@ -1412,6 +1482,9 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
         print_color("\nHARDWARE ERRORS DETECTED\n", COLOR_RED);
     }
 
+    keyboard_controller_enable();
+
+    wait_for_any_key_to_reboot();
 
     // Halt
     while (true)

@@ -15,7 +15,7 @@ ARCH ?= x86_64
 SUB_ARCH ?= x86_32
 
 # Default user QEMU flags. These are appended to the QEMU command calls.
-QEMUFLAGS := -m 2G
+QEMUFLAGS := -m 256M
 
 override IMAGE_NAME := NasuaOS-$(ARCH)
 override FS_NAME := clawfs_disk
