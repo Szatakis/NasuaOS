@@ -682,8 +682,6 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
         return;
     }
 
-    keyboard_controller_enable();
-
     // Clear screen
     clear_screen(COLOR_BLACK);
     cursor_x = 0;
@@ -711,6 +709,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     print("\n========================================\n", COLOR_BLUE);
     print("Hardware detection complete.\n", COLOR_GREEN);
 
+    keyboard_controller_enable();
     wait_for_reboot_key();
 
     for (;;)
