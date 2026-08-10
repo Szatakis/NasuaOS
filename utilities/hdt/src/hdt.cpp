@@ -126,11 +126,7 @@ static void draw_char(char c, uint32_t x, uint32_t y, uint32_t color, uint32_t s
                 {
                     for (uint32_t sx = 0; sx < scale; sx++)
                     {
-                        put_pixel(
-                            x + col * scale + sx,
-                            y + row * scale + sy,
-                            color
-                        );
+                        put_pixel(x + col * scale + sx, y + row * scale + sy, color);
                     }
                 }
             }
@@ -244,7 +240,6 @@ static bool cpuid_supported()
     uint32_t modified = before ^ (1 << 21);
 
     asm volatile("pushl %0\n" "popfl\n" : : "r"(modified));
-
     asm volatile("pushfl\n" "popl %0\n" : "=r"(after));
 
     return ((before ^ after) & (1 << 21)) != 0;

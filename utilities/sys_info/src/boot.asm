@@ -4,16 +4,12 @@ section .multiboot
 align 8
 
 multiboot_header:
-    ; Multiboot2 header
-
     dd 0xE85250D6
     dd 0
     dd multiboot_header_end - multiboot_header
 
-    ; checksum
     dd -(0xE85250D6 + 0 + (multiboot_header_end - multiboot_header))
 
-    ; Framebuffer tag
 
     dw 5                  ; type
     dw 0                  ; flags
@@ -23,15 +19,7 @@ multiboot_header:
     dd 720                ; height
     dd 32                 ; depth
 
-    ; Padding
-    ;
-    ; 16 + 20 = 36
-    ; Next tag must start at 40.
-
     align 8
-
-
-    ; End tag
 
     dw 0
     dw 0
@@ -49,11 +37,7 @@ extern kmain
 
 
 _start:
-
     cli
-
-    ; EAX = Multiboot2 magic
-    ; EBX = Multiboot2 information structure
 
     mov esp, stack_top
 
@@ -64,7 +48,6 @@ _start:
 
 
 .hang:
-
     cli
     hlt
     jmp .hang

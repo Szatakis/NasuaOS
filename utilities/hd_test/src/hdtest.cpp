@@ -147,17 +147,7 @@ static inline uint64_t rdtsc()
 // Text rendering
 static void put_pixel(uint32_t x, uint32_t y, uint32_t color)
 {
-    if (framebuffer == nullptr)
-    {
-        return;
-    }
-
-    if (x >= framebuffer_width)
-    {
-        return;
-    }
-
-    if (y >= framebuffer_height)
+    if (framebuffer == nullptr || x >= framebuffer_width || y >= framebuffer_height)
     {
         return;
     }
@@ -191,11 +181,6 @@ static void clear_screen(uint32_t color)
 
 static void clear_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color)
 {
-    if (framebuffer == nullptr)
-    {
-        return;
-    }
-
     for (uint32_t yy = 0; yy < height; ++yy)
     {
         for (uint32_t xx = 0; xx < width; ++xx)
@@ -317,7 +302,6 @@ static void print_hex(uint32_t value)
     for (int i = 7; i >= 0; --i)
     {
         uint32_t digit = (value >> (i * 4)) & 0xF;
-
         putchar(hex[digit]);
     }
 }
@@ -405,9 +389,9 @@ static void soft_reboot()
 }
 
 
-static void wait_for_any_key_to_reboot()
+static void wait_for_any_key()
 {
-    print_color("\nPress any key to reboot...\n", COLOR_YELLOW);
+    print_color("\nPress any key to reboot\n", COLOR_YELLOW);
 
     for (;;)
     {
@@ -466,17 +450,7 @@ static bool init_framebuffer(uint32_t mbi_addr)
         {
             multiboot_tag_framebuffer* fb = reinterpret_cast<multiboot_tag_framebuffer*>(current);
 
-            if (fb->framebuffer_type != 1)
-            {
-                return false;
-            }
-
-            if (fb->framebuffer_bpp != 32)
-            {
-                return false;
-            }
-
-            if (fb->framebuffer_addr > 0xFFFFFFFFULL)
+            if (fb->framebuffer_type != 1 || fb->framebuffer_bpp != 32 || fb->framebuffer_addr > 0xFFFFFFFFULL)
             {
                 return false;
             }
@@ -513,12 +487,7 @@ static uint32_t protected_range_count = 0;
 
 static void add_protected_range(uint64_t start, uint64_t end)
 {
-    if (start >= end)
-    {
-        return;
-    }
-
-    if (protected_range_count >= 4)
+    if (start >= end || protected_range_count >= 4)
     {
         return;
     }
@@ -534,11 +503,8 @@ static void add_protected_range(uint64_t start, uint64_t end)
 static bool test_ram_range(uint32_t start, uint32_t end, uint32_t& error_address)
 {
     start += 3;
-
     start &= ~3U;
-
     end &= ~3U;
-
 
     if (start >= end)
     {
@@ -646,23 +612,10 @@ static bool test_ram_range(uint32_t start, uint32_t end, uint32_t& error_address
 // RAM progress
 static void draw_ram_progress(uint64_t tested, uint64_t total, uint32_t progress_y)
 {
-    if (framebuffer == nullptr)
+    if (framebuffer == nullptr || total == 0)
     {
         return;
     }
-
-    if (total == 0)
-    {
-        return;
-    }
-
-
-    /*
-     * Do not use 64-bit division here.
-     *
-     * This prevents the linker from requiring
-     * __udivdi3 in the 32-bit kernel.
-     */
 
     uint32_t tested_mb = static_cast<uint32_t>(tested >> 20);
     uint32_t total_mb = static_cast<uint32_t>(total >> 20);
@@ -689,11 +642,11 @@ static void draw_ram_progress(uint64_t tested, uint64_t total, uint32_t progress
 
 
     /*
-     * Clear only the RAM progress area.
-     *
-     * Previous hardware test results are above this
-     * area and will not be touched.
-     */
+        Clear only the RAM progress area.
+    
+        Previous hardware test results are above this
+        area and will not be touched.
+    */
 
     clear_rect(0, progress_y, framebuffer_width, 32, COLOR_BLACK);
 
@@ -1042,11 +995,11 @@ static bool test_all_ram(uint32_t mbi_addr)
 
 
     /*
-     * Move cursor below the progress bar.
-     *
-     * This means the summary will never overwrite
-     * the RAM progress display.
-     */
+        Move cursor below the progress bar.
+    
+        This means the summary will never overwrite
+        the RAM progress display.
+    */
 
     cursor_x = 0;
     cursor_y = progress_y + 32;
@@ -1129,12 +1082,9 @@ static bool test_rdtsc()
 {
     uint64_t a = rdtsc();
 
-    for (volatile uint32_t i = 0; i < 1000; ++i)
-    {
-    }
+    for (volatile uint32_t i = 0; i < 1000; ++i) {}
 
     uint64_t b = rdtsc();
-
 
     return b > a;
 }
@@ -1144,9 +1094,7 @@ static bool test_rdtsc()
 static uint32_t pci_read32(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset)
 {
     uint32_t address = 0x80000000 | (static_cast<uint32_t>(bus) << 16) | (static_cast<uint32_t>(device) << 11) | (static_cast<uint32_t>(function) << 8) | (offset & 0xFC);
-
     outl(0xCF8, address);
-
 
     return inl(0xCFC);
 }
@@ -1155,7 +1103,6 @@ static uint32_t pci_read32(uint8_t bus, uint8_t device, uint8_t function, uint8_
 static uint16_t pci_read16(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset)
 {
     uint32_t value = pci_read32(bus, device, function, offset);
-
 
     if (offset & 2)
     {
@@ -1170,13 +1117,11 @@ static bool test_pci()
 {
     uint32_t devices = 0;
 
-
     for (uint16_t bus = 0; bus < 256; ++bus)
     {
         for (uint8_t device = 0; device < 32; ++device)
         {
             uint16_t vendor = pci_read16(static_cast<uint8_t>(bus), device, 0, 0);
-
 
             if (vendor == 0xFFFF)
             {
@@ -1200,7 +1145,6 @@ static bool test_pci()
 static bool test_keyboard_controller()
 {
     uint8_t status = inb(0x64);
-
     (void)status;
 
     return true;
@@ -1222,12 +1166,7 @@ static bool test_cmos_registers()
     uint8_t reg_b = cmos_read(0x0B);
     uint8_t reg_c = cmos_read(0x0C);
 
-    if (reg_a == 0xFF || reg_b == 0xFF || reg_c == 0xFF)
-    {
-        return false;
-    }
-
-    if ((reg_a & 0x80) != 0)
+    if (reg_a == 0xFF || reg_b == 0xFF || reg_c == 0xFF || ((reg_a & 0x80) != 0))
     {
         return false;
     }
@@ -1239,7 +1178,6 @@ static bool test_cmos_registers()
 static bool test_rtc()
 {
     uint8_t status_a = cmos_read(0x0A);
-
     uint8_t dv = status_a & 0x70;
 
     return dv != 0x70;
@@ -1285,31 +1223,10 @@ static bool test_pit_counter0_latch()
 // Framebuffer test
 static bool test_framebuffer()
 {
-    if (framebuffer == nullptr)
+    if (framebuffer == nullptr || framebuffer_width == 0 || framebuffer_height == 0 || framebuffer_pitch == 0 || framebuffer_bpp != 32)
     {
         return false;
     }
-
-    if (framebuffer_width == 0)
-    {
-        return false;
-    }
-
-    if (framebuffer_height == 0)
-    {
-        return false;
-    }
-
-    if (framebuffer_pitch == 0)
-    {
-        return false;
-    }
-
-    if (framebuffer_bpp != 32)
-    {
-        return false;
-    }
-
 
     uint32_t old1 = framebuffer[0];
     uint32_t middle = (framebuffer_height / 2) * (framebuffer_pitch / 4) + (framebuffer_width / 2);
@@ -1559,8 +1476,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     }
 
     keyboard_controller_enable();
-
-    wait_for_any_key_to_reboot();
+    wait_for_any_key();
 
     // Halt
     while (true)
