@@ -39,6 +39,7 @@ void pmm_init();
 uint64_t pmm_alloc_page();
 void pmm_free_page(uint64_t addr);
 uint64_t pmm_get_total_memory();
+uint64_t pmm_get_free_memory();
 
 //vmm
 #define PAGE_PRESENT 0x001

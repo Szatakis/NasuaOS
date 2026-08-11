@@ -2,8 +2,7 @@
 
 static char ram_buffer[32];
 
-static uint64_t total_ram = 0; 
-static uint64_t used_ram = 0;  
+static uint64_t total_ram = 0;
 
 extern "C" {
 
@@ -101,7 +100,6 @@ void memory_init()
         }
     }
 
-    used_ram = 0;
 }
 
 
@@ -142,7 +140,14 @@ uint64_t memory_total_bytes()
     return total_ram;
 }
 
-uint64_t memory_used() 
-{     
-    return used_ram; 
+uint64_t memory_used()
+{
+    uint64_t free_bytes = pmm_get_free_memory();
+
+    if (free_bytes >= total_ram)
+    {
+        return 0;
+    }
+
+    return total_ram - free_bytes;
 }

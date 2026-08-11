@@ -8,11 +8,8 @@ on:
       - "kernel_32bit/**"
       - "kernel_64bit/**"
       - "utillities/**"
-      - "config.mk"
-      - "boot_config.txt"
-      - "boot_config_sf.txt"
+      - ".config/**"
       - "GNUmakefile"
-      - "limine.conf"
   workflow_dispatch:
 
 jobs:

@@ -236,3 +236,8 @@ uint64_t pmm_get_total_memory()
 {
     return total_pages * PAGE_SIZE;
 }
+
+uint64_t pmm_get_free_memory()
+{
+    return free_pages * PAGE_SIZE;
+}

@@ -21,7 +21,7 @@ cp -r temp-files/freestanding-cxx-hdrs .
 cp -r temp-files/cc-runtime .
 cp -r temp-files/limine-protocol .
 
-rm -rf temp-files-files
+rm -rf temp-files
 
 touch .deps-obtained
 
