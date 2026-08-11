@@ -55,9 +55,17 @@ void idt_init()
 
     // CPU Exceptions
 
-    set_gate(0, (void*)isr_divide_error);
-
-    set_gate(14, (void*)isr_page_fault);
+    set_gate(0,  (void*)isr_divide_error);          // #DE Divide Error
+    set_gate(4,  (void*)isr_overflow);              // #OF Overflow
+    set_gate(5,  (void*)isr_bound_range);           // #BR Bound Range Exceeded
+    set_gate(6,  (void*)isr_invalid_opcode);        // #UD Invalid Opcode
+    set_gate(8,  (void*)isr_double_fault);          // #DF Double Fault
+    set_gate(10, (void*)isr_invalid_tss);           // #TS Invalid TSS
+    set_gate(11, (void*)isr_segment_not_present);   // #NP Segment Not Present
+    set_gate(12, (void*)isr_stack_fault);           // #SS Stack-Segment Fault
+    set_gate(13, (void*)isr_gpf);                   // #GP General Protection Fault
+    set_gate(14, (void*)isr_page_fault);            // #PF Page Fault
+    set_gate(17, (void*)isr_alignment_check);       // #AC Alignment Check
 
     // IRQ0 - PIT Timer
 

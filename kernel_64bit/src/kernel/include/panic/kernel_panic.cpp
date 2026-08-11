@@ -155,6 +155,8 @@ void kernel_panic(const char* message, const char* error_code, const char* rip, 
 
     clear_screen();
 
+    kernel_panicked = true;
+
     panic_set_position();
     panic_print_border();
     panic_print_center_title("KERNEL PANIC");

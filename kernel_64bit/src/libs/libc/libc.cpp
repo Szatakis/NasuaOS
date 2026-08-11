@@ -212,6 +212,31 @@ void to_hex8(uint8_t value, char* out)
     out[4] = '\0';
 }
 
+void to_hex64(uint64_t value, char* out)
+{
+    static const char hex[] = "0123456789ABCDEF";
+
+    out[0]  = '0';
+    out[1]  = 'x';
+    out[2]  = hex[(value >> 60) & 0xF];
+    out[3]  = hex[(value >> 56) & 0xF];
+    out[4]  = hex[(value >> 52) & 0xF];
+    out[5]  = hex[(value >> 48) & 0xF];
+    out[6]  = hex[(value >> 44) & 0xF];
+    out[7]  = hex[(value >> 40) & 0xF];
+    out[8]  = hex[(value >> 36) & 0xF];
+    out[9]  = hex[(value >> 32) & 0xF];
+    out[10] = hex[(value >> 28) & 0xF];
+    out[11] = hex[(value >> 24) & 0xF];
+    out[12] = hex[(value >> 20) & 0xF];
+    out[13] = hex[(value >> 16) & 0xF];
+    out[14] = hex[(value >> 12) & 0xF];
+    out[15] = hex[(value >>  8) & 0xF];
+    out[16] = hex[(value >>  4) & 0xF];
+    out[17] = hex[ value        & 0xF];
+    out[18] = '\0';
+}
+
 size_t strlen(const char* str)
 {
     size_t length = 0;

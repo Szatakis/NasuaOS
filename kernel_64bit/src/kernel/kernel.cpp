@@ -189,7 +189,7 @@ extern "C" void kmain()
             handle_keyboard();
         }
         
-        if(redraw) {
+        if(redraw && !kernel_panicked) {
             redraw = false;
 
             clear_screen();

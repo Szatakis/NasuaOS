@@ -4,6 +4,9 @@
 #include "system/drivers/uart/driver.hpp"
 
 #include "kernel/include/logger/logger.hpp"
+#include "kernel/include/panic/kernel_panic.hpp"
+
+#include "libs/libc/libc.h"
 
 static uint64_t read_cr2()
 {
@@ -62,6 +65,12 @@ void page_fault_handler(uint64_t error)
     Uart::puthex(error);
     Uart::puts("\n");
 
+    char addr_buf[20];
+    char err_buf[20];
+
+    to_hex64(addr,  addr_buf);
+    to_hex64(error, err_buf);
+
     /*
      * Do NOT automatically allocate RAM for MMIO.
      *
@@ -89,10 +98,15 @@ void page_fault_handler(uint64_t error)
             "Page fault in MMIO/PCI address"
         );
 
-        while(1)
-        {
-            asm volatile("cli; hlt");
-        }
+        kernel_panic(
+            "Page Fault in MMIO/PCI address",
+            err_buf,
+            "Unknown",
+            "Unknown",
+            addr_buf
+        );
+
+        return;
     }
 
     /*
@@ -114,10 +128,15 @@ void page_fault_handler(uint64_t error)
             "OUT OF MEMORY"
         );
 
-        while(1)
-        {
-            asm volatile("cli; hlt");
-        }
+        kernel_panic(
+            "Page Fault - Out of Memory",
+            err_buf,
+            "Unknown",
+            "Unknown",
+            addr_buf
+        );
+
+        return;
     }
 
     uint64_t virtual_page =
