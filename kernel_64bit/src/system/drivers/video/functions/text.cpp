@@ -7,6 +7,7 @@
 #include "system/gui/vars/colors.hpp"
 
 #include "applications/shell/commands.hpp"
+#include "applications/terminal/terminal.hpp"
 
 #include "libs/libc/libc.h"
 
@@ -113,6 +114,12 @@ void draw_text_buffer()
 
 void print_char8(char c) 
 {
+    if (active_terminal_redirect) 
+    {
+        terminal_write_char(c);
+        return;
+    }
+
     if (c == '\n') 
     {
         text_col = 0;

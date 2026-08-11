@@ -209,7 +209,14 @@ void execute_command(const char *cmd)
     // 2. Command: clear
     else if (cmd_name_len == 5 && strncmp(cmd, "clear", 5)) 
     {
-        init_text_buffer();
+        if (active_terminal_redirect) 
+        {
+            terminal_clear_output();
+        } 
+        else 
+        {
+            init_text_buffer();
+        }
         return; 
     } 
     // 3. Command: echo
