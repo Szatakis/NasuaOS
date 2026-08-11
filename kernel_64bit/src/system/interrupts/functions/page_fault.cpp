@@ -25,23 +25,21 @@ static uint64_t read_cr2()
 static bool is_mmio_address(uint64_t addr)
 {
     /*
-     * Common PCI MMIO regions.
-     *
-     * This is intentionally conservative.
-     *
-     * Do NOT allocate normal RAM for these addresses.
-     */
+        Common PCI MMIO regions.
+    
+        This is intentionally conservative.
+    
+        Do NOT allocate normal RAM for these addresses.
+    */
 
     // Legacy PCI/MMIO region commonly used by devices
-    if(addr >= 0x80000000ULL &&
-       addr <  0x100000000ULL)
+    if(addr >= 0x80000000ULL && addr <  0x100000000ULL)
     {
         return true;
     }
 
     // PCI 64-bit MMIO region
-    if(addr >= 0x100000000ULL &&
-       addr <  0x10000000000ULL)
+    if(addr >= 0x100000000ULL && addr <  0x10000000000ULL)
     {
         return true;
     }
@@ -55,9 +53,7 @@ void page_fault_handler(uint64_t error)
 {
     uint64_t addr = read_cr2();
 
-    Uart::puts("\n[PAGE FAULT]\n");
-
-    Uart::puts("[PAGE FAULT] Address: ");
+    Uart::puts("\n[PAGE FAULT] Address: ");
     Uart::puthex(addr);
     Uart::puts("\n");
 
@@ -72,31 +68,19 @@ void page_fault_handler(uint64_t error)
     to_hex64(error, err_buf);
 
     /*
-     * Do NOT automatically allocate RAM for MMIO.
-     *
-     * Example:
-     *
-     * EHCI BAR = 0x80860000
-     *
-     * If we allocated RAM here, the EHCI driver would read
-     * from normal RAM instead of the USB controller.
-     */
+        Do NOT automatically allocate RAM for MMIO.
+    
+        If we allocated RAM here, the EHCI driver would read
+        from normal RAM instead of the USB controller.
+    */
 
     if(is_mmio_address(addr))
     {
-        Uart::puts(
-            "[PAGE FAULT] Address belongs to MMIO/PCI range\n"
-        );
+        Uart::puts("[PAGE FAULT] Address belongs to MMIO/PCI range\n");
 
-        Uart::puts(
-            "[PAGE FAULT] Refusing automatic RAM mapping\n"
-        );
+        Uart::puts("[PAGE FAULT] Refusing automatic RAM mapping\n");
 
-        log(
-            ERROR,
-            "PAGE FAULT",
-            "Page fault in MMIO/PCI address"
-        );
+        log(ERROR,"PAGE FAULT","Page fault in MMIO/PCI address");
 
         kernel_panic(
             "Page Fault in MMIO/PCI address",
@@ -110,23 +94,16 @@ void page_fault_handler(uint64_t error)
     }
 
     /*
-     * Normal demand paging.
-     */
+        Normal demand paging.
+    */
 
-    uint64_t page =
-        pmm_alloc_page();
+    uint64_t page = pmm_alloc_page();
 
     if(!page)
     {
-        Uart::puts(
-            "[PAGE FAULT] OUT OF MEMORY\n"
-        );
+        Uart::puts("[PAGE FAULT] OUT OF MEMORY\n");
 
-        log(
-            ERROR,
-            "PAGE FAULT",
-            "OUT OF MEMORY"
-        );
+        log(ERROR, "PAGE FAULT", "OUT OF MEMORY");
 
         kernel_panic(
             "Page Fault - Out of Memory",
@@ -139,40 +116,38 @@ void page_fault_handler(uint64_t error)
         return;
     }
 
-    uint64_t virtual_page =
-        addr & ~0xFFFULL;
+    bool page_exists = (error & 0x1) != 0;  
+    bool is_write    = (error & 0x2) != 0;
 
-    Uart::puts(
-        "[PAGE FAULT] Mapping normal RAM page\n"
-    );
+    if (page_exists && is_write) {
+        Uart::puts("[PAGE FAULT] Write violation on read-only page!\n");
+        log(ERROR, "PAGE FAULT", "Attempted write to read-only memory");
+    
+        kernel_panic(
+            "Access Violation - Write to Read-Only Memory",
+            err_buf,
+            "Unknown", "Unknown", addr_buf
+        );
+        return;
+    }
 
-    Uart::puts(
-        "[PAGE FAULT] Virtual: "
-    );
+    uint64_t virtual_page = addr & ~0xFFFULL;
+
+    Uart::puts("[PAGE FAULT] Mapping normal RAM page\n");
+
+    Uart::puts("[PAGE FAULT] Virtual: ");
 
     Uart::puthex(virtual_page);
 
-    Uart::puts(
-        " Physical: "
-    );
+    Uart::puts(" Physical: ");
 
     Uart::puthex(page);
 
     Uart::puts("\n");
 
-    vmm_map_page(
-        virtual_page,
-        page,
-        PAGE_WRITE
-    );
+    vmm_map_page(virtual_page, page, PAGE_WRITE);
 
-    Uart::puts(
-        "[PAGE FAULT] Page allocated\n"
-    );
+    Uart::puts("[PAGE FAULT] Page allocated\n");
 
-    log(
-        INFO,
-        "PAGE FAULT",
-        "Page allocated"
-    );
+    log(INFO, "PAGE FAULT", "Page allocated");
 }

@@ -70,9 +70,7 @@ void isr_handler(Registers* regs)
         to_hex64(regs->rsp,   rsp_buf);
         to_hex64(regs->error, err_buf);
 
-        const char* name = (regs->vector < 22)
-            ? exception_names[regs->vector]
-            : "Unknown Exception";
+        const char* name = (regs->vector < 22) ? exception_names[regs->vector] : "Unknown Exception";
 
         Uart::puts("\n[ISR] CPU Exception vector=");
         Uart::puthex(regs->vector);
@@ -87,7 +85,7 @@ void isr_handler(Registers* regs)
     }
 
     // Unknown / hardware IRQ with no handler
-    Uart::puts("\n========== UNHANDLED INTERRUPT ==========\n");
+    Uart::puts("\nUNHANDLED INTERRUPT\n");
     Uart::puts("Vector: ");
     Uart::puthex(regs->vector);
     Uart::puts("\n");

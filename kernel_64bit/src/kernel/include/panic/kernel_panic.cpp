@@ -122,11 +122,11 @@ static void panic_kv_row(const char* key, const char* value)
     fill_block(x, y, COL_PANEL, BOX_COLS * CH_W, CH_H);
 
     // Draw Key (Dimmed) at a fixed offset from the inner panel start
-    draw_string_clipped(x + CH_W, y + 2, key ? key : "", COL_TEXT_DIM, 15);
+    draw_string_clipped(x + CH_W, y + 2, key ? key : "", COL_TEXT_DIM, 13);
 
     // Draw Value (Bright) aligned further across
-    size_t val_offset = 16 * CH_W;
-    draw_string_clipped(x + val_offset, y + 2, (value && *value) ? value : "N/A", COL_TEXT_BRIGHT, BOX_COLS - 16);
+    size_t val_offset = 14 * CH_W;
+    draw_string_clipped(x + val_offset, y + 2, (value && *value) ? value : "N/A", COL_TEXT_BRIGHT, BOX_COLS - 14);
 
     // Right border
     fill_block(box_px + BOX_PX_W - HORIZ_PAD, y, COL_BORDER, HORIZ_PAD, CH_H);
@@ -170,7 +170,7 @@ void kernel_panic(const char* message, const char* error_code, const char* rip, 
     panic_kv_row("RSP:", rsp);
     panic_kv_row("Fault Addr:", fault_address);
     panic_kv_row("Process ID:", pid);
-    panic_kv_row("CPU Model:", cpu_name[0] ? cpu_name : "Unknown x86_64 CPU");
+    panic_kv_row("CPU Model:", cpu_name[0] ? cpu_name : "Unknown CPU");
 
     panic_text_row("", COLOR_WHITE);                          
     panic_center_row("System halted safely. Please reboot your computer.", COL_TEXT_DIM);
