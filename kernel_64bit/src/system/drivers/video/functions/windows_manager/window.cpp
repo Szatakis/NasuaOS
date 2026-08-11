@@ -1,19 +1,36 @@
 #include "window.hpp"
 
 #include "system/drivers/video/driver.hpp"
+#include "system/gui/gui.hpp"
 
 #include "system/gui/vars/colors.hpp"
 
 #define MAX_WINDOWS 13
+#define MAX_TASKBAR_WINDOWS 5
+
+static constexpr int WINDOW_TITLEBAR_HEIGHT = 24;
 
 window_struct* active_window = nullptr;
 
 static window_struct* window_list[MAX_WINDOWS];
 static int window_count = 0;
 
+static int find_window_index(window_struct* window)
+{
+    for (int i = 0; i < window_count; i++)
+    {
+        if (window_list[i] == window)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 void register_window(window_struct* window) 
 {
-    if (window_count >= MAX_WINDOWS) return;
+    if (!window || window_count >= MAX_WINDOWS) return;
     for (int i = 0; i < window_count; i++) 
     {
         if (window_list[i] == window) 
@@ -22,6 +39,7 @@ void register_window(window_struct* window)
         }
     }
     window->is_dragging = false; // Init safty flag
+    window->minimized = false;
     window_list[window_count++] = window;
 
     active_window = window;
@@ -30,6 +48,11 @@ void register_window(window_struct* window)
 
 void unregister_window(window_struct* window) 
 {
+    if (!window) 
+    {
+        return;
+    }
+
     for (int i = 0; i < window_count; i++) 
     {
         if (window_list[i] == window) 
@@ -39,16 +62,35 @@ void unregister_window(window_struct* window)
                 window_list[j] = window_list[j + 1];
             }
             window_count--;
+            if (window_count > 0)
+            {
+                active_window = window_list[window_count - 1];
+            }
+            else
+            {
+                active_window = nullptr;
+            }
             return;
         }
     }
+}
+
+void minimize_window(window_struct* window)
+{
+    if (!window || find_window_index(window) < 0) return;
+
+    window->visible = false;
+    window->minimized = true;
+    window->focused = false;
 }
 
 // Helpers
 void bring_window_to_front(int index)
 {
     if(index < 0 || index >= window_count)
+    {
         return;
+    }
 
     window_struct* target = window_list[index];
 
@@ -69,10 +111,78 @@ void bring_window_to_front(int index)
     target->focused = true;
 }
 
+void restore_window(window_struct* window)
+{
+    if (!window)
+    {
+        return;
+    }
+
+    int index = find_window_index(window);
+    if (index < 0) return;
+
+    window->visible = true;
+    window->minimized = false;
+    window->focused = true;
+    bring_window_to_front(index);
+}
+
+void maximize_window(window_struct* window)
+{
+    if (!window || !window->can_maximize || find_window_index(window) < 0)
+    {
+        return;
+    }
+
+    if (window->maximized)
+    {
+        unmaximize_window(window);
+        return;
+    }
+
+    if (!fb)
+    {
+        return;
+    }
+
+    window->restore_pos_x = window->pos_x;
+    window->restore_pos_y = window->pos_y;
+    window->restore_width = window->width;
+    window->restore_height = window->height;
+
+    window->pos_x = 0;
+    window->pos_y = 0;
+    window->width = (int)fb->width;
+    window->height = (int)fb->height - (int)bar_h_scaled;
+    window->maximized = true;
+    window->visible = true;
+    window->minimized = false;
+    window->focused = true;
+}
+
+void unmaximize_window(window_struct* window)
+{
+    if (!window || !window->maximized || !window->can_maximize)
+    {
+        return;
+    }
+
+    window->pos_x = window->restore_pos_x;
+    window->pos_y = window->restore_pos_y;
+    window->width = window->restore_width;
+    window->height = window->restore_height;
+    window->maximized = false;
+    window->visible = true;
+    window->minimized = false;
+    window->focused = true;
+}
+
 void send_key_to_window(char key)
 {
     if(active_window == nullptr)
+    {
         return;
+    }
 
     if(active_window->key_press)
     {
@@ -106,6 +216,19 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
 // Windows clicks
 void handle_window_mouse_click(int mouse_x, int mouse_y) 
 {
+    if (is_menu_start_open)
+    {
+        const int start_menu_left = (int)menu_x;
+        const int start_menu_top = (int)menu_y;
+        const int start_menu_right = (int)(menu_x + menu_w);
+        const int start_menu_bottom = (int)(menu_y + menu_h);
+
+        if (mouse_x < start_menu_left || mouse_x >= start_menu_right || mouse_y < start_menu_top || mouse_y >= start_menu_bottom)
+        {
+            close_start_menu();
+        }
+    }
+
     for (int i = window_count - 1; i >= 0; i--) 
     {
         if (window_list[i]->visible && window_list[i]->is_dragging) 
@@ -113,6 +236,27 @@ void handle_window_mouse_click(int mouse_x, int mouse_y)
             window_list[i]->is_dragging = false;
             return;
         }
+    }
+
+    window_struct* taskbar = get_taskbar_window_at(mouse_x, mouse_y);
+    if (taskbar != nullptr)
+    {
+        if (taskbar->minimized)
+        {
+            restore_window(taskbar);
+        }
+        else if (taskbar->visible)
+        {
+            if (active_window == taskbar)
+            {
+                minimize_window(taskbar);
+            }
+            else
+            {
+                bring_window_to_front(find_window_index(taskbar));
+            }
+        }
+        return;
     }
 
     for (int i = window_count - 1; i >= 0; i--) 
@@ -128,16 +272,29 @@ void handle_window_mouse_click(int mouse_x, int mouse_y)
         if (btn == BUTTON_CLOSE) 
         {
             win->visible = false;
+            win->minimized = false;
             unregister_window(win);
             return;
         }
         else if (btn == BUTTON_MINIMIZE) 
         {
-            win->visible = false;
+            minimize_window(win);
             return;
         }
         else if (btn == BUTTON_MAXIMIZE) 
         {
+            if (win->can_maximize)
+            {
+                bring_window_to_front(i);
+                if (win->maximized)
+                {
+                    unmaximize_window(win);
+                }
+                else
+                {
+                    maximize_window(win);
+                }
+            }
             return;
         }
         
@@ -158,11 +315,7 @@ void handle_window_mouse_click(int mouse_x, int mouse_y)
 
             if(win->mouse_click)
             {
-                win->mouse_click(
-                    win,
-                    mouse_x,
-                    mouse_y
-                );
+                win->mouse_click(win, mouse_x, mouse_y);
             }
 
             return;
@@ -181,14 +334,143 @@ void draw_windows()
     }
 }
 
+void draw_taskbar_entries()
+{
+    if (!fb || window_count <= 0)
+    {
+        return;
+    }
+
+    const size_t taskbar_y = fb->height - bar_h_scaled;
+    const size_t button_h = bar_h_scaled - 4;
+    const size_t button_w = 100;
+    size_t x = 110;
+
+    int draw_count = window_count;
+    if (draw_count > MAX_TASKBAR_WINDOWS)
+    {
+        draw_count = MAX_TASKBAR_WINDOWS;
+    }
+
+    for (int i = 0; i < draw_count; i++)
+    {
+        window_struct* win = window_list[i];
+        if (!win || !win->name){
+            continue;
+        }
+
+        if (!win->visible && !win->minimized)
+        {
+            continue;
+        }
+
+        if (x + button_w > fb->width - 170)
+        {
+            break;
+        }
+
+        uint32_t bg = win->visible ? COLOR_TITLEBAR : COLOR_HARD_SHADOW;
+
+        if (active_window == win)
+        {
+            bg = COLOR_NASUA_TASKBAR;
+        }
+
+        fill_block(x, taskbar_y + 2, bg, button_w, button_h);
+        draw_rect(x, taskbar_y + 2, x + button_w, taskbar_y + 2 + button_h, COLOR_SHADOW);
+
+        uint32_t fg = win->visible ? COLOR_WHITE : COLOR_NASUA_START_MENU_P;
+
+        const char* name = win->name;
+        size_t name_len = 0;
+        while (name[name_len] != '\0')
+        {
+            name_len++;
+        }
+
+        const int text_w = (int)(name_len * 8);
+        const int text_x = (int)x + ((int)button_w - text_w) / 2;
+        const int text_y = (int)(taskbar_y + 2) + ((int)button_h - 8) / 2;
+        print_at8(name, text_x, text_y, fg);
+
+        x += button_w + 4;
+    }
+}
+
+bool is_mouse_over_taskbar(int mouse_x, int mouse_y)
+{
+    (void)mouse_x;
+
+    if (!fb || !window_count)
+    {
+        return false;
+    }
+
+    size_t taskbar_y = fb->height - bar_h_scaled;
+    size_t taskbar_h = bar_h_scaled;
+
+    if (mouse_y < (int)taskbar_y || mouse_y >= (int)fb->height)
+    {
+        return false;
+    }
+
+    return mouse_y >= (int)taskbar_y && mouse_y < (int)(taskbar_y + taskbar_h);
+}
+
+window_struct* get_taskbar_window_at(int mouse_x, int mouse_y)
+{
+    if (!fb || !is_mouse_over_taskbar(mouse_x, mouse_y))
+    {
+        return nullptr;
+    }
+
+    const size_t taskbar_y = fb->height - bar_h_scaled;
+    const size_t button_h = bar_h_scaled - 4;
+    const size_t button_w = 100;
+    size_t x = 110;
+
+    int taskbar_slots = window_count;
+    if (taskbar_slots > MAX_TASKBAR_WINDOWS)
+    {
+        taskbar_slots = MAX_TASKBAR_WINDOWS;
+    }
+
+    for (int i = 0; i < taskbar_slots; i++)
+    {
+        window_struct* win = window_list[i];
+        if (!win || !win->name || (!win->visible && !win->minimized))
+        {
+            continue;
+        }
+
+        if (mouse_x >= (int)x && mouse_x < (int)(x + button_w) && mouse_y >= (int)(taskbar_y + 2) && mouse_y < (int)(taskbar_y + 2 + button_h))
+        {
+            return win;
+        }
+        x += button_w + 4;
+    }
+
+    return nullptr;
+}
+
 void draw_window(window_struct* window) 
 {
-    if (!window || !window->visible || !fb) return;
-    if (window->pos_x >= (int)fb->width || window->pos_y >= (int)fb->height) return;
-    if (window->pos_x + window->width <= 0 || window->pos_y + window->height <= 0) return;
+    if (!window || !window->visible || !fb)
+    {
+        return;
+    }
 
-    int title_height = window->height / 10;
-    if (title_height < 18) title_height = 18; 
+    if (window->pos_x >= (int)fb->width || window->pos_y >= (int)fb->height)
+    {
+        return;
+    }
+
+    if (window->pos_x + window->width <= 0 || window->pos_y + window->height <= 0)
+    {
+        return;
+    }
+
+    int title_height = WINDOW_TITLEBAR_HEIGHT;
 
     if (window->pos_x >= 0 && window->pos_y >= 0) 
     {
@@ -200,14 +482,22 @@ void draw_window(window_struct* window)
         int draw_y = window->pos_y < 0 ? 0 : window->pos_y;
         int draw_w = window->pos_x < 0 ? window->width + window->pos_x : window->width;
         int draw_h = window->pos_y < 0 ? window->height + window->pos_y : window->height;
-        if (draw_w > 0 && draw_h > 0) fill_block(draw_x, draw_y, COLOR_WINDOW, draw_w, draw_h);
+
+        if (draw_w > 0 && draw_h > 0)
+        {
+            fill_block(draw_x, draw_y, COLOR_WINDOW, draw_w, draw_h);
+        }
     }
 
     int title_draw_x = window->pos_x < 0 ? 0 : window->pos_x;
     int title_draw_y = window->pos_y < 0 ? 0 : window->pos_y;
     int title_draw_w = window->pos_x < 0 ? window->width + window->pos_x : window->width;
     int title_draw_h = window->pos_y < 0 ? title_height + window->pos_y : title_height;
-    if (title_draw_w > 0 && title_draw_h > 0) fill_block(title_draw_x, title_draw_y, COLOR_TITLEBAR, title_draw_w, title_draw_h);
+
+    if (title_draw_w > 0 && title_draw_h > 0) 
+    {
+        fill_block(title_draw_x, title_draw_y, COLOR_TITLEBAR, title_draw_w, title_draw_h);
+    }
 
     if (window->pos_x + 10 < (int)fb->width && window->pos_y + (title_height - 8) / 2 < (int)fb->height) 
     {
@@ -243,18 +533,24 @@ bool is_mouse_over_window(window_struct* window, int mouse_x, int mouse_y)
 
 bool is_mouse_over_window_title(window_struct* window, int mouse_x, int mouse_y) 
 {
-    if (!window || !window->visible) return false;
-    int title_height = window->height / 10;
-    if (title_height < 18) title_height = 18;
-    return (mouse_x >= window->pos_x && mouse_x < window->pos_x + window->width &&
-            mouse_y >= window->pos_y && mouse_y < window->pos_y + title_height);
+    if (!window || !window->visible)
+    {
+        return false;
+    }
+
+    int title_height = WINDOW_TITLEBAR_HEIGHT;
+
+    return (mouse_x >= window->pos_x && mouse_x < window->pos_x + window->width && mouse_y >= window->pos_y && mouse_y < window->pos_y + title_height);
 }
 
 window_button get_window_button(window_struct* window, int mouse_x, int mouse_y) 
 {
-    if (!window || !window->visible) return BUTTON_NONE;
-    int title_height = window->height / 10;
-    if (title_height < 18) title_height = 18;
+    if (!window || !window->visible)
+    {
+        return BUTTON_NONE;
+    }
+
+    int title_height = WINDOW_TITLEBAR_HEIGHT;
 
     if (mouse_y >= window->pos_y && mouse_y < window->pos_y + title_height) 
     {
@@ -265,7 +561,7 @@ window_button get_window_button(window_struct* window, int mouse_x, int mouse_y)
         {
             return BUTTON_MINIMIZE;
         }
-        if (rel_x >= 14 && rel_x < 36) 
+        if (window->can_maximize && rel_x >= 14 && rel_x < 36) 
         {
             return BUTTON_MAXIMIZE;
         }

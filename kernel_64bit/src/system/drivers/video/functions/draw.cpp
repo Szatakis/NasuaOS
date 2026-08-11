@@ -213,6 +213,7 @@ void update_bottom_bar()
         draw_icon<32, 32>(notification_icon_h, start_x - 145, start_y + ((bar_h_scaled - 32) / 2));
     }
 
+    draw_taskbar_entries();
     update_start();
     update_time();
 }

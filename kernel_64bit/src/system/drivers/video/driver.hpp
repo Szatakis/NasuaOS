@@ -81,7 +81,15 @@ typedef struct window_struct {
     int height;
 
     bool visible;
+    bool minimized;
     bool focused;
+    bool can_maximize;
+    bool maximized;
+
+    int restore_pos_x;
+    int restore_pos_y;
+    int restore_width;
+    int restore_height;
 
     bool is_dragging;    // If window is draged
     int drag_offset_x;   // Distance X from left side of the window
@@ -115,7 +123,14 @@ void handle_window_mouse_click(int mouse_x, int mouse_y);
 
 void register_window(window_struct* window);
 void unregister_window(window_struct* window);
+void minimize_window(window_struct* window);
+void restore_window(window_struct* window);
+void maximize_window(window_struct* window);
+void unmaximize_window(window_struct* window);
 void draw_windows();
+void draw_taskbar_entries();
 void update_windows_positions(int current_mouse_x, int current_mouse_y);
 
 bool is_mouse_over_any_window(int mouse_x, int mouse_y);
+bool is_mouse_over_taskbar(int mouse_x, int mouse_y);
+window_struct* get_taskbar_window_at(int mouse_x, int mouse_y);

@@ -253,7 +253,14 @@ window_struct calculator = {
     .height=320,
 
     .visible=false,
+    .minimized=false,
     .focused=false,
+    .can_maximize=false,
+    .maximized=false,
+    .restore_pos_x=0,
+    .restore_pos_y=0,
+    .restore_width=0,
+    .restore_height=0,
 
     .is_dragging=false,
     .drag_offset_x=0,
