@@ -4,6 +4,8 @@
 #include "system/gui/gui.hpp"
 
 #include "system/gui/vars/colors.hpp"
+#include "system/gui/icons/icons.hpp"
+#include "libs/libc/libc.h"
 
 #define MAX_WINDOWS 13
 #define MAX_TASKBAR_WINDOWS 5
@@ -82,6 +84,11 @@ void minimize_window(window_struct* window)
     window->visible = false;
     window->minimized = true;
     window->focused = false;
+
+    if (active_window == window)
+    {
+        active_window = nullptr;
+    }
 }
 
 // Helpers
@@ -334,6 +341,57 @@ void draw_windows()
     }
 }
 
+static void draw_app_icon_16(const char* name, int x, int y)
+{
+    if (!name || !fb) return;
+
+    const uint32_t* icon_data = nullptr;
+    if (strcmp(name, "Terminal") == 0)
+    {
+        icon_data = terminal_icon;
+    }
+    else if (strcmp(name, "Settings") == 0)
+    {
+        icon_data = settings_icon;
+    }
+    else if (strcmp(name, "SuaEdit") == 0)
+    {
+        icon_data = suaedit_icon;
+    }
+    else if (strcmp(name, "Calculator") == 0)
+    {
+        icon_data = calculator_icon;
+    }
+
+    if (!icon_data)
+    {
+        return;
+    }
+
+    uint32_t* bb_ptr = get_backbuffer();
+    if (!bb_ptr) return;
+    size_t pitch = get_backbuffer_pitch();
+
+    for (size_t iy = 0; iy < 16; iy++)
+    {
+        for (size_t ix = 0; ix < 16; ix++)
+        {
+            size_t px = x + ix;
+            size_t py = y + iy;
+
+            if (px >= fb->width || py >= fb->height)
+                continue;
+
+            uint32_t color = icon_data[(iy * 2) * 32 + (ix * 2)];
+
+            if (color == 0x000000)
+                continue;
+
+            bb_ptr[py * pitch + px] = color;
+        }
+    }
+}
+
 void draw_taskbar_entries()
 {
     if (!fb || window_count <= 0)
@@ -342,9 +400,11 @@ void draw_taskbar_entries()
     }
 
     const size_t taskbar_y = fb->height - bar_h_scaled;
-    const size_t button_h = bar_h_scaled - 4;
-    const size_t button_w = 100;
-    size_t x = 110;
+    const size_t button_h = bar_h_scaled - 8; // Slightly shorter button height
+    const int button_y = (int)taskbar_y + ((int)bar_h_scaled - (int)button_h) / 2;
+    const size_t button_w = 120;
+    const size_t button_spacing = 6;
+    size_t x = 124;
 
     int draw_count = window_count;
     if (draw_count > MAX_TASKBAR_WINDOWS)
@@ -355,7 +415,7 @@ void draw_taskbar_entries()
     for (int i = 0; i < draw_count; i++)
     {
         window_struct* win = window_list[i];
-        if (!win || !win->name){
+        if (!win || !win->name) {
             continue;
         }
 
@@ -369,31 +429,50 @@ void draw_taskbar_entries()
             break;
         }
 
-        uint32_t bg = win->visible ? COLOR_TITLEBAR : COLOR_HARD_SHADOW;
+        uint32_t bg;
+        uint32_t border;
+        uint32_t fg;
 
-        if (active_window == win)
+        bool is_minimized = win->minimized || !win->visible;
+        bool is_active = (active_window == win) && !is_minimized;
+
+        if (is_minimized)
         {
-            bg = COLOR_NASUA_TASKBAR;
+            bg = 0x000000; // Pitch black background when minimized
+            border = 0x111620;
+            fg = 0x4A5568; // Muted dark text
+        }
+        else if (is_active)
+        {
+            bg = 0x1E2838; // Active window background
+            border = 0x4A5568;
+            fg = COLOR_WHITE;
+        }
+        else
+        {
+            bg = 0x0F141D; // Normal visible window background
+            border = 0x222A38;
+            fg = 0xCBD5E0;
         }
 
-        fill_block(x, taskbar_y + 2, bg, button_w, button_h);
-        draw_rect(x, taskbar_y + 2, x + button_w, taskbar_y + 2 + button_h, COLOR_SHADOW);
+        fill_block(x, button_y, bg, button_w, button_h);
+        draw_rect(x, button_y, x + button_w, button_y + button_h, border);
 
-        uint32_t fg = win->visible ? COLOR_WHITE : COLOR_NASUA_START_MENU_P;
-
-        const char* name = win->name;
-        size_t name_len = 0;
-        while (name[name_len] != '\0')
+        if (is_active)
         {
-            name_len++;
+            // Bottom indicator line in gray
+            fill_block(x + 2, button_y + button_h - 2, 0x808C9C, button_w - 4, 2);
         }
 
-        const int text_w = (int)(name_len * 8);
-        const int text_x = (int)x + ((int)button_w - text_w) / 2;
-        const int text_y = (int)(taskbar_y + 2) + ((int)button_h - 8) / 2;
-        print_at8(name, text_x, text_y, fg);
+        int icon_x = (int)x + 8;
+        int icon_y = button_y + ((int)button_h - 16) / 2;
+        draw_app_icon_16(win->name, icon_x, icon_y);
 
-        x += button_w + 4;
+        int text_x = (int)x + 28;
+        int text_y = button_y + ((int)button_h - 8) / 2;
+        print_at8(win->name, text_x, text_y, fg);
+
+        x += button_w + button_spacing;
     }
 }
 
@@ -425,9 +504,11 @@ window_struct* get_taskbar_window_at(int mouse_x, int mouse_y)
     }
 
     const size_t taskbar_y = fb->height - bar_h_scaled;
-    const size_t button_h = bar_h_scaled - 4;
-    const size_t button_w = 100;
-    size_t x = 110;
+    const size_t button_h = bar_h_scaled - 8;
+    const int button_y = (int)taskbar_y + ((int)bar_h_scaled - (int)button_h) / 2;
+    const size_t button_w = 120;
+    const size_t button_spacing = 6;
+    size_t x = 124;
 
     int taskbar_slots = window_count;
     if (taskbar_slots > MAX_TASKBAR_WINDOWS)
@@ -443,11 +524,11 @@ window_struct* get_taskbar_window_at(int mouse_x, int mouse_y)
             continue;
         }
 
-        if (mouse_x >= (int)x && mouse_x < (int)(x + button_w) && mouse_y >= (int)(taskbar_y + 2) && mouse_y < (int)(taskbar_y + 2 + button_h))
+        if (mouse_x >= (int)x && mouse_x < (int)(x + button_w) && mouse_y >= button_y && mouse_y < (button_y + (int)button_h))
         {
             return win;
         }
-        x += button_w + 4;
+        x += button_w + button_spacing;
     }
 
     return nullptr;
