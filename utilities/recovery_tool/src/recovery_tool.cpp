@@ -179,7 +179,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     cursor_x = 0;
     cursor_y = 10;
 
-    print("System Information", COLOR_WHITE);
+    print("Recovery Tool", COLOR_WHITE);
 
     for (;;)
     {

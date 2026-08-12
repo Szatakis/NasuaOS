@@ -377,8 +377,7 @@ kernel_32bit:
 utilities:
 	$(MAKE) -C utilities/hdt ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/hd_test ARCH=$(SUB_ARCH)
-	$(MAKE) -C utilities/sys_info ARCH=$(SUB_ARCH)
-	$(MAKE) -C utilities/disk_tools ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/recovery_tool ARCH=$(SUB_ARCH)
 
 .PHONY: fs_sys
 fs_sys:
@@ -402,8 +401,7 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
 	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
 	cp -v utilities/hd_test/bin-$(SUB_ARCH)/hdtest iso_root/boot/utils
-	cp -v utilities/sys_info/bin-$(SUB_ARCH)/sys_info iso_root/boot/utils
-	cp -v utilities/disk_tools/bin-$(SUB_ARCH)/disk_tools iso_root/boot/utils
+	cp -v utilities/recovery_tool/bin-$(SUB_ARCH)/recovery_tool iso_root/boot/utils
 	cp -v utilities/rootfs/rootfs.img iso_root/system
 	cp -v .config/limine.conf iso_root/boot/limine/
 	cp -v documentation/images/background.png iso_root/system/assets/images/
@@ -474,8 +472,7 @@ endif
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hd_test/bin-$(SUB_ARCH)/hdtest ::/boot/utils
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/sys_info/bin-$(SUB_ARCH)/sys_info ::/boot/utils
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/disk_tools/bin-$(SUB_ARCH)/disk_tools ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/recovery_tool/bin-$(SUB_ARCH)/recovery_tool ::/boot/utils
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/rootfs/rootfs.img ::/system
 	mcopy -i $(IMAGE_NAME).hdd@@1M documentation/images/background.png ::/system/assets/images

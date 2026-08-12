@@ -7,14 +7,12 @@ SUB_ARCH ?= x86_32
 clean:
 	$(MAKE) -C hdt clean
 	$(MAKE) -C hd_test clean
-	$(MAKE) -C sys_info clean
-	$(MAKE) -C disk_tools clean
+	$(MAKE) -C recovery_tool clean
 	$(MAKE) -C rootfs clean
 
 .PHONY: distclean
 distclean:
 	$(MAKE) -C hdt distclean
 	$(MAKE) -C hd_test distclean
-	$(MAKE) -C sys_info distclean
-	$(MAKE) -C disk_tools distclean
+	$(MAKE) -C recovery_tool distclean
 	$(MAKE) -C rootfs distclean

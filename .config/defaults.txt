@@ -13,6 +13,7 @@ Animations=true
 Timeout=5
 DefaultEntry=NasuaOS 64-bit
 Verbose=true
+HelpHidden=true
 
 [Keyboard]
 Layout=us

@@ -4,8 +4,8 @@
 /hd_test/obj-*
 /hd_test/bin-*
 
-/disk_tools/obj-*
-/disk_tools/bin-*
+/recovery_tool/obj-*
+/recovery_tool/bin-*
 
 /sys_info/obj-*
 /sys_info/bin-*

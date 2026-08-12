@@ -9,7 +9,7 @@ LD := g++
 OBJ_DIR := obj-$(ARCH)
 BIN_DIR := bin-$(ARCH)
 
-TARGET := $(BIN_DIR)/sys_info
+TARGET := $(BIN_DIR)/recovery_tool
 
 
 CFLAGS := \

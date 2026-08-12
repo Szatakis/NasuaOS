@@ -97,6 +97,15 @@ def main():
         "/system/assets/images/background.png"
     )
 
+    help_hidden = bool_to_limine(
+        get(
+            config,
+            "Boot",
+            "HelpHidden",
+            "true"
+        )
+    )
+
     template = TEMPLATE.read_text(
         encoding="utf-8"
     )
@@ -107,6 +116,7 @@ def main():
         "{VERBOSE}": verbose,
         "{RESOLUTION}": resolution,
         "{WALLPAPER}": wallpaper,
+        "{HELP_HIDDEN}": help_hidden,
     }
 
     for key, value in replacements.items():

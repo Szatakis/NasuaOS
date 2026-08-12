@@ -2,7 +2,7 @@ timeout: {TIMEOUT}
 default_entry: {DEFAULT_ENTRY}
 interface_branding: NasuaOS
 
-interface_help_hidden: yes
+interface_help_hidden: {HELP_HIDDEN}
 
 # Debug
 
@@ -19,7 +19,6 @@ wallpaper_style: stretched
     module_path: boot():/system/rootfs.img
     module_path: boot():/boot/boot_config.txt
     module_path: boot():/config/defaults.txt
-    module_path: boot():/system/assets/images/background_dark.png
     resolution: {RESOLUTION}
     comment: Basic console-only environment
 
@@ -29,46 +28,43 @@ wallpaper_style: stretched
     module_path: boot():/system/rootfs.img
     module_path: boot():/boot/boot_config.txt
     module_path: boot():/config/defaults.txt
-    module_path: boot():/system/assets/images/background_dark.png
     resolution: {RESOLUTION}
     comment: Full operating system with graphical interface (recommended)
 
 /Advanced Options
-    //Safe mode 32-bit
-        protocol: multiboot2
-        path: boot():/boot/kernel_32bit
-        module_path: boot():/system/rootfs.img
-        module_path: boot():/boot/boot_config.txt
-        module_path: boot():/boot/boot_config_sf.txt
-        module_path: boot():/system/assets/images/background_dark.png
-        comment: Boot into a 32bit safe mode environment for troubleshooting
-
-    //Safe mode 64-bit
-        protocol: limine
-        path: boot():/boot/kernel_64bit
-        module_path: boot():/system/rootfs.img
-        module_path: boot():/boot/boot_config.txt
-        module_path: boot():/boot/boot_config_sf.txt
-        module_path: boot():/system/assets/images/background_dark.png
-        comment: Boot into a 64bit safe mode environment for troubleshooting
-
-    // Utilities
-        ///Hardware Test
+    //Boot Options
+        ///Safe Mode 32-bit
             protocol: multiboot2
-            path: boot():/boot/utils/hdtest
-            comment: Run RAM test utility
+            path: boot():/boot/kernel_32bit
+            module_path: boot():/system/rootfs.img
+            module_path: boot():/boot/boot_config.txt
+            module_path: boot():/boot/boot_config_sf.txt
+            module_path: boot():/config/defaults.txt
+            comment: Boot into a 32bit safe mode environment for troubleshooting
 
-        ///Hardware Detecion Tool
+        ///Safe Mode 64-bit
+            protocol: limine
+            path: boot():/boot/kernel_64bit
+            module_path: boot():/system/rootfs.img
+            module_path: boot():/boot/boot_config.txt
+            module_path: boot():/boot/boot_config_sf.txt
+            module_path: boot():/config/defaults.txt
+            comment: Boot into a 64bit safe mode environment for troubleshooting
+
+    //Utilities
+        ///Recovery Tool
+            protocol: multiboot2
+            path: boot():/boot/utils/recovery_tool
+            module_path: boot():/boot/boot_config.txt
+            module_path: boot():/boot/boot_config_rc.txt
+            comment: Boot into a recovery environment for troubleshooting
+
+        ///Hardware Detection Tool
             protocol: multiboot2
             path: boot():/boot/utils/hdt
             comment: Launch Hardware Detection Tool (HDT) to view system information
 
-        ///Disk Tools
+        ///Hardware Test
             protocol: multiboot2
-            path: boot():/boot/utils/disk_tools
-            comment: Disk Tools
-        
-        ///System Information
-            protocol: multiboot2
-            path: boot():/boot/utils/sys_info
-            comment: Information abaout system
+            path: boot():/boot/utils/hdtest
+            comment: Run hardware diagnostic tests
