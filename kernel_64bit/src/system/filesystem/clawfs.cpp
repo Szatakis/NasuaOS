@@ -1,6 +1,6 @@
 #include "clawfs.hpp"
 
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 #include "system/drivers/disk/driver.hpp"
 #include "system/drivers/memory/driver.hpp"
 

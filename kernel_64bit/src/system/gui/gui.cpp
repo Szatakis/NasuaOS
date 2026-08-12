@@ -1,7 +1,7 @@
 #include "gui.hpp"
 
 #include "./icons/icons.hpp"
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 #include "system/drivers/memory/driver.hpp"
 #include "system/drivers/keyboard/driver.hpp"
 #include "system/drivers/mouse/driver.hpp"

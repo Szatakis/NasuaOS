@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 #include "../vars/colors.hpp"
 
 // Taskbar Icons

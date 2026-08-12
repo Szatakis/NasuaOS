@@ -2,7 +2,7 @@
 
 #include "system/interrupts/functions/pic.hpp"
 #include "system/drivers/uart/driver.hpp"
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 
 #include "kernel/include/logger/logger.hpp"
 

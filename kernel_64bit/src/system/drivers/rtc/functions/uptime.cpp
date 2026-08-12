@@ -1,6 +1,6 @@
 #include "../driver.hpp"
 
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 #include "system/drivers/timer/driver.hpp"
 
 #include "libs/libc/libc.h"

@@ -1,6 +1,6 @@
 #include "kernel_panic.hpp"
 
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 #include "system/drivers/memory/driver.hpp"
 #include "system/drivers/cpu/driver.hpp"
 #include "system/drivers/timer/driver.hpp"

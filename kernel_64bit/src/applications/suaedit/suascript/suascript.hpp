@@ -15,7 +15,7 @@
 #include "system/drivers/memory/driver.hpp"
 #include "system/drivers/rtc/driver.hpp"
 #include "system/drivers/uart/driver.hpp"
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 
 
 void compile_code(char* code);

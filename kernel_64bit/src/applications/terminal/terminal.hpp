@@ -1,6 +1,6 @@
 #pragma once
 
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 
 #include "system/gui/vars/colors.hpp"
 

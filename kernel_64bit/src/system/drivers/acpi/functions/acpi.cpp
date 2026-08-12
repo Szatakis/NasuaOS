@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <limine.h>
 
-#include "system/drivers/video/driver.hpp"
+#include "system/drivers/gpu/driver.hpp"
 
 #include "applications/shell/commands.hpp"
 

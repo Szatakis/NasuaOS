@@ -17,7 +17,7 @@
 #include "timer/driver.hpp"
 #include "uart/driver.hpp"
 #include "usb/driver.hpp"
-#include "video/driver.hpp"
+#include "gpu/driver.hpp"
 #include "wifi/driver.hpp"
 
 #endif // DRIVERS_H
