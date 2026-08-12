@@ -9,10 +9,8 @@ static uint64_t used_pages = 0;
 static uint64_t free_pages = 0;
 static uint64_t bitmap_size = 0;
 
-// -------------------------------------------------
-// BITMAP
-// -------------------------------------------------
 
+// BITMAP
 static inline void set_bit(uint64_t bit)
 {
     bitmap[bit / 8] |= (1 << (bit % 8));
@@ -28,22 +26,15 @@ static inline bool test_bit(uint64_t bit)
     return bitmap[bit / 8] & (1 << (bit % 8));
 }
 
-// -------------------------------------------------
-// ALIGN
-// -------------------------------------------------
 
+// ALIGN
 static uint64_t align_up(uint64_t value, uint64_t align)
 {
-    return
-        (value + align - 1)
-        &
-        ~(align - 1);
+    return (value + align - 1) & ~(align - 1);
 }
 
-// -------------------------------------------------
-// FIND HIGHEST MEMORY
-// -------------------------------------------------
 
+// FIND HIGHEST MEMORY
 static uint64_t get_highest_address()
 {
     uint64_t highest = 0;
@@ -63,10 +54,8 @@ static uint64_t get_highest_address()
     return highest;
 }
 
-// -------------------------------------------------
-// PMM INIT
-// -------------------------------------------------
 
+// PMM INIT
 void pmm_init()
 {
     (void)get_highest_address();
@@ -156,8 +145,8 @@ void pmm_init()
     }
 
     /*
-        Zablokuj pierwsze 1MB
-        (BIOS, VGA, mapy itd.)
+        Lock first 1BN for
+        (BIOS, VGA, mapy etc.)
     */
 
     for(uint64_t addr = 0; addr < 0x100000; addr += PAGE_SIZE)
@@ -187,10 +176,8 @@ void pmm_init()
     log(INFO,"PMM","Ready");
 }
 
-// -------------------------------------------------
-// ALLOC PAGE
-// -------------------------------------------------
 
+// ALLOC PAGE
 uint64_t pmm_alloc_page()
 {
     for(uint64_t i = 0; i < total_pages; i++)
@@ -210,10 +197,8 @@ uint64_t pmm_alloc_page()
     return 0;
 }
 
-// -------------------------------------------------
-// FREE PAGE
-// -------------------------------------------------
 
+// FREE PAGE
 void pmm_free_page(uint64_t addr)
 {
     if(addr == 0)
