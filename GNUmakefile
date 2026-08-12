@@ -399,16 +399,20 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 
 	cp -v kernel_64bit/bin-$(ARCH)/kernel_64bit iso_root/boot/
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
+
 	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
 	cp -v utilities/hd_test/bin-$(SUB_ARCH)/hdtest iso_root/boot/utils
 	cp -v utilities/recovery_tool/bin-$(SUB_ARCH)/recovery_tool iso_root/boot/utils
+
 	cp -v utilities/rootfs/rootfs.img iso_root/system
 	cp -v .config/limine.conf iso_root/boot/limine/
+
 	cp -v documentation/images/background.png iso_root/system/assets/images/
 	cp -v documentation/images/background_dark.png iso_root/system/assets/images/
-	cp -v .config/boot_config.txt iso_root/boot
-	cp -v .config/boot_config_sf.txt iso_root/boot
-	cp -v .config/boot_config_rc.txt iso_root/boot
+
+	cp -v .config/boot_config.txt iso_root/config
+	cp -v .config/boot_config_sf.txt iso_root/config
+	cp -v .config/boot_config_rc.txt iso_root/config
 	cp -v .config/defaults.txt iso_root/config
 ifeq ($(ARCH),x86_64)
 	cp -v limine-binary/limine-bios.sys limine-binary/limine-bios-cd.bin limine-binary/limine-uefi-cd.bin iso_root/boot/limine/
@@ -465,9 +469,9 @@ endif
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_64bit/bin-$(ARCH)/kernel_64bit ::/boot
 	mcopy -i $(IMAGE_NAME).hdd@@1M kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit ::/boot
 
-	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config.txt ::/boot
-	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_sf.txt ::/boot
-	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_rc.txt ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config.txt ::/config
+	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_sf.txt ::/config
+	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_rc.txt ::/config
 	mcopy -i $(IMAGE_NAME).hdd@@1M .config/defaults.txt ::/config
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils

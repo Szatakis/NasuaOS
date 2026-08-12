@@ -17,7 +17,7 @@ wallpaper_style: stretched
     protocol: multiboot2
     path: boot():/boot/kernel_32bit
     module_path: boot():/system/rootfs.img
-    module_path: boot():/boot/boot_config.txt
+    module_path: boot():/config/boot_config.txt
     module_path: boot():/config/defaults.txt
     resolution: {RESOLUTION}
     comment: Basic console-only environment
@@ -26,7 +26,7 @@ wallpaper_style: stretched
     protocol: limine
     path: boot():/boot/kernel_64bit
     module_path: boot():/system/rootfs.img
-    module_path: boot():/boot/boot_config.txt
+    module_path: boot():/config/boot_config.txt
     module_path: boot():/config/defaults.txt
     resolution: {RESOLUTION}
     comment: Full operating system with graphical interface (recommended)
@@ -37,26 +37,26 @@ wallpaper_style: stretched
             protocol: multiboot2
             path: boot():/boot/kernel_32bit
             module_path: boot():/system/rootfs.img
-            module_path: boot():/boot/boot_config.txt
-            module_path: boot():/boot/boot_config_sf.txt
+            module_path: boot():/config/boot_config.txt
+            module_path: boot():/config/boot_config_sf.txt
             module_path: boot():/config/defaults.txt
-            comment: Boot into a 32bit safe mode environment for troubleshooting
+            comment: Boot into a 32-bit safe mode environment for troubleshooting
 
         ///Safe Mode 64-bit
             protocol: limine
             path: boot():/boot/kernel_64bit
             module_path: boot():/system/rootfs.img
-            module_path: boot():/boot/boot_config.txt
-            module_path: boot():/boot/boot_config_sf.txt
+            module_path: boot():/config/boot_config.txt
+            module_path: boot():/config/boot_config_sf.txt
             module_path: boot():/config/defaults.txt
-            comment: Boot into a 64bit safe mode environment for troubleshooting
+            comment: Boot into a 64-bit safe mode environment for troubleshooting
 
     //Utilities
         ///Recovery Tool
             protocol: multiboot2
             path: boot():/boot/utils/recovery_tool
-            module_path: boot():/boot/boot_config.txt
-            module_path: boot():/boot/boot_config_rc.txt
+            module_path: boot():/config/boot_config.txt
+            module_path: boot():/config/boot_config_rc.txt
             comment: Boot into a recovery environment for troubleshooting
 
         ///Hardware Detection Tool
