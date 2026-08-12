@@ -86,7 +86,6 @@ void iqu_init()
     Uart::init();
 
     init_cpu_cores();
-    storage_init();
     memory_init();
     paging_init();
     pmm_init();
@@ -97,6 +96,8 @@ void iqu_init()
     pit_init();
 
     asm volatile("sti");
+
+    storage_init();
 
     pci_init();
     usb_init();

@@ -3,5 +3,6 @@
 
 #include "./ahci/driver.hpp"
 #include "./ata/driver.hpp"
+#include "./ram_disk/driver.hpp"
 
 #endif

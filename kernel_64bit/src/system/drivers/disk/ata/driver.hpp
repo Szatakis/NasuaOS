@@ -9,11 +9,21 @@
 void disk_read_sector(uint32_t lba, uint8_t* buffer);
 void disk_write_sector(uint32_t lba, uint8_t* buffer);
 
-// Inits disk uses system
+bool ata_identify(uint32_t* sectors);
+
 void storage_init();
 
-// Returns disk size in bajts
-uint64_t storage_total();
+bool storage_is_ram();
 
-// Returns used disk space in bajts
+bool storage_read_sector(
+    uint32_t lba,
+    uint8_t* buffer
+);
+
+bool storage_write_sector(
+    uint32_t lba,
+    uint8_t* buffer
+);
+
+uint64_t storage_total();
 uint64_t storage_used();

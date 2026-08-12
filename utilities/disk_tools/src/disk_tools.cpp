@@ -145,12 +145,7 @@ static bool find_framebuffer(uint32_t mb_info)
         {
             mb2_tag_framebuffer* fb = (mb2_tag_framebuffer*)tag;
 
-            if (fb->framebuffer_type != 1)
-            {
-                return false;
-            }
-
-            if (fb->framebuffer_bpp != 32)
+            if (fb->framebuffer_type != 1 || fb->framebuffer_bpp != 32)
             {
                 return false;
             }
@@ -174,12 +169,7 @@ static bool find_framebuffer(uint32_t mb_info)
 // KMAIN
 extern "C" void kmain(uint32_t magic, uint32_t mb_info)
 {
-    if (magic != MULTIBOOT2_MAGIC)
-    {
-        return;
-    }
-
-    if (!find_framebuffer(mb_info))
+    if (magic != MULTIBOOT2_MAGIC || !find_framebuffer(mb_info))
     {
         return;
     }
