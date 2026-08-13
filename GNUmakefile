@@ -365,12 +365,15 @@ limine-binary/limine:
 kernel_64bit/.deps-obtained:
 	./kernel_64bit/get-deps
 
+kernel_32bit/.deps-obtained:
+	./kernel_32bit/get-deps
+
 .PHONY: kernel_64bit
 kernel_64bit: kernel_64bit/.deps-obtained
 	$(MAKE) -C kernel_64bit ARCH=$(ARCH)
 
 .PHONY: kernel_32bit
-kernel_32bit:
+kernel_32bit: kernel_32bit/.deps-obtained
 	$(MAKE) -C kernel_32bit ARCH=$(SUB_ARCH)
 
 .PHONY: utilities

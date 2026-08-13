@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+srcdir="$(dirname "$0")"
+test -z "$srcdir" && srcdir=.
+
+cd "$srcdir"
+
+rm -f .deps-obtained
+
+touch .deps-obtained
+
+printf "\nDependencies obtained successfully.\n"
