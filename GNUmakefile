@@ -375,8 +375,10 @@ kernel_32bit:
 
 .PHONY: utilities
 utilities:
-	$(MAKE) -C utilities/hdt ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/boot_mgr ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/clawfs_explorer ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/hd_test ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/hdt ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/recovery_tool ARCH=$(SUB_ARCH)
 
 .PHONY: fs_sys
@@ -400,8 +402,10 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	cp -v kernel_64bit/bin-$(ARCH)/kernel_64bit iso_root/boot/
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
 
-	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
+	cp -v utilities/boot_mgr/bin-$(SUB_ARCH)/boot_mgr iso_root/boot/utils
+	cp -v utilities/clawfs_explorer/bin-$(SUB_ARCH)/clawfs_explorer iso_root/boot/utils
 	cp -v utilities/hd_test/bin-$(SUB_ARCH)/hdtest iso_root/boot/utils
+	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
 	cp -v utilities/recovery_tool/bin-$(SUB_ARCH)/recovery_tool iso_root/boot/utils
 
 	cp -v utilities/rootfs/rootfs.img iso_root/system
@@ -474,8 +478,10 @@ endif
 	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_rc.txt ::/config
 	mcopy -i $(IMAGE_NAME).hdd@@1M .config/defaults.txt ::/config
 
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_mgr/bin-$(SUB_ARCH)/boot_mgr ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/clawfs_explorer/bin-$(SUB_ARCH)/clawfs_explorer ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hd_test/bin-$(SUB_ARCH)/hdtest ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/recovery_tool/bin-$(SUB_ARCH)/recovery_tool ::/boot/utils
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/rootfs/rootfs.img ::/system

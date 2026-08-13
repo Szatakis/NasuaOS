@@ -1,11 +1,16 @@
-/hdt/obj-*
-/hdt/bin-*
+/boot_mgr/obj-*
+/boot_mgr/bin-*
+
+/clawfs_explorer/obj-*
+/clawfs_explorer/bin-*
 
 /hd_test/obj-*
 /hd_test/bin-*
 
+/hdt/obj-*
+/hdt/bin-*
+
 /recovery_tool/obj-*
 /recovery_tool/bin-*
 
-/sys_info/obj-*
-/sys_info/bin-*
+/rootfs/*.img
