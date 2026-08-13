@@ -10,6 +10,9 @@
 /hdt/obj-*
 /hdt/bin-*
 
+/kernel_debugger/obj-*
+/kernel_debugger/bin-*
+
 /recovery_tool/obj-*
 /recovery_tool/bin-*
 

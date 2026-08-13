@@ -379,6 +379,7 @@ utilities:
 	$(MAKE) -C utilities/clawfs_explorer ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/hd_test ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/hdt ARCH=$(SUB_ARCH)
+	$(MAKE) -C utilities/kernel_debugger ARCH=$(SUB_ARCH)
 	$(MAKE) -C utilities/recovery_tool ARCH=$(SUB_ARCH)
 
 .PHONY: fs_sys
@@ -406,6 +407,7 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	cp -v utilities/clawfs_explorer/bin-$(SUB_ARCH)/clawfs_explorer iso_root/boot/utils
 	cp -v utilities/hd_test/bin-$(SUB_ARCH)/hdtest iso_root/boot/utils
 	cp -v utilities/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
+	cp -v utilities/kernel_debugger/bin-$(SUB_ARCH)/kdebug iso_root/boot/utils
 	cp -v utilities/recovery_tool/bin-$(SUB_ARCH)/recovery_tool iso_root/boot/utils
 
 	cp -v utilities/rootfs/rootfs.img iso_root/system
@@ -482,6 +484,7 @@ endif
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/clawfs_explorer/bin-$(SUB_ARCH)/clawfs_explorer ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hd_test/bin-$(SUB_ARCH)/hdtest ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/kernel_debugger/bin-$(SUB_ARCH)/kdebug ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/recovery_tool/bin-$(SUB_ARCH)/recovery_tool ::/boot/utils
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/rootfs/rootfs.img ::/system

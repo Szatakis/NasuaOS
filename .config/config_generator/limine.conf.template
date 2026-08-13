@@ -54,6 +54,7 @@ wallpaper_style: stretched
         ///Boot Manager
             protocol: multiboot2
             path: boot():/boot/utils/boot_mgr
+            module_path: boot():/config/defaults.txt
             comment: Boot into system boot manager
 
     //Utilities
@@ -67,7 +68,7 @@ wallpaper_style: stretched
         ///ClawFS Explorer
             protocol: multiboot2
             path: boot():/boot/utils/clawfs_explorer
-            comment: Browse files and directories on ClawFS
+            comment: Browse and manage files, directories, and partitions on ClawFS
 
         ///Hardware Detection Tool
             protocol: multiboot2
@@ -78,3 +79,8 @@ wallpaper_style: stretched
             protocol: multiboot2
             path: boot():/boot/utils/hdtest
             comment: Run hardware diagnostic tests
+
+        ///Kernel Debugger
+            protocol: multiboot2
+            path: boot():/boot/utils/kdebug
+            comment: Inspect kernel state and CPU registers

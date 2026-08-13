@@ -9,6 +9,7 @@ clean:
 	$(MAKE) -C clawfs_explorer clean
 	$(MAKE) -C hd_test clean
 	$(MAKE) -C hdt clean
+	$(MAKE) -C kernel_debugger clean
 	$(MAKE) -C recovery_tool clean
 	$(MAKE) -C rootfs clean
 
@@ -16,7 +17,8 @@ clean:
 distclean:
 	$(MAKE) -C boot_mgr distclean
 	$(MAKE) -C clawfs_explorer distclean
-	$(MAKE) -C hdt distclean
 	$(MAKE) -C hd_test distclean
+	$(MAKE) -C hdt distclean
+	$(MAKE) -C kernel_debugger distclean
 	$(MAKE) -C recovery_tool distclean
 	$(MAKE) -C rootfs distclean
