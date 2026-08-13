@@ -49,7 +49,7 @@ $(OBJ_DIR)/boot.o: src/boot.asm
 	@mkdir -p $(OBJ_DIR)
 	$(AS) -f elf32 $< -o $@
 
-$(OBJ_DIR)/hdtest.o: src/hdtest.cpp src/font8x8.h
+$(OBJ_DIR)/hdtest.o: src/hdtest.cpp
 	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
