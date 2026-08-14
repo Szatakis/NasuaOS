@@ -56,6 +56,8 @@ wallpaper_style: stretched
             path: boot():/boot/utils/boot_mgr
             module_path: boot():/boot/kernel_32bit
             module_path: boot():/boot/kernel_64bit
+            module_path: boot():/system/rootfs.img
+            module_path: boot():/config/boot_config.txt
             module_path: boot():/config/defaults.txt
             resolution: 1280x720x32
             comment: Boot into system boot manager
@@ -64,8 +66,6 @@ wallpaper_style: stretched
         ///Recovery Tool
             protocol: multiboot2
             path: boot():/boot/utils/recovery_tool
-            module_path: boot():/config/boot_config.txt
-            module_path: boot():/config/boot_config_rc.txt
             comment: Boot into a recovery environment for troubleshooting
 
         ///ClawFS Explorer
