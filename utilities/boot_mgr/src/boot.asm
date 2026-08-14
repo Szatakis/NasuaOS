@@ -1,6 +1,7 @@
 [bits 32]
 
 section .multiboot
+
 align 8
 
 multiboot_header:
@@ -11,15 +12,21 @@ multiboot_header:
     dd -(0xE85250D6 + 0 + (multiboot_header_end - multiboot_header))
 
 
-    dw 5                  ; type
-    dw 0                  ; flags
-    dd 20                 ; size
+    ; Framebuffer request
 
-    dd 1280               ; width
-    dd 720                ; height
-    dd 32                 ; depth
+    dw 5
+    dw 0
+    dd 20
+
+    dd 1280
+    dd 720
+    dd 32
+
 
     align 8
+
+
+    ; End tag
 
     dw 0
     dw 0
@@ -40,6 +47,9 @@ _start:
     cli
 
     mov esp, stack_top
+
+    ; EBX = Multiboot2 information
+    ; EAX = Multiboot2 magic
 
     push ebx
     push eax

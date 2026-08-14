@@ -54,7 +54,10 @@ wallpaper_style: stretched
         ///Boot Manager
             protocol: multiboot2
             path: boot():/boot/utils/boot_mgr
+            module_path: boot():/boot/kernel_32bit
+            module_path: boot():/boot/kernel_64bit
             module_path: boot():/config/defaults.txt
+            resolution: 1280x720x32
             comment: Boot into system boot manager
 
     //Utilities
