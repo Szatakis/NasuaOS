@@ -352,7 +352,6 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     if (cpu_has_long_mode())
     {
         print("Selected: kernel_64bit\n", COLOR_GREEN);
-        print("Starting x86-64 kernel...\n", COLOR_WHITE);
 
         for (;;)
         {
@@ -362,9 +361,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     else
     {
         print("Selected: kernel_32bit\n", COLOR_GREEN);
-
-        print("Starting x86 kernel...\n", COLOR_WHITE);
-
+        
         for (;;)
         {
             asm volatile("hlt");
