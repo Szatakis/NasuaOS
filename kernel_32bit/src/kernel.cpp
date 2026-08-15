@@ -3,12 +3,12 @@
 #include "applications/shell/shell.hpp"
 
 #include "system/drivers/drivers.hpp"
-#include "system/sysfunc/sysfunc.h"
+#include "system/sysfunc/sysfunc.hpp"
 
 #include "system/fonts/font8x8.h"
 
-#include "libs/libc/libc.h"
-#include "libs/asm/asm.h"
+#include "libs/libc/libc.hpp"
+#include "libs/asm/asm.hpp"
 
 //DEBUG VARS
 bool safe_mode = false;

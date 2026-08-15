@@ -1,9 +1,10 @@
 #include "shell.hpp"
 
 #include "../../system/drivers/video/driver.hpp"
-#include "../../libs/libc/libc.h"
 
 #include "../../system/sysfunc/sysfunc.h"
+
+#include "../../libs/libc/libc.hpp"
 
 extern char input_buffer[128];
 extern uint32_t cursor_x;

@@ -1,6 +1,6 @@
 #include "../driver.hpp"
 
-#include "../../multiboot/multiboot.h"
+#include "../../multiboot/multiboot.hpp"
 
 extern framebuffer fb;
 extern uint32_t* buffer;

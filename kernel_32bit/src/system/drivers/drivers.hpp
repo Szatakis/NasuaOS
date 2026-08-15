@@ -2,7 +2,7 @@
 #define DRIVERS_H
 
 #include "keyboard/driver.hpp"
-#include "multiboot/multiboot.h"
+#include "multiboot/multiboot.hpp"
 #include "video/driver.hpp"
 
 #endif // DRIVERS_H

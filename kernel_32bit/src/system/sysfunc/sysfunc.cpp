@@ -1,8 +1,8 @@
-#include "sysfunc.h"
+#include "sysfunc.hpp"
 
-#include "../../libs/libc/libc.h"
+#include "../../libs/libc/libc.hpp"
 #include "../drivers/video/driver.hpp"
-#include "../drivers/multiboot/multiboot.h"
+#include "../drivers/multiboot/multiboot.hpp"
 
 extern bool safe_mode;
 extern bool debug_mode;
