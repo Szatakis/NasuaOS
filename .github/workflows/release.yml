@@ -1,0 +1,89 @@
+name: Release NasuaOS
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            curl \
+            gcc \
+            g++ \
+            cmake \
+            xorriso \
+            clang \
+            lld \
+            nasm \
+            mtools
+
+      - name: Build ISO
+        run: |
+          make all
+
+      - name: Build HDD image
+        run: |
+          make all-hdd
+
+      - name: Find images
+        run: |
+          echo "Generated files:"
+          find . \( -name "*.iso" -o -name "*.hdd" \) -type f
+
+      - name: Prepare release
+        run: |
+          mkdir release
+
+          cp "$(find . -name "*.iso" -type f | head -n 1)" release/NasuaOS.iso
+          cp "$(find . -name "*.hdd" -type f | head -n 1)" release/NasuaOS.hdd
+
+          printf "# NasuaOS %s\n\n" "${GITHUB_REF_NAME}" > release/README.md
+          printf "Prebuilt NasuaOS images for this release.\n\n" >> release/README.md
+
+          printf "## Images\n\n" >> release/README.md
+          printf "| File | Description |\n" >> release/README.md
+          printf "|------|-------------|\n" >> release/README.md
+          printf "| **NasuaOS.iso** | Bootable ISO image |\n" >> release/README.md
+          printf "| **NasuaOS.hdd** | Hard disk image |\n\n" >> release/README.md
+
+          printf "## QEMU\n\n" >> release/README.md
+          printf "\`\`\`bash\n" >> release/README.md
+          printf "qemu-system-x86_64 -cdrom NasuaOS.iso -boot d\n" >> release/README.md
+          printf "\`\`\`\n" >> release/README.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: NasuaOS ${{ github.ref_name }}
+          body: |
+            ## NasuaOS ${{ github.ref_name }}
+
+            Prebuilt images for this release.
+
+            ### Downloads
+
+            - `NasuaOS.iso` — bootable ISO image
+            - `NasuaOS.hdd` — hard disk image
+
+            Tested build generated automatically by GitHub Actions.
+          files: |
+            release/NasuaOS.iso
+            release/NasuaOS.hdd
+            release/README.md
+          draft: false
+          prerelease: false

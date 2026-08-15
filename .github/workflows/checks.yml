@@ -1,0 +1,61 @@
+name: NasuaOS Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build-check:
+    name: Build Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            curl \
+            gcc \
+            g++ \
+            cmake \
+            xorriso \
+            clang \
+            lld \
+            nasm \
+            mtools
+
+      - name: Check Makefile
+        run: |
+          make --version
+          make -n all
+
+      - name: Build NasuaOS
+        run: |
+          make all
+
+      - name: Check ISO
+        run: |
+          ISO=$(find . -name "*.iso" -type f | head -n 1)
+
+          if [ -z "$ISO" ]; then
+            echo "ERROR: ISO image was not generated."
+            exit 1
+          fi
+
+          echo "ISO found: $ISO"
+          file "$ISO"
+
+      - name: Check build artifacts
+        run: |
+          echo "Build artifacts:"
+          find . \( -name "*.iso" -o -name "*.img" -o -name "*.hdd" \) -type f
