@@ -1,0 +1,7 @@
+/rootfs/*.img
+
+dir/bin/**
+!dir/bin/.clawfs
+
+dir/sbin/**
+!dir/sbin/.clawfs

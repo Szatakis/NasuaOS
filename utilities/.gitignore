@@ -15,5 +15,3 @@
 
 /recovery_tool/obj-*
 /recovery_tool/bin-*
-
-/rootfs/*.img

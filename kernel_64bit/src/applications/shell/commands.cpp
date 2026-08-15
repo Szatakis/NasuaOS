@@ -18,7 +18,7 @@
 
 #include "system/vars/info_vars/info_vars.hpp"
 
-#include "system/filesystem/clawfs.hpp"
+#include "system/filesystem/clawfs/clawfs.hpp"
 
 #include "libs/libc/libc.h"
 #include "libs/asm/asm.h"

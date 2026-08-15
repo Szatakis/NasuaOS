@@ -4,7 +4,7 @@
 
 #include "system/drivers/drivers.hpp"
 #include "system/interrupts/interrupts.hpp"
-#include "system/filesystem/clawfs.hpp"
+#include "system/filesystem/filesystem.hpp"
 
 #include "applications/shell/commands.hpp"
 

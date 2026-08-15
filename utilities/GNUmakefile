@@ -3,22 +3,19 @@
 ARCH ?= x86_64
 SUB_ARCH ?= x86_32
 
+BOOT_OPTIONS := $(wildcard boot_options/*/)
+BOOT_OPTIONS := $(patsubst %/,%,$(BOOT_OPTIONS))
+
 .PHONY: clean
 clean:
-	$(MAKE) -C boot_mgr clean
-	$(MAKE) -C clawfs_explorer clean
-	$(MAKE) -C hd_test clean
-	$(MAKE) -C hdt clean
-	$(MAKE) -C kernel_debugger clean
-	$(MAKE) -C recovery_tool clean
+	@for dir in $(BOOT_OPTIONS); do \
+		$(MAKE) -C $$dir clean; \
+	done
 	$(MAKE) -C rootfs clean
 
 .PHONY: distclean
 distclean:
-	$(MAKE) -C boot_mgr distclean
-	$(MAKE) -C clawfs_explorer distclean
-	$(MAKE) -C hd_test distclean
-	$(MAKE) -C hdt distclean
-	$(MAKE) -C kernel_debugger distclean
-	$(MAKE) -C recovery_tool distclean
+	@for dir in $(BOOT_OPTIONS); do \
+		$(MAKE) -C $$dir distclean; \
+	done
 	$(MAKE) -C rootfs distclean
