@@ -2,7 +2,7 @@
 
 #include "../../system/drivers/video/driver.hpp"
 
-#include "../../system/sysfunc/sysfunc.h"
+#include "../../system/sysfunc/sysfunc.hpp"
 
 #include "../../libs/libc/libc.hpp"
 
