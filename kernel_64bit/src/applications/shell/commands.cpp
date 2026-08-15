@@ -519,8 +519,8 @@ void execute_command(const char *cmd)
 
         // Section: Software
         print_info("Software information\n");
-        print_line("System Version: ", "NasuaOS 0.07");
-        print_line("Kernel Version: ", "0.03\n\n");
+        print_line("System Version: ", "NasuaOS 0.8.0");
+        print_line("Kernel Version: ", "0.3.0\n\n");
 
         print_info("Hardware information\n");
 
