@@ -25,6 +25,7 @@ BOOT_OPTIONS := $(patsubst %/,%,$(BOOT_OPTIONS))
 
 # Detect WSL
 DEBUG_WSL ?= true
+DEBUG_BUILD ?= false
 
 ifeq ($(DEBUG_WSL),true)
 	IS_WSL := 1

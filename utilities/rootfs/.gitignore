@@ -1,4 +1,4 @@
-/rootfs/*.img
+*.img
 
 dir/bin/**
 !dir/bin/.clawfs

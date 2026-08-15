@@ -1,2 +1,5 @@
 ARCH := x86_64
-SUB_ARCH ?= x86_32
+SUB_ARCH := x86_32
+
+DEBUG_WSL := true
+DEBUG_BUILD := false
