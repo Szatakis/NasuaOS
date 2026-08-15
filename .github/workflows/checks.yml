@@ -27,17 +27,45 @@ jobs:
             curl \
             gcc \
             g++ \
+            make \
             cmake \
             xorriso \
             clang \
             lld \
             nasm \
-            mtools
+            mtools \
+            file \
+            tar
 
-      - name: Check Makefile
+      - name: Download Limine
         run: |
-          make --version
-          make -n all
+          rm -rf limine-binary
+          rm -f limine-binary.tar.gz
+
+          curl -fL \
+            https://github.com/Szatakis/NasuaOS-Bootloader/raw/main/limine-binary.tar.gz \
+            -o limine-binary.tar.gz
+
+          echo "Limine archive:"
+          file limine-binary.tar.gz
+
+          echo "Archive contents:"
+          tar -tzf limine-binary.tar.gz
+
+          tar -xzf limine-binary.tar.gz
+
+          echo "Extracted files:"
+          find . -maxdepth 3 -type f | sort
+
+      - name: Verify Limine
+        run: |
+          if [ ! -d "limine-binary" ]; then
+            echo "ERROR: limine-binary directory was not created."
+            exit 1
+          fi
+
+          echo "Limine directory found:"
+          ls -la limine-binary
 
       - name: Build NasuaOS
         run: |
@@ -45,17 +73,23 @@ jobs:
 
       - name: Check ISO
         run: |
-          ISO=$(find . -name "*.iso" -type f | head -n 1)
+          ISO=$(find . -type f -name "*.iso" | head -n 1)
 
           if [ -z "$ISO" ]; then
             echo "ERROR: ISO image was not generated."
             exit 1
           fi
 
-          echo "ISO found: $ISO"
+          echo "ISO found:"
+          echo "$ISO"
+
           file "$ISO"
 
       - name: Check build artifacts
         run: |
           echo "Build artifacts:"
-          find . \( -name "*.iso" -o -name "*.img" -o -name "*.hdd" \) -type f
+          find . \( \
+            -name "*.iso" \
+            -o -name "*.img" \
+            -o -name "*.hdd" \
+          \) -type f -print
