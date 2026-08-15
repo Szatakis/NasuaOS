@@ -1,6 +1,6 @@
 #include "../driver.hpp"
 
-#include "libs/asm/asm.h"
+#include "libs/asm/asm.hpp"
 
 #define ATA_PORT_DATA       0x1F0
 #define ATA_PORT_ERROR      0x1F1

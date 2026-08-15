@@ -6,7 +6,7 @@
 #include "kernel/include/logger/logger.hpp"
 #include "kernel/include/panic/kernel_panic.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 static uint64_t read_cr2()
 {

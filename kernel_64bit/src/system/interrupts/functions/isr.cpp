@@ -7,8 +7,8 @@
 
 #include "kernel/include/panic/kernel_panic.hpp"
 
-#include "libs/libc/libc.h"
-#include "libs/asm/asm.h"
+#include "libs/libc/libc.hpp"
+#include "libs/asm/asm.hpp"
 
 // Exception name table indexed by vector number
 static const char* exception_names[] = {

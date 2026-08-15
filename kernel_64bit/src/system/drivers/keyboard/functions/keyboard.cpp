@@ -13,8 +13,8 @@
 #include "system/gui/gui.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
 
-#include "libs/libc/libc.h"
-#include "libs/asm/asm.h"
+#include "libs/libc/libc.hpp"
+#include "libs/asm/asm.hpp"
 
 char command_buffer[64];
 size_t cmd_idx = 0;

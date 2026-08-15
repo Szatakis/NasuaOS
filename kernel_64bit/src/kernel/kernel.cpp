@@ -15,8 +15,8 @@
 #include "kernel/include/logger/logger.hpp"
 #include "kernel/include/panic/kernel_panic.hpp"
 
-#include "libs/libc/libc.h"
-#include "libs/asm/asm.h"
+#include "libs/libc/libc.hpp"
+#include "libs/asm/asm.hpp"
 
 // DEBUG VARS
 bool debug_mode = false;

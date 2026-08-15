@@ -1,6 +1,6 @@
 #include "history.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 constexpr size_t HISTORY_SIZE = 10;
 constexpr size_t COMMAND_SIZE = 64;

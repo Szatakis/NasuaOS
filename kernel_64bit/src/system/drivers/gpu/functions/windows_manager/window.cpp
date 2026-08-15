@@ -5,7 +5,8 @@
 
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
-#include "libs/libc/libc.h"
+
+#include "libs/libc/libc.hpp"
 
 #define MAX_WINDOWS 13
 #define MAX_TASKBAR_WINDOWS 5

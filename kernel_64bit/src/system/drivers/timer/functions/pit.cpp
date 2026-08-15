@@ -6,7 +6,7 @@
 
 #include "kernel/include/logger/logger.hpp"
 
-#include "libs/asm/asm.h"
+#include "libs/asm/asm.hpp"
 
 
 #define PIT_CHANNEL0 0x40

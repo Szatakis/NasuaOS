@@ -1,6 +1,6 @@
 #include "../driver.hpp"
 
-#include "libs/asm/asm.h"
+#include "libs/asm/asm.hpp"
 
 #define RTC_CMOS_ADDRESS  0x70
 #define RTC_CMOS_DATA     0x71

@@ -5,7 +5,7 @@
 
 #include "kernel/include/logger/logger.hpp"
 
-#include "libs/asm/asm.h"
+#include "libs/asm/asm.hpp"
 
 
 #define PIC1_COMMAND 0x20

@@ -9,7 +9,7 @@
 #include "applications/shell/commands.hpp"
 #include "applications/terminal/terminal.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 #define TEXT_COLS 160
 #define TEXT_ROWS 80

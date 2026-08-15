@@ -6,7 +6,7 @@
 
 #include "applications/shell/commands.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 // Helpers
 char* next_path_token(char* str, const char* delim)

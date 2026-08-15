@@ -5,7 +5,6 @@
 #include <limine.h>
 
 #include "commands.hpp"
-#include "screen.h"
 
 #include "system/drivers/drivers.hpp"
 
@@ -20,8 +19,8 @@
 
 #include "system/filesystem/clawfs/clawfs.hpp"
 
-#include "libs/libc/libc.h"
-#include "libs/asm/asm.h"
+#include "libs/libc/libc.hpp"
+#include "libs/asm/asm.hpp"
 
 extern uint32_t current_text_color;
 extern bool debug_mode;

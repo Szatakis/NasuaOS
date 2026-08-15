@@ -3,7 +3,7 @@
 #include "system/gui/gui.hpp"
 #include "system/gui/vars/colors.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 
 struct calculator_state {

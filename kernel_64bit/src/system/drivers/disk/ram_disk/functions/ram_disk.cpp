@@ -2,7 +2,7 @@
 
 #include "system/drivers/memory/driver.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 static uint64_t ram_pages[RAM_DISK_PAGE_COUNT];
 

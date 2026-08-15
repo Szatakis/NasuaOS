@@ -2,7 +2,7 @@
 
 #include "system/drivers/timer/driver.hpp"
 
-#include "libs/asm/asm.h"
+#include "libs/asm/asm.hpp"
 
 #define PIT_FREQ 1193182
 #define SPEAKER_PORT 0x61

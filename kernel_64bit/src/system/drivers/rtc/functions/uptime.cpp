@@ -3,7 +3,7 @@
 #include "system/drivers/gpu/driver.hpp"
 #include "system/drivers/timer/driver.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 
 void print_uptime()

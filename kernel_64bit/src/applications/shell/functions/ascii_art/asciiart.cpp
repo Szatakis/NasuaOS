@@ -2,7 +2,7 @@
 
 #include "system/drivers/gpu/driver.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 static const char* font[][5] =
 {

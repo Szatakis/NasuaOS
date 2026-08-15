@@ -6,8 +6,8 @@
 #include "system/drivers/timer/driver.hpp"
 #include "system/gui/vars/colors.hpp"
 
-#include "libs/libc/libc.h"
-#include "libs/asm/asm.h"
+#include "libs/libc/libc.hpp"
+#include "libs/asm/asm.hpp"
 
 // Layout constants
 #define CH_W 9

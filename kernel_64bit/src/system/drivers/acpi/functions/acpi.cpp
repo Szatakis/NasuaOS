@@ -7,7 +7,7 @@
 
 #include "applications/shell/commands.hpp"
 
-#include "libs/asm/asm.h"
+#include "libs/asm/asm.hpp"
 
 
 extern "C" volatile struct limine_rsdp_request rsdp_request;

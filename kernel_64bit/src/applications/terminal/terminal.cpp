@@ -1,7 +1,7 @@
 #include "terminal.hpp"
 
 #include "../shell/commands.hpp"
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 #define TERM_MAX_ROWS 64
 #define TERM_MAX_COLS 256

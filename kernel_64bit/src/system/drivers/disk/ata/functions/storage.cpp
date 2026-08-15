@@ -6,7 +6,7 @@
 #include "system/drivers/uart/driver.hpp"
 #include "system/drivers/memory/driver.hpp"
 
-#include "libs/libc/libc.h"
+#include "libs/libc/libc.hpp"
 
 static uint64_t total_storage_bytes = 0;
 static uint64_t used_storage_bytes = 0;
