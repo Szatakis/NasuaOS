@@ -290,6 +290,16 @@ static bool find_modules(uint32_t mb_info)
     return module_count >= 2;
 }
 
+void start_kernel32bit()
+{
+
+}
+
+void start_kernel64bit()
+{
+    
+}
+
 
 extern "C" void kmain(uint32_t magic, uint32_t mb_info)
 {
@@ -352,6 +362,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     if (cpu_has_long_mode())
     {
         print("Selected: kernel_64bit\n", COLOR_GREEN);
+        start_kernel64bit();
 
         for (;;)
         {
@@ -361,7 +372,8 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     else
     {
         print("Selected: kernel_32bit\n", COLOR_GREEN);
-        
+        start_kernel32bit();
+
         for (;;)
         {
             asm volatile("hlt");
