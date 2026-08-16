@@ -19,8 +19,11 @@ window_struct suaedit =
     .visible = true,
     .minimized = false,
     .focused = true,
+
+    .resizable = true,
     .can_maximize = true,
     .maximized = false,
+    
     .restore_pos_x = 0,
     .restore_pos_y = 0,
     .restore_width = 0,

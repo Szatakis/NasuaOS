@@ -83,6 +83,8 @@ typedef struct window_struct {
     bool visible;
     bool minimized;
     bool focused;
+
+    bool resizable;
     bool can_maximize;
     bool maximized;
 

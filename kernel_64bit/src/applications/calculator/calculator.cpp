@@ -65,7 +65,6 @@ void calculator_key(window_struct* win, char key)
 
         if(calc->result_shown) 
         {
-
             strcpy(calc->display, "0");
 
             calc->result_shown = false;
@@ -76,7 +75,6 @@ void calculator_key(window_struct* win, char key)
 
         if(calc->operation != 0 && !calc->entering_second) 
         {
-
             strcpy(calc->display, "0");
 
             calc->entering_second = true;
@@ -193,13 +191,10 @@ void calculator_key(window_struct* win, char key)
     if(key == '%') 
     {
         int value = atoi(calc->display);
-
         value /= 100;
-
         char buf[32];
 
         itoa(value, buf);
-
         strcpy(calc->display, buf);
 
         calc->result_shown = true;
@@ -212,13 +207,10 @@ void calculator_key(window_struct* win, char key)
     if(key == 'Q') 
     {
         int value = atoi(calc->display);
-
         int result = value * value;
-
         char buf[32];
 
         itoa(result, buf);
-
         strcpy(calc->display, buf);
 
         calc->result_shown = true;
@@ -278,7 +270,6 @@ void calculator_key(window_struct* win, char key)
 
 
         int result = 1 / value;
-
         char buf[32];
 
         itoa(result, buf);
@@ -551,6 +542,7 @@ window_struct calculator = {
     .minimized = false,
     .focused = false,
 
+    .resizable = false,
     .can_maximize = false,
     .maximized = false,
 
