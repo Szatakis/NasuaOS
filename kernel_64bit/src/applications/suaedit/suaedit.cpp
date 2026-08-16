@@ -23,7 +23,7 @@ window_struct suaedit =
     .resizable = true,
     .can_maximize = true,
     .maximized = false,
-    
+
     .restore_pos_x = 0,
     .restore_pos_y = 0,
     .restore_width = 0,
@@ -32,6 +32,14 @@ window_struct suaedit =
     .is_dragging = false,
     .drag_offset_x = 0,
     .drag_offset_y = 0,
+
+    .is_resizing = false,
+    .resize_right = false,
+    .resize_bottom = false,
+    .resize_start_mouse_x = 500,
+    .resize_start_mouse_y = 350,
+    .resize_start_width = 10,
+    .resize_start_height = 20,
 
     .userdata = nullptr,
     .draw_content = draw_suaedit,

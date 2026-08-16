@@ -12,6 +12,9 @@
 #define MAX_TASKBAR_WINDOWS 5
 
 static constexpr int WINDOW_TITLEBAR_HEIGHT = 24;
+static constexpr int WINDOW_RESIZE_BORDER = 8;
+static constexpr int WINDOW_MIN_WIDTH = 150;
+static constexpr int WINDOW_MIN_HEIGHT = 100;
 
 window_struct* active_window = nullptr;
 
@@ -41,8 +44,15 @@ void register_window(window_struct* window)
             return;
         }
     }
-    window->is_dragging = false; // Init safty flag
+
+    window->is_dragging = false;
+
+    window->is_resizing = false;
+    window->resize_right = false;
+    window->resize_bottom = false;
+
     window->minimized = false;
+
     window_list[window_count++] = window;
 
     active_window = window;
@@ -185,6 +195,53 @@ void unmaximize_window(window_struct* window)
     window->focused = true;
 }
 
+static bool get_resize_area(window_struct* window, int mouse_x, int mouse_y, bool* resize_right, bool* resize_bottom) 
+{
+    if (!window || !window->visible || !window->resizable || window->maximized) 
+    {
+        return false;
+    }
+
+    int right = window->pos_x + window->width;
+    int bottom = window->pos_y + window->height;
+
+    bool on_right = mouse_x >= right - WINDOW_RESIZE_BORDER && mouse_x < right && mouse_y >= window->pos_y && mouse_y < bottom;
+    bool on_bottom = mouse_y >= bottom - WINDOW_RESIZE_BORDER && mouse_y < bottom && mouse_x >= window->pos_x && mouse_x < right;
+
+    // BOTTOM RIGHT ORNER
+    bool on_corner = mouse_x >= right - WINDOW_RESIZE_BORDER && mouse_x < right && mouse_y >= bottom - WINDOW_RESIZE_BORDER && mouse_y < bottom;
+
+    if (on_corner)
+    {
+        *resize_right = true;
+        *resize_bottom = true;
+
+        return true;
+    }
+
+
+    // RIGHT EDGE
+    if (on_right)
+    {
+        *resize_right = true;
+        *resize_bottom = false;
+
+        return true;
+    }
+
+
+    // BOTTOM EDGE
+    if (on_bottom)
+    {
+        *resize_right = false;
+        *resize_bottom = true;
+
+        return true;
+    }
+
+    return false;
+}
+
 void send_key_to_window(char key)
 {
     if(active_window == nullptr)
@@ -204,17 +261,77 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
     for (int i = 0; i < window_count; i++) 
     {
         window_struct* win = window_list[i];
-        if (win->visible && win->is_dragging) 
+
+
+        if (!win || !win->visible) 
+        {
+            continue;
+        }
+
+
+        // WINDOW DRAGGING
+        if (win->is_dragging) 
         {
             win->pos_x = current_mouse_x - win->drag_offset_x;
             win->pos_y = current_mouse_y - win->drag_offset_y;
-            
+
             // Taskbar protection
             if (fb) 
             {
                 if (win->pos_y > (int)fb->height - 50) 
                 {
                     win->pos_y = (int)fb->height - 50;
+                }
+            }
+
+            continue;
+        }
+
+
+        // WINDOW RESIZING
+        if (win->is_resizing) 
+        {
+            int delta_x = current_mouse_x - win->resize_start_mouse_x;
+            int delta_y = current_mouse_y - win->resize_start_mouse_y;
+
+
+            // Resize right
+            if (win->resize_right) 
+            {
+                int new_width = win->resize_start_width + delta_x;
+
+                if (new_width < WINDOW_MIN_WIDTH) 
+                {
+                    new_width = WINDOW_MIN_WIDTH;
+                }
+
+                win->width = new_width;
+            }
+
+            // Resize bottom
+            if (win->resize_bottom) 
+            {
+                int new_height = win->resize_start_height + delta_y;
+
+                if (new_height < WINDOW_MIN_HEIGHT) 
+                {
+                    new_height = WINDOW_MIN_HEIGHT;
+                }
+
+                win->height = new_height;
+            }
+
+            // Don't resize outside screen
+            if (fb) 
+            {
+                if (win->pos_x + win->width > (int)fb->width) 
+                {
+                    win->width = (int)fb->width - win->pos_x;
+                }
+
+                if (win->pos_y + win->height > (int)fb->height - (int)bar_h_scaled) 
+                {
+                    win->height = (int)fb->height - (int)bar_h_scaled - win->pos_y;
                 }
             }
         }
@@ -239,9 +356,29 @@ void handle_window_mouse_click(int mouse_x, int mouse_y)
 
     for (int i = window_count - 1; i >= 0; i--) 
     {
-        if (window_list[i]->visible && window_list[i]->is_dragging) 
+        window_struct* win = window_list[i];
+
+        if (!win || !win->visible) 
         {
-            window_list[i]->is_dragging = false;
+            continue;
+        }
+
+
+        if (win->is_dragging) 
+        {
+            win->is_dragging = false;
+
+            return;
+        }
+
+
+        if (win->is_resizing) 
+        {
+            win->is_resizing = false;
+
+            win->resize_right = false;
+            win->resize_bottom = false;
+
             return;
         }
     }
@@ -304,6 +441,29 @@ void handle_window_mouse_click(int mouse_x, int mouse_y)
                 }
             }
             return;
+        }
+
+        // RESIZE
+        if (win->resizable && !win->maximized)
+        {
+            bool resize_right = false;
+            bool resize_bottom = false;
+
+
+            if (get_resize_area(win, mouse_x, mouse_y, &resize_right, &resize_bottom))
+            {
+                bring_window_to_front(i);
+
+                win->is_resizing = true;
+                win->resize_right = resize_right;
+                win->resize_bottom = resize_bottom;
+                win->resize_start_mouse_x = mouse_x;
+                win->resize_start_mouse_y = mouse_y;
+                win->resize_start_width = win->width;
+                win->resize_start_height = win->height;
+
+                return;
+            }
         }
         
         if (is_mouse_over_window_title(win, mouse_x, mouse_y)) 
@@ -401,7 +561,7 @@ void draw_taskbar_entries()
     }
 
     const size_t taskbar_y = fb->height - bar_h_scaled;
-    const size_t button_h = bar_h_scaled - 8; // Slightly shorter button height
+    const size_t button_h = bar_h_scaled - 8;
     const int button_y = (int)taskbar_y + ((int)bar_h_scaled - (int)button_h) / 2;
     const size_t button_w = 120;
     const size_t button_spacing = 6;
@@ -667,4 +827,3 @@ bool is_mouse_over_any_window(int mouse_x, int mouse_y)
     }
     return false;
 }
-

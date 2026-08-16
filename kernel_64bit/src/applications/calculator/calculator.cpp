@@ -553,10 +553,16 @@ window_struct calculator = {
 
 
     .is_dragging = false,
-
     .drag_offset_x = 0,
     .drag_offset_y = 0,
 
+    .is_resizing = false,
+    .resize_right = false,
+    .resize_bottom = false,
+    .resize_start_mouse_x = 290,
+    .resize_start_mouse_y = 390,
+    .resize_start_width = 10,
+    .resize_start_height = 20,
 
     .userdata = &calc_data,
     .draw_content = draw_calculator,

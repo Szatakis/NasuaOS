@@ -70,6 +70,7 @@ void fetch();
 typedef void (*window_draw_callback)(struct window_struct*);
 typedef void (*window_key_callback)(window_struct*, char);
 typedef void (*window_mouse_callback)(window_struct*, int, int);
+
 //Window manager
 typedef struct window_struct {
     const char* name;
@@ -93,9 +94,20 @@ typedef struct window_struct {
     int restore_width;
     int restore_height;
 
-    bool is_dragging;    // If window is draged
-    int drag_offset_x;   // Distance X from left side of the window
-    int drag_offset_y;   // Distance Y from top of the window
+    bool is_dragging;
+    int drag_offset_x;
+    int drag_offset_y;
+
+    // Resize
+    bool is_resizing;
+    bool resize_right;
+    bool resize_bottom;
+
+    int resize_start_mouse_x;
+    int resize_start_mouse_y;
+
+    int resize_start_width;
+    int resize_start_height;
 
     void* userdata;
 
