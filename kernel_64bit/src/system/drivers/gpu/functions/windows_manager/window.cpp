@@ -12,7 +12,7 @@
 #define MAX_TASKBAR_WINDOWS 5
 
 static constexpr int WINDOW_TITLEBAR_HEIGHT = 24;
-static constexpr int WINDOW_RESIZE_BORDER = 8;
+static constexpr int WINDOW_RESIZE_BORDER = 12;
 static constexpr int WINDOW_MIN_WIDTH = 150;
 static constexpr int WINDOW_MIN_HEIGHT = 100;
 
@@ -263,7 +263,7 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
         window_struct* win = window_list[i];
 
 
-        if (!win || !win->visible) 
+        if (!win || !win->visible || win->maximized) 
         {
             continue;
         }

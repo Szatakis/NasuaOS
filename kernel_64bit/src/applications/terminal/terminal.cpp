@@ -158,16 +158,12 @@ void draw_terminal(window_struct* win)
         title = 18;
     }
 
-    int win_inner_x = win->pos_x + 2;
-    int win_inner_y = win->pos_y + title + 2;
     int win_inner_w = win->width - 4;
     int win_inner_h = win->height - title - 4;
 
-    fill_block(win_inner_x, win_inner_y, COLOR_BLACK, win_inner_w, win_inner_h);
-
     int start_x = win->pos_x + 8;
     int start_y = win->pos_y + title + 6;
-    print_at8("NasuaOS Terminal", start_x, start_y, COLOR_GREEN);
+    print_at8("NasuaOS Terminal", start_x, start_y, COLOR_TERM_INFO);
 
     int char_w = 8 + FONT_SPACING_W;
     int line_height = 12;
