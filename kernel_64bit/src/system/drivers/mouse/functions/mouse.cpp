@@ -370,7 +370,6 @@ void mouse_handle_byte(uint8_t data)
 }
 
 
-// ---------------------------------------------------------
 // LEFT CLICK
 void handle_left_click(bool cmd_enter)
 {
@@ -387,6 +386,19 @@ void handle_left_click(bool cmd_enter)
         }
 
         return;
+    }
+
+    if (is_menu_start_open)
+    {
+        const int start_menu_left = (int)menu_x;
+        const int start_menu_top = (int)menu_y;
+        const int start_menu_right = (int)(menu_x + menu_w);
+        const int start_menu_bottom = (int)(menu_y + menu_h);
+
+        if (mouse_x < start_menu_left || mouse_x >= start_menu_right || mouse_y < start_menu_top || mouse_y >= start_menu_bottom)
+        {
+            close_start_menu();
+        }
     }
 
 

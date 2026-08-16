@@ -341,19 +341,6 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
 // Windows clicks
 void handle_window_mouse_click(int mouse_x, int mouse_y) 
 {
-    if (is_menu_start_open)
-    {
-        const int start_menu_left = (int)menu_x;
-        const int start_menu_top = (int)menu_y;
-        const int start_menu_right = (int)(menu_x + menu_w);
-        const int start_menu_bottom = (int)(menu_y + menu_h);
-
-        if (mouse_x < start_menu_left || mouse_x >= start_menu_right || mouse_y < start_menu_top || mouse_y >= start_menu_bottom)
-        {
-            close_start_menu();
-        }
-    }
-
     for (int i = window_count - 1; i >= 0; i--) 
     {
         window_struct* win = window_list[i];
