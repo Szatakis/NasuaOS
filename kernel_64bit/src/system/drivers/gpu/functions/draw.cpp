@@ -16,8 +16,7 @@
 #include "system/gui/gui.hpp"
 
 // HELPERS
-
-static inline void put_pixel(size_t x, size_t y, uint32_t color) 
+void put_pixel(size_t x, size_t y, uint32_t color) 
 {
     if (!fb) return;
 

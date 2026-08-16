@@ -22,6 +22,8 @@ void render_frame();
 void init_text_buffer();
 void draw_text_buffer();
 
+void put_pixel(size_t x, size_t y, uint32_t color);
+
 void clear_screen();
 void clear_line();
 
