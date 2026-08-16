@@ -45,3 +45,18 @@ void cpu_get_brand(char* brand)
 
     brand[48] = '\0';
 }
+
+const char* get_architecture()
+{
+#if defined(__x86_64__)
+    return "x86_64";
+#elif defined(__i386__)
+    return "x86";
+#elif defined(__aarch64__)
+    return "ARM64";
+#elif defined(__arm__)
+    return "ARM";
+#else
+    return "Unknown";
+#endif
+}

@@ -3,6 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 
+#define WINDOW_TITLEBAR_HEIGHT 24
+#define WINDOW_RESIZE_BORDER 6
+#define WINDOW_MIN_WIDTH 150
+#define WINDOW_MIN_HEIGHT 100
+
 extern limine_framebuffer* fb;
 
 extern size_t cursor_x;

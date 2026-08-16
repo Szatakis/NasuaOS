@@ -429,3 +429,34 @@ bool is_empty_or_whitespace(const char* str) {
     }
     return true; 
 }
+
+void uint64_to_string(uint64_t value, char* buffer, size_t size)
+{
+    if (!buffer || size < 2)
+        return;
+
+    char temp[21];
+    int pos = 0;
+
+    if (value == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return;
+    }
+
+    while (value > 0 && pos < 20)
+    {
+        temp[pos++] = '0' + (value % 10);
+        value /= 10;
+    }
+
+    int out = 0;
+
+    while (pos > 0 && (size_t)out < size - 1)
+    {
+        buffer[out++] = temp[--pos];
+    }
+
+    buffer[out] = '\0';
+}

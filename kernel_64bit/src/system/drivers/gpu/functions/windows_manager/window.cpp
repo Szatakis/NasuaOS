@@ -11,11 +11,6 @@
 #define MAX_WINDOWS 13
 #define MAX_TASKBAR_WINDOWS 5
 
-static constexpr int WINDOW_TITLEBAR_HEIGHT = 24;
-static constexpr int WINDOW_RESIZE_BORDER = 12;
-static constexpr int WINDOW_MIN_WIDTH = 150;
-static constexpr int WINDOW_MIN_HEIGHT = 100;
-
 window_struct* active_window = nullptr;
 
 static window_struct* window_list[MAX_WINDOWS];
