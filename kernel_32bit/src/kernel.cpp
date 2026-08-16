@@ -5,7 +5,7 @@
 #include "system/drivers/drivers.hpp"
 #include "system/sysfunc/sysfunc.hpp"
 
-#include "system/fonts/font8x8.h"
+#include "../../resources/fonts/fonts.hpp"
 
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"

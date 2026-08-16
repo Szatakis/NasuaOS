@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#include "../../fonts/font8x8.h"
+#include "../../../../resources/fonts/font8x8.h"
 
 
 #define MULTIBOOT2_MAGIC     0x36D76289

@@ -3,7 +3,7 @@
 #include "system/drivers/keyboard/driver.hpp"
 #include "system/drivers/uart/driver.hpp"
 
-#include "system/fonts/fonts.hpp"
+#include "../../../../../../resources/fonts/fonts.hpp"
 #include "system/gui/vars/colors.hpp"
 
 #include "applications/shell/commands.hpp"

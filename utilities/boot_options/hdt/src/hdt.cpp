@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#include "../../fonts/font8x8.h"
+#include "../../../../resources/fonts/font8x8.h"
 
 
 // MULTIBOOT2

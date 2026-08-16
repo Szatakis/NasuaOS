@@ -1,6 +1,6 @@
 #include "../driver.hpp"
 
-#include "../../../fonts/font8x8.h"
+#include "../../../../../../resources/fonts/fonts.hpp"
 
 extern uint32_t* buffer;
 extern framebuffer fb;

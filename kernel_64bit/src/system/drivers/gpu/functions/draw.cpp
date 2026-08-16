@@ -3,11 +3,11 @@
 #include "system/drivers/rtc/driver.hpp"
 #include "system/drivers/mouse/driver.hpp"
 
-#include "system/fonts/font8x8.h"
-#include "system/fonts/font10x10.h"
-#include "system/fonts/font12x12.h"
-#include "system/fonts/font14x14.h"
-#include "system/fonts/font16x16.h"
+#include "../../../../../../resources/fonts/font8x8.h"
+#include "../../../../../../resources/fonts/font10x10.h"
+#include "../../../../../../resources/fonts/font12x12.h"
+#include "../../../../../../resources/fonts/font14x14.h"
+#include "../../../../../../resources/fonts/font16x16.h"
 
 #include "system/sysfunc/notification_manager/notification_manager.hpp"
 
