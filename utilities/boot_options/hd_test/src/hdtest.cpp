@@ -79,14 +79,15 @@ static constexpr uint32_t CHAR_SPACING = 1;
 
 
 // Colors
-static constexpr uint32_t COLOR_BLACK  = 0x00000000;
-static constexpr uint32_t COLOR_WHITE  = 0x00FFFFFF;
-static constexpr uint32_t COLOR_RED    = 0x00FF0000;
-static constexpr uint32_t COLOR_GREEN  = 0x0000FF00;
-static constexpr uint32_t COLOR_BLUE   = 0x000000FF;
-static constexpr uint32_t COLOR_YELLOW = 0x00FFFF00;
-static constexpr uint32_t COLOR_CYAN   = 0x0000FFFF;
-static constexpr uint32_t COLOR_GRAY   = 0x00303030;
+static constexpr uint32_t COLOR_BLACK       = 0xFF000000;
+static constexpr uint32_t COLOR_WHITE       = 0xFFFFFFFF;
+static constexpr uint32_t COLOR_RED         = 0xFFBF616A;
+static constexpr uint32_t COLOR_GREEN       = 0xFF2B8A2B;
+static constexpr uint32_t COLOR_BLUE        = 0xFF0000FF;
+static constexpr uint32_t COLOR_YELLOW      = 0xFFEBCB8B;
+static constexpr uint32_t COLOR_CYAN        = 0xFF7EC2D6;
+static constexpr uint32_t COLOR_GRAY        = 0xFF303030;
+static constexpr uint32_t COLOR_LIGHT_GRAY  = 0xFF858585;
 
 
 // Test counters
@@ -1070,7 +1071,7 @@ static void print_cpu_vendor()
 
     vendor[12] = 0;
 
-
+    print_color("[INFO] ", COLOR_CYAN);
     print("CPU: ");
     print(vendor);
     print("\n");
@@ -1132,7 +1133,7 @@ static bool test_pci()
         }
     }
 
-
+    print_color("[INFO] ", COLOR_CYAN);
     print("PCI devices: ");
     print_dec(devices);
     print("\n");
@@ -1275,24 +1276,18 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     extern uint8_t kernel_end;
 
 
-    /*
-        Kernel.
-    */
+    //Kernel.
     add_protected_range(reinterpret_cast<uint32_t>(&kernel_start), reinterpret_cast<uint32_t>(&kernel_end));
 
 
-    /*
-        Multiboot2 information.
-    */
+    //Multiboot2 information.
     uint8_t* mbi = reinterpret_cast<uint8_t*>(static_cast<uintptr_t>(mbi_addr));
     uint32_t mbi_size = *reinterpret_cast<uint32_t*>(mbi);
 
     add_protected_range(mbi_addr, static_cast<uint64_t>(mbi_addr) + mbi_size);
 
 
-    /*
-        Framebuffer.
-    */
+    //Framebuffer.
     if (framebuffer != nullptr)
     {
         uint64_t fb_start = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(framebuffer));
@@ -1308,7 +1303,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     cursor_x = 0;
     cursor_y = 10;
 
-    print_color("NasuaOS Hardware Diagnostic Test\n\n", COLOR_GREEN);
+    print_color("Hardware Diagnostic Test\n\n", COLOR_LIGHT_GRAY);
 
     // Multiboot2
     test_ok("Multiboot2");
@@ -1324,6 +1319,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
         test_fail("Framebuffer");
     }
 
+    print_color("[INFO] ", COLOR_CYAN);
     print("Resolution: ");
 
     print_dec(framebuffer_width);
@@ -1333,6 +1329,7 @@ extern "C" void kmain(uint32_t magic, uint32_t mbi_addr)
     print_dec(framebuffer_bpp);
     print("\n");
 
+    print_color("[INFO] ", COLOR_CYAN);
     print("Pitch: ");
 
     print_dec(framebuffer_pitch);

@@ -5,6 +5,24 @@
 
 #include "libs/libc/libc.hpp"
 
+/*
+    ┌─────────────────────────┐
+    │         DISPLAY         │
+    ├──────┬──────┬──────┬────┤
+    │  AC  │  CE  │ C    │ ←  │
+    ├──────┼──────┼──────┼────┤
+    │  x²  │  1/x │  %   │ /  │
+    ├──────┼──────┼──────┼────┤
+    │  7   │  8   │  9   │ *  │
+    ├──────┼──────┼──────┼────┤
+    │  4   │  5   │  6   │ -  │
+    ├──────┼──────┼──────┼────┤
+    │  1   │  2   │  3   │ +  │
+    ├──────┼──────┼──────┼────┤
+    │  0   │ +/-  │ √    │ =  │
+    └──────┴──────┴──────┴────┘
+*/
+
 
 struct calculator_state {
     char display[64];
@@ -15,35 +33,69 @@ struct calculator_state {
     char operation;
 
     bool entering_second;
+    bool result_shown;
 };
+
 
 static calculator_state calc_data = {
     .display = "0",
+
     .value1 = 0,
     .value2 = 0,
+
     .operation = 0,
-    .entering_second = false
+
+    .entering_second = false,
+    .result_shown = false
 };
 
 
+// CALCULATOR KEY
+void calculator_key(window_struct* win, char key) 
+{
 
-void calculator_key(window_struct* win, char key) {
-    calculator_state* calc =
-        (calculator_state*)win->userdata;
+    calculator_state* calc = (calculator_state*)win->userdata;
 
 
     // numbers
-    if(key >= '0' && key <= '9') {
+    if(key >= '0' && key <= '9') 
+    {
+
         size_t len = strlen(calc->display);
 
-        if(len < 62) {
-            if(len == 1 && calc->display[0] == '0') {
+        if(calc->result_shown) 
+        {
+
+            strcpy(calc->display, "0");
+
+            calc->result_shown = false;
+
+            len = 1;
+        }
+
+
+        if(calc->operation != 0 && !calc->entering_second) 
+        {
+
+            strcpy(calc->display, "0");
+
+            calc->entering_second = true;
+
+            len = 1;
+        }
+
+
+        if(len < 62) 
+        {
+
+            if(len == 1 && calc->display[0] == '0') 
+            {
                 calc->display[0] = key;
             }
             else 
             {
                 calc->display[len] = key;
-                calc->display[len+1] = 0;
+                calc->display[len + 1] = 0;
             }
         }
 
@@ -51,39 +103,221 @@ void calculator_key(window_struct* win, char key) {
     }
 
 
-    // clean
-    if(key == 'c' || key == 'C') {
-        strcpy(calc->display,"0");
+    // AC
+    if(key == 'A') 
+    {
+        strcpy(calc->display, "0");
 
         calc->value1 = 0;
         calc->value2 = 0;
+
         calc->operation = 0;
+
+        calc->entering_second = false;
+        calc->result_shown = false;
+
+        return;
+    }
+
+
+    // CE
+    if(key == 'E') 
+    {
+        strcpy(calc->display, "0");
+
         calc->entering_second = false;
 
         return;
     }
 
 
-    // operators
-    if(key=='+' || key=='-' || key=='*' || key=='/') {
-        calc->value1 = atoi(calc->display);
-
-        calc->operation = key;
-
-        calc->entering_second = true;
-
-        strcpy(calc->display,"0");
+    // C
+    if(key == 'C') 
+    {
+        strcpy(calc->display, "0");
 
         return;
     }
 
-    // resoult
-    if(key=='=') {
-        calc->value2 = atoi(calc->display);
+
+    // BACKSPACE
+    if(key == 'B') 
+    {
+        size_t len = strlen(calc->display);
+
+        if(len > 1) 
+        {
+            calc->display[len - 1] = 0;
+        }
+        else 
+        {
+            strcpy(calc->display, "0");
+        }
+
+        return;
+    }
+
+
+    // PLUS / MINUS
+    if(key == 'N') 
+    {
+        if(calc->display[0] == '-') 
+        {
+            size_t len = strlen(calc->display);
+
+            for(size_t i = 0; i < len; i++) 
+            {
+                calc->display[i] = calc->display[i + 1];
+            }
+        }
+        else if(calc->display[0] != '0') 
+        {
+            size_t len = strlen(calc->display);
+
+            if(len < 62) 
+            {
+                for(size_t i = len; i > 0; i--) 
+                {
+                    calc->display[i] = calc->display[i - 1];
+                }
+
+                calc->display[0] = '-';
+            }
+        }
+
+        return;
+    }
+
+
+    // PERCENT
+    if(key == '%') 
+    {
+        int value = atoi(calc->display);
+
+        value /= 100;
+
+        char buf[32];
+
+        itoa(value, buf);
+
+        strcpy(calc->display, buf);
+
+        calc->result_shown = true;
+
+        return;
+    }
+
+
+    // SQUARE
+    if(key == 'Q') 
+    {
+        int value = atoi(calc->display);
+
+        int result = value * value;
+
+        char buf[32];
+
+        itoa(result, buf);
+
+        strcpy(calc->display, buf);
+
+        calc->result_shown = true;
+
+        return;
+    }
+
+
+    // SQUARE ROOT
+    if(key == 'R') 
+    {
+        int value = atoi(calc->display);
+
+        if(value < 0) 
+        {
+            strcpy(calc->display, "Error");
+
+            calc->result_shown = true;
+
+            return;
+        }
+
 
         int result = 0;
 
-        switch(calc->operation) {
+        while((result + 1) <= value / (result + 1)) 
+        {
+            result++;
+        }
+
+
+        char buf[32];
+
+        itoa(result, buf);
+        strcpy(calc->display, buf);
+
+        calc->result_shown = true;
+
+        return;
+    }
+
+
+    // 1 / X
+    if(key == 'I') 
+    {
+
+        int value = atoi(calc->display);
+
+        if(value == 0) 
+        {
+            strcpy(calc->display, "Error");
+
+            calc->result_shown = true;
+
+            return;
+        }
+
+
+        int result = 1 / value;
+
+        char buf[32];
+
+        itoa(result, buf);
+        strcpy(calc->display, buf);
+
+        calc->result_shown = true;
+
+        return;
+    }
+
+
+    // OPERATORS
+    if(key == '+' || key == '-' || key == '*' || key == '/') 
+    {
+        calc->value1 = atoi(calc->display);
+
+        calc->operation = key;
+
+        calc->entering_second = false;
+        calc->result_shown = false;
+
+        return;
+    }
+
+
+    // EQUAL
+    if(key == '=') 
+    {
+        if(calc->operation == 0)
+        {
+            return;
+        }
+
+        calc->value2 = atoi(calc->display);
+        int result = 0;
+
+
+        switch(calc->operation) 
+        {
             case '+':
                 result = calc->value1 + calc->value2;
                 break;
@@ -97,177 +331,243 @@ void calculator_key(window_struct* win, char key) {
                 break;
 
             case '/':
-                if(calc->value2 != 0)
-                    result = calc->value1 / calc->value2;
+                if(calc->value2 == 0) 
+                {
+                    strcpy(calc->display, "Error");
+
+                    calc->operation = 0;
+                    calc->result_shown = true;
+
+                    return;
+                }
+
+                result = calc->value1 / calc->value2;
+
                 break;
         }
 
 
         char buf[32];
 
-        itoa(result,buf);
-        strcpy(calc->display,buf);
+        itoa(result, buf);
+        strcpy(calc->display, buf);
 
 
-        calc->entering_second=false;
-        calc->operation=0;
+        calc->value1 = result;
+        calc->value2 = 0;
+
+        calc->operation = 0;
+
+        calc->entering_second = false;
+        calc->result_shown = true;
+
+        return;
     }
 }
 
 
-void draw_button(int x, int y, const char* text) {
-    fill_block(x, y, COLOR_TITLEBAR, 50, 35);
-    print_at8(text, x+15, y+12, COLOR_WHITE);
+// BUTTON
+void draw_button(int x, int y, const char* text) 
+{
+    fill_block(x, y, COLOR_TITLEBAR, 55, 35);
+    print_at8(text, x + 8, y + 11, COLOR_WHITE);
 }
 
 
-void draw_calculator(window_struct* win) {
-
-    calculator_state* calc = (calculator_state*)win->userdata;
-    int title = win->height/10;
-
-
-    if(title < 18) {
-        title = 18;
-    }
-
-    // display
-    fill_block(win->pos_x+15, win->pos_y+title+10, COLOR_BLACK, 220, 40);
-    print_at8(calc->display, win->pos_x+25, win->pos_y+title+25, COLOR_GREEN);
-
-
-
-    int x = win->pos_x+10;
-    int y = win->pos_y+title+70;
-
-
-    draw_button(x,y,"7");
-    draw_button(x+60,y,"8");
-    draw_button(x+120,y,"9");
-    draw_button(x+180,y,"/");
-
-
-    y+=45;
-
-    draw_button(x,y,"4");
-    draw_button(x+60,y,"5");
-    draw_button(x+120,y,"6");
-    draw_button(x+180,y,"*");
-
-
-    y+=45;
-
-    draw_button(x,y,"1");
-    draw_button(x+60,y,"2");
-    draw_button(x+120,y,"3");
-    draw_button(x+180,y,"-");
-
-
-    y+=45;
-
-    draw_button(x,y,"0");
-    draw_button(x+60,y,"C");
-    draw_button(x+120,y,"=");
-    draw_button(x+180,y,"+");
-}
-
-
-
-void calculator_mouse(window_struct* win, int mx, int my) 
+// DRAW CALCULATOR
+void draw_calculator(window_struct* win) 
 {
     calculator_state* calc = (calculator_state*)win->userdata;
-
-    (void)calc;
-
     int title = win->height / 10;
 
-    if(title < 18) 
+    if(title < 18)
     {
         title = 18;
     }
 
 
-    int x = win->pos_x + 10;
-    int y = win->pos_y + title + 70;
+    // DISPLAY
+    fill_block(win->pos_x + 12, win->pos_y + title + 10, COLOR_BLACK, win->width - 24, 42);
+    print_at8(calc->display, win->pos_x + 22, win->pos_y + title + 26, COLOR_GREEN);
 
-    char key = 0;
 
-    struct button 
+    // BUTTON GRID
+    int x = win->pos_x + 12;
+    int y = win->pos_y + title + 65;
+
+    // ROW 1
+    draw_button(x,       y, "AC");
+    draw_button(x + 65,  y, "CE");
+    draw_button(x + 130, y, "C");
+    draw_button(x + 195, y, "<-");
+
+
+    // ROW 2
+    y += 43;
+
+    draw_button(x,       y, "x2");
+    draw_button(x + 65,  y, "1/x");
+    draw_button(x + 130, y, "%");
+    draw_button(x + 195, y, "/");
+
+
+    // ROW 3
+    y += 43;
+
+    draw_button(x,       y, "7");
+    draw_button(x + 65,  y, "8");
+    draw_button(x + 130, y, "9");
+    draw_button(x + 195, y, "*");
+
+
+    // ROW 4
+    y += 43;
+
+    draw_button(x,       y, "4");
+    draw_button(x + 65,  y, "5");
+    draw_button(x + 130, y, "6");
+    draw_button(x + 195, y, "-");
+
+
+    // ROW 5
+    y += 43;
+
+    draw_button(x,       y, "1");
+    draw_button(x + 65,  y, "2");
+    draw_button(x + 130, y, "3");
+    draw_button(x + 195, y, "+");
+
+
+    // ROW 6
+    y += 43;
+
+    draw_button(x,       y, "0");
+    draw_button(x + 65,  y, "+/-");
+    draw_button(x + 130, y, "sqrt");
+    draw_button(x + 195, y, "=");
+}
+
+
+
+// MOUSE
+void calculator_mouse(window_struct* win, int mx, int my) 
+{
+    int title = win->height / 10;
+
+    if(title < 18)
     {
+        title = 18;
+    }
+
+    int x = win->pos_x + 12;
+    int y = win->pos_y + title + 65;
+
+    struct button {
         int x;
         int y;
+
         char key;
     };
 
 
-    button buttons[] = 
-    {
-        {0,0,'7'},
-        {60,0,'8'},
-        {120,0,'9'},
-        {180,0,'/'},
+    // EXACT SAME ORDER AS DRAW
+    button buttons[] = {
 
-        {0,45,'4'},
-        {60,45,'5'},
-        {120,45,'6'},
-        {180,45,'*'},
+        // ROW 1
+        {0,   0,   'A'}, // AC
+        {65,  0,   'E'}, // CE
+        {130, 0,   'C'}, // C
+        {195, 0,   'B'}, // <-
 
-        {0,90,'1'},
-        {60,90,'2'},
-        {120,90,'3'},
-        {180,90,'-'},
+        // ROW 2
+        {0,   43,  'Q'}, // x2
+        {65,  43,  'I'}, // 1/x
+        {130, 43,  '%'}, // %
+        {195, 43,  '/'}, // /
 
-        {0,135,'0'},
-        {60,135,'C'},
-        {120,135,'='},
-        {180,135,'+'}
+        // ROW 3
+        {0,   86,  '7'},
+        {65,  86,  '8'},
+        {130, 86,  '9'},
+        {195, 86,  '*'},
+
+        // ROW 4
+        {0,   129, '4'},
+        {65,  129, '5'},
+        {130, 129, '6'},
+        {195, 129, '-'},
+
+        // ROW 5
+        {0,   172, '1'},
+        {65,  172, '2'},
+        {130, 172, '3'},
+        {195, 172, '+'},
+
+        // ROW 6
+        {0,   215, '0'},
+        {65,  215, 'N'}, // +/-
+        {130, 215, 'R'}, // sqrt
+        {195, 215, '='}
     };
 
 
-    for(size_t i=0;i<16;i++) 
+    const size_t button_count = sizeof(buttons) / sizeof(buttons[0]);
+    char key = 0;
+
+
+    for(size_t i = 0; i < button_count; i++) 
     {
         int bx = x + buttons[i].x;
         int by = y + buttons[i].y;
 
-        if(mx >= bx && mx < bx + 50 && my >= by && my < by + 35) 
+        if(mx >= bx && mx < bx + 55 && my >= by && my < by + 35) 
         {
             key = buttons[i].key;
+
             break;
         }
     }
 
+
     if(key) 
     {
-        calculator_key(win,key);
+        calculator_key(win, key);
     }
 }
 
 
+// CALCULATOR WINDOW
 window_struct calculator = {
-    .name="Calculator",
-    .id=0,
+    .name = "Calculator",
+    .id = 0,
 
-    .pos_x=10,
-    .pos_y=10,
-    .width=250,
-    .height=320,
+    .pos_x = 10,
+    .pos_y = 10,
 
-    .visible=false,
-    .minimized=false,
-    .focused=false,
-    .can_maximize=false,
-    .maximized=false,
-    .restore_pos_x=0,
-    .restore_pos_y=0,
-    .restore_width=0,
-    .restore_height=0,
+    .width = 290,
+    .height = 390,
 
-    .is_dragging=false,
-    .drag_offset_x=0,
-    .drag_offset_y=0,
+    .visible = false,
+    .minimized = false,
+    .focused = false,
 
-    .userdata=&calc_data,
-    .draw_content=draw_calculator,
-    .key_press=calculator_key,
-    .mouse_click=calculator_mouse
+    .can_maximize = false,
+    .maximized = false,
+
+    .restore_pos_x = 0,
+    .restore_pos_y = 0,
+    .restore_width = 0,
+    .restore_height = 0,
+
+
+    .is_dragging = false,
+
+    .drag_offset_x = 0,
+    .drag_offset_y = 0,
+
+
+    .userdata = &calc_data,
+    .draw_content = draw_calculator,
+    .key_press = calculator_key,
+    .mouse_click = calculator_mouse
 };

@@ -73,13 +73,13 @@ static uint32_t cursor_y = 0;
 
 
 // COLORS
-static const uint32_t COLOR_BLACK   = 0x00101820;
-static const uint32_t COLOR_WHITE   = 0x00FFFFFF;
-static const uint32_t COLOR_GREEN   = 0x0044FF88;
-static const uint32_t COLOR_BLUE    = 0x004080FF;
-static const uint32_t COLOR_YELLOW  = 0x00FFD34D;
-static const uint32_t COLOR_RED     = 0x00FF5555;
-static const uint32_t COLOR_GRAY    = 0x00808090;
+static constexpr uint32_t COLOR_BLACK       = 0xFF000000;
+static constexpr uint32_t COLOR_WHITE       = 0xFFFFFFFF;
+static constexpr uint32_t COLOR_RED         = 0xFFBF616A;
+static constexpr uint32_t COLOR_GREEN       = 0xFF2B8A2B;
+static constexpr uint32_t COLOR_BLUE        = 0xFF7EC2D6;
+static constexpr uint32_t COLOR_YELLOW      = 0xFFEBCB8B;
+static constexpr uint32_t COLOR_GRAY        = 0xFF808090;
 
 
 // FRAMEBUFFER PIXEL

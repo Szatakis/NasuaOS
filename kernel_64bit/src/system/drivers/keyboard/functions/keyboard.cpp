@@ -23,12 +23,7 @@ bool shift_pressed = false;
 bool extended_scancode = false;
 bool shell_input_enabled = true;
 
-window_struct* apps[] = {
-    &terminal,
-    &settings,
-    &suaedit,
-    &calculator
-};
+extern window_struct* apps[];
 
 char scancode_to_ascii_normal(uint8_t scancode) 
 {
@@ -141,10 +136,13 @@ void handle_keyboard()
         return;
     }
 
-    // Mouse handler
+    // Mouse PS/2
     if (status & 0x20)
     {
-        (void)inb(0x60);
+        uint8_t mouse_data = inb(0x60);
+
+        mouse_handle_byte(mouse_data);
+
         return;
     }
 
@@ -295,58 +293,8 @@ void handle_keyboard()
     // ENTER
     if (scancode == 0x1C) 
     {
-        if (is_mouse_over_start(mouse_x, mouse_y)) 
-        {
-            if (!is_menu_start_open) 
-            {
-                open_start_menu();
-            } 
-            else 
-            {
-                close_start_menu();
-            }
-        } 
-        else if (is_mouse_over_taskbar(mouse_x, mouse_y))
-        {
-            handle_window_mouse_click(mouse_x, mouse_y);
-        }
-        else if(is_mouse_over_any_window(mouse_x, mouse_y)) 
-        {
-            handle_window_mouse_click(mouse_x, mouse_y);
-        }
-        else if(!is_mouse_over_any_window(mouse_x, mouse_y)) 
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                if (is_menu_start_open && is_mouse_over_icon(mouse_x, mouse_y, icons_start_x + 50, icons_start_y + i * icons_offset, 250, 32))
-                {
-                    apps[i]->visible = true;
-                    apps[i]->id = current_id++;
-                    register_window(apps[i]);
-                    return;
-                }
-            }
+        handle_left_click(true);
 
-            if(is_mouse_over_icon(mouse_x, mouse_y, icons_start_x, menu_y + menu_h - 80, 32, 32) && is_menu_start_open)
-            {
-                acpi_shutdown();
-            }
-            else if(is_mouse_over_icon(mouse_x, mouse_y, icons_start_x, menu_y + menu_h - 40, 32, 32) && is_menu_start_open)
-            {
-                acpi_reboot();
-            }
-            else if(shell_input_enabled) 
-            {
-                command_buffer[cmd_idx] = '\0';
-            
-                history_add(command_buffer);
-                history_reset_nav(); 
-            
-                execute_command(command_buffer);
-                cmd_idx = 0;
-                command_buffer[0] = '\0';
-            }
-        }
         if(active_window)
         {
             if(is_mouse_over_any_window(mouse_x, mouse_y)) 
@@ -357,11 +305,7 @@ void handle_keyboard()
         return;
     }
 
-    char c = shift_pressed
-        ? scancode_to_ascii_shift(scancode)
-        : scancode_to_ascii_normal(scancode);
-
-
+    char c = shift_pressed ? scancode_to_ascii_shift(scancode) : scancode_to_ascii_normal(scancode);
     if(c)
     {
         if(active_window)

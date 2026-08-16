@@ -102,6 +102,8 @@ void iqu_init()
     pci_init();
     usb_init();
 
+    mouse_init();
+
     image_init();
 
     if(safe_mode) 
