@@ -127,7 +127,7 @@ static void panic_kv_row(const char* key, const char* value)
 
 static void draw_bitmap_128x128(size_t x, size_t y)
 {
-    generate_qr_code(128, "https://github.com/Szatakis/NasuaOS/blob/main/documentation/debug_instructions/debug_instructions.md", debug_qr_code);
+    generate_qr_code(128, "https://github.com/Szatakis/NasuaOS/blob/main/documentation/debug_instructions/debug_instructions.md#kernel_panic", debug_qr_code);
 
     for (size_t j = 0; j < 128; ++j)
     {
