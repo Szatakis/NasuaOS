@@ -17,6 +17,7 @@
 
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
+#include "libs/qr_code/qr_code.hpp"
 
 // DEBUG VARS
 bool debug_mode = false;

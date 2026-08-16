@@ -1,7 +1,5 @@
 #include "kernel_panic.hpp"
 
-#include "debug_qr_code.hpp"
-
 #include "system/drivers/gpu/driver.hpp"
 #include "system/drivers/memory/driver.hpp"
 #include "system/drivers/cpu/driver.hpp"
@@ -10,6 +8,7 @@
 
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
+#include "libs/qr_code/qr_code.hpp"
 
 // Layout constants
 #define CH_W 9
@@ -42,6 +41,8 @@
 static size_t box_px;
 static size_t box_py;
 static size_t prow;
+
+uint32_t debug_qr_code[128 * 128];
 
 static inline size_t row_y()
 {
@@ -126,6 +127,8 @@ static void panic_kv_row(const char* key, const char* value)
 
 static void draw_bitmap_128x128(size_t x, size_t y)
 {
+    generate_qr_code(128, "https://github.com/Szatakis/NasuaOS/blob/main/documentation/debug_instructions/debug_instructions.md", debug_qr_code);
+
     for (size_t j = 0; j < 128; ++j)
     {
         for (size_t i = 0; i < 128; ++i)
@@ -138,6 +141,8 @@ static void draw_bitmap_128x128(size_t x, size_t y)
 
 static void draw_debug_box(size_t scr_w, size_t scr_h)
 {
+    (void)scr_h;
+
     size_t total_w = BOX_PX_W + BOX_GAP + DBG_BOX_PX_W;
     if (scr_w < total_w)
     {
@@ -152,18 +157,6 @@ static void draw_debug_box(size_t scr_w, size_t scr_h)
 
     size_t header_y = dbg_py + 2;
     fill_block(dbg_px, header_y, COL_HEADER, DBG_BOX_PX_W, CH_H);
-
-    const char* title = "Kernel Debug Instructions";
-    size_t len = strlen(title);
-    size_t pad_chars = (len < DBG_BOX_COLS) ? (DBG_BOX_COLS - len) / 2 : 0;
-
-    draw_string_clipped(
-        dbg_px + HORIZ_PAD + pad_chars * CH_W,
-        header_y + 2,
-        title,
-        COL_TEXT_BRIGHT,
-        DBG_BOX_COLS - pad_chars
-    );
 
     size_t text_block_y = header_y + CH_H + 4;
     size_t text_block_h = CH_H * 3;
