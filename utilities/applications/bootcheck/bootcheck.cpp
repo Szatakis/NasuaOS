@@ -11,8 +11,7 @@ int _start(const napp_api* api)
 
     api->serial_log("[BOOTCHECK] Application started\n");
 
-    api->print_line("NasuaOS boot check");
-    api->print_line("------------------");
+    api->print_line("\nNasuaOS boot check");
     api->print_line("Application image: loaded from /bin/bootcheck/bootcheck.napp");
     api->print("Application ABI:    ");
     api->print_dec(api->abi_version);
