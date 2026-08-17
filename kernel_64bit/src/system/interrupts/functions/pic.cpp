@@ -3,7 +3,7 @@
 #include "system/drivers/apic/driver.hpp"
 #include "system/drivers/uart/driver.hpp"
 
-#include "kernel/include/logger/logger.hpp"
+#include "system/sysfunc/logger/logger.hpp"
 
 #include "libs/asm/asm.hpp"
 

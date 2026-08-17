@@ -8,8 +8,8 @@
 
 #include "system/drivers/drivers.hpp"
 
-#include "kernel/include/panic/kernel_panic.hpp"
-#include "kernel/include/logger/logger.hpp"
+#include "kernel/kernel_panic/kernel_panic.hpp"
+#include "system/sysfunc/logger/logger.hpp"
 #include "system/sysfunc/rand/rand.hpp"
 
 #include "applications/applications.hpp"

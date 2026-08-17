@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "kernel/include/logger/logger.hpp"
+#include "system/sysfunc/logger/logger.hpp"
 #include "system/drivers/uart/driver.hpp"
 
 bool found_uhci = false;

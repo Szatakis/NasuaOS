@@ -3,7 +3,7 @@
 
 #include "system/drivers/uart/driver.hpp"
 
-#include "kernel/include/logger/logger.hpp"
+#include "system/sysfunc/logger/logger.hpp"
 
 extern volatile limine_rsdp_request rsdp_request;
 extern volatile limine_hhdm_request hhdm_request;

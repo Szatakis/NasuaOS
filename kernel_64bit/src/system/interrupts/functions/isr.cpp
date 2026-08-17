@@ -5,7 +5,7 @@
 #include "system/drivers/uart/driver.hpp"
 #include "system/drivers/timer/driver.hpp"
 
-#include "kernel/include/panic/kernel_panic.hpp"
+#include "kernel/kernel_panic/kernel_panic.hpp"
 
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"

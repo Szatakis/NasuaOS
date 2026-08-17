@@ -1,7 +1,8 @@
 #include "libc.hpp"
 
 #include <stdint.h>
-#include <cstddef>
+#include <stdarg.h>
+#include <stddef.h>
 
 void strcpy(char* dest, const char* src)
 {
@@ -353,13 +354,17 @@ uint32_t parse_hex(const char* str) {
     return value;
 }
 
-char* strtok(char* str, const char* delim) {
+char* strtok(char* str, const char* delim) 
+{
     static char* backup_ptr = nullptr;
-    if (str != nullptr) {
+
+    if (str != nullptr) 
+    {
         backup_ptr = str;
     }
 
-    if (backup_ptr == nullptr || *backup_ptr == '\0') {
+    if (backup_ptr == nullptr || *backup_ptr == '\0') 
+    {
         return nullptr;
     }
 
@@ -367,43 +372,61 @@ char* strtok(char* str, const char* delim) {
     
     while (*backup_ptr != '\0') {
         bool is_delim = false;
-        for (int i = 0; delim[i] != '\0'; i++) {
-            if (*backup_ptr == delim[i]) {
+        for (int i = 0; delim[i] != '\0'; i++) 
+        {
+            if (*backup_ptr == delim[i]) 
+            {
                 is_delim = true;
                 break;
             }
         }
 
-        if (is_delim) {
+        if (is_delim) 
+        {
             *backup_ptr = '\0';
             backup_ptr++;
             return start;
         }
+
         backup_ptr++;
     }
 
     return start;
 }
 
-char* strrchr(const char* str, int c) {
+char* strrchr(const char* str, int c) 
+{
     const char* last = nullptr;
-    while (*str) {
-        if (*str == (char)c) last = str;
+
+    while (*str) 
+    {
+        if (*str == (char)c) 
+        {
+            last = str;
+        }
+
         str++;
     }
+
     return (char*)last;
 }
 
 bool find_in_string(const char* str, const char* target) 
 {
-    if (!str || !target) return false;
+    if (!str || !target) 
+    {
+        return false;
+    }
+
     for (std::size_t i = 0; str[i] != '\0'; ++i) 
     {
         std::size_t j = 0;
+
         while (target[j] != '\0' && str[i + j] == target[j]) 
         {
             j++;
         }
+
         if (target[j] == '\0') 
         {
             return true;
@@ -414,17 +437,23 @@ bool find_in_string(const char* str, const char* target)
 
 void memclear(void* ptr, size_t size) {
     uint8_t* p = (uint8_t*)ptr;
-    for(size_t i = 0; i < size; i++) p[i] = 0;
+
+    for(size_t i = 0; i < size; i++) 
+    {
+        p[i] = 0;
+    }
 }
 
 bool is_empty_or_whitespace(const char* str) {
     if (str == nullptr || *str == '\0') {
         return true; 
     }
+
     while (*str) {
         if (*str != ' ' && *str != '\t' && *str != '\n' && *str != '\r') {
             return false;
         }
+        
         str++;
     }
     return true; 
@@ -433,7 +462,9 @@ bool is_empty_or_whitespace(const char* str) {
 void uint64_to_string(uint64_t value, char* buffer, size_t size)
 {
     if (!buffer || size < 2)
+    {
         return;
+    }
 
     char temp[21];
     int pos = 0;
