@@ -1,4 +1,8 @@
 **/*
 !**/
 !**/*.*
-!**/GNUmakefile
+!**/GNUmakefile.
+
+*.o
+*.elf
+*.napp

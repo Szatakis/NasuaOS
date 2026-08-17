@@ -19,6 +19,8 @@
 
 #include "system/filesystem/clawfs/clawfs.hpp"
 
+#include "system/applications/napp/napp.hpp"
+
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
 
@@ -748,6 +750,24 @@ void execute_command(const char *cmd)
             print(" - taskmgr\n");
             print(" - settings\n");
 
+            static char application_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
+
+            uint32_t application_count = napp_list(application_names, NAPP_MAX_APPLICATIONS);
+
+            print_info("Applications in /bin:\n");
+
+            if (application_count == 0)
+            {
+                print(" (none)\n");
+            }
+
+            for (uint32_t i = 0; i < application_count; i++)
+            {
+                print(" - ");
+                print(application_names[i]);
+                print("\n");
+            }
+
             print("\nUsage:\n");
             print(" bootapp --app \"application_name\"\n");
 
@@ -813,7 +833,7 @@ void execute_command(const char *cmd)
                     current_id++;
                     register_window(&settings);
                 }
-                else 
+                else if (!napp_run(app_name_buf, nullptr))
                 {
                     print_error("Unknown app\n");
                 }

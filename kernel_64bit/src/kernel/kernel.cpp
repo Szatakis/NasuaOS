@@ -8,6 +8,8 @@
 
 #include "applications/shell/commands.hpp"
 
+#include "system/applications/napp/napp.hpp"
+
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
 #include "system/gui/gui.hpp"
@@ -23,6 +25,10 @@
 bool debug_mode = false;
 bool safe_mode = false;
 bool kernel_panicked = false;
+
+// Rootfs image handed over by the bootloader as a module.
+static const void* rootfs_module_address = nullptr;
+static uint64_t rootfs_module_size = 0;
 
 __attribute__((used, section(".limine_requests")))
 volatile limine_rsdp_request rsdp_request = {
@@ -107,6 +113,8 @@ void iqu_init()
 
     image_init();
 
+    napp_init(rootfs_module_address, rootfs_module_size);
+
     if(safe_mode) 
     {
         execute_command("safe_mode");
@@ -138,7 +146,12 @@ void pre_check()
         {
             struct limine_file* file = module_request.response->modules[i];
 
-            if (find_in_string(file->path, "boot_config.txt"))
+            if (find_in_string(file->path, "rootfs.img"))
+            {
+                rootfs_module_address = file->address;
+                rootfs_module_size = file->size;
+            }
+            else if (find_in_string(file->path, "boot_config.txt"))
             {
                 const char* content = (const char*)file->address;
 
