@@ -270,12 +270,28 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
             win->pos_x = current_mouse_x - win->drag_offset_x;
             win->pos_y = current_mouse_y - win->drag_offset_y;
 
-            // Taskbar protection
+            // Clamp window position to screen boundaries
             if (fb) 
             {
-                if (win->pos_y > (int)fb->height - 50) 
+                int max_x = (int)fb->width - win->width;
+                int max_y = (int)fb->height - (int)bar_h_scaled - win->height;
+
+                if (win->pos_x < 0)
                 {
-                    win->pos_y = (int)fb->height - 50;
+                    win->pos_x = 0;
+                }
+                else if (win->pos_x > max_x)
+                {
+                    win->pos_x = max_x;
+                }
+
+                if (win->pos_y < 0)
+                {
+                    win->pos_y = 0;
+                }
+                else if (win->pos_y > max_y)
+                {
+                    win->pos_y = max_y;
                 }
             }
 
