@@ -614,8 +614,8 @@ int _start(const napp_api* api)
 
     config.title = "Calculator";
 
-    config.width = 290;
-    config.height = 390;
+    config.width = 275;
+    config.height = 380;
 
     config.resizable = false;
     config.can_maximize = false;
