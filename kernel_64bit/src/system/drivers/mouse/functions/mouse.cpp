@@ -28,6 +28,7 @@ static uint8_t mouse_id = 0;
 extern window_struct* apps[];
 
 
+// PS/2 CONTROLLER
 // Wait for PS/2 controller to be ready for writing
 static void mouse_wait_write()
 {
@@ -81,7 +82,7 @@ static uint8_t mouse_read()
 }
 
 
-// Initialize PS/2 mouse
+// MOUSE INITIALIZATION
 void mouse_init()
 {
     mouse_connected = false;
@@ -93,10 +94,12 @@ void mouse_init()
     // Enable second PS/2 port
     ps2_write(0xA8);
 
+
     // Read controller configuration
     ps2_write(0x20);
 
     uint8_t config = mouse_read();
+
 
     // Enable IRQ12
     config |= 0x02;
@@ -104,12 +107,12 @@ void mouse_init()
     // Enable second PS/2 clock
     config &= ~0x20;
 
-    // Write configuration
+
+    // Write controller configuration
     ps2_write(0x60);
 
     mouse_wait_write();
     outb(0x60, config);
-
 
     // Reset mouse
     mouse_write(0xFF);
@@ -122,6 +125,7 @@ void mouse_init()
         return;
     }
 
+
     // BAT
     uint8_t bat = mouse_read();
 
@@ -131,7 +135,8 @@ void mouse_init()
         return;
     }
 
-    // Mouse ID
+
+    // Initial mouse ID
     uint8_t id = mouse_read();
 
     if (id != 0x00)
@@ -151,6 +156,7 @@ void mouse_init()
         return;
     }
 
+
     mouse_write(0xF3);
     ack = mouse_read();
 
@@ -160,14 +166,16 @@ void mouse_init()
         ack = mouse_read();
     }
 
+
     mouse_write(0xF3);
     ack = mouse_read();
 
     if (ack == 0xFA)
     {
-        mouse_write(100);
+        mouse_write(200);
         ack = mouse_read();
     }
+
 
     mouse_write(0xF3);
     ack = mouse_read();
@@ -188,22 +196,70 @@ void mouse_init()
     {
         mouse_id = mouse_read();
 
-        if (mouse_id == 0x03)
+        if (mouse_id == 0x04)
         {
-            Uart::puts("[MOUSE] IntelliMouse wheel enabled\n");
+            Uart::puts("[MOUSE] IntelliMouse Explorer 5-button enabled\n");
+        }
+    }
+
+    if (mouse_id != 0x04)
+    {
+        mouse_write(0xF3);
+        ack = mouse_read();
+
+        if (ack == 0xFA)
+        {
+            mouse_write(200);
+            ack = mouse_read();
+        }
+
+
+        mouse_write(0xF3);
+        ack = mouse_read();
+
+        if (ack == 0xFA)
+        {
+            mouse_write(100);
+            ack = mouse_read();
+        }
+
+
+        mouse_write(0xF3);
+        ack = mouse_read();
+
+        if (ack == 0xFA)
+        {
+            mouse_write(80);
+            ack = mouse_read();
+        }
+
+
+        // Get ID
+        mouse_write(0xF2);
+
+        ack = mouse_read();
+
+        if (ack == 0xFA)
+        {
+            mouse_id = mouse_read();
+
+            if (mouse_id == 0x03)
+            {
+                Uart::puts("[MOUSE] IntelliMouse wheel enabled\n");
+            }
+            else
+            {
+                mouse_id = 0;
+
+                Uart::puts("[MOUSE] Standard PS/2 mouse\n");
+            }
         }
         else
         {
             mouse_id = 0;
 
-            Uart::puts("[MOUSE] Standard PS/2 mouse\n");
+            Uart::puts("[MOUSE] Could not detect mouse ID\n");
         }
-    }
-    else
-    {
-        mouse_id = 0;
-
-        Uart::puts("[MOUSE] Could not detect wheel\n");
     }
 
 
@@ -218,8 +274,6 @@ void mouse_init()
         return;
     }
 
-
-    // Done
     mouse_packet_index = 0;
     mouse_buttons = 0;
     old_mouse_buttons = 0;
@@ -230,7 +284,7 @@ void mouse_init()
 }
 
 
-// Update cursor position
+// CURSOR POSITION
 void mouse_update_position(int32_t dx, int32_t dy)
 {
     mouse_x += dx;
@@ -241,12 +295,12 @@ void mouse_update_position(int32_t dx, int32_t dy)
     {
         mouse_x = 0;
     }
+
     // Top boundary
     if (mouse_y < 0)
     {
         mouse_y = 0;
     }
-
 
     if (fb)
     {
@@ -265,13 +319,13 @@ void mouse_update_position(int32_t dx, int32_t dy)
 }
 
 
-// Handle mouse packet byte
+// MOUSE PACKET
 void mouse_handle_byte(uint8_t data)
 {
     // First byte synchronization
     if (mouse_packet_index == 0)
     {
-        // Bit 3 of first byte must always be 1
+        // Bit 3 must always be 1
         if (!(data & 0x08))
         {
             return;
@@ -282,10 +336,8 @@ void mouse_handle_byte(uint8_t data)
     mouse_packet[mouse_packet_index++] = data;
 
 
-    // Normal mouse = 3 bytes
-    // IntelliMouse = 4 bytes
-    uint8_t packet_size = (mouse_id == 0x03) ? 4 : 3;
-
+    // Packet size
+    uint8_t packet_size = (mouse_id == 0x03 || mouse_id == 0x04) ? 4 : 3;
 
     if (mouse_packet_index < packet_size)
     {
@@ -295,16 +347,12 @@ void mouse_handle_byte(uint8_t data)
 
     // Packet complete
     mouse_packet_index = 0;
+
     uint8_t flags = mouse_packet[0];
 
 
     // Overflow
-    if (flags & 0x40)
-    {
-        return;
-    }
-
-    if (flags & 0x80)
+    if (flags & 0x40 || flags & 0x80)
     {
         return;
     }
@@ -314,13 +362,16 @@ void mouse_handle_byte(uint8_t data)
     int8_t dx = (int8_t)mouse_packet[1];
     int8_t dy = (int8_t)mouse_packet[2];
 
-
-    // Update position BEFORE handling click
     mouse_update_position(dx, dy);
 
-
-    // Buttons
     uint8_t new_buttons = flags & 0x07;
+
+
+    // IntelliMouse Explorer buttons
+    if (mouse_id == 0x04)
+    {
+        new_buttons |= (mouse_packet[3] >> 1) & 0x18;
+    }
 
 
     // LEFT BUTTON
@@ -347,11 +398,34 @@ void mouse_handle_byte(uint8_t data)
     }
 
 
-    // SCROLL
-    if (mouse_id == 0x03)
+    // BUTTON 4 - BACK
+    if ((new_buttons & 0x08) &&
+        !(old_mouse_buttons & 0x08))
     {
-        // Wheel is signed.
-        int8_t wheel = (int8_t)mouse_packet[3];
+        mouse_back_click();
+    }
+
+
+    // BUTTON 5 - FORWARD
+    if ((new_buttons & 0x10) &&
+        !(old_mouse_buttons & 0x10))
+    {
+        mouse_forward_click();
+    }
+
+
+    // WHEEL
+    if (mouse_id == 0x03 || mouse_id == 0x04)
+    {
+        //Low 4 bits contain signed wheel movement.
+        int8_t wheel = (int8_t)(mouse_packet[3] & 0x0F);
+
+        // Sign extend 4-bit wheel value
+        if (wheel & 0x08)
+        {
+            wheel |= 0xF0;
+        }
+
 
         if (wheel > 0)
         {
@@ -496,6 +570,20 @@ void mouse_scroll_up()
 
 // Mouse scroll down
 void mouse_scroll_down()
+{
+
+}
+
+
+// BACK CLICK
+void mouse_back_click()
+{
+
+}
+
+
+// FORWARD CLICK
+void mouse_forward_click()
 {
 
 }

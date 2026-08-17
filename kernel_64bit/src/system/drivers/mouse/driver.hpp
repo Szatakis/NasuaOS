@@ -20,6 +20,8 @@ void mouse_update_position(int32_t dx, int32_t dy);
 void handle_left_click(bool cmd_enter);
 void handle_right_click(bool cmd_enter);
 void handle_middle_click(bool cmd_enter);
+void mouse_back_click();
+void mouse_forward_click();
 
 void mouse_scroll_up();
 void mouse_scroll_down();
