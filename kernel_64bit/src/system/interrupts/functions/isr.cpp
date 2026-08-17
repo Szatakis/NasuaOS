@@ -55,7 +55,7 @@ void isr_handler(Registers* regs)
     // Page fault — attempt demand paging; fatal cases handled inside
     if (regs->vector == 14)
     {
-        page_fault_handler(regs->error);
+        page_fault_handler(regs);
         return;
     }
 

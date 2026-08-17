@@ -8,6 +8,8 @@
 
 #include "libs/libc/libc.hpp"
 
+#include "isr.hpp"
+
 static uint64_t read_cr2()
 {
     uint64_t value;
@@ -49,23 +51,38 @@ static bool is_mmio_address(uint64_t addr)
 
 // Page fault handler
 
-void page_fault_handler(uint64_t error)
+void page_fault_handler(Registers* regs)
 {
     uint64_t addr = read_cr2();
-
-    Uart::puts("\n[PAGE FAULT] Address: ");
-    Uart::puthex(addr);
-    Uart::puts("\n");
-
-    Uart::puts("[PAGE FAULT] Error: ");
-    Uart::puthex(error);
-    Uart::puts("\n");
+    uint64_t error = regs->error;
+    uint64_t rip = regs->rip;
+    uint64_t rsp = regs->rsp;
 
     char addr_buf[20];
     char err_buf[20];
+    char rip_buf[20];
+    char rsp_buf[20];
 
     to_hex64(addr,  addr_buf);
     to_hex64(error, err_buf);
+    to_hex64(rip,   rip_buf);
+    to_hex64(rsp,   rsp_buf);
+
+    Uart::puts("\n[PAGE FAULT] Address: ");
+    Uart::puts(addr_buf);
+    Uart::puts("\n");
+
+    Uart::puts("[PAGE FAULT] Error: ");
+    Uart::puts(err_buf);
+    Uart::puts("\n");
+
+    Uart::puts("[PAGE FAULT] RIP: ");
+    Uart::puts(rip_buf);
+    Uart::puts("\n");
+
+    Uart::puts("[PAGE FAULT] RSP: ");
+    Uart::puts(rsp_buf);
+    Uart::puts("\n");
 
     /*
         Do NOT automatically allocate RAM for MMIO.
@@ -85,8 +102,8 @@ void page_fault_handler(uint64_t error)
         kernel_panic(
             "Page Fault in MMIO/PCI address",
             err_buf,
-            "Unknown",
-            "Unknown",
+            rip_buf,
+            rsp_buf,
             addr_buf
         );
 
@@ -108,8 +125,8 @@ void page_fault_handler(uint64_t error)
         kernel_panic(
             "Page Fault - Out of Memory",
             err_buf,
-            "Unknown",
-            "Unknown",
+            rip_buf,
+            rsp_buf,
             addr_buf
         );
 
@@ -126,7 +143,9 @@ void page_fault_handler(uint64_t error)
         kernel_panic(
             "Access Violation - Write to Read-Only Memory",
             err_buf,
-            "Unknown", "Unknown", addr_buf
+            rip_buf,
+            rsp_buf,
+            addr_buf
         );
         return;
     }
