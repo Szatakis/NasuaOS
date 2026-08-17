@@ -116,6 +116,9 @@ typedef struct window_struct {
     int resize_start_width;
     int resize_start_height;
 
+    int max_width;
+    int max_height;
+
     void* userdata;
 
     window_draw_callback draw_content;

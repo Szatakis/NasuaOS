@@ -1,6 +1,7 @@
 #include "window.hpp"
 
 #include "system/drivers/gpu/driver.hpp"
+#include "system/drivers/mouse/driver.hpp"
 #include "system/gui/gui.hpp"
 
 #include "system/gui/vars/colors.hpp"
@@ -45,6 +46,9 @@ void register_window(window_struct* window)
     window->is_resizing = false;
     window->resize_right = false;
     window->resize_bottom = false;
+
+    window->max_width = 0;
+    window->max_height = 0;
 
     window->minimized = false;
 
@@ -267,33 +271,34 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
         // WINDOW DRAGGING
         if (win->is_dragging) 
         {
-            win->pos_x = current_mouse_x - win->drag_offset_x;
-            win->pos_y = current_mouse_y - win->drag_offset_y;
+            int eff_mouse_x = current_mouse_x;
+            int eff_mouse_y = current_mouse_y;
 
-            // Clamp window position to screen boundaries
             if (fb) 
             {
-                int max_x = (int)fb->width - win->width;
-                int max_y = (int)fb->height - (int)bar_h_scaled - win->height;
+                // Valid mouse range that keeps the window fully on screen.
+                int min_mx = win->drag_offset_x;
+                int max_mx = (int)fb->width - win->width + win->drag_offset_x;
+                int min_my = win->drag_offset_y;
+                int max_my = (int)fb->height - (int)bar_h_scaled - win->height + win->drag_offset_y;
 
-                if (win->pos_x < 0)
-                {
-                    win->pos_x = 0;
-                }
-                else if (win->pos_x > max_x)
-                {
-                    win->pos_x = max_x;
-                }
+                if (max_mx < min_mx) max_mx = min_mx;
+                if (max_my < min_my) max_my = min_my;
 
-                if (win->pos_y < 0)
-                {
-                    win->pos_y = 0;
-                }
-                else if (win->pos_y > max_y)
-                {
-                    win->pos_y = max_y;
-                }
+                if (eff_mouse_x < min_mx) eff_mouse_x = min_mx;
+                else if (eff_mouse_x > max_mx) eff_mouse_x = max_mx;
+
+                if (eff_mouse_y < min_my) eff_mouse_y = min_my;
+                else if (eff_mouse_y > max_my) eff_mouse_y = max_my;
+
+                // Keep the real cursor locked to the constrained drag position
+                // so the cursor never drifts past the window's valid range.
+                mouse_x = eff_mouse_x;
+                mouse_y = eff_mouse_y;
             }
+
+            win->pos_x = eff_mouse_x - win->drag_offset_x;
+            win->pos_y = eff_mouse_y - win->drag_offset_y;
 
             continue;
         }
@@ -302,48 +307,97 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
         // WINDOW RESIZING
         if (win->is_resizing) 
         {
-            int delta_x = current_mouse_x - win->resize_start_mouse_x;
-            int delta_y = current_mouse_y - win->resize_start_mouse_y;
+            int eff_mouse_x = current_mouse_x;
+            int eff_mouse_y = current_mouse_y;
 
-
-            // Resize right
-            if (win->resize_right) 
+            if (fb) 
             {
-                int new_width = win->resize_start_width + delta_x;
+                // Axis-lock: constrain one coordinate to where the resize began.
+                // Horizontal resize -> lock Y; vertical resize -> lock X.
+                // Corner (both axes) resizing keeps both coordinates free.
+                if (win->resize_right && !win->resize_bottom) 
+                {
+                    eff_mouse_y = win->resize_start_mouse_y;
+                } 
+                else if (win->resize_bottom && !win->resize_right) 
+                {
+                    eff_mouse_x = win->resize_start_mouse_x;
+                }
 
-                if (new_width < WINDOW_MIN_WIDTH) 
+                int delta_x = eff_mouse_x - win->resize_start_mouse_x;
+                int delta_y = eff_mouse_y - win->resize_start_mouse_y;
+
+                int new_width = win->resize_start_width;
+                int new_height = win->resize_start_height;
+
+                if (win->resize_right) 
+                {
+                    new_width = win->resize_start_width + delta_x;
+                }
+
+                if (win->resize_bottom) 
+                {
+                    new_height = win->resize_start_height + delta_y;
+                }
+
+                // Minimum dimensions
+                if (win->resize_right && new_width < WINDOW_MIN_WIDTH) 
                 {
                     new_width = WINDOW_MIN_WIDTH;
                 }
 
-                win->width = new_width;
-            }
-
-            // Resize bottom
-            if (win->resize_bottom) 
-            {
-                int new_height = win->resize_start_height + delta_y;
-
-                if (new_height < WINDOW_MIN_HEIGHT) 
+                if (win->resize_bottom && new_height < WINDOW_MIN_HEIGHT) 
                 {
                     new_height = WINDOW_MIN_HEIGHT;
                 }
 
+                // Maximum dimensions (window limit and screen limit)
+                if (win->resize_right) 
+                {
+                    int max_w = (int)fb->width - win->pos_x;
+                    if (win->max_width > 0 && win->max_width < max_w) 
+                    {
+                        max_w = win->max_width;
+                    }
+
+                    if (new_width > max_w) 
+                    {
+                        new_width = max_w;
+                    }
+                }
+
+                if (win->resize_bottom) 
+                {
+                    int max_h = (int)fb->height - (int)bar_h_scaled - win->pos_y;
+                    if (win->max_height > 0 && win->max_height < max_h) 
+                    {
+                        max_h = win->max_height;
+                    }
+
+                    if (new_height > max_h) 
+                    {
+                        new_height = max_h;
+                    }
+                }
+
+                win->width = new_width;
                 win->height = new_height;
-            }
 
-            // Don't resize outside screen
-            if (fb) 
-            {
-                if (win->pos_x + win->width > (int)fb->width) 
+                // Derive the constrained mouse position from the clamped size so
+                // the cursor stays perfectly synchronized with the resize edge.
+                if (win->resize_right) 
                 {
-                    win->width = (int)fb->width - win->pos_x;
+                    eff_mouse_x = win->resize_start_mouse_x + (new_width - win->resize_start_width);
                 }
 
-                if (win->pos_y + win->height > (int)fb->height - (int)bar_h_scaled) 
+                if (win->resize_bottom) 
                 {
-                    win->height = (int)fb->height - (int)bar_h_scaled - win->pos_y;
+                    eff_mouse_y = win->resize_start_mouse_y + (new_height - win->resize_start_height);
                 }
+
+                // Lock the real cursor to the constrained resize position.
+                mouse_x = eff_mouse_x;
+                mouse_y = eff_mouse_y;
             }
         }
     }
