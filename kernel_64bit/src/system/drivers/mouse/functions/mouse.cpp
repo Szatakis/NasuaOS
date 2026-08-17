@@ -6,6 +6,7 @@
 #include "system/sysfunc/command_history/history.hpp"
 
 #include "applications/applications.hpp"
+#include "system/applications/napp/napp.hpp"
 #include "system/gui/icons/icons.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
 #include "system/gui/gui.hpp"
@@ -497,8 +498,8 @@ void handle_left_click(bool cmd_enter)
     // START MENU
     if (is_menu_start_open)
     {
-        // Applications
-        for (int i = 0; i < 4; i++)
+        // Kernel applications
+        for (int i = 0; i < kernel_app_count; i++)
         {
             if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x + 50, icons_start_y + i * icons_offset, 250, 32))
             {
@@ -506,6 +507,20 @@ void handle_left_click(bool cmd_enter)
                 apps[i]->id = current_id++;
 
                 register_window(apps[i]);
+
+                return;
+            }
+        }
+
+
+        // Applications shipped as .napp packages in the rootfs
+        for (int i = 0; i < start_menu_napp_count; i++)
+        {
+            const int row = kernel_app_count + i;
+
+            if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x + 50, icons_start_y + row * icons_offset, 250, 32))
+            {
+                napp_run(start_menu_napps[i], nullptr);
 
                 return;
             }

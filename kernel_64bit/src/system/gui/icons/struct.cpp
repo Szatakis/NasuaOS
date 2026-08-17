@@ -1,6 +1,8 @@
 #include "icons.hpp"
 #include "system/gui/gui.hpp"
 
+#include "libs/libc/libc.hpp"
+
 bool start_hover = false;
 
 int icons_start_x = 0;
@@ -65,8 +67,28 @@ void draw_start_menu_system_icons(int x, int y, int p, int w, int h)
     draw_icon<32, 32>(suaedit_icon, icons_start_x + 50, icons_start_y + 2 * icons_offset);
     print_at8("SuaEdit", icons_start_x + 85, icons_start_y + 12 + 2 * icons_offset, COLOR_WHITE); // not work yet
 
-    draw_icon<32, 32>(calculator_icon, icons_start_x + 50, icons_start_y + 3 * icons_offset);
-    print_at8("Calculator", icons_start_x + 85, icons_start_y + 12 + 3 * icons_offset, COLOR_WHITE);
+    draw_start_menu_napp_icons();
+}
+
+// Applications installed as .napp packages in the rootfs, listed below the
+// kernel applications and refreshed every time the start menu is drawn.
+char start_menu_napps[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
+int start_menu_napp_count = 0;
+
+void draw_start_menu_napp_icons()
+{
+    start_menu_napp_count = (int)napp_list(start_menu_napps, NAPP_MAX_APPLICATIONS);
+
+    for (int i = 0; i < start_menu_napp_count; i++)
+    {
+        const int row = kernel_app_count + i;
+        const int y = icons_start_y + row * icons_offset;
+
+        const uint32_t* icon = strcmp(start_menu_napps[i], "calculator") == 0 ? calculator_icon : suaedit_icon;
+
+        draw_icon<32, 32>(icon, icons_start_x + 50, y);
+        print_at8(start_menu_napps[i], icons_start_x + 85, y + 12, COLOR_WHITE);
+    }
 }
 
 bool is_mouse_over_start(int mouse_x, int mouse_y) 

@@ -8,6 +8,7 @@
 #include "system/filesystem/fat/fat.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
+#include "system/vars/info_vars/info_vars.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -17,6 +18,37 @@
 
 static fat_volume rootfs_volume;
 static bool rootfs_mounted = false;
+
+// A graphical application keeps its image mapped for as long as its window
+// exists, because the window callbacks live inside that image.
+struct napp_window_slot
+{
+    bool used;
+
+    char owner[NAPP_MAX_NAME];
+    char title[NAPP_MAX_NAME];
+
+    window_struct window;
+    napp_window view;
+
+    napp_window_draw draw;
+    napp_window_key key;
+    napp_window_mouse mouse;
+};
+
+struct napp_resident_image
+{
+    bool used;
+
+    char name[NAPP_MAX_NAME];
+    void* image;
+};
+
+static napp_window_slot window_slots[NAPP_MAX_WINDOWS];
+static napp_resident_image resident_images[NAPP_MAX_WINDOWS];
+
+static char loading_application[NAPP_MAX_NAME];
+static uint32_t loading_window_count = 0;
 
 static void napp_api_print(const char* text)
 {
@@ -58,6 +90,183 @@ static void napp_api_serial_log(const char* text)
     }
 }
 
+static void napp_api_fill_block(int x, int y, uint32_t color, int width, int height)
+{
+    if (x < 0 || y < 0 || width <= 0 || height <= 0)
+    {
+        return;
+    }
+
+    fill_block((size_t)x, (size_t)y, color, (size_t)width, (size_t)height);
+}
+
+static void napp_api_draw_text(const char* text, int x, int y, uint32_t color)
+{
+    if (text == nullptr || x < 0 || y < 0)
+    {
+        return;
+    }
+
+    print_at8(text, (size_t)x, (size_t)y, color);
+}
+
+static int window_title_height(const window_struct* window)
+{
+    int title = window->height / 10;
+
+    return title < 18 ? 18 : title;
+}
+
+static napp_window_slot* slot_of(window_struct* window)
+{
+    for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
+    {
+        if (window_slots[i].used && &window_slots[i].window == window)
+        {
+            return &window_slots[i];
+        }
+    }
+
+    return nullptr;
+}
+
+static napp_window_slot* sync_slot(window_struct* window)
+{
+    napp_window_slot* slot = slot_of(window);
+
+    if (slot == nullptr)
+    {
+        return nullptr;
+    }
+
+    slot->view.pos_x = window->pos_x;
+    slot->view.pos_y = window->pos_y;
+    slot->view.width = window->width;
+    slot->view.height = window->height;
+    slot->view.title_height = window_title_height(window);
+
+    return slot;
+}
+
+static void napp_window_draw_trampoline(window_struct* window)
+{
+    napp_window_slot* slot = sync_slot(window);
+
+    if (slot != nullptr && slot->draw != nullptr)
+    {
+        slot->draw(&slot->view);
+    }
+}
+
+static void napp_window_key_trampoline(window_struct* window, char key)
+{
+    napp_window_slot* slot = sync_slot(window);
+
+    if (slot != nullptr && slot->key != nullptr)
+    {
+        slot->key(&slot->view, key);
+    }
+}
+
+static void napp_window_mouse_trampoline(window_struct* window, int mouse_x, int mouse_y)
+{
+    napp_window_slot* slot = sync_slot(window);
+
+    if (slot != nullptr && slot->mouse != nullptr)
+    {
+        slot->mouse(&slot->view, mouse_x, mouse_y);
+    }
+}
+
+static napp_window_slot* find_window_of(const char* application)
+{
+    for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
+    {
+        if (window_slots[i].used && strcmp(window_slots[i].owner, application) == 0)
+        {
+            return &window_slots[i];
+        }
+    }
+
+    return nullptr;
+}
+
+static void show_window(napp_window_slot* slot)
+{
+    slot->window.visible = true;
+    slot->window.minimized = false;
+    slot->window.id = current_id;
+
+    current_id++;
+
+    register_window(&slot->window);
+}
+
+static bool napp_api_open_window(const napp_window_config* config)
+{
+    if (config == nullptr || config->draw == nullptr || loading_application[0] == '\0')
+    {
+        return false;
+    }
+
+    napp_window_slot* slot = nullptr;
+
+    for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
+    {
+        if (!window_slots[i].used)
+        {
+            slot = &window_slots[i];
+
+            break;
+        }
+    }
+
+    if (slot == nullptr)
+    {
+        log(ERROR, "NAPP", "No free window slot");
+
+        return false;
+    }
+
+    memset(slot, 0, sizeof(napp_window_slot));
+
+    strcpy(slot->owner, loading_application);
+    strcpy(slot->title, config->title != nullptr ? config->title : loading_application);
+
+    slot->draw = config->draw;
+    slot->key = config->key;
+    slot->mouse = config->mouse;
+
+    slot->view.userdata = config->userdata;
+
+    slot->window.name = slot->title;
+    slot->window.pos_x = 10;
+    slot->window.pos_y = 10;
+    slot->window.width = config->width > 0 ? config->width : 320;
+    slot->window.height = config->height > 0 ? config->height : 240;
+    slot->window.resizable = config->resizable;
+    slot->window.can_maximize = config->can_maximize;
+    slot->window.userdata = slot;
+    slot->window.draw_content = napp_window_draw_trampoline;
+    slot->window.key_press = napp_window_key_trampoline;
+    slot->window.mouse_click = napp_window_mouse_trampoline;
+
+    slot->used = true;
+
+    show_window(slot);
+
+    loading_window_count++;
+
+    return true;
+}
+
+static const napp_gui kernel_napp_gui =
+{
+    napp_api_open_window,
+    napp_api_fill_block,
+    napp_api_draw_text
+};
+
 static const napp_api kernel_napp_api =
 {
     NAPP_ABI_VERSION,
@@ -66,8 +275,27 @@ static const napp_api kernel_napp_api =
     napp_api_print_dec,
     napp_api_print_hex,
     napp_api_sleep_ms,
-    napp_api_serial_log
+    napp_api_serial_log,
+    &kernel_napp_gui
 };
+
+static bool remember_image(const char* name, void* image)
+{
+    for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
+    {
+        if (!resident_images[i].used)
+        {
+            resident_images[i].used = true;
+            resident_images[i].image = image;
+
+            strcpy(resident_images[i].name, name);
+
+            return true;
+        }
+    }
+
+    return false;
+}
 
 // Turns "bootcheck.napp" into "bootcheck", returns false for any other file.
 static bool strip_extension(const char* file_name, char* output, uint32_t output_size)
@@ -281,6 +509,20 @@ bool napp_run(const char* name, int* exit_code)
         return false;
     }
 
+    napp_window_slot* existing = find_window_of(name);
+
+    if (existing != nullptr)
+    {
+        show_window(existing);
+
+        if (exit_code != nullptr)
+        {
+            *exit_code = 0;
+        }
+
+        return true;
+    }
+
     Uart::puts("[NAPP] Starting application: ");
     Uart::puts(name);
     Uart::puts("\n");
@@ -288,14 +530,28 @@ bool napp_run(const char* name, int* exit_code)
 
     napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
 
+    strcpy(loading_application, name);
+
+    loading_window_count = 0;
+
     int result = entry(&kernel_napp_api);
+
+    uint32_t opened_windows = loading_window_count;
+
+    loading_application[0] = '\0';
+    loading_window_count = 0;
 
     if (exit_code != nullptr)
     {
         *exit_code = result;
     }
 
-    kfree(image);
+    // A graphical application keeps running through its window callbacks, so
+    // its image has to stay mapped.
+    if (opened_windows == 0 || !remember_image(name, image))
+    {
+        kfree(image);
+    }
 
     Uart::puts("[NAPP] Application finished\n");
     log(INFO, "NAPP", "Application finished");

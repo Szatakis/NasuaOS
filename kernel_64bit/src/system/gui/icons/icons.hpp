@@ -2,8 +2,12 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "system/applications/napp/napp.hpp"
 #include "system/drivers/gpu/driver.hpp"
 #include "../vars/colors.hpp"
+
+// Applications built into the kernel, shown at the top of the start menu.
+inline constexpr int kernel_app_count = 3;
 
 // Taskbar Icons
 extern const uint32_t start_icon[1024];
@@ -34,6 +38,10 @@ void draw_start_button(size_t x, size_t y);
 bool is_mouse_over_start(int mouse_x, int mouse_y);
 
 void draw_start_menu_system_icons(int x, int y, int p, int w, int h);
+void draw_start_menu_napp_icons();
+
+extern char start_menu_napps[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
+extern int start_menu_napp_count;
 
 bool is_mouse_over_icon(int mx, int my, int x, int y, int w, int h);
 

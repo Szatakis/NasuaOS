@@ -6,6 +6,7 @@
 
 #define NAPP_MAX_APPLICATIONS 32
 #define NAPP_MAX_NAME 64
+#define NAPP_MAX_WINDOWS 8
 
 // Mounts the rootfs image supplied by the bootloader as a module.
 void napp_init(const void* rootfs_image, uint64_t rootfs_size);

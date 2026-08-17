@@ -746,7 +746,6 @@ void execute_command(const char *cmd)
 
             print(" - terminal\n");
             print(" - suaedit\n");
-            print(" - calculator\n");
             print(" - taskmgr\n");
             print(" - settings\n");
 
@@ -811,13 +810,6 @@ void execute_command(const char *cmd)
                     suaedit.id = current_id;
                     current_id++;
                     register_window(&suaedit);
-                }
-                else if (strncmp(app_name_buf, "calculator", 10)) 
-                {
-                    calculator.visible = true;
-                    calculator.id = current_id;
-                    current_id++;
-                    register_window(&calculator);
                 }
                 else if (strncmp(app_name_buf, "taskmgr", 7)) 
                 {

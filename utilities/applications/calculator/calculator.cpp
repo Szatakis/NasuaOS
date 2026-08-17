@@ -1,9 +1,6 @@
-#include "calculator.hpp"
+#include <napp.h>
 
-#include "system/gui/gui.hpp"
-#include "system/gui/vars/colors.hpp"
-
-#include "libs/libc/libc.hpp"
+NAPP_APPLICATION("calculator");
 
 /*
     ┌─────────────────────────┐
@@ -23,8 +20,101 @@
     └──────┴──────┴──────┴────┘
 */
 
+static const napp_gui* gui = nullptr;
 
-struct calculator_state {
+
+static int calc_strlen(const char* text)
+{
+    int length = 0;
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
+
+static void calc_strcpy(char* destination, const char* source)
+{
+    int i = 0;
+
+    while (source[i] != '\0')
+    {
+        destination[i] = source[i];
+
+        i++;
+    }
+
+    destination[i] = '\0';
+}
+
+
+static int calc_atoi(const char* text)
+{
+    int i = 0;
+    int sign = 1;
+    int value = 0;
+
+    if (text[i] == '-')
+    {
+        sign = -1;
+
+        i++;
+    }
+
+    while (text[i] >= '0' && text[i] <= '9')
+    {
+        value = value * 10 + (text[i] - '0');
+
+        i++;
+    }
+
+    return value * sign;
+}
+
+
+static void calc_itoa(int value, char* output)
+{
+    char digits[16];
+
+    int count = 0;
+    int index = 0;
+
+    if (value < 0)
+    {
+        output[index] = '-';
+
+        index++;
+    }
+
+    unsigned int magnitude = value < 0 ? (unsigned int)(-value) : (unsigned int)value;
+
+    do
+    {
+        digits[count] = (char)('0' + (magnitude % 10));
+
+        magnitude /= 10;
+        count++;
+    }
+    while (magnitude != 0 && count < 15);
+
+    while (count > 0)
+    {
+        count--;
+
+        output[index] = digits[count];
+
+        index++;
+    }
+
+    output[index] = '\0';
+}
+
+
+struct calculator_state
+{
     char display[64];
 
     int value1;
@@ -37,7 +127,8 @@ struct calculator_state {
 };
 
 
-static calculator_state calc_data = {
+static calculator_state calc_data =
+{
     .display = "0",
 
     .value1 = 0,
@@ -51,21 +142,19 @@ static calculator_state calc_data = {
 
 
 // CALCULATOR KEY
-void calculator_key(window_struct* win, char key) 
+static void calculator_key(napp_window* win, char key)
 {
-
     calculator_state* calc = (calculator_state*)win->userdata;
 
 
     // numbers
-    if(key >= '0' && key <= '9') 
+    if(key >= '0' && key <= '9')
     {
+        int len = calc_strlen(calc->display);
 
-        size_t len = strlen(calc->display);
-
-        if(calc->result_shown) 
+        if(calc->result_shown)
         {
-            strcpy(calc->display, "0");
+            calc_strcpy(calc->display, "0");
 
             calc->result_shown = false;
 
@@ -73,9 +162,9 @@ void calculator_key(window_struct* win, char key)
         }
 
 
-        if(calc->operation != 0 && !calc->entering_second) 
+        if(calc->operation != 0 && !calc->entering_second)
         {
-            strcpy(calc->display, "0");
+            calc_strcpy(calc->display, "0");
 
             calc->entering_second = true;
 
@@ -83,14 +172,13 @@ void calculator_key(window_struct* win, char key)
         }
 
 
-        if(len < 62) 
+        if(len < 62)
         {
-
-            if(len == 1 && calc->display[0] == '0') 
+            if(len == 1 && calc->display[0] == '0')
             {
                 calc->display[0] = key;
             }
-            else 
+            else
             {
                 calc->display[len] = key;
                 calc->display[len + 1] = 0;
@@ -102,9 +190,9 @@ void calculator_key(window_struct* win, char key)
 
 
     // AC
-    if(key == 'A') 
+    if(key == 'A')
     {
-        strcpy(calc->display, "0");
+        calc_strcpy(calc->display, "0");
 
         calc->value1 = 0;
         calc->value2 = 0;
@@ -119,9 +207,9 @@ void calculator_key(window_struct* win, char key)
 
 
     // CE
-    if(key == 'E') 
+    if(key == 'E')
     {
-        strcpy(calc->display, "0");
+        calc_strcpy(calc->display, "0");
 
         calc->entering_second = false;
 
@@ -130,26 +218,26 @@ void calculator_key(window_struct* win, char key)
 
 
     // C
-    if(key == 'C') 
+    if(key == 'C')
     {
-        strcpy(calc->display, "0");
+        calc_strcpy(calc->display, "0");
 
         return;
     }
 
 
     // BACKSPACE
-    if(key == 'B') 
+    if(key == 'B')
     {
-        size_t len = strlen(calc->display);
+        int len = calc_strlen(calc->display);
 
-        if(len > 1) 
+        if(len > 1)
         {
             calc->display[len - 1] = 0;
         }
-        else 
+        else
         {
-            strcpy(calc->display, "0");
+            calc_strcpy(calc->display, "0");
         }
 
         return;
@@ -157,24 +245,24 @@ void calculator_key(window_struct* win, char key)
 
 
     // PLUS / MINUS
-    if(key == 'N') 
+    if(key == 'N')
     {
-        if(calc->display[0] == '-') 
+        if(calc->display[0] == '-')
         {
-            size_t len = strlen(calc->display);
+            int len = calc_strlen(calc->display);
 
-            for(size_t i = 0; i < len; i++) 
+            for(int i = 0; i < len; i++)
             {
                 calc->display[i] = calc->display[i + 1];
             }
         }
-        else if(calc->display[0] != '0') 
+        else if(calc->display[0] != '0')
         {
-            size_t len = strlen(calc->display);
+            int len = calc_strlen(calc->display);
 
-            if(len < 62) 
+            if(len < 62)
             {
-                for(size_t i = len; i > 0; i--) 
+                for(int i = len; i > 0; i--)
                 {
                     calc->display[i] = calc->display[i - 1];
                 }
@@ -188,14 +276,14 @@ void calculator_key(window_struct* win, char key)
 
 
     // PERCENT
-    if(key == '%') 
+    if(key == '%')
     {
-        int value = atoi(calc->display);
+        int value = calc_atoi(calc->display);
         value /= 100;
         char buf[32];
 
-        itoa(value, buf);
-        strcpy(calc->display, buf);
+        calc_itoa(value, buf);
+        calc_strcpy(calc->display, buf);
 
         calc->result_shown = true;
 
@@ -204,14 +292,14 @@ void calculator_key(window_struct* win, char key)
 
 
     // SQUARE
-    if(key == 'Q') 
+    if(key == 'Q')
     {
-        int value = atoi(calc->display);
+        int value = calc_atoi(calc->display);
         int result = value * value;
         char buf[32];
 
-        itoa(result, buf);
-        strcpy(calc->display, buf);
+        calc_itoa(result, buf);
+        calc_strcpy(calc->display, buf);
 
         calc->result_shown = true;
 
@@ -220,13 +308,13 @@ void calculator_key(window_struct* win, char key)
 
 
     // SQUARE ROOT
-    if(key == 'R') 
+    if(key == 'R')
     {
-        int value = atoi(calc->display);
+        int value = calc_atoi(calc->display);
 
-        if(value < 0) 
+        if(value < 0)
         {
-            strcpy(calc->display, "Error");
+            calc_strcpy(calc->display, "Error");
 
             calc->result_shown = true;
 
@@ -236,7 +324,7 @@ void calculator_key(window_struct* win, char key)
 
         int result = 0;
 
-        while((result + 1) <= value / (result + 1)) 
+        while((result + 1) <= value / (result + 1))
         {
             result++;
         }
@@ -244,8 +332,8 @@ void calculator_key(window_struct* win, char key)
 
         char buf[32];
 
-        itoa(result, buf);
-        strcpy(calc->display, buf);
+        calc_itoa(result, buf);
+        calc_strcpy(calc->display, buf);
 
         calc->result_shown = true;
 
@@ -254,14 +342,13 @@ void calculator_key(window_struct* win, char key)
 
 
     // 1 / X
-    if(key == 'I') 
+    if(key == 'I')
     {
+        int value = calc_atoi(calc->display);
 
-        int value = atoi(calc->display);
-
-        if(value == 0) 
+        if(value == 0)
         {
-            strcpy(calc->display, "Error");
+            calc_strcpy(calc->display, "Error");
 
             calc->result_shown = true;
 
@@ -272,8 +359,8 @@ void calculator_key(window_struct* win, char key)
         int result = 1 / value;
         char buf[32];
 
-        itoa(result, buf);
-        strcpy(calc->display, buf);
+        calc_itoa(result, buf);
+        calc_strcpy(calc->display, buf);
 
         calc->result_shown = true;
 
@@ -282,9 +369,9 @@ void calculator_key(window_struct* win, char key)
 
 
     // OPERATORS
-    if(key == '+' || key == '-' || key == '*' || key == '/') 
+    if(key == '+' || key == '-' || key == '*' || key == '/')
     {
-        calc->value1 = atoi(calc->display);
+        calc->value1 = calc_atoi(calc->display);
 
         calc->operation = key;
 
@@ -296,18 +383,18 @@ void calculator_key(window_struct* win, char key)
 
 
     // EQUAL
-    if(key == '=') 
+    if(key == '=')
     {
         if(calc->operation == 0)
         {
             return;
         }
 
-        calc->value2 = atoi(calc->display);
+        calc->value2 = calc_atoi(calc->display);
         int result = 0;
 
 
-        switch(calc->operation) 
+        switch(calc->operation)
         {
             case '+':
                 result = calc->value1 + calc->value2;
@@ -322,9 +409,9 @@ void calculator_key(window_struct* win, char key)
                 break;
 
             case '/':
-                if(calc->value2 == 0) 
+                if(calc->value2 == 0)
                 {
-                    strcpy(calc->display, "Error");
+                    calc_strcpy(calc->display, "Error");
 
                     calc->operation = 0;
                     calc->result_shown = true;
@@ -340,8 +427,8 @@ void calculator_key(window_struct* win, char key)
 
         char buf[32];
 
-        itoa(result, buf);
-        strcpy(calc->display, buf);
+        calc_itoa(result, buf);
+        calc_strcpy(calc->display, buf);
 
 
         calc->value1 = result;
@@ -358,33 +445,27 @@ void calculator_key(window_struct* win, char key)
 
 
 // BUTTON
-void draw_button(int x, int y, const char* text) 
+static void draw_button(int x, int y, const char* text)
 {
-    fill_block(x, y, COLOR_TITLEBAR, 55, 35);
-    print_at8(text, x + 8, y + 11, COLOR_WHITE);
+    gui->fill_block(x, y, NAPP_COLOR_TITLEBAR, 55, 35);
+    gui->draw_text(text, x + 8, y + 11, NAPP_COLOR_WHITE);
 }
 
 
 // DRAW CALCULATOR
-void draw_calculator(window_struct* win) 
+static void draw_calculator(napp_window* win)
 {
     calculator_state* calc = (calculator_state*)win->userdata;
-    int title = win->height / 10;
-
-    if(title < 18)
-    {
-        title = 18;
-    }
 
 
     // DISPLAY
-    fill_block(win->pos_x + 12, win->pos_y + title + 10, COLOR_BLACK, win->width - 24, 42);
-    print_at8(calc->display, win->pos_x + 22, win->pos_y + title + 26, COLOR_GREEN);
+    gui->fill_block(win->pos_x + 12, win->pos_y + win->title_height + 10, NAPP_COLOR_BLACK, win->width - 24, 42);
+    gui->draw_text(calc->display, win->pos_x + 22, win->pos_y + win->title_height + 26, NAPP_COLOR_GREEN);
 
 
     // BUTTON GRID
     int x = win->pos_x + 12;
-    int y = win->pos_y + title + 65;
+    int y = win->pos_y + win->title_height + 65;
 
     // ROW 1
     draw_button(x,       y, "AC");
@@ -439,21 +520,14 @@ void draw_calculator(window_struct* win)
 }
 
 
-
 // MOUSE
-void calculator_mouse(window_struct* win, int mx, int my) 
+static void calculator_mouse(napp_window* win, int mx, int my)
 {
-    int title = win->height / 10;
-
-    if(title < 18)
-    {
-        title = 18;
-    }
-
     int x = win->pos_x + 12;
-    int y = win->pos_y + title + 65;
+    int y = win->pos_y + win->title_height + 65;
 
-    struct button {
+    struct button
+    {
         int x;
         int y;
 
@@ -502,16 +576,16 @@ void calculator_mouse(window_struct* win, int mx, int my)
     };
 
 
-    const size_t button_count = sizeof(buttons) / sizeof(buttons[0]);
+    const int button_count = (int)(sizeof(buttons) / sizeof(buttons[0]));
     char key = 0;
 
 
-    for(size_t i = 0; i < button_count; i++) 
+    for(int i = 0; i < button_count; i++)
     {
         int bx = x + buttons[i].x;
         int by = y + buttons[i].y;
 
-        if(mx >= bx && mx < bx + 55 && my >= by && my < by + 35) 
+        if(mx >= bx && mx < bx + 55 && my >= by && my < by + 35)
         {
             key = buttons[i].key;
 
@@ -520,52 +594,46 @@ void calculator_mouse(window_struct* win, int mx, int my)
     }
 
 
-    if(key) 
+    if(key)
     {
         calculator_key(win, key);
     }
 }
 
 
-// CALCULATOR WINDOW
-window_struct calculator = {
-    .name = "Calculator",
-    .id = 0,
+int _start(const napp_api* api)
+{
+    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr)
+    {
+        return 1;
+    }
 
-    .pos_x = 10,
-    .pos_y = 10,
+    gui = api->gui;
 
-    .width = 290,
-    .height = 390,
+    napp_window_config config = {};
 
-    .visible = false,
-    .minimized = false,
-    .focused = false,
+    config.title = "Calculator";
 
-    .resizable = false,
-    .can_maximize = false,
-    .maximized = false,
+    config.width = 290;
+    config.height = 390;
 
-    .restore_pos_x = 0,
-    .restore_pos_y = 0,
-    .restore_width = 0,
-    .restore_height = 0,
+    config.resizable = false;
+    config.can_maximize = false;
 
+    config.userdata = &calc_data;
 
-    .is_dragging = false,
-    .drag_offset_x = 0,
-    .drag_offset_y = 0,
+    config.draw = draw_calculator;
+    config.key = calculator_key;
+    config.mouse = calculator_mouse;
 
-    .is_resizing = false,
-    .resize_right = false,
-    .resize_bottom = false,
-    .resize_start_mouse_x = 290,
-    .resize_start_mouse_y = 390,
-    .resize_start_width = 10,
-    .resize_start_height = 20,
+    if (!gui->open_window(&config))
+    {
+        api->serial_log("[CALCULATOR] Failed to open window\n");
 
-    .userdata = &calc_data,
-    .draw_content = draw_calculator,
-    .key_press = calculator_key,
-    .mouse_click = calculator_mouse
-};
+        return 1;
+    }
+
+    api->serial_log("[CALCULATOR] Window opened\n");
+
+    return 0;
+}
