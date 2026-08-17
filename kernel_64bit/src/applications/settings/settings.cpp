@@ -485,6 +485,8 @@ window_struct settings =
     .resize_start_mouse_y = 0,
     .resize_start_width = 0,
     .resize_start_height = 0,
+    .max_width = 0,
+    .max_height = 0,
 
     .userdata = nullptr,
     .draw_content = draw_settings,

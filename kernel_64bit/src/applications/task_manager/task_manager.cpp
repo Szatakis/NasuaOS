@@ -39,6 +39,8 @@ window_struct task_manager =
     .resize_start_mouse_y = 350,
     .resize_start_width = 10,
     .resize_start_height = 20,
+    .max_width = 0,
+    .max_height = 0,
 
     .userdata = nullptr,
     .draw_content = draw_task_manager,
