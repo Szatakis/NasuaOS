@@ -20,7 +20,9 @@ char command_buffer[64];
 size_t cmd_idx = 0;
 
 bool shift_pressed = false;
+bool caps_lock = false;
 bool extended_scancode = false;
+
 bool shell_input_enabled = true;
 
 extern window_struct* apps[];
@@ -86,6 +88,86 @@ char scancode_to_ascii_shift(uint8_t scancode)
         case 0x2B: return '|';
         default: return 0;
     }
+}
+
+static char get_ascii(uint8_t scancode)
+{
+    char normal = scancode_to_ascii_normal(scancode);
+
+    if (normal >= 'a' && normal <= 'z')
+    {
+        if (caps_lock ^ shift_pressed)
+        {
+            return normal - 'a' + 'A';
+        }
+
+        return normal;
+    }
+
+    return shift_pressed ? scancode_to_ascii_shift(scancode) : normal;
+}
+
+void keyboard_set_leds(uint8_t leds)
+{
+    // Wait until keyboard controller can accept data
+    uint32_t timeout = 100000;
+
+    while (timeout--)
+    {
+        if (!(inb(0x64) & 0x02))
+        {
+            break;
+        }
+    }
+
+    // 0xED = Set LEDs
+    outb(0x60, 0xED);
+
+    // Wait for ACK
+    timeout = 100000;
+
+    while (timeout--)
+    {
+        if (inb(0x64) & 0x01)
+        {
+            break;
+        }
+    }
+
+    uint8_t ack = inb(0x60);
+
+    if (ack != 0xFA)
+    {
+        return;
+    }
+
+
+    // Send LED state
+    timeout = 100000;
+
+    while (timeout--)
+    {
+        if (!(inb(0x64) & 0x02))
+        {
+            break;
+        }
+    }
+
+    outb(0x60, leds);
+
+
+    // Wait for ACK
+    timeout = 100000;
+
+    while (timeout--)
+    {
+        if (inb(0x64) & 0x01)
+        {
+            break;
+        }
+    }
+
+    inb(0x60);
 }
 
 void print_sc(uint8_t scancode) 
@@ -268,6 +350,16 @@ void handle_keyboard()
         return;
     }
 
+    // CAPS LOCK
+    if (scancode == 0x3A)
+    {
+        caps_lock = !caps_lock;
+
+        keyboard_set_leds(caps_lock ? 0x04 : 0x00);
+
+        return;
+    }
+
     // BACKSPACE
     if (scancode == 0x0E) 
     {
@@ -305,7 +397,8 @@ void handle_keyboard()
         return;
     }
 
-    char c = shift_pressed ? scancode_to_ascii_shift(scancode) : scancode_to_ascii_normal(scancode);
+    char c = get_ascii(scancode);
+
     if(c)
     {
         if(active_window)
