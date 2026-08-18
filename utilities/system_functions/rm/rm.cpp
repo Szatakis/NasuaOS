@@ -35,7 +35,7 @@ int _start(const napp_api* api)
 
     if (name == nullptr || *name == '\0')
     {
-        api->print("Usage: rm <name> or rm --name <name> --type <file|dir>\n");
+        api->print("Usage: rm --name <name> --type <file|dir>\n");
         return 1;
     }
 

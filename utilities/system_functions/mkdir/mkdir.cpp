@@ -26,7 +26,7 @@ int _start(const napp_api* api)
 
     if (dir_name == nullptr || *dir_name == '\0')
     {
-        api->print("Usage: mkdir <folder_name> or mkdir --dir_name <folder_name>\n");
+        api->print("Usage: mkdir --dir_name <folder_name>\n");
         return 1;
     }
 

@@ -56,7 +56,7 @@ int _start(const napp_api* api)
 {
     if (api->argc < 3)
     {
-        api->print("Usage: cp <source_file> <destination>\n");
+        api->print("Usage: cp --source <source_file> --destination <destination>\n");
         return 1;
     }
 
