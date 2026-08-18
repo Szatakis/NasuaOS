@@ -32,3 +32,4 @@ void clawfs_create_file_in(const char* path, const char* name);
 uint32_t get_sector_by_path(const char* path);
 bool clawfs_exists();
 void clawfs_rm(const char* parent_path, const char* name, uint32_t type);
+uint32_t find_entry_in_dir(uint32_t dir_sector, const char* name, CLAWFSEntry* out_entry);

@@ -18,5 +18,22 @@ uint32_t napp_list(char names[][NAPP_MAX_NAME], uint32_t max_names);
 
 bool napp_exists(const char* name);
 
+// Loads a flat binary from an absolute FAT rootfs path and runs it.
+// Used by the shell to execute /bin/<name> and /sbin/<name> commands.
+bool napp_run_path(const char* path, int argc, const char* const* argv, int* exit_code);
+bool napp_exists_path(const char* path);
+
 // Loads /bin/<name>/<name>.napp and runs it. Returns false when it cannot be started.
 bool napp_run(const char* name, int* exit_code);
+
+// Lists flat-binary commands found in the rootfs /sbin folder.
+uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], uint32_t max_names);
+
+// Path sync between shell's current_path and napp runtime
+const char* napp_get_current_path(void);
+void napp_set_current_path(const char* path);
+
+// Path sync between shell's current_path and napp runtime
+const char* napp_get_current_path(void);
+void napp_set_current_path(const char* path);
+

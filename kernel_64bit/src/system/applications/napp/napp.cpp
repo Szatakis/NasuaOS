@@ -1,11 +1,13 @@
 #include "napp.hpp"
 
 #include "system/drivers/gpu/driver.hpp"
+#include "system/drivers/disk/ata/driver.hpp"
 #include "system/drivers/memory/driver.hpp"
 #include "system/drivers/timer/driver.hpp"
 #include "system/drivers/uart/driver.hpp"
 
 #include "system/filesystem/fat/fat.hpp"
+#include "system/filesystem/clawfs/clawfs.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
@@ -13,11 +15,15 @@
 #include "libs/libc/libc.hpp"
 
 #define NAPP_DIRECTORY "/bin"
+#define NAPP_SBIN_DIRECTORY "/sbin"
 #define NAPP_EXTENSION ".napp"
 #define NAPP_MAX_IMAGE_SIZE (1024 * 1024)
 
 static fat_volume rootfs_volume;
 static bool rootfs_mounted = false;
+
+// Current working directory exposed to napp programs
+static char napp_current_path[256] = "/home";
 
 // A graphical application keeps its image mapped for as long as its window
 // exists, because the window callbacks live inside that image.
@@ -88,6 +94,98 @@ static void napp_api_serial_log(const char* text)
     {
         Uart::puts(text);
     }
+}
+
+// ── CWD wrapper ──────────────────────────────────────────────────────────────
+
+static void napp_api_set_cwd(const char* path)
+{
+    if (path != nullptr)
+    {
+        uint32_t i = 0;
+        while (path[i] && i < 255) { napp_current_path[i] = path[i]; i++; }
+        napp_current_path[i] = '\0';
+    }
+}
+
+// ── ClawFS wrappers (give userspace flat binaries access to the disk FS) ──────
+
+static uint32_t napp_api_clawfs_get_sector(const char* path)
+{
+    return get_sector_by_path(path);
+}
+
+static bool napp_api_clawfs_read_sector(uint32_t sector, void* buffer)
+{
+    return storage_read_sector(sector, (uint8_t*)buffer);
+}
+
+static bool napp_api_clawfs_write_sector(uint32_t sector, const void* buffer)
+{
+    return storage_write_sector(sector, (uint8_t*)buffer);
+}
+
+static void napp_api_clawfs_mkdir(const char* parent_path, const char* dir_name)
+{
+    clawfs_mkdir(parent_path, dir_name);
+}
+
+static void napp_api_clawfs_rm(const char* parent_path, const char* name, uint32_t type)
+{
+    clawfs_rm(parent_path, name, type);
+}
+
+static void napp_api_clawfs_create_file_in(const char* path, const char* name)
+{
+    clawfs_create_file_in(path, name);
+}
+
+static void napp_api_clawfs_dir(const char* path)
+{
+    clawfs_dir(path);
+}
+
+static int napp_api_clawfs_get_entry_type(const char* parent_path, const char* name)
+{
+    // Walk to parent sector
+    uint32_t parent_sector = get_sector_by_path(parent_path);
+    if (parent_sector == 0)
+    {
+        return -1;
+    }
+
+    CLAWFSEntry entry;
+    if (find_entry_in_dir(parent_sector, name, &entry) != 0)
+    {
+        return -1;
+    }
+
+    return (int)entry.type;
+}
+
+static uint32_t napp_api_clawfs_resolve_path(const char* cur_path, const char* rel)
+{
+    if (rel == nullptr || rel[0] == '\0')
+    {
+        return get_sector_by_path(cur_path);
+    }
+
+    if (rel[0] == '/')
+    {
+        return get_sector_by_path(rel);
+    }
+
+    // Build absolute path
+    char abs[256];
+    uint32_t i = 0;
+    const char* p = cur_path;
+    while (*p && i < 254) { abs[i++] = *p++; }
+    if (i > 0 && abs[i-1] != '/') { abs[i++] = '/'; }
+    const char* r = rel;
+    while (*r && i < 254) { abs[i++] = *r++; }
+    abs[i] = '\0';
+
+    return get_sector_by_path(abs);
 }
 
 static void napp_api_fill_block(int x, int y, uint32_t color, int width, int height)
@@ -267,7 +365,9 @@ static const napp_gui kernel_napp_gui =
     napp_api_draw_text
 };
 
-static const napp_api kernel_napp_api =
+// Updated at the start of each napp_run_path call so the binary sees the
+// shell's current working directory.
+static napp_api kernel_napp_api =
 {
     NAPP_ABI_VERSION,
     napp_api_print,
@@ -276,7 +376,20 @@ static const napp_api kernel_napp_api =
     napp_api_print_hex,
     napp_api_sleep_ms,
     napp_api_serial_log,
-    &kernel_napp_gui
+    &kernel_napp_gui,
+    /* argc */            0,
+    /* argv */            nullptr,
+    /* current_path */    napp_current_path,
+    napp_api_set_cwd,
+    napp_api_clawfs_get_sector,
+    napp_api_clawfs_read_sector,
+    napp_api_clawfs_write_sector,
+    napp_api_clawfs_mkdir,
+    napp_api_clawfs_rm,
+    napp_api_clawfs_create_file_in,
+    napp_api_clawfs_dir,
+    napp_api_clawfs_get_entry_type,
+    napp_api_clawfs_resolve_path
 };
 
 static bool remember_image(const char* name, void* image)
@@ -557,4 +670,158 @@ bool napp_run(const char* name, int* exit_code)
     log(INFO, "NAPP", "Application finished");
 
     return true;
+}
+
+// ── Path-based flat-binary loader (for /bin/<name> and /sbin/<name>) ──────────
+
+bool napp_exists_path(const char* path)
+{
+    if (!rootfs_mounted || path == nullptr || *path == '\0')
+    {
+        return false;
+    }
+
+    fat_entry_info info;
+
+    if (!fat_stat(&rootfs_volume, path, &info))
+    {
+        return false;
+    }
+
+    return !info.directory;
+}
+
+bool napp_run_path(const char* path, int argc, const char* const* argv, int* exit_code)
+{
+    if (!rootfs_mounted || path == nullptr || *path == '\0')
+    {
+        return false;
+    }
+
+    fat_entry_info info;
+
+    if (!fat_stat(&rootfs_volume, path, &info) || info.directory)
+    {
+        log(WARN, "NAPP", "Path not found");
+        return false;
+    }
+
+    if (info.size == 0 || info.size > NAPP_MAX_IMAGE_SIZE)
+    {
+        log(ERROR, "NAPP", "Invalid flat binary size");
+        return false;
+    }
+
+    void* image = kmalloc(info.size);
+
+    if (image == nullptr)
+    {
+        log(ERROR, "NAPP", "Out of memory");
+        return false;
+    }
+
+    uint32_t read_size = 0;
+
+    if (!fat_read_file(&rootfs_volume, path, image, info.size, &read_size) || read_size != info.size)
+    {
+        log(ERROR, "NAPP", "Failed to read flat binary");
+        kfree(image);
+        return false;
+    }
+
+    // Populate runtime fields
+    kernel_napp_api.argc = argc;
+    kernel_napp_api.argv = argv;
+    // current_path already points at napp_current_path (live pointer)
+
+    Uart::puts("[NAPP] Running: ");
+    Uart::puts(path);
+    Uart::puts("\n");
+
+    int result = 0;
+
+    // Check for NAPP header (sbin commands are NAPP binaries without extension)
+    const napp_header* header = (const napp_header*)image;
+    if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
+    {
+        if (header->entry_offset < header->header_size || header->entry_offset >= info.size)
+        {
+            log(ERROR, "NAPP", "Invalid application entry point");
+            kfree(image);
+            return false;
+        }
+
+        napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
+        result = entry(&kernel_napp_api);
+    }
+    else
+    {
+        // Flat binary (no header)
+        typedef int (*flat_entry)(const napp_api*);
+        flat_entry entry = (flat_entry)image;
+        result = entry(&kernel_napp_api);
+    }
+
+    // Reset argc/argv after return
+    kernel_napp_api.argc = 0;
+    kernel_napp_api.argv = nullptr;
+
+    kfree(image);
+
+    if (exit_code != nullptr)
+    {
+        *exit_code = result;
+    }
+
+    return true;
+}
+
+// ── sbin listing ─────────────────────────────────────────────────────────────
+
+uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], uint32_t max_names)
+{
+    if (!rootfs_mounted || names == nullptr || max_names == 0)
+    {
+        return 0;
+    }
+
+    static fat_entry_info files[NAPP_MAX_APPLICATIONS];
+
+    uint32_t file_count = fat_list_directory(&rootfs_volume, NAPP_SBIN_DIRECTORY, files, NAPP_MAX_APPLICATIONS);
+    uint32_t found = 0;
+
+    for (uint32_t i = 0; i < file_count && found < max_names; i++)
+    {
+        if (files[i].directory)
+        {
+            continue;
+        }
+
+        // Copy name directly — flat binaries have no extension
+        uint32_t j = 0;
+        while (files[i].name[j] && j < NAPP_MAX_NAME - 1)
+        {
+            names[found][j] = files[i].name[j];
+            j++;
+        }
+        names[found][j] = '\0';
+        found++;
+    }
+
+    return found;
+}
+
+const char* napp_get_current_path(void)
+{
+    return napp_current_path;
+}
+
+void napp_set_current_path(const char* path)
+{
+    if (path != nullptr)
+    {
+        uint32_t i = 0;
+        while (path[i] && i < 255) { napp_current_path[i] = path[i]; i++; }
+        napp_current_path[i] = '\0';
+    }
 }

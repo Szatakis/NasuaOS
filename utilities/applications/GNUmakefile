@@ -4,7 +4,7 @@
 
 APPS := $(wildcard */)
 APPS := $(patsubst %/,%,$(APPS))
-APPS := $(filter-out include,$(APPS))
+APPS := $(filter-out include calculator,$(APPS))
 
 .PHONY: all
 
@@ -15,8 +15,7 @@ all:
 		else \
 			$(MAKE) -C $$app -f ../app.mk APP=$$app || exit 1; \
 		fi; \
-		mkdir -p ../rootfs/dir/bin/$$app; \
-		cp -v $$app/$$app.napp ../rootfs/dir/bin/$$app/$$app.napp; \
+		cp -v $$app/$$app.napp ../rootfs/dir/bin/$$app; \
 	done
 
 .PHONY: clean
@@ -27,7 +26,7 @@ clean:
 		else \
 			$(MAKE) -C $$app -f ../app.mk APP=$$app clean; \
 		fi; \
-		rm -rf ../rootfs/dir/bin/$$app; \
+		rm -f ../rootfs/dir/bin/$$app; \
 	done
 
 .PHONY: distclean
@@ -38,5 +37,5 @@ distclean:
 		else \
 			$(MAKE) -C $$app -f ../app.mk APP=$$app distclean; \
 		fi; \
-		rm -rf ../rootfs/dir/bin/$$app; \
+		rm -f ../rootfs/dir/bin/$$app; \
 	done

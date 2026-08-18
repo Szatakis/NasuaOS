@@ -90,6 +90,23 @@ struct napp_api
     void (*serial_log)(const char* text);
 
     const struct napp_gui* gui;
+
+    // Arguments passed by the shell
+    int argc;
+    const char* const* argv;
+
+    // Filesystem additions for system commands
+    const char* current_path;
+    void (*set_cwd)(const char* path);
+    uint32_t (*clawfs_get_sector)(const char* path);
+    bool (*clawfs_read_sector)(uint32_t sector, void* buffer);
+    bool (*clawfs_write_sector)(uint32_t sector, const void* buffer);
+    void (*clawfs_mkdir)(const char* parent_path, const char* dir_name);
+    void (*clawfs_rm)(const char* parent_path, const char* name, uint32_t type);
+    void (*clawfs_create_file_in)(const char* path, const char* name);
+    void (*clawfs_dir)(const char* path);
+    int (*clawfs_get_entry_type)(const char* parent_path, const char* name);
+    uint32_t (*clawfs_resolve_path)(const char* cur_path, const char* path);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);

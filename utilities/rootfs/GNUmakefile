@@ -6,6 +6,7 @@ SIZE_MB = 8
 .PHONY: all
 all:
 	$(MAKE) -C ../applications
+	$(MAKE) -C ../system_functions
 
 	dd if=/dev/zero of=$(IMAGE) bs=1M count=$(SIZE_MB)
 	mformat -i $(IMAGE) ::
@@ -17,9 +18,11 @@ clean:
 	rm -f $(IMAGE)
 
 	$(MAKE) -C ../applications clean
+	$(MAKE) -C ../system_functions clean
 
 .PHONY: distclean
 distclean:
 	rm -f *.img
 
 	$(MAKE) -C ../applications distclean
+	$(MAKE) -C ../system_functions distclean

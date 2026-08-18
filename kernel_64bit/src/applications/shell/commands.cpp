@@ -28,6 +28,53 @@ extern uint32_t current_text_color;
 extern bool debug_mode;
 extern bool safe_mode;
 
+// Build argv array from shell args string (splits by spaces, strips quotes)
+static int build_argv(const char* args, const char** argv, int max_args)
+{
+    if (args == nullptr || *args == '\0' || max_args <= 0)
+    {
+        return 0;
+    }
+
+    char buf[256];
+    strcpy(buf, args);
+
+    int argc = 0;
+    char* p = buf;
+
+    while (*p && argc < max_args)
+    {
+        // Skip leading spaces
+        while (*p == ' ') p++;
+        if (*p == '\0') break;
+
+        // Start of this argument
+        *argv++ = p;
+        argc++;
+
+        if (argc >= max_args) break;
+
+        // Advance past the argument, stripping quotes
+        while (*p && *p != ' ')
+        {
+            if (*p == '"')
+            {
+                *p = '\0';
+                p++;
+                break;
+            }
+            p++;
+        }
+        if (*p == ' ')
+        {
+            *p = '\0';
+            p++;
+        }
+    }
+
+    return argc;
+}
+
 // Main shell function
 
 void execute_command(const char *cmd) 
@@ -138,7 +185,7 @@ void execute_command(const char *cmd)
             print(" -bootapp                            - Application manager command\n");
             print("    --app \"application_name\"         - (Required) Load and execute selected application\n");
             print("    --list                           - List all available applications\n");
-            print(" -cd \"directory\"                     - Change current working directory\n");
+            print(" See page 6 for system commands loaded from /sbin.\n");
         }
 
         else if (page == 4) 
@@ -177,7 +224,7 @@ void execute_command(const char *cmd)
 
         }
 
-        else if (page == 6) 
+        else if (page == 6)
         {
             print_info("Available commands (Page 6/10):\n");
             print("More commands coming soon...\n");
@@ -203,8 +250,22 @@ void execute_command(const char *cmd)
 
         else if (page == 10) 
         {
-            print_info("Available commands (Page 10/10):\n");
-            print("More commands coming soon...\n");
+            print_info("System commands from /sbin (Page 10/10):\n");
+
+            static char sbin_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
+            uint32_t sbin_count = napp_list_sbin(sbin_names, NAPP_MAX_APPLICATIONS);
+
+            if (sbin_count == 0)
+            {
+                print(" (no commands found in /sbin — rootfs may not be mounted)\n");
+            }
+
+            for (uint32_t i = 0; i < sbin_count; i++)
+            {
+                print(" - ");
+                print(sbin_names[i]);
+                print("\n");
+            }
         }
     }
     // 2. Command: clear
@@ -418,12 +479,7 @@ void execute_command(const char *cmd)
         clawfs_format();
         print_info("Done.\n");
     }
-    // 9. Command: dir
-    else if(cmd_name_len == 3 && strncmp(cmd, "dir", 3))
-    {
-        clawfs_dir(current_path);
-    }
-    // 10. Command: mount
+    // 9. Command: mount
     else if(cmd_name_len == 5 && strncmp(cmd, "mount", 5)) 
     {
         if (clawfs_exists())
@@ -1225,149 +1281,7 @@ void execute_command(const char *cmd)
             print_ascii_art(buffer);
         }
     }
-    // 27. Command: cd
-    else if(cmd_name_len == 2 && strncmp(cmd, "cd", 2))
-    {
-        // Handling cd without arguments return to home
-        if (args[0] == '\0') {
-            strcpy(current_path, "/home");
-        }
-        // Handling "cd ~"
-        else if (strcmp(args, "~") == 0) {
-            strcpy(current_path, "/home");
-        }
-        // Handling "cd .."
-        else if (strcmp(args, "..") == 0) {
-            char* last_slash = strrchr(current_path, '/');
-            if (last_slash != nullptr && last_slash != current_path) {
-                *last_slash = '\0';
-            } else {
-                strcpy(current_path, "/");
-            }
-        }
-        // Handling changing directory
-        else {
-            char new_path[256];
-        
-            // If path start with '/' handle as absolute
-            if (args[0] == '/') {
-                strcpy(new_path, args);
-            } else {
-                strcpy(new_path, current_path);
-                if (strcmp(new_path, "/") != 0) strcat(new_path, "/");
-                strcat(new_path, args);
-            }
-
-            // Check if path exists
-            if (get_sector_by_path(new_path) != 0) {
-                strcpy(current_path, new_path);
-            }    
-            else 
-            {
-                print_error("Directory not found!\n");
-            }
-        }
-    }
-    // 28. Command: mkdir
-    else if(cmd_name_len == 5 && strncmp(cmd, "mkdir", 5))
-    {
-        const char* dirname_flag = strstr(args, "--dir_name ");
-
-        if(dirname_flag)
-        {
-            const char* dirname_ptr = dirname_flag + 11;
-
-            char name_buf[64];
-            int i = 0;
-
-            if(*dirname_ptr == '"')
-            {
-                dirname_ptr++;
-
-                while(*dirname_ptr && *dirname_ptr != '"' && i < 63)
-                {
-                    name_buf[i++] = *dirname_ptr++;
-                }
-            }
-            else
-            {
-                while(*dirname_ptr && *dirname_ptr != ' ' && *dirname_ptr != '-' && i < 63)
-                {
-                    name_buf[i++] = *dirname_ptr++;
-                }
-            }
-
-            name_buf[i] = '\0';
-
-            if(i > 0)
-            {
-                clawfs_mkdir(current_path, name_buf);
-            }
-            else
-            {
-                print_error("Error: Directory name cannot be empty!\n");
-            }
-        }
-        else
-        {
-            print_error("Syntax error!\n");
-            print_info("Usage: mkdir --dir_name \"folder_name\"\n");
-        }
-    }
-    // 29. Command: rm
-    else if(cmd_name_len == 2 && strncmp(cmd, "rm", 2))
-    {
-        const char* name_flag = strstr(args, "--name ");
-        const char* type_flag = strstr(args, "--type ");
-
-        if (name_flag && type_flag)
-        {
-            char name_buf[64] = {0};
-            char type_buf[16] = {0};
-            int i = 0;
-
-            // Parsing --name
-            const char* name_arg = name_flag + 7;
-            if (*name_arg == '"') {
-                name_arg++;
-                while (*name_arg != '"' && *name_arg != '\0' && i < 63) name_buf[i++] = *name_arg++;
-            } else {
-                while (*name_arg != ' ' && *name_arg != '\0' && i < 63) name_buf[i++] = *name_arg++;
-            }
-            name_buf[i] = '\0';
-
-            // Parsing --type
-            const char* type_arg = type_flag + 7;
-            i = 0;
-            if (*type_arg == '"') {
-                type_arg++;
-                while (*type_arg != '"' && *type_arg != '\0' && i < 15) type_buf[i++] = *type_arg++;
-            } else {
-                while (*type_arg != ' ' && *type_arg != '\0' && i < 15) type_buf[i++] = *type_arg++;
-            }
-            type_buf[i] = '\0';
-
-            // Chossing type
-            int type = -1;
-            if (strcmp(type_buf, "file") == 0) {
-                type = CLAWFS_FILE;
-            } else if (strcmp(type_buf, "dir") == 0) {
-                type = CLAWFS_DIRECTORY;
-            }
-
-            if (type != -1 && strlen(name_buf) > 0) {
-                clawfs_rm(current_path, name_buf, type);
-            } else {
-                print_error("Invalid type! Use: --type \"file\" or --type \"dir\"\n");
-            }
-        }
-        else
-        {
-            print_error("Syntax error!\n");
-            print_info("Usage: rm --name \"name\" --type \"file|dir\"\n");
-        }
-    }
-    // 30. Command: safe_mode
+    // 27. Command: safe_mode
     else if(cmd_name_len == 9 && strncmp(cmd, "safe_mode", 9))
     {
         print_info("Safe mode ON\n");
@@ -1375,9 +1289,41 @@ void execute_command(const char *cmd)
     }
 
 
-    // Command: Unknown
+    // Dynamic /sbin commands
     else 
     {
+        char cmd_name[64];
+        int i = 0;
+        while (i < cmd_name_len && i < 63)
+        {
+            cmd_name[i] = cmd[i];
+            i++;
+        }
+        cmd_name[i] = '\0';
+
+        char sbin_path[256];
+        strcpy(sbin_path, "/sbin/");
+        strcat(sbin_path, cmd_name);
+
+        if (napp_exists_path(sbin_path))
+        {
+            napp_set_current_path(current_path);
+
+            const char* argv[17];
+            argv[0] = cmd_name;
+            int argc = build_argv(args, argv + 1, 16) + 1;
+
+            int exit_code = 0;
+            if (napp_run_path(sbin_path, argc, argv, &exit_code))
+            {
+                strcpy(current_path, napp_get_current_path());
+                print_cmd();
+                return;
+            }
+
+            strcpy(current_path, napp_get_current_path());
+        }
+
         print_error("Unknown command: ");
         for (size_t i = 0; i < cmd_name_len; i++) 
         {
