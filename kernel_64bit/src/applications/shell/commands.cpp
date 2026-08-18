@@ -36,39 +36,40 @@ static int build_argv(const char* args, const char** argv, int max_args)
         return 0;
     }
 
-    char buf[256];
+    static char buf[256];
     strcpy(buf, args);
 
     int argc = 0;
-    char* p = buf;
-
-    while (*p && argc < max_args)
+    int i = 0;
+    
+    while (buf[i] != '\0' && argc < max_args)
     {
         // Skip leading spaces
-        while (*p == ' ') p++;
-        if (*p == '\0') break;
-
-        // Start of this argument
-        *argv++ = p;
-        argc++;
-
-        if (argc >= max_args) break;
-
-        // Advance past the argument, stripping quotes
-        while (*p && *p != ' ')
+        while (buf[i] == ' ') 
         {
-            if (*p == '"')
-            {
-                *p = '\0';
-                p++;
-                break;
-            }
-            p++;
+            i++;
+            if (buf[i] == '\0') break;
         }
-        if (*p == ' ')
+        
+        if (buf[i] == '\0') break;
+        
+        // Start of argument
+        argv[argc] = &buf[i];
+        argc++;
+        
+        if (argc >= max_args) break;
+        
+        // Find end of argument
+        while (buf[i] != '\0' && buf[i] != ' ')
         {
-            *p = '\0';
-            p++;
+            i++;
+        }
+        
+        // Null-terminate
+        if (buf[i] == ' ')
+        {
+            buf[i] = '\0';
+            i++;
         }
     }
 
@@ -1286,6 +1287,76 @@ void execute_command(const char *cmd)
     {
         print_info("Safe mode ON\n");
         safe_mode = true;
+    }
+    // 28. Command: cd
+    else if(cmd_name_len == 2 && strncmp(cmd, "cd", 2))
+    {
+        const char* arg = args;
+        
+        // Skip leading spaces
+        while (*arg == ' ') arg++;
+        
+        char new_path[256];
+        
+        if (arg[0] == '\0' || (arg[0] == '~' && (arg[1] == '\0' || arg[1] == ' ')))
+        {
+            strcpy(new_path, "/home");
+        }
+        else if (strncmp(arg, "..", 2) && (arg[2] == '\0' || arg[2] == ' '))
+        {
+            strcpy(new_path, current_path);
+            char* last_slash = strrchr(new_path, '/');
+            if (last_slash != nullptr && last_slash != new_path)
+            {
+                *last_slash = '\0';
+            }
+            else
+            {
+                strcpy(new_path, "/");
+            }
+        }
+        else
+        {
+            if (arg[0] == '/')
+            {
+                // Copy the path until space or end
+                int i = 0;
+                while (arg[i] && arg[i] != ' ' && i < 255)
+                {
+                    new_path[i] = arg[i];
+                    i++;
+                }
+                new_path[i] = '\0';
+            }
+            else
+            {
+                strcpy(new_path, current_path);
+                if (strcmp(new_path, "/") != 0)
+                {
+                    strcat(new_path, "/");
+                }
+                // Append the path until space or end
+                int i = 0;
+                int len = strlen(new_path);
+                while (arg[i] && arg[i] != ' ' && len + i < 255)
+                {
+                    new_path[len + i] = arg[i];
+                    i++;
+                }
+                new_path[len + i] = '\0';
+            }
+        }
+        
+        if (get_sector_by_path(new_path) != 0)
+        {
+            strcpy(current_path, new_path);
+        }
+        else
+        {
+            print_error("Directory not found: ");
+            print(new_path);
+            print("\n");
+        }
     }
 
 

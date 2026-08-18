@@ -6,38 +6,56 @@ int _start(const napp_api* api)
 {
     if (api->argc < 2)
     {
-        api->print("Usage: cat <file>\n");
+        api->print("Syntax error: cat requires at least 1 argument\n");
+        api->print("Usage: cat <file1> [file2] ...\n");
         return 1;
     }
 
-    const char* path = api->argv[1];
-    uint32_t sector = api->clawfs_resolve_path(api->current_path, path);
-
-    if (sector == 0)
+    // Check for flag usage (incorrect syntax)
+    if (api->argv[1][0] == '-')
     {
-        api->print("File not found!\n");
+        api->print("Syntax error: cat uses positional arguments, not flags\n");
+        api->print("Usage: cat <file1> [file2] ...\n");
         return 1;
     }
 
-    char buffer[512];
-    if (api->clawfs_read_sector(sector, buffer))
+    bool any_success = false;
+
+    for (int i = 1; i < api->argc; i++)
     {
-        for (int i = 0; i < 512; i++)
+        const char* path = api->argv[i];
+        uint32_t sector = api->clawfs_resolve_path(api->current_path, path);
+
+        if (sector == 0)
         {
-            if (buffer[i] == '\0')
-            {
-                break;
-            }
-            char c[2] = { buffer[i], 0 };
-            api->print(c);
+            api->print("Error: File not found: ");
+            api->print(path);
+            api->print("\n");
+            continue;
         }
-        api->print("\n");
-    }
-    else
-    {
-        api->print("Failed to read file contents!\n");
-        return 1;
+
+        char buffer[512];
+        if (api->clawfs_read_sector(sector, buffer))
+        {
+            for (int j = 0; j < 512; j++)
+            {
+                if (buffer[j] == '\0')
+                {
+                    break;
+                }
+                char c[2] = { buffer[j], 0 };
+                api->print(c);
+            }
+            api->print("\n");
+            any_success = true;
+        }
+        else
+        {
+            api->print("Error: Failed to read file: ");
+            api->print(path);
+            api->print("\n");
+        }
     }
 
-    return 0;
+    return any_success ? 0 : 1;
 }

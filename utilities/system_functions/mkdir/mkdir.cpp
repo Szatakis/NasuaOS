@@ -2,30 +2,30 @@
 
 NAPP_APPLICATION("mkdir");
 
-static bool strcmp(const char* s1, const char* s2)
+static bool is_flag(const char* arg, const char* flag)
 {
-    while (*s1 && *s1 == *s2) { s1++; s2++; }
-    return *s1 == *s2;
+    int i = 0;
+    while (flag[i] && arg[i] == flag[i]) i++;
+    return flag[i] == '\0' && arg[i] == '\0';
 }
 
 int _start(const napp_api* api)
 {
     const char* dir_name = nullptr;
+
+    // Only accept flag format
     for (int i = 1; i < api->argc; i++)
     {
-        if (strcmp(api->argv[i], "--dir_name") && i + 1 < api->argc)
+        if (is_flag(api->argv[i], "--dir_name") && i + 1 < api->argc)
         {
             dir_name = api->argv[i + 1];
-            break;
-        }
-        else if (api->argv[i][0] != '-')
-        {
-            dir_name = api->argv[i];
+            i++;
         }
     }
 
     if (dir_name == nullptr || *dir_name == '\0')
     {
+        api->print("Syntax error: mkdir requires --dir_name flag\n");
         api->print("Usage: mkdir --dir_name <folder_name>\n");
         return 1;
     }

@@ -2,12 +2,6 @@
 
 NAPP_APPLICATION("cd");
 
-static bool strcmp(const char* s1, const char* s2)
-{
-    while (*s1 && *s1 == *s2) { s1++; s2++; }
-    return *s1 == *s2;
-}
-
 static void strcpy(char* dest, const char* src)
 {
     while ((*dest++ = *src++));
@@ -30,17 +24,31 @@ static char* strrchr(const char* str, int ch)
     return last;
 }
 
+static bool streq(const char* s1, const char* s2)
+{
+    while (*s1 && *s1 == *s2) { s1++; s2++; }
+    return *s1 == *s2;
+}
+
 int _start(const napp_api* api)
 {
     const char* arg = (api->argc > 1) ? api->argv[1] : "";
 
+    // Check for flag usage (incorrect syntax)
+    if (api->argc > 1 && arg[0] == '-')
+    {
+        api->print("Syntax error: cd uses positional arguments, not flags\n");
+        api->print("Usage: cd [directory_path]\n");
+        return 1;
+    }
+
     char new_path[256];
 
-    if (arg[0] == '\0' || strcmp(arg, "~"))
+    if (arg[0] == '\0' || streq(arg, "~"))
     {
         strcpy(new_path, "/home");
     }
-    else if (strcmp(arg, ".."))
+    else if (streq(arg, ".."))
     {
         strcpy(new_path, api->current_path);
         char* last_slash = strrchr(new_path, '/');
@@ -62,7 +70,7 @@ int _start(const napp_api* api)
         else
         {
             strcpy(new_path, api->current_path);
-            if (strcmp(new_path, "/") != 0)
+            if (!streq(new_path, "/"))
             {
                 strcat(new_path, "/");
             }
@@ -76,7 +84,9 @@ int _start(const napp_api* api)
     }
     else
     {
-        api->print("Directory not found!\n");
+        api->print("Error: Directory not found: ");
+        api->print(new_path);
+        api->print("\n");
         return 1;
     }
 

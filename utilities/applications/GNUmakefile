@@ -4,7 +4,7 @@
 
 APPS := $(wildcard */)
 APPS := $(patsubst %/,%,$(APPS))
-APPS := $(filter-out include calculator,$(APPS))
+APPS := $(filter-out include,$(APPS))
 
 .PHONY: all
 

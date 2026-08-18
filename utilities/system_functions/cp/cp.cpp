@@ -30,6 +30,13 @@ static bool strcmp(const char* s1, const char* s2)
     return *s1 == *s2;
 }
 
+static bool is_flag(const char* arg, const char* flag)
+{
+    int i = 0;
+    while (flag[i] && arg[i] == flag[i]) i++;
+    return flag[i] == '\0' && arg[i] == '\0';
+}
+
 static void split_path(const char* path, char* parent, char* filename)
 {
     const char* last_slash = strrchr(path, '/');
@@ -52,51 +59,65 @@ static void split_path(const char* path, char* parent, char* filename)
     }
 }
 
+static void resolve_path(const char* path, const char* current_path, char* resolved)
+{
+    if (path[0] == '/')
+    {
+        strcpy(resolved, path);
+    }
+    else if (path[0] == '.' && path[1] == '\0')
+    {
+        strcpy(resolved, current_path);
+    }
+    else
+    {
+        strcpy(resolved, current_path);
+        if (!strcmp(resolved, "/"))
+        {
+            strcat(resolved, "/");
+        }
+        strcat(resolved, path);
+    }
+}
+
 int _start(const napp_api* api)
 {
-    if (api->argc < 3)
+    const char* src_path = nullptr;
+    const char* dest_path = nullptr;
+
+    // Only accept flag format
+    for (int i = 1; i < api->argc; i++)
     {
-        api->print("Usage: cp --source <source_file> --destination <destination>\n");
-        return 1;
-    }
-
-    const char* src_path = api->argv[1];
-    const char* dest_path = api->argv[2];
-
-    char src_parent[128], src_name[128];
-    split_path(src_path, src_parent, src_name);
-
-    char src_parent_abs[256];
-    if (strcmp(src_parent, ".")) {
-        strcpy(src_parent_abs, api->current_path);
-    } else {
-        if (src_parent[0] == '/') {
-            strcpy(src_parent_abs, src_parent);
-        } else {
-            strcpy(src_parent_abs, api->current_path);
-            if (strcmp(src_parent_abs, "/") != 0) strcat(src_parent_abs, "/");
-            strcat(src_parent_abs, src_parent);
+        if (is_flag(api->argv[i], "--source") && i + 1 < api->argc)
+        {
+            src_path = api->argv[i + 1];
+            i++;
+        }
+        else if (is_flag(api->argv[i], "--destination") && i + 1 < api->argc)
+        {
+            dest_path = api->argv[i + 1];
+            i++;
         }
     }
 
-    int src_type = api->clawfs_get_entry_type(src_parent_abs, src_name);
-    if (src_type != 0)
+    if (src_path == nullptr || dest_path == nullptr)
     {
-        api->print("Source is not a file or does not exist!\n");
+        api->print("Syntax error: cp requires --source and --destination flags\n");
+        api->print("Usage: cp --source <source> --destination <destination>\n");
         return 1;
     }
 
     uint32_t src_sector = api->clawfs_resolve_path(api->current_path, src_path);
     if (src_sector == 0)
     {
-        api->print("Failed to resolve source file!\n");
+        api->print("Error: Source file not found!\n");
         return 1;
     }
 
     char file_buffer[512];
     if (!api->clawfs_read_sector(src_sector, file_buffer))
     {
-        api->print("Failed to read source file!\n");
+        api->print("Error: Failed to read source file!\n");
         return 1;
     }
 
@@ -104,17 +125,7 @@ int _start(const napp_api* api)
     split_path(dest_path, dest_parent, dest_name);
 
     char dest_parent_abs[256];
-    if (strcmp(dest_parent, ".")) {
-        strcpy(dest_parent_abs, api->current_path);
-    } else {
-        if (dest_parent[0] == '/') {
-            strcpy(dest_parent_abs, dest_parent);
-        } else {
-            strcpy(dest_parent_abs, api->current_path);
-            if (strcmp(dest_parent_abs, "/") != 0) strcat(dest_parent_abs, "/");
-            strcat(dest_parent_abs, dest_parent);
-        }
-    }
+    resolve_path(dest_parent, api->current_path, dest_parent_abs);
 
     uint32_t dest_sector = api->clawfs_resolve_path(api->current_path, dest_path);
     if (dest_sector != 0)
@@ -122,7 +133,10 @@ int _start(const napp_api* api)
         int dest_type = api->clawfs_get_entry_type(dest_parent_abs, dest_name);
         if (dest_type == 1)
         {
-            strcpy(dest_parent_abs, dest_path);
+            // Destination is a directory, copy into it with source name
+            char src_parent[128], src_name[128];
+            split_path(src_path, src_parent, src_name);
+            resolve_path(dest_path, api->current_path, dest_parent_abs);
             strcpy(dest_name, src_name);
         }
     }
@@ -132,13 +146,13 @@ int _start(const napp_api* api)
     uint32_t new_file_sector = api->clawfs_resolve_path(dest_parent_abs, dest_name);
     if (new_file_sector == 0)
     {
-        api->print("Failed to create destination file!\n");
+        api->print("Error: Failed to create destination file!\n");
         return 1;
     }
 
     if (!api->clawfs_write_sector(new_file_sector, file_buffer))
     {
-        api->print("Failed to write destination file!\n");
+        api->print("Error: Failed to write destination file!\n");
         return 1;
     }
 

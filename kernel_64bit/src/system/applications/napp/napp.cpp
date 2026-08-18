@@ -423,7 +423,11 @@ static bool strip_extension(const char* file_name, char* output, uint32_t output
 
     if (!strncmp(file_name + (length - extension_length), NAPP_EXTENSION, extension_length))
     {
-        return false;
+        // Extension matches - proceed to strip it
+    }
+    else
+    {
+        return false;  // No .napp extension found
     }
 
     for (uint32_t i = 0; i < length - extension_length; i++)
@@ -441,9 +445,6 @@ static void build_application_path(const char* name, char* output)
     strcpy(output, NAPP_DIRECTORY);
     strcat(output, "/");
     strcat(output, name);
-    strcat(output, "/");
-    strcat(output, name);
-    strcat(output, NAPP_EXTENSION);
 }
 
 void napp_init(const void* rootfs_image, uint64_t rootfs_size)
@@ -487,48 +488,29 @@ uint32_t napp_list(char names[][NAPP_MAX_NAME], uint32_t max_names)
         return 0;
     }
 
-    static fat_entry_info directories[NAPP_MAX_APPLICATIONS];
-    static fat_entry_info files[NAPP_MAX_APPLICATIONS];
+    static fat_entry_info entries[NAPP_MAX_APPLICATIONS];
 
-    uint32_t directory_count = fat_list_directory(&rootfs_volume, NAPP_DIRECTORY, directories, NAPP_MAX_APPLICATIONS);
+    uint32_t entry_count = fat_list_directory(&rootfs_volume, NAPP_DIRECTORY, entries, NAPP_MAX_APPLICATIONS);
 
     uint32_t found = 0;
 
-    for (uint32_t i = 0; i < directory_count && found < max_names; i++)
+    for (uint32_t i = 0; i < entry_count && found < max_names; i++)
     {
-        if (!directories[i].directory)
+        // Skip directories and special files
+        if (entries[i].directory || entries[i].name[0] == '.')
         {
             continue;
         }
 
-        char path[256];
-
-        strcpy(path, NAPP_DIRECTORY);
-        strcat(path, "/");
-        strcat(path, directories[i].name);
-
-        uint32_t file_count = fat_list_directory(&rootfs_volume, path, files, NAPP_MAX_APPLICATIONS);
-
-        for (uint32_t j = 0; j < file_count; j++)
+        // Copy the filename directly (flat binaries in /bin)
+        uint32_t j = 0;
+        while (entries[i].name[j] && j < NAPP_MAX_NAME - 1)
         {
-            char application_name[NAPP_MAX_NAME];
-
-            if (files[j].directory)
-            {
-                continue;
-            }
-
-            if (!strip_extension(files[j].name, application_name, NAPP_MAX_NAME))
-            {
-                continue;
-            }
-
-            strcpy(names[found], application_name);
-
-            found++;
-
-            break;
+            names[found][j] = entries[i].name[j];
+            j++;
         }
+        names[found][j] = '\0';
+        found++;
     }
 
     return found;
@@ -575,7 +557,7 @@ bool napp_run(const char* name, int* exit_code)
         return false;
     }
 
-    if (info.size < NAPP_HEADER_SIZE || info.size > NAPP_MAX_IMAGE_SIZE)
+    if (info.size == 0 || info.size > NAPP_MAX_IMAGE_SIZE)
     {
         log(ERROR, "NAPP", "Invalid application size");
 
@@ -602,26 +584,6 @@ bool napp_run(const char* name, int* exit_code)
         return false;
     }
 
-    const napp_header* header = (const napp_header*)image;
-
-    if (header->magic != NAPP_MAGIC || header->abi_version != NAPP_ABI_VERSION)
-    {
-        log(ERROR, "NAPP", "Invalid application image");
-
-        kfree(image);
-
-        return false;
-    }
-
-    if (header->entry_offset < header->header_size || header->entry_offset >= info.size)
-    {
-        log(ERROR, "NAPP", "Invalid application entry point");
-
-        kfree(image);
-
-        return false;
-    }
-
     napp_window_slot* existing = find_window_of(name);
 
     if (existing != nullptr)
@@ -633,6 +595,7 @@ bool napp_run(const char* name, int* exit_code)
             *exit_code = 0;
         }
 
+        kfree(image);
         return true;
     }
 
@@ -641,13 +604,32 @@ bool napp_run(const char* name, int* exit_code)
     Uart::puts("\n");
     log(INFO, "NAPP", "Starting application");
 
-    napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
-
     strcpy(loading_application, name);
-
     loading_window_count = 0;
 
-    int result = entry(&kernel_napp_api);
+    int result = 0;
+
+    // Check for NAPP header (graphical applications)
+    const napp_header* header = (const napp_header*)image;
+    if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
+    {
+        if (header->entry_offset < header->header_size || header->entry_offset >= info.size)
+        {
+            log(ERROR, "NAPP", "Invalid application entry point");
+            kfree(image);
+            return false;
+        }
+
+        napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
+        result = entry(&kernel_napp_api);
+    }
+    else
+    {
+        // Flat binary (console applications)
+        typedef int (*flat_entry)(const napp_api*);
+        flat_entry entry = (flat_entry)image;
+        result = entry(&kernel_napp_api);
+    }
 
     uint32_t opened_windows = loading_window_count;
 
