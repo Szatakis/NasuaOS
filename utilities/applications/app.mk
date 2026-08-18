@@ -69,4 +69,5 @@ clean:
 	rm -f $(OBJECTS) $(ELF) $(TARGET)
 
 .PHONY: distclean
-distclean: clean
+distclean: 
+	rm -f $(OBJECTS) $(ELF) $(TARGET)
