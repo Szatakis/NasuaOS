@@ -15,7 +15,7 @@ int _start(const napp_api* api)
     if (api->argc != 3)
     {
         api->print_error("Syntax error!\n");
-        api->print("Usage: ls --file \"directory_path\"\n");
+        api->print("Usage: ls --file <directory_path>\n");
         return 1;
     }
 

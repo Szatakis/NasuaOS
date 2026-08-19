@@ -234,6 +234,39 @@ void clawfs_format()
     print_info("Format complete.\n");
 }
 
+// Format Clear CLAWFS
+void clawfs_format_clr()
+{
+    print_info("Formatting CLAWFS...\n");
+
+    // Reset allocation pointer.
+    next_free_sector = 108;
+
+
+    // Header
+    uint8_t buffer[512];
+
+    memclear(buffer, sizeof(buffer));
+
+    CLAWFSHeader* header = (CLAWFSHeader*)buffer;
+
+    memcpy(header->signature, "CLAWFS", 6);
+
+    header->version = CLAWFS_VERSION;
+    header->entryCount = 0;
+
+    storage_write_sector(CLAWFS_START_LBA, buffer);
+
+
+    // Root directory
+    uint8_t root_buffer[512];
+    memclear(root_buffer, sizeof(root_buffer));
+
+    storage_write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
+
+    print_info("Format complete.\n");
+}
+
 
 // Make directory
 void clawfs_mkdir(const char* parent_path, const char* dir_name)

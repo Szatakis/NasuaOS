@@ -163,6 +163,7 @@ void execute_command(const char *cmd)
             itoa(total_pages, total_buf);
             print(total_buf);
             print("):\n");
+            print(" See page 11 and above to view commands loaded from /sbin.\n");
             print(" -help                               - Show the first page of help\n");
             print("   --page [1-10]                     - Show specific help page\n");
             print(" -info                               - Display OS version and hardware info\n");
@@ -170,12 +171,11 @@ void execute_command(const char *cmd)
             print(" -shutdown                           - Power off the system safely\n");
             print(" -reboot                             - Restart the computer\n");
             print(" -echo                               - Print text to the screen or write to file\n");
-            print("   --text \"text\"                     - (Required) Specify the text to print\n");
-            print("   --color \"0xRRGGBB\"                - (Optional) Set custom HEX text color\n");
-            print("   --file \"file_name.file_ext\"       - (Optional) Save the text output into a file\n");
-            print(" -debug                              - Enable or disable debug mode\n");
-            print("   --on                              - (Required 1 of 2) Enable debug mode\n");
-            print("   --off                             - (Required 1 of 2) Disable debug mode\n");
+            print("   --text <text>                     - (Required) Specify the text to print\n");
+            print("   --color [0xRRGGBB]                - (Optional) Set custom HEX text color\n");
+            print("   --file <file_name.file_ext>       - (Optional) Save the text output into a file\n");
+            print(" -asciiart                           - Convert text into large ASCII banner\n");
+            print("    --text <string>                  - (Required) Text to transform\n");
         } 
 
         else if (page == 2) 
@@ -185,20 +185,18 @@ void execute_command(const char *cmd)
             itoa(total_pages, total_buf);
             print(total_buf);
             print("):\n");
-            print(" -clear                              - Clear the terminal screen\n");
-            print(" -fetch                              - Display system summary and ASCII logo\n");
             print(" -format                             - Format storage drive\n");
-            print("   --commands                       - Copy system commands from ISO to ClawFS\n");
+            print("   --commands                        - Copy system commands from ISO to ClawFS\n");
+            print("   --clear                           - Completely wipe the disk without creating the base file structure\n");
             print(" -ls                                 - List files and directories in current path\n");
+            print("    [path]                           - (Optional) List contents of specified path\n");
             print(" -touch                              - Create a new empty file\n");
-            print("   --file \"file_name.file_ext\"       - (Required) Name of the file to create\n");
+            print("   --file <file_name.file_ext>       - (Required) Name of the file to create\n");
             print(" -mount                              - Mount ClawFS overlay for command override\n");
             print(" -unmount                            - Unmount ClawFS overlay\n");
-            print(" -uart                               - Send data over serial port\n");
-            print("   --text \"text\"                     - (Required) Text string to transmit via UART\n");
             print(" -time                               - System clock utility\n");
             print("   --get                             - (Required 1 of 3) Display current date and time\n");
-            print("   --set \"DD.MM.YYYY HH:MM:SS\"       - (Required 1 of 3) Set new system date and time\n");
+            print("   --set <DD.MM.YYYY-HH:MM:SS>       - (Required 1 of 3) Set new system date and time\n");
             print("   --info                            - (Required 1 of 3) Display CMOS storage and RTC battery status\n");
         }
 
@@ -215,13 +213,13 @@ void execute_command(const char *cmd)
             print(" -logs                               - Kernel log management utility\n");
             print("    --show                           - (Required 1 of 5) Display stored kernel logs from memory\n");
             print("    --clear                          - (Required 1 of 5) Clear kernel log buffer\n");
-            print("    --level \"INFO|WARN|ERROR|DEBUG\"  - (Required 1 of 5) Display only selected level messages\n");
-            print("    --subsystem \"subsystem_name\"     - (Required 1 of 5) Display logs from selected subsystem\n");
-            print("    --put \"text\"                     - (Required 1 of 5) Add custom log message with INFO level\n");
+            print("    --level <INFO|WARN|ERROR|DEBUG>  - (Required 1 of 5) Display only selected level messages\n");
+            print("    --subsystem <subsystem_name>     - (Required 1 of 5) Display logs from selected subsystem\n");
+            print("    --put <text>                     - (Required 1 of 5) Add custom log message with INFO level\n");
             print(" -bootapp                            - Application manager command\n");
-            print("    --app \"application_name\"         - (Required) Load and execute selected application\n");
+            print("    --app <application_name>         - (Required) Load and execute selected application\n");
             print("    --list                           - List all available applications\n");
-            print(" See page 6 for system commands loaded from /sbin.\n");
+            print(" -clear                              - Clear the terminal screen\n");
         }
 
         else if (page == 4)
@@ -232,12 +230,18 @@ void execute_command(const char *cmd)
             print(total_buf);
             print("):\n");
             print(" -mkdir                              - Create a new directory\n");
-            print("    --dir_name \"name\"                - (Required) Name of the new directory\n");
+            print("    --dir_name <name>                - (Required) Name of the new directory\n");
             print(" -rm                                 - Remove file or directory\n");
-            print("    --name \"name\"                   - (Required) Name of the item to remove\n");
-            print("    --type \"file|dir\"               - (Required) Specify if it is a file or directory\n");
+            print("    --name <name>                    - (Required) Name of the item to remove\n");
+            print("    --type <file|dir>                - (Required) Specify if it is a file or directory\n");
             print(" -cd                                 - Change current directory\n");
             print("    [path]                           - (Optional) Path to change to (default: /home)\n");
+            print(" -uart                               - Send data over serial port\n");
+            print("   --text <text>                     - (Required) Text string to transmit via UART\n");
+            print(" -pwd                                - Display the current working directory\n");
+            print(" -safe_mode                          - Enable safe mode for system debugging\n");
+            print(" -inb                                - Read a byte from an I/O port\n");
+            print("    --port [0xHEX]                   - (Required) Specify I/O port address\n");
         }
 
         else if (page == 5)
@@ -247,18 +251,19 @@ void execute_command(const char *cmd)
             itoa(total_pages, total_buf);
             print(total_buf);
             print("):\n");
-            print(" -inb                                - Read a byte from an I/O port\n");
-            print("    --port \"0xHEX\"                   - (Required) Specify I/O port address\n");
             print(" -outb                               - Write a byte to an I/O port\n");
-            print("    --port \"0xHEX\"                   - (Required) Specify I/O port address\n");
-            print("    --val \"0xHEX\"                    - (Required) Value byte to write\n");
-            print(" -asciiart                           - Convert text into large ASCII banner\n");
-            print("    --text \"string\"                  - (Required) Text to transform\n");
-            print(" -safe_mode                          - Enable safe mode for system debugging\n");
-            print(" -mv\n");
-            print(" -cp\n");
-            print(" -pwd\n");
-            print(" -cat\n");
+            print("    --port [0xHEX]                   - (Required) Specify I/O port address\n");
+            print("    --val [0xHEX]                    - (Required) Value byte to write\n");
+            print(" -mv                                 - Move a file or directory\n");
+            print("    --source <source>                - (Required) Source path\n");
+            print("    --destination <destination>      - (Required) Destination path\n");
+            print(" -cp                                 - Copy a file or directory\n");
+            print("    --source <source>                - (Required) Source path\n");
+            print("    --destination <destination>      - (Required) Destination path\n");
+            print(" -cat                                - Display the contents of one or more files\n");
+            print("    --file <filename>                - (Required) First file to display\n");
+            print("    --file_n <filename>              - (Optional) Additional file to display\n");
+            print(" -fetch                              - Display system summary and ASCII logo\n");
         }
 
         else if (page == 6)
@@ -268,6 +273,9 @@ void execute_command(const char *cmd)
             itoa(total_pages, total_buf);
             print(total_buf);
             print("):\n");
+            print(" -debug                              - Enable or disable debug mode\n");
+            print("   --on                              - (Required 1 of 2) Enable debug mode\n");
+            print("   --off                             - (Required 1 of 2) Disable debug mode\n");
         }
 
         else if (page == 7)
@@ -440,7 +448,7 @@ void execute_command(const char *cmd)
         else
         {
             print_error("Syntax error!\n");
-            print_info("Usage: echo --text \"text\" [--color \"0xRRGGBB\"] [--file \"filename\"]\n");
+            print_info("Usage: echo --text <text> [--color [0xRRGGBB]] [--file <filename>]\n");
         }
     }
 
@@ -459,27 +467,35 @@ void execute_command(const char *cmd)
 
         if (set_flag)
         {
-            // format "--set ": "DD.MM.YYYY HH:MM:SS"
+            // Format:
+            // --set DD.MM.YYYY-HH:MM:SS
             const char* date_ptr = set_flag + 6;
 
-            // Walidation to (DD.MM.YYYY HH:MM:SS)
-            if (strlen(date_ptr) < 19 || date_ptr[2] != '.' || date_ptr[5] != '.' || date_ptr[10] != ' ' || date_ptr[13] != ':' || date_ptr[16] != ':')
+            // Validate format: DD.MM.YYYY-HH:MM:SS
+            if (strlen(date_ptr) < 19 ||
+                date_ptr[2] != '.' ||
+                date_ptr[5] != '.' ||
+                date_ptr[10] != '-' ||
+                date_ptr[13] != ':' ||
+                date_ptr[16] != ':')
             {
                 print_error("Syntax error!\n");
-                print_info("Usage: time --set DD.MM.YYYY HH:MM:SS\n");
+                print_info("Usage: time --set <DD.MM.YYYY-HH:MM:SS>\n");
             }
             else
             {
                 RtcTime new_time;
+
                 new_time.day    = parse_digits(date_ptr, 2);
                 new_time.month  = parse_digits(date_ptr + 3, 2);
                 new_time.year   = parse_digits(date_ptr + 6, 4);
+
                 new_time.hour   = parse_digits(date_ptr + 11, 2);
                 new_time.minute = parse_digits(date_ptr + 14, 2);
                 new_time.second = parse_digits(date_ptr + 17, 2);
 
-                // Saving time to RTC
                 set_rtc_time(new_time);
+
                 print_info("System time updated successfully!\n");
             }
         }
@@ -516,7 +532,7 @@ void execute_command(const char *cmd)
         else
         {
             print_error("Syntax error!\n");
-            print_info("Usage: time --get | --set \"DD.MM.YYYY HH:MM:SS\" | --info\n");
+            print_info("Usage: time --get | --set <DD.MM.YYYY-HH:MM:SS> | --info\n");
         }
     }
 
@@ -535,25 +551,41 @@ void execute_command(const char *cmd)
     // 8. Command: format
     else if(cmd_name_len == 6 && memcmp(cmd,"format", 6) == 0)
     {
-        const char* commands_flag = strstr(args, "--commands");
-        
-        if (commands_flag)
+        while (*args == ' ')
         {
-            // Format commands - copy from rootfs to ClawFS
-            print_info("Setting up persistent command storage...\n");
-            if (format_commands())
+            args++;
+        }
+
+        if (*args != '\0')
+        {
+            if (strcmp(args, "--commands") == 0)
             {
-                print_info("Commands copied successfully to ClawFS.\n");
-                print_info("Run 'mount' to enable the overlay.\n");
+                print_info("Setting up persistent command storage...\n");
+                if (format_commands())
+                {
+                    print_info("Commands copied successfully to ClawFS.\n");
+                    print_info("Run 'mount' to enable the overlay.\n");
+                }
+                else
+                {
+                    print_error("Failed to format commands.\n");
+                }
+            }
+            else if (strcmp(args, "--clear") == 0)
+            {
+                // Clear option
+                print_info("Clearing ClawFS...\n");
+                clawfs_format_clr();
+                print_info("Done.\n");
             }
             else
             {
-                print_error("Failed to format commands.\n");
+                print_error("Syntax error!\n");
+                print_info("Usage: format [--commands | --clear]\n");
             }
         }
         else
         {
-            // Regular format - format ClawFS
             print_warn("Formatting CLAWFS...\n");
             clawfs_format();
             print_info("Done.\n");
@@ -615,7 +647,7 @@ void execute_command(const char *cmd)
         else 
         {
             print_error("Syntax error!\n");
-            print_info("Usage: touch --file \"filename\"\n");
+            print_info("Usage: touch --file <filename>\n");
         }
     }
 
@@ -794,7 +826,7 @@ void execute_command(const char *cmd)
         }
         else
         {
-            print_error("Invalid --put format! Use: logs --put \"your message\"\n");
+            print_error("Invalid --put format! Use: logs --put <your message>\n");
         }
     }
 
@@ -897,7 +929,7 @@ void execute_command(const char *cmd)
             print_error("Syntax error!\n");
             print_info("Usage:\n");
             print("  bootapp --list\n");
-            print("  bootapp --app \"app_name\"\n");
+            print("  bootapp --app <app_name>\n");
         }
     }
 
@@ -988,7 +1020,7 @@ void execute_command(const char *cmd)
             print_error("Invalid arguments!\n");
             print_info("Usage:\n");
             print("  beep\n");
-            print("  beep --freq \"frequency\" --dur \"time\"\n");
+            print("  beep --freq [frequency] --dur [time]\n");
         }
     }
 
@@ -1112,7 +1144,7 @@ void execute_command(const char *cmd)
         else 
         {
             print_error("Syntax error! Missing required arguments.\n");
-            print_info("Usage: calc --op \"add|sub|mul|div\" --num1 [val] --num2 [val]\n");
+            print_info("Usage: calc --op <add|sub|mul|div> --num1 [val] --num2 [val]\n");
         }
     }
 
@@ -1215,7 +1247,7 @@ void execute_command(const char *cmd)
         if (!port_flag)
         {
             print_error("Syntax error!\n");
-            print_info("Usage: inb --port \"0xHEX\"\n");
+            print_info("Usage: inb --port [0xHEX]\n");
         } 
         else {
             const char* port_str = port_flag + 7;
@@ -1241,7 +1273,7 @@ void execute_command(const char *cmd)
         if (!port_flag || !val_flag)
         {
             print_error("Syntax error!\n");
-            print_info("Usage: outb --port \"0xHEX\" --val \"0xHEX\"\n");
+            print_info("Usage: outb --port [0xHEX] --val [0xHEX]\n");
         }
         else
         {
@@ -1265,7 +1297,7 @@ void execute_command(const char *cmd)
 
         if(!text_flag)
         {
-            print("Usage: asciiart --text \"text\"\n");
+            print("Usage: asciiart --text <text>\n");
         }
         else
         {
