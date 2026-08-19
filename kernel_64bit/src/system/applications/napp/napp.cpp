@@ -65,6 +65,30 @@ static void napp_api_print(const char* text)
     }
 }
 
+static void napp_api_print_info(const char* text) 
+{ 
+    if (text != nullptr) 
+    { 
+        print_info(text);
+    } 
+} 
+
+static void napp_api_print_warn(const char* text) 
+{ 
+    if (text != nullptr) 
+    { 
+        print_warn(text);
+    } 
+} 
+
+static void napp_api_print_error(const char* text) 
+{ 
+    if (text != nullptr) 
+    { 
+        print_error(text);
+    } 
+}
+
 static void napp_api_print_line(const char* text)
 {
     if (text != nullptr)
@@ -97,7 +121,7 @@ static void napp_api_serial_log(const char* text)
     }
 }
 
-// ── CWD wrapper ──────────────────────────────────────────────────────────────
+// wrapper
 
 static void napp_api_set_cwd(const char* path)
 {
@@ -109,7 +133,7 @@ static void napp_api_set_cwd(const char* path)
     }
 }
 
-// ── ClawFS wrappers (give userspace flat binaries access to the disk FS) ──────
+// ClawFS wrappers (give userspace flat binaries access to the disk FS)
 
 static uint32_t napp_api_clawfs_get_sector(const char* path)
 {
@@ -372,15 +396,18 @@ static napp_api kernel_napp_api =
 {
     NAPP_ABI_VERSION,
     napp_api_print,
+    napp_api_print_info,
+    napp_api_print_warn, 
+    napp_api_print_error,
     napp_api_print_line,
     napp_api_print_dec,
     napp_api_print_hex,
     napp_api_sleep_ms,
     napp_api_serial_log,
     &kernel_napp_gui,
-    /* argc */            0,
-    /* argv */            nullptr,
-    /* current_path */    napp_current_path,
+    0,  // argc
+    nullptr, // argv
+    napp_current_path, // current_path
     napp_api_set_cwd,
     napp_api_clawfs_get_sector,
     napp_api_clawfs_read_sector,
@@ -409,36 +436,6 @@ static bool remember_image(const char* name, void* image)
     }
 
     return false;
-}
-
-// Turns "bootcheck.napp" into "bootcheck", returns false for any other file.
-static bool strip_extension(const char* file_name, char* output, uint32_t output_size)
-{
-    uint32_t length = (uint32_t)strlen(file_name);
-    uint32_t extension_length = (uint32_t)strlen(NAPP_EXTENSION);
-
-    if (length <= extension_length || length - extension_length >= output_size)
-    {
-        return false;
-    }
-
-    if (!strncmp(file_name + (length - extension_length), NAPP_EXTENSION, extension_length))
-    {
-        // Extension matches - proceed to strip it
-    }
-    else
-    {
-        return false;  // No .napp extension found
-    }
-
-    for (uint32_t i = 0; i < length - extension_length; i++)
-    {
-        output[i] = file_name[i];
-    }
-
-    output[length - extension_length] = '\0';
-
-    return true;
 }
 
 static void build_application_path(const char* name, char* output)
@@ -658,7 +655,7 @@ bool napp_run(const char* name, int* exit_code)
     return true;
 }
 
-// ── Path-based flat-binary loader (for /bin/<name> and /sbin/<name>) ──────────
+// Path-based flat-binary loader (for /bin/<name> and /sbin/<name>)
 
 bool napp_exists_path(const char* path)
 {
@@ -784,7 +781,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     return true;
 }
 
-// ── sbin listing ─────────────────────────────────────────────────────────────
+// sbin listing
 
 uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], uint32_t max_names)
 {

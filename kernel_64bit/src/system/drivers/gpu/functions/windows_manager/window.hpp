@@ -6,7 +6,8 @@
 window_struct* apps[] = {
     &terminal,
     &settings,
-    &suaedit
+    &suaedit,
+    &task_manager
 };
 
 #endif

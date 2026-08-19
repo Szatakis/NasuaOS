@@ -39,7 +39,7 @@ int _start(const napp_api* api)
 
     if (name == nullptr || *name == '\0')
     {
-        api->print("Syntax error: rm requires --name flag\n");
+        api->print_error("Syntax error!\n");
         api->print("Usage: rm --name <name> --type <file|dir>\n");
         return 1;
     }
@@ -49,7 +49,7 @@ int _start(const napp_api* api)
         type = api->clawfs_get_entry_type(api->current_path, name);
         if (type == -1)
         {
-            api->print("Error: File or directory not found!\n");
+            api->print_error("File or directory not found!\n");
             return 1;
         }
     }

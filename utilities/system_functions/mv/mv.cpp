@@ -102,7 +102,7 @@ int _start(const napp_api* api)
 
     if (src_path == nullptr || dest_path == nullptr)
     {
-        api->print("Syntax error: mv requires --source and --destination flags\n");
+        api->print_error("Syntax error!\n");
         api->print("Usage: mv --source <source> --destination <destination>\n");
         return 1;
     }
@@ -110,14 +110,14 @@ int _start(const napp_api* api)
     uint32_t src_sector = api->clawfs_resolve_path(api->current_path, src_path);
     if (src_sector == 0)
     {
-        api->print("Error: Source file not found!\n");
+        api->print_error("Source file not found!\n");
         return 1;
     }
 
     char file_buffer[512];
     if (!api->clawfs_read_sector(src_sector, file_buffer))
     {
-        api->print("Error: Failed to read source file!\n");
+        api->print_error("Failed to read source file!\n");
         return 1;
     }
 
@@ -146,13 +146,13 @@ int _start(const napp_api* api)
     uint32_t new_file_sector = api->clawfs_resolve_path(dest_parent_abs, dest_name);
     if (new_file_sector == 0)
     {
-        api->print("Error: Failed to create destination file!\n");
+        api->print_error("Failed to create destination file!\n");
         return 1;
     }
 
     if (!api->clawfs_write_sector(new_file_sector, file_buffer))
     {
-        api->print("Error: Failed to write destination file!\n");
+        api->print_error("Failed to write destination file!\n");
         return 1;
     }
 

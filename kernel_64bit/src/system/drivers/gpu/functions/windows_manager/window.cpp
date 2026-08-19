@@ -51,6 +51,7 @@ void register_window(window_struct* window)
     window->max_height = 0;
 
     window->minimized = false;
+    window->visible = true;
 
     window_list[window_count++] = window;
 
@@ -74,6 +75,8 @@ void unregister_window(window_struct* window)
                 window_list[j] = window_list[j + 1];
             }
             window_count--;
+            window->visible = false;
+            window->focused = false;
             if (window_count > 0)
             {
                 active_window = window_list[window_count - 1];

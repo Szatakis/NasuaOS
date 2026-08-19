@@ -37,7 +37,7 @@ int _start(const napp_api* api)
     // Check for flag usage (incorrect syntax)
     if (api->argc > 1 && arg[0] == '-')
     {
-        api->print("Syntax error: cd uses positional arguments, not flags\n");
+        api->print_error("Syntax error!\n");
         api->print("Usage: cd [directory_path]\n");
         return 1;
     }
@@ -84,7 +84,7 @@ int _start(const napp_api* api)
     }
     else
     {
-        api->print("Error: Directory not found: ");
+        api->print_error("Directory not found: ");
         api->print(new_path);
         api->print("\n");
         return 1;

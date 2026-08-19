@@ -25,7 +25,7 @@ int _start(const napp_api* api)
 
     if (dir_name == nullptr || *dir_name == '\0')
     {
-        api->print("Syntax error: mkdir requires --dir_name flag\n");
+        api->print_error("Syntax error!\n");
         api->print("Usage: mkdir --dir_name <folder_name>\n");
         return 1;
     }

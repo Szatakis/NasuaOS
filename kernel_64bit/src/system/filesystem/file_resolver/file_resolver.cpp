@@ -262,16 +262,19 @@ static bool clawfs_get_file_info(const char* path, uint32_t* data_sector, uint32
     const char* filename = last_slash + 1;
     
     uint32_t parent_sector = get_sector_by_path(path_copy);
-    if (parent_sector == 0) {
+    if (parent_sector == 0) 
+    {
         return false;
     }
     
     CLAWFSEntry entry;
-    if (find_entry_in_dir(parent_sector, filename, &entry) == 0) {
+    if (find_entry_in_dir(parent_sector, filename, &entry) == 0) 
+    {
         return false;
     }
     
-    if (entry.type != CLAWFS_FILE) {
+    if (entry.type != CLAWFS_FILE) 
+    {
         return false;
     }
     
@@ -286,7 +289,8 @@ file_resolve_result_t resolve_system_file(const char* path)
 {
     file_resolve_result_t result = {FILE_SOURCE_NONE, false, 0, 0};
     
-    if (path == nullptr || *path == '\0') {
+    if (path == nullptr || *path == '\0') 
+    {
         return result;
     }
     

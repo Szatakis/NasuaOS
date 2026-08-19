@@ -10,6 +10,8 @@
 
 #include "isr.hpp"
 
+extern bool debug_mode;
+
 static uint64_t read_cr2()
 {
     uint64_t value;
@@ -68,21 +70,24 @@ void page_fault_handler(Registers* regs)
     to_hex64(rip,   rip_buf);
     to_hex64(rsp,   rsp_buf);
 
-    Uart::puts("\n[PAGE FAULT] Address: ");
-    Uart::puts(addr_buf);
-    Uart::puts("\n");
+    // Only show detailed page fault info for errors (non-zero error code)
+    if (error != 0) {
+        Uart::puts("\n[PAGE FAULT] Address: ");
+        Uart::puts(addr_buf);
+        Uart::puts("\n");
 
-    Uart::puts("[PAGE FAULT] Error: ");
-    Uart::puts(err_buf);
-    Uart::puts("\n");
+        Uart::puts("[PAGE FAULT] Error: ");
+        Uart::puts(err_buf);
+        Uart::puts("\n");
 
-    Uart::puts("[PAGE FAULT] RIP: ");
-    Uart::puts(rip_buf);
-    Uart::puts("\n");
+        Uart::puts("[PAGE FAULT] RIP: ");
+        Uart::puts(rip_buf);
+        Uart::puts("\n");
 
-    Uart::puts("[PAGE FAULT] RSP: ");
-    Uart::puts(rsp_buf);
-    Uart::puts("\n");
+        Uart::puts("[PAGE FAULT] RSP: ");
+        Uart::puts(rsp_buf);
+        Uart::puts("\n");
+    }
 
     /*
         Do NOT automatically allocate RAM for MMIO.
@@ -152,21 +157,26 @@ void page_fault_handler(Registers* regs)
 
     uint64_t virtual_page = addr & ~0xFFFULL;
 
-    Uart::puts("[PAGE FAULT] Mapping normal RAM page\n");
+    // Only show verbose mapping info if debug mode is enabled
+    if (debug_mode) {
+        Uart::puts("[PAGE FAULT] Mapping normal RAM page\n");
 
-    Uart::puts("[PAGE FAULT] Virtual: ");
+        Uart::puts("[PAGE FAULT] Virtual: ");
 
-    Uart::puthex(virtual_page);
+        Uart::puthex(virtual_page);
 
-    Uart::puts(" Physical: ");
+        Uart::puts(" Physical: ");
 
-    Uart::puthex(page);
+        Uart::puthex(page);
 
-    Uart::puts("\n");
+        Uart::puts("\n");
+    }
 
     vmm_map_page(virtual_page, page, PAGE_WRITE);
 
-    Uart::puts("[PAGE FAULT] Page allocated\n");
-
-    log(INFO, "PAGE FAULT", "Page allocated");
+    // Only log if debug mode is enabled
+    if (debug_mode) {
+        Uart::puts("[PAGE FAULT] Page allocated\n");
+        log(INFO, "PAGE FAULT", "Page allocated");
+    }
 }

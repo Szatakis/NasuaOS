@@ -36,4 +36,3 @@ void napp_set_current_path(const char* path);
 // Path sync between shell's current_path and napp runtime
 const char* napp_get_current_path(void);
 void napp_set_current_path(const char* path);
-

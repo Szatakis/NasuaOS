@@ -7,7 +7,7 @@ int _start(const napp_api* api)
     // Check for unexpected arguments
     if (api->argc > 1)
     {
-        api->print("Syntax error: pwd does not take arguments\n");
+        api->print_error("Syntax error!\n");
         api->print("Usage: pwd\n");
         return 1;
     }

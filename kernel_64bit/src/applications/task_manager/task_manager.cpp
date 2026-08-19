@@ -15,9 +15,9 @@ window_struct task_manager =
     .width = 500,
     .height = 350,
 
-    .visible = true,
+    .visible = false,
     .minimized = false,
-    .focused = true,
+    .focused = false,
 
     .resizable = true,
     .can_maximize = true,

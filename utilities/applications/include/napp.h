@@ -83,6 +83,9 @@ struct napp_api
     uint32_t abi_version;
 
     void (*print)(const char* text);
+    void (*print_info)(const char* text);
+    void (*print_warn)(const char* text);
+    void (*print_error)(const char* text);
     void (*print_line)(const char* text);
     void (*print_dec)(uint32_t value);
     void (*print_hex)(uint32_t value);

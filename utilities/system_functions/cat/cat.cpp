@@ -6,7 +6,7 @@ int _start(const napp_api* api)
 {
     if (api->argc < 2)
     {
-        api->print("Syntax error: cat requires at least 1 argument\n");
+        api->print_error("Syntax error!\n");
         api->print("Usage: cat <file1> [file2] ...\n");
         return 1;
     }
@@ -14,7 +14,7 @@ int _start(const napp_api* api)
     // Check for flag usage (incorrect syntax)
     if (api->argv[1][0] == '-')
     {
-        api->print("Syntax error: cat uses positional arguments, not flags\n");
+        api->print_error("Syntax error!\n");
         api->print("Usage: cat <file1> [file2] ...\n");
         return 1;
     }
@@ -51,7 +51,7 @@ int _start(const napp_api* api)
         }
         else
         {
-            api->print("Error: Failed to read file: ");
+            api->print_error("Failed to read file: ");
             api->print(path);
             api->print("\n");
         }
