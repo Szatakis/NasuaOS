@@ -678,7 +678,8 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     // Use file resolver to determine source and load accordingly
     file_resolve_result_t resolve = resolve_system_file(path);
     
-    if (!resolve.exists) {
+    if (!resolve.exists) 
+    {
         log(WARN, "NAPP", "Path not found");
         return false;
     }
@@ -686,12 +687,14 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     void* image = nullptr;
     uint32_t image_size = 0;
 
-    if (resolve.source == FILE_SOURCE_CLAWFS) {
+    if (resolve.source == FILE_SOURCE_CLAWFS) 
+    {
         // Load from ClawFS
         image_size = resolve.size;
         image = kmalloc(image_size);
         
-        if (image == nullptr) {
+        if (image == nullptr) 
+        {
             log(ERROR, "NAPP", "Out of memory");
             return false;
         }
@@ -708,8 +711,10 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         uint32_t sectors_to_read = (image_size + 511) / 512;
         uint8_t* image_ptr = (uint8_t*)image;
         
-        for (uint32_t i = 0; i < sectors_to_read; i++) {
-            if (!storage_read_sector(resolve.data_sector + i, image_ptr + (i * 512))) {
+        for (uint32_t i = 0; i < sectors_to_read; i++) 
+        {
+            if (!storage_read_sector(resolve.data_sector + i, image_ptr + (i * 512))) 
+            {
                 log(ERROR, "NAPP", "Failed to read from ClawFS");
                 kfree(image);
                 return false;
@@ -719,7 +724,8 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         // Debug: dump first 16 bytes of loaded binary
         Uart::puts("[NAPP] Binary dump: ");
         uint8_t* img_bytes = (uint8_t*)image;
-        for(uint32_t i = 0; i < 16 && i < image_size; i++) {
+        for(uint32_t i = 0; i < 16 && i < image_size; i++) 
+        {
             Uart::puthex(img_bytes[i]);
             Uart::puts(" ");
         }
@@ -728,15 +734,18 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         Uart::puts("[NAPP] Running from ClawFS: ");
         Uart::puts(path);
         Uart::puts("\n");
-    } else {
+    } 
+    else {
         // Load from rootfs (FAT)
         fat_entry_info info;
-        if (!fat_stat(&rootfs_volume, path, &info) || info.directory) {
+        if (!fat_stat(&rootfs_volume, path, &info) || info.directory) 
+        {
             log(WARN, "NAPP", "Path not found in rootfs");
             return false;
         }
 
-        if (info.size == 0 || info.size > NAPP_MAX_IMAGE_SIZE) {
+        if (info.size == 0 || info.size > NAPP_MAX_IMAGE_SIZE) 
+        {
             log(ERROR, "NAPP", "Invalid flat binary size");
             return false;
         }
@@ -744,15 +753,18 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         image_size = info.size;
         image = kmalloc(image_size);
 
-        if (image == nullptr) {
+        if (image == nullptr) 
+        {
             log(ERROR, "NAPP", "Out of memory");
             return false;
         }
 
         uint32_t read_size = 0;
-        if (!fat_read_file(&rootfs_volume, path, image, image_size, &read_size) || read_size != image_size) {
+        if (!fat_read_file(&rootfs_volume, path, image, image_size, &read_size) || read_size != image_size) 
+        {
             log(ERROR, "NAPP", "Failed to read flat binary");
             kfree(image);
+
             return false;
         }
         
@@ -868,7 +880,11 @@ void napp_set_current_path(const char* path)
     if (path != nullptr)
     {
         uint32_t i = 0;
-        while (path[i] && i < 255) { napp_current_path[i] = path[i]; i++; }
+        while (path[i] && i < 255) 
+        { 
+            napp_current_path[i] = path[i]; i++; 
+        }
+
         napp_current_path[i] = '\0';
     }
 }

@@ -49,10 +49,12 @@ void file_resolver_mount(bool mount)
 {
     clawfs_mounted = mount;
     
-    if (mount) {
+    if (mount) 
+    {
         print_info("ClawFS overlay mounted.\n");
         Uart::puts("[File Resolver] ClawFS overlay mounted.\n");
-    } else {
+    } 
+    else {
         print_info("ClawFS overlay unmounted.\n");
         Uart::puts("[File Resolver] ClawFS overlay unmounted.\n");
         // Tombstones persist but only apply when mounted
@@ -71,7 +73,8 @@ void file_resolver_save_tombstones()
     
     // Clear buffer and write tombstone data
     void* buffer = kmalloc(512);
-    if (buffer == nullptr) {
+    if (buffer == nullptr) 
+    {
         return;
     }
     
@@ -99,12 +102,14 @@ void file_resolver_load_tombstones()
     Uart::puts("[File Resolver] Loading tombstones from disk...\n");
     
     void* buffer = kmalloc(512);
-    if (buffer == nullptr) {
+    if (buffer == nullptr) 
+    {
         return;
     }
     
     // Read from fixed sector
-    if (!storage_read_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer)) {
+    if (!storage_read_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer)) 
+    {
         Uart::puts("[File Resolver] Failed to read tombstones.\n");
         kfree(buffer);
         return;
@@ -132,7 +137,10 @@ void file_resolver_load_tombstones()
 // Deletion tombstone management
 void file_resolver_mark_deleted(const char* path)
 {
-    if (path == nullptr || *path == '\0') return;
+    if (path == nullptr || *path == '\0') \
+    {
+        return;
+    }
     
     // Check if already in list
     for (uint32_t i = 0; i < deleted_count; i++)
@@ -164,7 +172,10 @@ void file_resolver_mark_deleted(const char* path)
 
 void file_resolver_undelete(const char* path)
 {
-    if (path == nullptr || *path == '\0') return;
+    if (path == nullptr || *path == '\0') 
+    {
+        return;
+    }
     
     for (uint32_t i = 0; i < deleted_count; i++)
     {
@@ -232,9 +243,11 @@ static bool clawfs_file_exists(const char* path)
     Uart::puts("[File Resolver] ClawFS check: ");
     Uart::puts(path);
     Uart::puts(" -> ");
-    if (exists) {
+    if (exists) 
+    {
         Uart::puts("EXISTS\n");
-    } else {
+    } else 
+    {
         Uart::puts("NOT FOUND\n");
     }
     
@@ -245,7 +258,8 @@ static bool clawfs_file_exists(const char* path)
 static bool clawfs_get_file_info(const char* path, uint32_t* data_sector, uint32_t* size)
 {
     uint32_t sector = get_sector_by_path(path);
-    if (sector == 0) {
+    if (sector == 0) 
+    {
         return false;
     }
     
@@ -254,7 +268,8 @@ static bool clawfs_get_file_info(const char* path, uint32_t* data_sector, uint32
     strcpy(path_copy, path);
     
     char* last_slash = strrchr(path_copy, '/');
-    if (last_slash == nullptr || last_slash == path_copy) {
+    if (last_slash == nullptr || last_slash == path_copy) 
+    {
         return false;
     }
     
@@ -278,8 +293,15 @@ static bool clawfs_get_file_info(const char* path, uint32_t* data_sector, uint32
         return false;
     }
     
-    if (data_sector) *data_sector = entry.data_sector;
-    if (size) *size = entry.entry_count; // Return actual file size from entry_count
+    if (data_sector) 
+    {
+        *data_sector = entry.data_sector;
+    }
+
+    if (size) 
+    {
+        *size = entry.entry_count; // Return actual file size from entry_count
+    }
     
     return true;
 }
@@ -294,52 +316,44 @@ file_resolve_result_t resolve_system_file(const char* path)
         return result;
     }
     
-    Uart::puts("[File Resolver] Resolving: ");
-    Uart::puts(path);
-    Uart::puts("\n");
-    
     // Priority 1: ClawFS (if mounted)
-    if (clawfs_mounted) {
-        Uart::puts("[File Resolver] ClawFS is mounted, checking first...\n");
-        
+    if (clawfs_mounted) 
+    {
         // Check if file is marked as deleted (tombstone only applies when mounted)
         if (file_resolver_is_deleted(path))
         {
-            Uart::puts("[File Resolver] File marked as deleted, blocking ISO fallback\n");
             return result; // Return not found
         }
         
-        if (clawfs_file_exists(path)) {
+        if (clawfs_file_exists(path)) 
+        {
             uint32_t data_sector;
-            if (clawfs_get_file_info(path, &data_sector, &result.size)) {
+            if (clawfs_get_file_info(path, &data_sector, &result.size)) 
+            {
                 result.source = FILE_SOURCE_CLAWFS;
                 result.exists = true;
                 result.data_sector = data_sector;
-                
-                Uart::puts("[File Resolver] Found in CLAWFS\n");
+
                 return result;
             }
         }
         
-        Uart::puts("[File Resolver] Not found in CLAWFS, checking ISO...\n");
-    } else {
-        Uart::puts("[File Resolver] ClawFS not mounted, checking ISO...\n");
     }
     
     // Priority 2: rootfs (ISO)
-    if (rootfs_mounted) {
+    if (rootfs_mounted) 
+    {
         fat_entry_info info;
-        if (fat_stat(&rootfs_volume, path, &info) && !info.directory) {
+        if (fat_stat(&rootfs_volume, path, &info) && !info.directory) 
+        {
             result.source = FILE_SOURCE_ROOTFS;
             result.exists = true;
             result.size = info.size;
             
-            Uart::puts("[File Resolver] Found in ISO rootfs\n");
             return result;
         }
     }
     
-    Uart::puts("[File Resolver] File not found anywhere\n");
     return result;
 }
 
@@ -352,17 +366,20 @@ bool system_file_exists(const char* path)
 // Copy file from rootfs to ClawFS
 bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
 {
-    if (!rootfs_mounted || src_path == nullptr || dst_path == nullptr) {
+    if (!rootfs_mounted || src_path == nullptr || dst_path == nullptr) 
+    {
         return false;
     }
     
     // Get source file info from rootfs
     fat_entry_info src_info;
-    if (!fat_stat(&rootfs_volume, src_path, &src_info) || src_info.directory) {
+    if (!fat_stat(&rootfs_volume, src_path, &src_info) || src_info.directory) 
+    {
         return false;
     }
     
-    if (src_info.size == 0) {
+    if (src_info.size == 0) 
+    {
         print_error("Empty file in rootfs\n");
         return false;
     }
@@ -372,7 +389,8 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     strcpy(dst_path_copy, dst_path);
     
     char* last_slash = strrchr(dst_path_copy, '/');
-    if (last_slash == nullptr || last_slash == dst_path_copy) {
+    if (last_slash == nullptr || last_slash == dst_path_copy) 
+    {
         return false;
     }
     
@@ -380,7 +398,8 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     const char* filename = last_slash + 1;
     
     // Check if file already exists in ClawFS
-    if (clawfs_file_exists(dst_path)) {
+    if (clawfs_file_exists(dst_path)) 
+    {
         // File exists in ClawFS, remove from deletion tombstone if present
         file_resolver_undelete(dst_path);
         
@@ -394,12 +413,14 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     
     // Get the newly created file's sector
     uint32_t parent_sector = get_sector_by_path(dst_path_copy);
-    if (parent_sector == 0) {
+    if (parent_sector == 0) 
+    {
         return false;
     }
     
     CLAWFSEntry entry;
-    if (find_entry_in_dir(parent_sector, filename, &entry) == 0) {
+    if (find_entry_in_dir(parent_sector, filename, &entry) == 0) 
+    {
         return false;
     }
     
@@ -408,7 +429,8 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     uint32_t sectors_needed = (bytes_to_copy + 511) / 512;
     
     void* buffer = kmalloc(sectors_needed * 512);
-    if (buffer == nullptr) {
+    if (buffer == nullptr) 
+    {
         return false;
     }
     
@@ -416,13 +438,15 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     
     uint32_t read_size = 0;
     
-    if (!fat_read_file(&rootfs_volume, src_path, buffer, bytes_to_copy, &read_size) || read_size != bytes_to_copy) {
+    if (!fat_read_file(&rootfs_volume, src_path, buffer, bytes_to_copy, &read_size) || read_size != bytes_to_copy) 
+    {
         kfree(buffer);
         return false;
     }
     
     // Write to ClawFS sectors
-    for (uint32_t i = 0; i < sectors_needed; i++) {
+    for (uint32_t i = 0; i < sectors_needed; i++) 
+    {
         storage_write_sector(entry.data_sector + i, (uint8_t*)buffer + (i * 512));
     }
     
@@ -433,21 +457,27 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     
     // Write back the directory entry with updated size
     uint8_t dir_buffer[512];
-    if (storage_read_sector(parent_sector, dir_buffer)) {
+    if (storage_read_sector(parent_sector, dir_buffer)) 
+    {
         CLAWFSEntry* entries = (CLAWFSEntry*)dir_buffer;
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 12; i++) 
+        {
             // Compare entry name with filename
             bool match = true;
-            for (int j = 0; j < 28; j++) {
-                if (entries[i].name[j] != filename[j]) {
+            for (int j = 0; j < 28; j++) 
+            {
+                if (entries[i].name[j] != filename[j]) 
+                {
                     match = false;
                     break;
                 }
-                if (entries[i].name[j] == '\0' && filename[j] == '\0') {
+                if (entries[i].name[j] == '\0' && filename[j] == '\0') 
+                {
                     break;
                 }
             }
-            if (match) {
+            if (match)
+            {
                 entries[i].entry_count = bytes_to_copy;
                 storage_write_sector(parent_sector, dir_buffer);
                 break;
@@ -474,7 +504,8 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
 // Format commands: copy all from rootfs /bin and /sbin to ClawFS
 bool format_commands()
 {
-    if (!rootfs_mounted) {
+    if (!rootfs_mounted) 
+    {
         print_error("Rootfs not available\n");
         return false;
     }
@@ -494,8 +525,10 @@ bool format_commands()
     
     print_info("Processing /bin directory...\n");
     
-    for (uint32_t i = 0; i < bin_count; i++) {
-        if (bin_entries[i].directory || bin_entries[i].name[0] == '.') {
+    for (uint32_t i = 0; i < bin_count; i++) 
+    {
+        if (bin_entries[i].directory || bin_entries[i].name[0] == '.') 
+        {
             continue;
         }
         
@@ -512,9 +545,11 @@ bool format_commands()
         print(bin_entries[i].name);
         print("...");
         
-        if (copy_file_to_clawfs(src_path, dst_path)) {
+        if (copy_file_to_clawfs(src_path, dst_path)) 
+        {
             copied++;
-        } else {
+        } 
+        else {
             skipped++;
             print(" [SKIPPED]");
         }
@@ -527,8 +562,10 @@ bool format_commands()
     
     print_info("Processing /sbin directory...\n");
     
-    for (uint32_t i = 0; i < sbin_count; i++) {
-        if (sbin_entries[i].directory || sbin_entries[i].name[0] == '.') {
+    for (uint32_t i = 0; i < sbin_count; i++) 
+    {
+        if (sbin_entries[i].directory || sbin_entries[i].name[0] == '.') 
+        {
             continue;
         }
         
@@ -545,9 +582,11 @@ bool format_commands()
         print(sbin_entries[i].name);
         print("...");
         
-        if (copy_file_to_clawfs(src_path, dst_path)) {
+        if (copy_file_to_clawfs(src_path, dst_path)) 
+        {
             copied++;
-        } else {
+        } 
+        else {
             skipped++;
             print(" [SKIPPED]");
         }

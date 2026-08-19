@@ -567,7 +567,6 @@ void execute_command(const char *cmd)
         if (clawfs_exists())
         {
             file_resolver_mount(true);
-            print_info("ClawFS overlay mounted. Commands will be loaded from disk.\n");
         }
         else
         {
@@ -580,7 +579,6 @@ void execute_command(const char *cmd)
     else if(cmd_name_len == 7 && memcmp(cmd, "unmount", 7) == 0)
     {
         file_resolver_mount(false);
-        print_info("ClawFS overlay unmounted. Commands will be loaded from ISO.\n");
     }
 
     // 11. Command: touch
