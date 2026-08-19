@@ -649,6 +649,19 @@ void execute_command(const char *cmd)
             if (file_resolver_is_mounted())
             {
                 clawfs_rm(current_path, name_buf, file_type);
+                
+                // Build full path for tombstone
+                char full_path[256];
+                strcpy(full_path, current_path);
+                if (strcmp(full_path, "/") != 0)
+                {
+                    strcat(full_path, "/");
+                }
+                strcat(full_path, name_buf);
+                
+                // Mark as deleted in tombstone list
+                file_resolver_mark_deleted(full_path);
+                
                 print_info("Removed from ClawFS: ");
                 print(name_buf);
                 print("\n");

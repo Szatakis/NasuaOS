@@ -19,6 +19,10 @@ extern bool storage_uses_ram;
 // Mount state
 static bool clawfs_mounted = false;
 
+// Deletion tombstone list (files deleted from ClawFS)
+static deletion_tombstone_t deleted_files[64];
+static uint32_t deleted_count = 0;
+
 // Storage detection
 bool storage_uses_ata()
 {
@@ -28,6 +32,14 @@ bool storage_uses_ata()
 void file_resolver_init()
 {
     clawfs_mounted = false;
+    deleted_count = 0;
+    
+    // Clear tombstone list
+    for (uint32_t i = 0; i < 64; i++)
+    {
+        deleted_files[i].path[0] = '\0';
+        deleted_files[i].deleted = false;
+    }
 }
 
 void file_resolver_mount(bool mount)
@@ -40,6 +52,7 @@ void file_resolver_mount(bool mount)
     } else {
         print_info("ClawFS overlay unmounted.\n");
         Uart::puts("[File Resolver] ClawFS overlay unmounted.\n");
+        // Tombstones persist but only apply when mounted
     }
 }
 
@@ -48,11 +61,105 @@ bool file_resolver_is_mounted()
     return clawfs_mounted;
 }
 
+// Deletion tombstone management
+void file_resolver_mark_deleted(const char* path)
+{
+    if (path == nullptr || *path == '\0') return;
+    
+    // Check if already in list
+    for (uint32_t i = 0; i < deleted_count; i++)
+    {
+        if (strcmp(deleted_files[i].path, path) == 0)
+        {
+            deleted_files[i].deleted = true;
+            return;
+        }
+    }
+    
+    // Add to list if space available
+    if (deleted_count < 64)
+    {
+        strcpy(deleted_files[deleted_count].path, path);
+        deleted_files[deleted_count].deleted = true;
+        deleted_count++;
+        
+        Uart::puts("[File Resolver] Marked as deleted: ");
+        Uart::puts(path);
+        Uart::puts("\n");
+    }
+}
+
+void file_resolver_undelete(const char* path)
+{
+    if (path == nullptr || *path == '\0') return;
+    
+    for (uint32_t i = 0; i < deleted_count; i++)
+    {
+        if (strcmp(deleted_files[i].path, path) == 0)
+        {
+            deleted_files[i].deleted = false;
+            deleted_files[i].path[0] = '\0';
+            
+            // Shift remaining entries
+            for (uint32_t j = i; j < deleted_count - 1; j++)
+            {
+                strcpy(deleted_files[j].path, deleted_files[j + 1].path);
+                deleted_files[j].deleted = deleted_files[j + 1].deleted;
+            }
+            
+            deleted_count--;
+            
+            Uart::puts("[File Resolver] Removed from deletion list: ");
+            Uart::puts(path);
+            Uart::puts("\n");
+            return;
+        }
+    }
+}
+
+void file_resolver_clear_deletions()
+{
+    deleted_count = 0;
+    for (uint32_t i = 0; i < 64; i++)
+    {
+        deleted_files[i].path[0] = '\0';
+        deleted_files[i].deleted = false;
+    }
+    
+    Uart::puts("[File Resolver] Cleared deletion tombstones\n");
+}
+
+bool file_resolver_is_deleted(const char* path)
+{
+    if (path == nullptr || *path == '\0') return false;
+    
+    for (uint32_t i = 0; i < deleted_count; i++)
+    {
+        if (deleted_files[i].deleted && strcmp(deleted_files[i].path, path) == 0)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 // Check if file exists in ClawFS
 static bool clawfs_file_exists(const char* path)
 {
     uint32_t sector = get_sector_by_path(path);
-    return sector != 0;
+    bool exists = (sector != 0);
+    
+    Uart::puts("[File Resolver] ClawFS check: ");
+    Uart::puts(path);
+    Uart::puts(" -> ");
+    if (exists) {
+        Uart::puts("EXISTS\n");
+    } else {
+        Uart::puts("NOT FOUND\n");
+    }
+    
+    return exists;
 }
 
 // Get ClawFS file entry info
@@ -104,15 +211,36 @@ file_resolve_result_t resolve_system_file(const char* path)
         return result;
     }
     
+    Uart::puts("[File Resolver] Resolving: ");
+    Uart::puts(path);
+    Uart::puts("\n");
+    
     // Priority 1: ClawFS (if mounted)
-    if (clawfs_mounted && clawfs_file_exists(path)) {
-        uint32_t data_sector;
-        if (clawfs_get_file_info(path, &data_sector, &result.size)) {
-            result.source = FILE_SOURCE_CLAWFS;
-            result.exists = true;
-            result.data_sector = data_sector;
-            return result;
+    if (clawfs_mounted) {
+        Uart::puts("[File Resolver] ClawFS is mounted, checking first...\n");
+        
+        // Check if file is marked as deleted (tombstone only applies when mounted)
+        if (file_resolver_is_deleted(path))
+        {
+            Uart::puts("[File Resolver] File marked as deleted, blocking ISO fallback\n");
+            return result; // Return not found
         }
+        
+        if (clawfs_file_exists(path)) {
+            uint32_t data_sector;
+            if (clawfs_get_file_info(path, &data_sector, &result.size)) {
+                result.source = FILE_SOURCE_CLAWFS;
+                result.exists = true;
+                result.data_sector = data_sector;
+                
+                Uart::puts("[File Resolver] Found in CLAWFS\n");
+                return result;
+            }
+        }
+        
+        Uart::puts("[File Resolver] Not found in CLAWFS, checking ISO...\n");
+    } else {
+        Uart::puts("[File Resolver] ClawFS not mounted, checking ISO...\n");
     }
     
     // Priority 2: rootfs (ISO)
@@ -122,10 +250,13 @@ file_resolve_result_t resolve_system_file(const char* path)
             result.source = FILE_SOURCE_ROOTFS;
             result.exists = true;
             result.size = info.size;
+            
+            Uart::puts("[File Resolver] Found in ISO rootfs\n");
             return result;
         }
     }
     
+    Uart::puts("[File Resolver] File not found anywhere\n");
     return result;
 }
 
@@ -167,7 +298,11 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     
     // Check if file already exists in ClawFS
     if (clawfs_file_exists(dst_path)) {
+        // File exists in ClawFS, remove from deletion tombstone if present
+        file_resolver_undelete(dst_path);
+        
         // Skip copying if already present
+        Uart::puts("[File Resolver] File already exists in CLAWFS, skipping\n");
         return true;
     }
     
@@ -206,6 +341,9 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     
     kfree(buffer);
     
+    // Remove from deletion tombstone if it was there
+    file_resolver_undelete(dst_path);
+    
     print_info("Copied: ");
     print(src_path);
     print(" -> ");
@@ -227,6 +365,9 @@ bool format_commands()
     
     print_info("Formatting commands - copying from rootfs to ClawFS...\n");
     Uart::puts("[File Resolver] Formatting commands...\n");
+    
+    // Clear any existing deletion tombstones
+    file_resolver_clear_deletions();
     
     // List and copy /bin files
     static fat_entry_info bin_entries[64];
