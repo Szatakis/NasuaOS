@@ -28,6 +28,9 @@ extern uint32_t current_text_color;
 extern bool debug_mode;
 extern bool safe_mode;
 
+static constexpr uint32_t HELP_COMMANDS_PER_PAGE = 13;
+static constexpr uint32_t HELP_STATIC_PAGES = 10;
+
 // Build argv array from shell args string (splits by spaces, strips quotes)
 static int build_argv(const char* args, const char** argv, int max_args)
 {
@@ -77,7 +80,6 @@ static int build_argv(const char* args, const char** argv, int max_args)
 }
 
 // Main shell function
-
 void execute_command(const char *cmd) 
 {
     print("\n");
@@ -116,7 +118,18 @@ void execute_command(const char *cmd)
             }
         }
 
-        int page = 1; // default page
+        uint32_t page = 1; // default page
+
+        static char sbin_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
+        uint32_t sbin_count = napp_list_sbin(sbin_names, NAPP_MAX_APPLICATIONS);
+        uint32_t sbin_pages = (sbin_count + HELP_COMMANDS_PER_PAGE - 1) / HELP_COMMANDS_PER_PAGE;
+
+        if (sbin_pages == 0)
+        {
+            sbin_pages = 1;
+        }
+
+        uint32_t total_pages = HELP_STATIC_PAGES + sbin_pages;
 
         const char* page_flag = strstr(args, "--page ");
 
@@ -125,19 +138,15 @@ void execute_command(const char *cmd)
             const char* page_num = page_flag + 7;
 
             page = parse_number(page_num);
-
-            if (page < 1 || page > 10) 
-            {
-                print_error("Syntax error!\n");
-                print_info("Usage: help --page [1-10]\n");
-                print_cmd();
-                return;
-            }
         }
 
         if (page == 1) 
         {
-            print_info("Available commands (Page 1/10):\n");
+            print_info("Available commands (Page 1/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print(" -help                               - Show the first page of help\n");
             print("   --page [1-10]                     - Show specific help page\n");
             print(" -info                               - Display OS version and hardware info\n");
@@ -155,7 +164,11 @@ void execute_command(const char *cmd)
 
         else if (page == 2) 
         {
-            print_info("Available commands (Page 2/10):\n");
+            print_info("Available commands (Page 2/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print(" -clear                              - Clear the terminal screen\n");
             print(" -fetch                              - Display system summary and ASCII logo\n");
             print(" -format                             - Format storage drive\n");
@@ -173,7 +186,11 @@ void execute_command(const char *cmd)
 
         else if (page == 3) 
         {
-            print_info("Available commands (Page 3/10):\n");
+            print_info("Available commands (Page 3/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print(" -uptime                             - Display system uptime since boot\n");
             print(" -panic                              - Trigger kernel panic for debugging\n");
             print(" -resolution                         - Display current screen resolution and video mode information\n");
@@ -191,7 +208,11 @@ void execute_command(const char *cmd)
 
         else if (page == 4) 
         {
-            print_info("Available commands (Page 4/10):\n");
+            print_info("Available commands (Page 4/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print(" -beep                               - System PC Speaker sound generator utility\n");
             print("    --freq \"Hz\"                      - (Optional) Sound frequency in Hertz (Default: 1000 Hz)\n");
             print("    --dur \"ms\"                       - (Optional) Sound duration in milliseconds (Default: 200 ms)\n");
@@ -209,7 +230,11 @@ void execute_command(const char *cmd)
 
         else if (page == 5) 
         {
-            print_info("Available commands (Page 5/10):\n");
+            print_info("Available commands (Page 5/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print(" -inb                                - Read a byte from an I/O port\n");
             print("    --port \"0xHEX\"                   - (Required) Specify I/O port address\n");
             print(" -outb                               - Write a byte to an I/O port\n");
@@ -220,52 +245,131 @@ void execute_command(const char *cmd)
             print(" -mkdir                              - Create a new directory\n");
             print("    --dir_name \"name\"                - (Required) Name of the new directory\n");
             print(" -safe_mode                          - Enable safe mode for system debugging\n");
-
-
-
         }
 
         else if (page == 6)
         {
-            print_info("Available commands (Page 6/10):\n");
+            print_info("Available commands (Page 6/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print("More commands coming soon...\n");
         }
 
         else if (page == 7) 
         {
-            print_info("Available commands (Page 7/10):\n");
+            print_info("Available commands (Page 7/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print("More commands coming soon...\n");
         }
 
         else if (page == 8) 
         {
-            print_info("Available commands (Page 8/10):\n");
+            print_info("Available commands (Page 8/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print("More commands coming soon...\n");
         }
 
         else if (page == 9) 
         {
-            print_info("Available commands (Page 9/10):\n");
+            print_info("Available commands (Page 9/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
             print("More commands coming soon...\n");
         }
 
         else if (page == 10) 
         {
-            print_info("System commands from /sbin (Page 10/10):\n");
+            print_info("Available commands (Page 10/");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+            print("):\n");
+            print("More commands coming soon...\n");
+        }
 
+        else if (page > HELP_STATIC_PAGES)
+        {
             static char sbin_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
+
             uint32_t sbin_count = napp_list_sbin(sbin_names, NAPP_MAX_APPLICATIONS);
+
+            // Calculate how many pages /sbin needs.
+            uint32_t sbin_pages = (sbin_count + HELP_COMMANDS_PER_PAGE - 1) / HELP_COMMANDS_PER_PAGE;
+
+            if (sbin_pages == 0)
+            {
+                sbin_pages = 1;
+            }
+
+            uint32_t total_pages = HELP_STATIC_PAGES + sbin_pages;
+
+            // Page is outside the valid range.
+            if (page > total_pages)
+            {
+                print_error("Invalid help page!\n");
+                print_info("Usage: help --page [1-");
+                
+                char num_buf[16];
+                itoa(total_pages, num_buf);
+                print(num_buf);
+
+                print("]\n");
+                print_cmd();
+                return;
+            }
+
+            // Convert help page to /sbin page.
+            uint32_t sbin_page = (uint32_t)page - HELP_STATIC_PAGES;
+
+            print_info("System commands from /sbin (Page ");
+
+            char page_buf[16];
+            itoa(page, page_buf);
+            print(page_buf);
+
+            print("/");
+
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            print(total_buf);
+
+            print("):\n");
 
             if (sbin_count == 0)
             {
                 print(" (no commands found in /sbin — rootfs may not be mounted)\n");
             }
-
-            for (uint32_t i = 0; i < sbin_count; i++)
+            else
             {
-                print(" - ");
-                print(sbin_names[i]);
-                print("\n");
+                uint32_t start = (sbin_page - 1) * HELP_COMMANDS_PER_PAGE;
+                uint32_t end = start + HELP_COMMANDS_PER_PAGE;
+
+                if (end > sbin_count)
+                {
+                    end = sbin_count;
+                }
+
+                for (uint32_t i = start; i < end; i++)
+                {
+                    if (strcmp(sbin_names[i], ".clawfs") == 0)
+                    {
+                        continue;
+                    }
+
+                    print(" -");
+                    print(sbin_names[i]);
+                    print("\n");
+                }
             }
         }
     }
@@ -1364,12 +1468,14 @@ void execute_command(const char *cmd)
     else 
     {
         char cmd_name[64];
-        int i = 0;
+        size_t i = 0;
+
         while (i < cmd_name_len && i < 63)
         {
             cmd_name[i] = cmd[i];
             i++;
         }
+
         cmd_name[i] = '\0';
 
         char sbin_path[256];
