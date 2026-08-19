@@ -127,6 +127,9 @@ bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags)
         flags
         |
         PAGE_PRESENT;
+    
+    // Clear NX bit to allow execution from heap (needed for flat binaries)
+    pt[pt_i] &= ~(1ULL << 63);
 
     asm volatile(
         "invlpg (%0)"

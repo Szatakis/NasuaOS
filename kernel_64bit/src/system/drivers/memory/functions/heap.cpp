@@ -48,6 +48,7 @@ void* kmalloc(size_t size)
             return nullptr;
         }
 
+        // Map heap pages as executable (needed for flat binaries loaded from ClawFS)
         if(!vmm_map_page(heap_current, phys, PAGE_WRITE))
         {
             Uart::puts("[HEAP] MAP FAILED\n");

@@ -688,7 +688,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
 
     if (resolve.source == FILE_SOURCE_CLAWFS) {
         // Load from ClawFS
-        image_size = resolve.size; // Currently fixed at 512 bytes
+        image_size = resolve.size;
         image = kmalloc(image_size);
         
         if (image == nullptr) {
@@ -696,11 +696,34 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
             return false;
         }
 
-        if (!storage_read_sector(resolve.data_sector, (uint8_t*)image)) {
-            log(ERROR, "NAPP", "Failed to read from ClawFS");
-            kfree(image);
-            return false;
+        Uart::puts("[NAPP] ClawFS load - image allocated at: ");
+        Uart::puthex((uint64_t)image);
+        Uart::puts(" size: ");
+        Uart::puthex(image_size);
+        Uart::puts(" sector: ");
+        Uart::puthex(resolve.data_sector);
+        Uart::puts("\n");
+
+        // Read the file - may span multiple sectors
+        uint32_t sectors_to_read = (image_size + 511) / 512;
+        uint8_t* image_ptr = (uint8_t*)image;
+        
+        for (uint32_t i = 0; i < sectors_to_read; i++) {
+            if (!storage_read_sector(resolve.data_sector + i, image_ptr + (i * 512))) {
+                log(ERROR, "NAPP", "Failed to read from ClawFS");
+                kfree(image);
+                return false;
+            }
         }
+        
+        // Debug: dump first 16 bytes of loaded binary
+        Uart::puts("[NAPP] Binary dump: ");
+        uint8_t* img_bytes = (uint8_t*)image;
+        for(uint32_t i = 0; i < 16 && i < image_size; i++) {
+            Uart::puthex(img_bytes[i]);
+            Uart::puts(" ");
+        }
+        Uart::puts("\n");
         
         Uart::puts("[NAPP] Running from ClawFS: ");
         Uart::puts(path);
@@ -747,6 +770,15 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
 
     // Check for NAPP header (sbin commands are NAPP binaries without extension)
     const napp_header* header = (const napp_header*)image;
+    
+    Uart::puts("[NAPP] Checking header at: ");
+    Uart::puthex((uint64_t)header);
+    Uart::puts(" magic: ");
+    Uart::puthex(header->magic);
+    Uart::puts(" expected: ");
+    Uart::puthex(NAPP_MAGIC);
+    Uart::puts("\n");
+    
     if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
     {
         if (header->entry_offset < header->header_size || header->entry_offset >= image_size)
@@ -757,6 +789,11 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         }
 
         napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
+        
+        Uart::puts("[NAPP] NAPP entry point: ");
+        Uart::puthex((uint64_t)entry);
+        Uart::puts("\n");
+        
         result = entry(&kernel_napp_api);
     }
     else
@@ -764,6 +801,11 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         // Flat binary (no header)
         typedef int (*flat_entry)(const napp_api*);
         flat_entry entry = (flat_entry)image;
+        
+        Uart::puts("[NAPP] Flat binary entry point: ");
+        Uart::puthex((uint64_t)entry);
+        Uart::puts("\n");
+        
         result = entry(&kernel_napp_api);
     }
 

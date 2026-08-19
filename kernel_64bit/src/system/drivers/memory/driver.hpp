@@ -46,6 +46,7 @@ uint64_t pmm_get_free_memory();
 #define PAGE_WRITE   0x002
 #define PAGE_USER    0x004
 #define PAGE_NX      (1ULL << 63)
+#define PAGE_EXEC    0x000 // Default to executable (NX bit cleared)
 
 void vmm_init();
 bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags);

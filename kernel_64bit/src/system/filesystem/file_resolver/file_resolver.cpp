@@ -279,7 +279,7 @@ static bool clawfs_get_file_info(const char* path, uint32_t* data_sector, uint32
     }
     
     if (data_sector) *data_sector = entry.data_sector;
-    if (size) *size = 512; // ClawFS files are single sector for now
+    if (size) *size = entry.entry_count; // Return actual file size from entry_count
     
     return true;
 }
@@ -403,15 +403,17 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
         return false;
     }
     
-    // Read file from rootfs (limited to 512 bytes for ClawFS)
-    void* buffer = kmalloc(512);
+    // Read file from rootfs - support multi-sector files
+    uint32_t bytes_to_copy = src_info.size;
+    uint32_t sectors_needed = (bytes_to_copy + 511) / 512;
+    
+    void* buffer = kmalloc(sectors_needed * 512);
     if (buffer == nullptr) {
         return false;
     }
     
-    memclear(buffer, 512);
+    memclear(buffer, sectors_needed * 512);
     
-    uint32_t bytes_to_copy = src_info.size > 512 ? 512 : src_info.size;
     uint32_t read_size = 0;
     
     if (!fat_read_file(&rootfs_volume, src_path, buffer, bytes_to_copy, &read_size) || read_size != bytes_to_copy) {
@@ -419,10 +421,39 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
         return false;
     }
     
-    // Write to ClawFS sector
-    storage_write_sector(entry.data_sector, (uint8_t*)buffer);
+    // Write to ClawFS sectors
+    for (uint32_t i = 0; i < sectors_needed; i++) {
+        storage_write_sector(entry.data_sector + i, (uint8_t*)buffer + (i * 512));
+    }
     
     kfree(buffer);
+    
+    // Update the entry to store the actual file size
+    entry.entry_count = bytes_to_copy;
+    
+    // Write back the directory entry with updated size
+    uint8_t dir_buffer[512];
+    if (storage_read_sector(parent_sector, dir_buffer)) {
+        CLAWFSEntry* entries = (CLAWFSEntry*)dir_buffer;
+        for (int i = 0; i < 12; i++) {
+            // Compare entry name with filename
+            bool match = true;
+            for (int j = 0; j < 28; j++) {
+                if (entries[i].name[j] != filename[j]) {
+                    match = false;
+                    break;
+                }
+                if (entries[i].name[j] == '\0' && filename[j] == '\0') {
+                    break;
+                }
+            }
+            if (match) {
+                entries[i].entry_count = bytes_to_copy;
+                storage_write_sector(parent_sector, dir_buffer);
+                break;
+            }
+        }
+    }
     
     // Remove from deletion tombstone if it was there
     file_resolver_undelete(dst_path);
@@ -433,7 +464,9 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     print(dst_path);
     print(" (");
     print_num8(bytes_to_copy);
-    print(" bytes)\n");
+    print(" bytes, ");
+    print_num8(sectors_needed);
+    print(" sectors)\n");
     
     return true;
 }
