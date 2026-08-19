@@ -8,6 +8,7 @@
 
 #include "system/filesystem/fat/fat.hpp"
 #include "system/filesystem/clawfs/clawfs.hpp"
+#include "system/filesystem/file_resolver/file_resolver.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
@@ -19,8 +20,8 @@
 #define NAPP_EXTENSION ".napp"
 #define NAPP_MAX_IMAGE_SIZE (1024 * 1024)
 
-static fat_volume rootfs_volume;
-static bool rootfs_mounted = false;
+fat_volume rootfs_volume;
+bool rootfs_mounted = false;
 
 // Current working directory exposed to napp programs
 static char napp_current_path[256] = "/home";
@@ -474,6 +475,9 @@ void napp_init(const void* rootfs_image, uint64_t rootfs_size)
 
     Uart::puts("[NAPP] Rootfs mounted\n");
     log(INFO, "NAPP", "Rootfs mounted");
+    
+    // Initialize file resolver
+    file_resolver_init();
 }
 
 bool napp_rootfs_available()
@@ -658,57 +662,83 @@ bool napp_run(const char* name, int* exit_code)
 
 bool napp_exists_path(const char* path)
 {
-    if (!rootfs_mounted || path == nullptr || *path == '\0')
+    if (path == nullptr || *path == '\0')
     {
         return false;
     }
 
-    fat_entry_info info;
-
-    if (!fat_stat(&rootfs_volume, path, &info))
-    {
-        return false;
-    }
-
-    return !info.directory;
+    // Use file resolver for unified path checking
+    return system_file_exists(path);
 }
 
 bool napp_run_path(const char* path, int argc, const char* const* argv, int* exit_code)
 {
-    if (!rootfs_mounted || path == nullptr || *path == '\0')
+    if (path == nullptr || *path == '\0')
     {
         return false;
     }
 
-    fat_entry_info info;
-
-    if (!fat_stat(&rootfs_volume, path, &info) || info.directory)
-    {
+    // Use file resolver to determine source and load accordingly
+    file_resolve_result_t resolve = resolve_system_file(path);
+    
+    if (!resolve.exists) {
         log(WARN, "NAPP", "Path not found");
         return false;
     }
 
-    if (info.size == 0 || info.size > NAPP_MAX_IMAGE_SIZE)
-    {
-        log(ERROR, "NAPP", "Invalid flat binary size");
-        return false;
-    }
+    void* image = nullptr;
+    uint32_t image_size = 0;
 
-    void* image = kmalloc(info.size);
+    if (resolve.source == FILE_SOURCE_CLAWFS) {
+        // Load from ClawFS
+        image_size = resolve.size; // Currently fixed at 512 bytes
+        image = kmalloc(image_size);
+        
+        if (image == nullptr) {
+            log(ERROR, "NAPP", "Out of memory");
+            return false;
+        }
 
-    if (image == nullptr)
-    {
-        log(ERROR, "NAPP", "Out of memory");
-        return false;
-    }
+        if (!storage_read_sector(resolve.data_sector, (uint8_t*)image)) {
+            log(ERROR, "NAPP", "Failed to read from ClawFS");
+            kfree(image);
+            return false;
+        }
+        
+        Uart::puts("[NAPP] Running from ClawFS: ");
+        Uart::puts(path);
+        Uart::puts("\n");
+    } else {
+        // Load from rootfs (FAT)
+        fat_entry_info info;
+        if (!fat_stat(&rootfs_volume, path, &info) || info.directory) {
+            log(WARN, "NAPP", "Path not found in rootfs");
+            return false;
+        }
 
-    uint32_t read_size = 0;
+        if (info.size == 0 || info.size > NAPP_MAX_IMAGE_SIZE) {
+            log(ERROR, "NAPP", "Invalid flat binary size");
+            return false;
+        }
 
-    if (!fat_read_file(&rootfs_volume, path, image, info.size, &read_size) || read_size != info.size)
-    {
-        log(ERROR, "NAPP", "Failed to read flat binary");
-        kfree(image);
-        return false;
+        image_size = info.size;
+        image = kmalloc(image_size);
+
+        if (image == nullptr) {
+            log(ERROR, "NAPP", "Out of memory");
+            return false;
+        }
+
+        uint32_t read_size = 0;
+        if (!fat_read_file(&rootfs_volume, path, image, image_size, &read_size) || read_size != image_size) {
+            log(ERROR, "NAPP", "Failed to read flat binary");
+            kfree(image);
+            return false;
+        }
+        
+        Uart::puts("[NAPP] Running from rootfs: ");
+        Uart::puts(path);
+        Uart::puts("\n");
     }
 
     // Populate runtime fields
@@ -716,17 +746,13 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     kernel_napp_api.argv = argv;
     // current_path already points at napp_current_path (live pointer)
 
-    Uart::puts("[NAPP] Running: ");
-    Uart::puts(path);
-    Uart::puts("\n");
-
     int result = 0;
 
     // Check for NAPP header (sbin commands are NAPP binaries without extension)
     const napp_header* header = (const napp_header*)image;
     if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
     {
-        if (header->entry_offset < header->header_size || header->entry_offset >= info.size)
+        if (header->entry_offset < header->header_size || header->entry_offset >= image_size)
         {
             log(ERROR, "NAPP", "Invalid application entry point");
             kfree(image);

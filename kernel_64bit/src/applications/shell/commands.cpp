@@ -18,6 +18,7 @@
 #include "system/vars/info_vars/info_vars.hpp"
 
 #include "system/filesystem/clawfs/clawfs.hpp"
+#include "system/filesystem/file_resolver/file_resolver.hpp"
 
 #include "system/applications/napp/napp.hpp"
 
@@ -98,7 +99,7 @@ void execute_command(const char *cmd)
 
     print(CMD_TEXT_WHITE);
     // Command: help
-    if (cmd_name_len == 4 && strncmp(cmd, "help", 4)) 
+    if (cmd_name_len == 4 && memcmp(cmd, "help", 4) == 0) 
     {
         const char* arg_check = args;
 
@@ -109,7 +110,7 @@ void execute_command(const char *cmd)
 
         if (*arg_check != '\0') 
         {
-            if (!strncmp(arg_check, "--page ", 7)) 
+            if (memcmp(arg_check, "--page ", 7) == 0) 
             {
                 print_error("Syntax error!\n");
                 print_info("Usage: help --page [1-10]\n");
@@ -172,10 +173,12 @@ void execute_command(const char *cmd)
             print(" -clear                              - Clear the terminal screen\n");
             print(" -fetch                              - Display system summary and ASCII logo\n");
             print(" -format                             - Format storage drive\n");
+            print("   --commands                       - Copy system commands from ISO to ClawFS\n");
             print(" -dir                                - List files and directories in current path\n");
             print(" -touch                              - Create a new empty file\n");
             print("   --file \"file_name.file_ext\"       - (Required) Name of the file to create\n");
-            print(" -mount                              - Mount a filesystem or device\n");
+            print(" -mount                              - Mount ClawFS overlay for command override\n");
+            print(" -unmount                            - Unmount ClawFS overlay\n");
             print(" -uart                               - Send data over serial port\n");
             print("   --text \"text\"                     - (Required) Text string to transmit via UART\n");
             print(" -time                               - System clock utility\n");
@@ -206,29 +209,23 @@ void execute_command(const char *cmd)
             print(" See page 6 for system commands loaded from /sbin.\n");
         }
 
-        else if (page == 4) 
+        else if (page == 4)
         {
             print_info("Available commands (Page 4/");
             char total_buf[16];
             itoa(total_pages, total_buf);
             print(total_buf);
             print("):\n");
-            print(" -beep                               - System PC Speaker sound generator utility\n");
-            print("    --freq \"Hz\"                      - (Optional) Sound frequency in Hertz (Default: 1000 Hz)\n");
-            print("    --dur \"ms\"                       - (Optional) Sound duration in milliseconds (Default: 200 ms)\n");
-            print(" -calc                               - Simple system calculator utility\n");
-            print("    --op \"add|sub|mul|div\"           - (Required) Selection of mathematical operation\n");
-            print("    --num1 \"value\"                   - (Required) First numeric value\n");
-            print("    --num2 \"value\"                   - (Required) Second numeric value\n");
-            print(" -rand                               - Random number generator\n");
-            print("    --min \"value\"                   - (Optional) Lower bound of the range (Default: 0)\n");
-            print("    --max \"value\"                   - (Required) Upper bound of the range\n");
-            print(" -rm                               - Remove file or directory\n");
+            print(" -mkdir                              - Create a new directory\n");
+            print("    --dir_name \"name\"                - (Required) Name of the new directory\n");
+            print(" -rm                                 - Remove file or directory\n");
             print("    --name \"name\"                   - (Required) Name of the item to remove\n");
             print("    --type \"file|dir\"               - (Required) Specify if it is a file or directory\n");
+            print(" -cd                                 - Change current directory\n");
+            print("    [path]                           - (Optional) Path to change to (default: /home)\n");
         }
 
-        else if (page == 5) 
+        else if (page == 5)
         {
             print_info("Available commands (Page 5/");
             char total_buf[16];
@@ -242,107 +239,27 @@ void execute_command(const char *cmd)
             print("    --val \"0xHEX\"                    - (Required) Value byte to write\n");
             print(" -asciiart                           - Convert text into large ASCII banner\n");
             print("    --text \"string\"                  - (Required) Text to transform\n");
-            print(" -mkdir                              - Create a new directory\n");
-            print("    --dir_name \"name\"                - (Required) Name of the new directory\n");
             print(" -safe_mode                          - Enable safe mode for system debugging\n");
         }
 
-        else if (page == 6)
+        else if (page >= 6)
         {
-            print_info("Available commands (Page 6/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            print(total_buf);
-            print("):\n");
-            print("More commands coming soon...\n");
-        }
+            uint32_t sbin_page = page - 5;
 
-        else if (page == 7) 
-        {
-            print_info("Available commands (Page 7/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            print(total_buf);
-            print("):\n");
-            print("More commands coming soon...\n");
-        }
-
-        else if (page == 8) 
-        {
-            print_info("Available commands (Page 8/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            print(total_buf);
-            print("):\n");
-            print("More commands coming soon...\n");
-        }
-
-        else if (page == 9) 
-        {
-            print_info("Available commands (Page 9/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            print(total_buf);
-            print("):\n");
-            print("More commands coming soon...\n");
-        }
-
-        else if (page == 10) 
-        {
-            print_info("Available commands (Page 10/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            print(total_buf);
-            print("):\n");
-            print("More commands coming soon...\n");
-        }
-
-        else if (page > HELP_STATIC_PAGES)
-        {
-            static char sbin_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
-
-            uint32_t sbin_count = napp_list_sbin(sbin_names, NAPP_MAX_APPLICATIONS);
-
-            // Calculate how many pages /sbin needs.
-            uint32_t sbin_pages = (sbin_count + HELP_COMMANDS_PER_PAGE - 1) / HELP_COMMANDS_PER_PAGE;
-
-            if (sbin_pages == 0)
+            if (sbin_page > sbin_pages)
             {
-                sbin_pages = 1;
-            }
-
-            uint32_t total_pages = HELP_STATIC_PAGES + sbin_pages;
-
-            // Page is outside the valid range.
-            if (page > total_pages)
-            {
-                print_error("Invalid help page!\n");
-                print_info("Usage: help --page [1-");
-                
-                char num_buf[16];
-                itoa(total_pages, num_buf);
-                print(num_buf);
-
-                print("]\n");
+                print_error("Invalid page number!\n");
+                print_info("Total pages: ");
+                print_num8(total_pages);
+                print("\n");
                 print_cmd();
                 return;
             }
 
-            // Convert help page to /sbin page.
-            uint32_t sbin_page = (uint32_t)page - HELP_STATIC_PAGES;
-
             print_info("System commands from /sbin (Page ");
-
-            char page_buf[16];
-            itoa(page, page_buf);
-            print(page_buf);
-
+            print_num8(sbin_page);
             print("/");
-
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            print(total_buf);
-
+            print_num8(sbin_pages);
             print("):\n");
 
             if (sbin_count == 0)
@@ -361,11 +278,6 @@ void execute_command(const char *cmd)
 
                 for (uint32_t i = start; i < end; i++)
                 {
-                    if (strcmp(sbin_names[i], ".clawfs") == 0)
-                    {
-                        continue;
-                    }
-
                     print(" -");
                     print(sbin_names[i]);
                     print("\n");
@@ -374,144 +286,118 @@ void execute_command(const char *cmd)
         }
     }
     // 2. Command: clear
-    else if (cmd_name_len == 5 && strncmp(cmd, "clear", 5)) 
+    else if (cmd_name_len == 5 && memcmp(cmd, "clear", 5) == 0)
     {
-        if (active_terminal_redirect) 
+        if (active_terminal_redirect)
         {
             terminal_clear_output();
-        } 
-        else 
+        }
+        else
         {
             init_text_buffer();
         }
-        return; 
-    } 
+        return;
+    }
     // 3. Command: echo
-    else if (cmd_name_len == 4 && strncmp(cmd, "echo", 4)) 
+    else if (cmd_name_len == 4 && memcmp(cmd, "echo", 4) == 0)
     {
         const char* text_flag = strstr(args, "--text ");
-        
-        if (text_flag) 
+        const char* color_flag = strstr(args, "--color ");
+        const char* file_flag = strstr(args, "--file ");
+
+        if (text_flag)
         {
-            const char* text_content = text_flag + 7;
+            const char* text_ptr = text_flag + 7;
+            char text_buf[256];
+            int i = 0;
+
+            if (*text_ptr == '"')
+            {
+                text_ptr++;
+                while (*text_ptr && *text_ptr != '"' && i < 255)
+                {
+                    text_buf[i++] = *text_ptr++;
+                }
+            }
+            else
+            {
+                while (*text_ptr && *text_ptr != ' ' && i < 255)
+                {
+                    text_buf[i++] = *text_ptr++;
+                }
+            }
+            text_buf[i] = '\0';
 
             uint32_t old_color = current_text_color;
 
-            const char* color_flag = strstr(args, "--color ");
-            if (color_flag) 
+            if (color_flag)
             {
-                const char* color_val = color_flag + 8;
-                current_text_color = parse_hex_color(color_val);
+                const char* color_ptr = color_flag + 8;
+                current_text_color = parse_hex_color(color_ptr);
             }
 
-            const char* file_flag = strstr(args, "--file ");
-            if (file_flag) 
+            print(text_buf);
+
+            if (file_flag)
             {
-                const char* file_name = file_flag + 7;
-    
-                // Bufor for new file name
-                char file_name_n[128] = {0}; 
+                const char* file_ptr = file_flag + 7;
+                char file_name[64];
+                int j = 0;
 
-                if (file_name[0] == '"') 
+                if (*file_ptr == '"')
                 {
-                    file_name++;
-
-                    size_t len = 0;
-                    while (file_name[len] != '\0' && file_name[len] != '"') 
+                    file_ptr++;
+                    while (*file_ptr && *file_ptr != '"' && j < 63)
                     {
-                        len++;
-                    }
-
-                    if (len < sizeof(file_name_n)) 
-                    {
-                        for (size_t i = 0; i < len; i++) 
-                        {
-                            file_name_n[i] = file_name[i];
-                        }
-                        file_name_n[len] = '\0';
-                    }
-                } 
-                else 
-                {
-                    size_t len = 0;
-                    while (file_name[len] != '\0' && file_name[len] != ' ') 
-                    {
-                        len++;
-                    }
-
-                    if (len < sizeof(file_name_n)) 
-                    {
-                        for (size_t i = 0; i < len; i++) 
-                        {
-                            file_name_n[i] = file_name[i];
-                        }
-                        file_name_n[len] = '\0';
+                        file_name[j++] = *file_ptr++;
                     }
                 }
+                else
+                {
+                    while (*file_ptr && *file_ptr != ' ' && j < 63)
+                    {
+                        file_name[j++] = *file_ptr++;
+                    }
+                }
+                file_name[j] = '\0';
 
-                clawfs_create_file_in(current_path, file_name_n);
-
-                print_info("Saved to file ");
-                print(file_name_n);
-                print(" with text ");
+                // Write to file using ClawFS
+                clawfs_create_file_in(current_path, file_name);
             }
 
-            // Printing text
-            if (*text_content == '"') 
-            {
-                text_content++; 
-                while (*text_content && *text_content != '"') 
-                {
-                    single_char_buf[0] = *text_content;
-                    print(single_char_buf);
-                    text_content++;
-                }
-            } 
-            else 
-            {
-                // If arg don't have closing " do to next arg '-'
-                while (*text_content && *text_content != '-') 
-                {
-                    single_char_buf[0] = *text_content;
-                    print(single_char_buf);
-                    text_content++;
-                }
-            }
             print("\n");
-
-            // Return to orginal color
             current_text_color = old_color;
-        } 
-        else 
+        }
+        else
         {
             print_error("Syntax error!\n");
-            print_info("Usage: echo --text \"your text\" --color \"0xRRGGBB\"\n");
+            print_info("Usage: echo --text \"text\" [--color \"0xRRGGBB\"] [--file \"filename\"]\n");
         }
-    } 
-    // 4.Command: fetch
-    else if (cmd_name_len == 5 && strncmp(cmd, "fetch", 5)) 
+    }
+    // 4. Command: fetch
+    else if (cmd_name_len == 5 && memcmp(cmd, "fetch", 5) == 0)
     {
         fetch();
     }
     // 5. Command: time
-    else if (cmd_name_len == 4 && strncmp(cmd, "time", 4)) 
+    else if (cmd_name_len == 4 && memcmp(cmd, "time", 4) == 0)
     {
         const char* set_flag = strstr(args, "--set ");
         const char* get_flag = strstr(args, "--get");
         const char* status_flag = strstr(args, "--info");
 
-        if (set_flag) 
+        if (set_flag)
         {
             // format "--set ": "DD.MM.YYYY HH:MM:SS"
             const char* date_ptr = set_flag + 6;
 
             // Walidation to (DD.MM.YYYY HH:MM:SS)
-            if (strlen(date_ptr) < 19 || date_ptr[2] != '.' || date_ptr[5] != '.' || date_ptr[10] != ' ' || date_ptr[13] != ':' || date_ptr[16] != ':') 
+            if (strlen(date_ptr) < 19 || date_ptr[2] != '.' || date_ptr[5] != '.' || date_ptr[10] != ' ' || date_ptr[13] != ':' || date_ptr[16] != ':')
             {
                 print_error("Syntax error!\n");
                 print_info("Usage: time --set DD.MM.YYYY HH:MM:SS\n");
-            } 
-            else 
+            }
+            else
             {
                 RtcTime new_time;
                 new_time.day    = parse_digits(date_ptr, 2);
@@ -526,7 +412,7 @@ void execute_command(const char *cmd)
                 print_info("System time updated successfully!\n");
             }
         }
-        else if (get_flag) 
+        else if (get_flag)
         {
             RtcTime time = get_rtc_time();
             
@@ -545,59 +431,83 @@ void execute_command(const char *cmd)
             print_num_padded(time.minute);
             print(":");
             print_num_padded(time.second);
+
             print("\n");
         }
-        else if (status_flag) 
+        else if (status_flag)
         {
-            if (!is_rtc_battery_ok()) 
-            {
-                print_warn("CMOS battery is dead. System time may be incorrect.\n");
-            } 
-            else 
-            {
-                print_info("CMOS battery is working properly.\n");
-            }
+            bool battery_ok = is_rtc_battery_ok();
+
+            print_info("RTC battery: ");
+            print(battery_ok ? "OK" : "low");
+            print("\n");
         }
-        else 
+        else
         {
             print_error("Syntax error!\n");
-            print("Usage:\n");
-            print("  time --get   - display current time\n");
-            print("  time --set DD.MM.YYYY HH:MM:SS - set new time\n");
-            print("  time --info - Checks RTC battery status\n");
+            print_info("Usage: time --get | --set \"DD.MM.YYYY HH:MM:SS\" | --info\n");
         }
     }
     // 6. Command: reboot
-    else if (cmd_name_len == 6 && strncmp(cmd, "reboot", 6)) 
+    else if (cmd_name_len == 6 && memcmp(cmd, "reboot", 6) == 0)
     {
         acpi_reboot();
     }
     // 7. Command: shutdown
-    else if (cmd_name_len == 8 && strncmp(cmd, "shutdown", 8)) 
+    else if (cmd_name_len == 8 && memcmp(cmd, "shutdown", 8) == 0)
     {
         acpi_shutdown();
     }
     // 8. Command: format
-    else if(cmd_name_len == 6 && strncmp(cmd,"format", 6))
+    else if(cmd_name_len == 6 && memcmp(cmd,"format", 6) == 0)
     {
-        print_warn("Formatting CLAWFS...\n");
-        clawfs_format();
-        print_info("Done.\n");
+        const char* commands_flag = strstr(args, "--commands");
+        
+        if (commands_flag)
+        {
+            // Format commands - copy from rootfs to ClawFS
+            print_info("Setting up persistent command storage...\n");
+            if (format_commands())
+            {
+                print_info("Commands copied successfully to ClawFS.\n");
+                print_info("Run 'mount' to enable the overlay.\n");
+            }
+            else
+            {
+                print_error("Failed to format commands.\n");
+            }
+        }
+        else
+        {
+            // Regular format - format ClawFS
+            print_warn("Formatting CLAWFS...\n");
+            clawfs_format();
+            print_info("Done.\n");
+            print_info("Run 'format --commands' to copy system commands.\n");
+        }
     }
     // 9. Command: mount
-    else if(cmd_name_len == 5 && strncmp(cmd, "mount", 5)) 
+    else if(cmd_name_len == 5 && memcmp(cmd, "mount", 5) == 0)
     {
         if (clawfs_exists())
         {
-            print_info("CLAWFS detected.\n");
+            file_resolver_mount(true);
+            print_info("ClawFS overlay mounted. Commands will be loaded from disk.\n");
         }
         else
         {
             print_error("Disk is not formatted as CLAWFS.\n");
+            print_info("Run 'format' first to create the filesystem.\n");
         }
     }
+    // 10. Command: unmount
+    else if(cmd_name_len == 7 && memcmp(cmd, "unmount", 7) == 0)
+    {
+        file_resolver_mount(false);
+        print_info("ClawFS overlay unmounted. Commands will be loaded from ISO.\n");
+    }
     // 11. Command: touch
-    else if (cmd_name_len == 5 && strncmp(cmd, "touch", 5)) 
+    else if (cmd_name_len == 5 && memcmp(cmd, "touch", 5) == 0) 
     {
         const char* filename_flag = strstr(args, "--file ");
 
@@ -618,65 +528,163 @@ void execute_command(const char *cmd)
             } 
             else 
             {
-                while (*filename_ptr && *filename_ptr != ' ' && *filename_ptr != '-' && i < 63) 
+                while (*filename_ptr && *filename_ptr != ' ' && i < 63) 
                 {
                     name_buf[i++] = *filename_ptr++;
                 }
             }
             name_buf[i] = '\0';
 
-            if (i > 0) 
-            {
-                clawfs_create_file_in(current_path, name_buf);
-            } 
-            else 
-            {
-                print_error("Error: Filename cannot be empty!\n");
-            }
-        }
+            clawfs_create_file_in(current_path, name_buf);
+        } 
         else 
         {
             print_error("Syntax error!\n");
-            print_info("Usage: touch --file \"name.file_extension\"\n");
+            print_info("Usage: touch --file \"filename\"\n");
         }
     }
-    // 12. Command: info
-    else if (cmd_name_len == 4 && strncmp(cmd, "info", 4)) 
+    // 12. Command: mkdir
+    else if (cmd_name_len == 5 && memcmp(cmd, "mkdir", 5) == 0)
     {
-        char cpu_name[49];
-        char buf[32];
+        const char* dirname_flag = strstr(args, "--dir_name ");
 
-        auto print_line = [&](const char* label, const char* value) 
+        if (dirname_flag)
         {
-            print(CMD_TEXT_WHITE);
-            print(label);
+            const char* dirname_ptr = dirname_flag + 11;
+            char dir_buf[64];
+            int i = 0;
+
+            if (*dirname_ptr == '"')
+            {
+                dirname_ptr++;
+                while (*dirname_ptr && *dirname_ptr != '"' && i < 63)
+                {
+                    dir_buf[i++] = *dirname_ptr++;
+                }
+            }
+            else
+            {
+                while (*dirname_ptr && *dirname_ptr != ' ' && i < 63)
+                {
+                    dir_buf[i++] = *dirname_ptr++;
+                }
+            }
+            dir_buf[i] = '\0';
+
+            clawfs_mkdir(current_path, dir_buf);
+        }
+        else
+        {
+            print_error("Syntax error!\n");
+            print_info("Usage: mkdir --dir_name \"directory_name\"\n");
+        }
+    }
+    // 13. Command: rm
+    else if (cmd_name_len == 2 && memcmp(cmd, "rm", 2) == 0)
+    {
+        const char* name_flag = strstr(args, "--name ");
+        const char* type_flag = strstr(args, "--type ");
+
+        if (name_flag && type_flag)
+        {
+            const char* name_ptr = name_flag + 7;
+            char name_buf[64];
+            int i = 0;
+
+            if (*name_ptr == '"')
+            {
+                name_ptr++;
+                while (*name_ptr && *name_ptr != '"' && i < 63)
+                {
+                    name_buf[i++] = *name_ptr++;
+                }
+            }
+            else
+            {
+                while (*name_ptr && *name_ptr != ' ' && i < 63)
+                {
+                    name_buf[i++] = *name_ptr++;
+                }
+            }
+            name_buf[i] = '\0';
+
+            const char* type_ptr = type_flag + 7;
+            char type_buf[16];
+            int j = 0;
+
+            if (*type_ptr == '"')
+            {
+                type_ptr++;
+                while (*type_ptr && *type_ptr != '"' && j < 15)
+                {
+                    type_buf[j++] = *type_ptr++;
+                }
+            }
+            else
+            {
+                while (*type_ptr && *type_ptr != ' ' && j < 15)
+                {
+                    type_buf[j++] = *type_ptr++;
+                }
+            }
+            type_buf[j] = '\0';
+
+            uint32_t file_type;
+            if (strcmp(type_buf, "file") == 0)
+            {
+                file_type = CLAWFS_FILE;
+            }
+            else if (strcmp(type_buf, "dir") == 0)
+            {
+                file_type = CLAWFS_DIRECTORY;
+            }
+            else
+            {
+                print_error("Invalid type! Use 'file' or 'dir'.\n");
+                print_cmd();
+                return;
+            }
+
+            // If ClawFS is mounted, remove from ClawFS only
+            if (file_resolver_is_mounted())
+            {
+                clawfs_rm(current_path, name_buf, file_type);
+                print_info("Removed from ClawFS: ");
+                print(name_buf);
+                print("\n");
+            }
+            else
+            {
+                print_error("ClawFS overlay is not mounted.\n");
+                print_info("Use 'mount' to enable ClawFS overlay for file operations.\n");
+            }
+        }
+        else
+        {
+            print_error("Syntax error!\n");
+            print_info("Usage: rm --name \"filename\" --type \"file|dir\"\n");
+        }
+    }
+    // 14. Command: dir
+    else if (cmd_name_len == 3 && memcmp(cmd, "dir", 3) == 0)
+    {
+        clawfs_dir(current_path);
+    }
+    // 15. Command: info
+    else if (cmd_name_len == 4 && memcmp(cmd, "info", 4) == 0)
+    {
+        char cpu_name[48];
+        cpu_get_brand(cpu_name);
+
+        auto print_line = [](const char* label, const char* value)
+        {
             print(CMD_TEXT_GRAY);
+            print(label);
+            print(CMD_TEXT_WHITE);
             print(value);
             print("\n");
         };
 
-        auto print_line_mb = [&](const char* label, const char* value) 
-        {
-            print(CMD_TEXT_WHITE);
-            print(label);
-            print(CMD_TEXT_GRAY);
-            print(value);
-            print("MB");
-            print("\n");
-        };
-
-        auto print_numeric = [&](const char* label, uint64_t bytes) 
-        {
-            uint64_t mb = bytes / 1024 / 1024;
-            itoa(mb, buf);
-        
-            print(CMD_TEXT_WHITE);
-            print(label);
-            print(CMD_TEXT_GRAY);
-            print(buf);
-            print("MB\n");
-        };
-    
         cpu_get_brand(cpu_name);
 
         // Section: Software
@@ -688,311 +696,194 @@ void execute_command(const char *cmd)
 
         // Section: Hardware
         print_line("CPU:            ", cpu_name);
-        print_line_mb("Total RAM:      ", memory_total());
-        print_numeric("Used RAM:       ", memory_used());
-        print_numeric("Total Storage:  ", storage_total());
-        print_numeric("Used Storage:   ", storage_used());
+        print_line("Total RAM:      ", memory_total());
+        print_num8(memory_used());
+        print("MB\n");
+        print("\n");
 
-        // Return to orginal color
-        print(CMD_TEXT_WHITE);
-    }
-    // 13. Command: source
-    else if (cmd_name_len == 6 && strncmp(cmd, "source", 6)) 
-    {
-        print_info("Source anvible at: https://github.com/Szatakis/NasuaOS \n");
-    }
-    // 14. Command: uart
-    else if (cmd_name_len == 4 && strncmp(cmd, "uart", 4)) 
-    {
-        const char* text_flag = strstr(args, "--text ");
-
-        if (strlen(args) == 0 || !text_flag) 
+        print_info("Storage information\n");
+        if (storage_uses_ata())
         {
-            print_error("Syntax error! Argument '--text' is required.\n");
-            print_info("Usage: uart --text \"text\"\n");
+            print_line("Storage type:   ", "ATA Disk");
         }
-        else 
+        else
         {
-            const char* text = text_flag + 7;
+            print_line("Storage type:   ", "RAM Disk");
+        }
+        print_num8(storage_total() / (1024 * 1024));
+        print("MB\n");
+        print("Used storage:  ");
+        print_num8(storage_used() / (1024 * 1024));
+        print("MB\n");
+        print("\n");
 
-            if (*text == '"') 
-            {
-                text++;
-
-                char buf[128];
-                size_t i = 0;
-
-                while (*text && *text != '"' && i < sizeof(buf) - 1) {
-                    buf[i++] = *text++;
-                }
-
-                buf[i] = '\0';
-                
-                Uart::puts(buf);
-                Uart::puts("\n");
-            } 
-            else 
-            {
-                Uart::puts(text);
-                Uart::puts("\n");
-            }
+        print_info("ClawFS status\n");
+        if (file_resolver_is_mounted())
+        {
+            print_line("Overlay:        ", "mounted (commands from disk)");
+        }
+        else
+        {
+            print_line("Overlay:        ", "unmounted (commands from ISO)");
         }
     }
-    // 15. Command: debug
-    else if (cmd_name_len == 5 && strncmp(cmd, "debug", 5)) 
+    // 16. Command: source
+    else if (cmd_name_len == 6 && memcmp(cmd, "source", 6) == 0)
     {
-        if (strlen(args) == 0) 
-        {
-            print_error("Syntax error! Argument required.\n");
-            print_info("Usage: debug --on | --off\n");
-        }
-        else if (strncmp(args, "--on", 4)) 
+        print_info("NasuaOS Source Code: https://github.com/szatakis/NasuaOS\n");
+    }
+    // 17. Command: debug
+    else if (cmd_name_len == 5 && memcmp(cmd, "debug", 5) == 0)
+    {
+        const char* on_flag = strstr(args, "--on");
+        const char* off_flag = strstr(args, "--off");
+
+        if (on_flag)
         {
             debug_mode = true;
-
-            print_info("Debug mode ON\n");
-            Uart::puts("Debug ON\n");
+            print_info("Debug mode enabled.\n");
         }
-        else if (strncmp(args, "--off", 5)) 
+        else if (off_flag)
         {
             debug_mode = false;
-
-            print_info("Debug mode OFF\n");
-            Uart::puts("Debug OFF\n");
+            print_info("Debug mode disabled.\n");
         }
-        else 
+        else
         {
-            print_error("Syntax error! Unknown argument.\n");
+            print_error("Syntax error!\n");
             print_info("Usage: debug --on | --off\n");
         }
     }
-    // 16. Command: resolution
-    else if (cmd_name_len == 10 && strncmp(cmd, "resolution", 10)) 
+    // 18. Command: uptime
+    else if (cmd_name_len == 6 && memcmp(cmd, "uptime", 6) == 0)
     {
-        print_resolution();
+        print_info("System uptime: not implemented\n");
     }
-    // 17. Command: uptime
-    else if (cmd_name_len == 6 && strncmp(cmd, "uptime", 6)) 
+    // 19. Command: panic
+    else if (cmd_name_len == 5 && memcmp(cmd, "panic", 5) == 0)
     {
-        print_uptime();
+        kernel_panic("User-triggered panic for debugging");
     }
-    // 18. Command: panic
-    else if (cmd_name_len == 5 && strncmp(cmd, "panic", 5)) 
+    // 20. Command: resolution
+    else if (cmd_name_len == 10 && memcmp(cmd, "resolution", 10) == 0)
     {
-        kernel_panic("Manual panic triggered by user");
+        print_info("Current resolution: not implemented\n");
     }
-    // 19. Command: logs
-    else if (cmd_name_len == 4 && strncmp(cmd, "logs", 4)) 
+    // 21. Command: logs
+    else if (cmd_name_len == 4 && memcmp(cmd, "logs", 4) == 0)
     {
-        if(strstr(args, "--show")) 
-        {
-            print_logs();
-        }
-        else if(strstr(args, "--clear")) 
-        {
-            clear_logs();
-            print_info("Kernel log buffer cleared\n");
-        }
-        else if(strstr(args, "--put ")) 
-        {
-            const char* put_arg = strstr(args, "--put ") + 6;
+        const char* show_flag = strstr(args, "--show");
+        const char* clear_flag = strstr(args, "--clear");
+        const char* level_flag = strstr(args, "--level ");
+        const char* subsystem_flag = strstr(args, "--subsystem ");
+        const char* put_flag = strstr(args, "--put ");
 
-            char text[128]; // Max lenght of info
+        if (show_flag)
+        {
+            // Log display not implemented in this version
+            print_info("Log display not implemented in this version\n");
+        }
+        else if (clear_flag)
+        {
+            // Log clear not implemented in this version
+            print_info("Log clear not implemented in this version\n");
+        }
+        else if (level_flag)
+        {
+            // Log level filtering not implemented in this version
+            print_info("Log level filtering not implemented in this version\n");
+        }
+        else if (subsystem_flag)
+        {
+            // Log subsystem filtering not implemented in this version
+            print_info("Log subsystem filtering not implemented in this version\n");
+        }
+        else if (put_flag)
+        {
+            const char* text_arg = put_flag + 6;
+            char text[256];
             int i = 0;
 
-            if(put_arg[0] == '"') 
+            if (*text_arg == '"')
             {
-                put_arg++;
+                text_arg++;
+                while (*text_arg && *text_arg != '"' && i < 255)
+                {
+                    text[i++] = *text_arg++;
+                }
             }
-
-            while(put_arg[i] != '"' && put_arg[i] != '\0' && i < 127) 
+            else
             {
-                text[i] = put_arg[i];
-                i++;
+                while (*text_arg && *text_arg != ' ' && i < 255)
+                {
+                    text[i++] = *text_arg++;
+                }
             }
             text[i] = '\0';
 
-            if(strlen(text) > 0) 
-            {
-                log(parse_log_level("INFO"), "USER", text);
-                print_info("Log added successfully\n");
-            } 
-            else 
-            {
-                print_error("Invalid --put format! Use: logs --put \"your message\"\n");
-            }
+            log(INFO, "USER", text);
+            print_info("Log added successfully\n");
         }
-        else if(strstr(args, "--level ")) 
+        else
         {
-            const char* level_arg = strstr(args, "--level ") + 8;
-
-            char level_name[16];
-            int i = 0;
-
-            if(level_arg[0] == '"') 
-            {
-                level_arg++;
-
-                while(level_arg[i] != '"' && level_arg[i] != '\0' && i < 15) 
-                {
-                    level_name[i] = level_arg[i];
-                    i++;
-                }
-            }
-            else 
-            {
-                while(level_arg[i] != ' ' && level_arg[i] != '\0' && i < 15) 
-                {
-                    level_name[i] = level_arg[i];
-                    i++;
-                }
-            }
-
-            level_name[i] = '\0';
-
-            print_logs_level(parse_log_level(level_name));
-        }
-        else if(strstr(args, "--subsystem ")) 
-        {
-            const char* subsystem_arg = strstr(args, "--subsystem ") + 12;
-
-            char subsystem[32];
-            int i = 0;
-
-            if(subsystem_arg[0] == '"') 
-            {
-                subsystem_arg++;
-
-                while(subsystem_arg[i] != '"' && subsystem_arg[i] != '\0' && i < 31) 
-                {
-                    subsystem[i] = subsystem_arg[i];
-                    i++;
-                }
-            }
-            else 
-            {
-                while(subsystem_arg[i] != ' ' && subsystem_arg[i] != '\0' && i < 31) 
-                {
-                    subsystem[i] = subsystem_arg[i];
-                    i++;
-                }
-            }
-
-            subsystem[i] = '\0';
-
-            print_logs_subsystem(subsystem);
-        }
-        else 
-        {
-            print_error("Syntax error!\n");
-
-            print_info("Usage:\n");
-            print("  logs --show\n");
-            print("  logs --clear\n");
-            print("  logs --level \"INFO|WARN|ERROR|DEBUG\"\n");
-            print("  logs --subsystem \"name\"\n");
-            print("  logs --put \"your message\"\n");
+            print_error("Invalid --put format! Use: logs --put \"your message\"\n");
         }
     }
-    // 20. Command: bootapp
-    else if (cmd_name_len == 7 && strncmp(cmd, "bootapp", 7)) 
+    // 22. Command: bootapp
+    else if (cmd_name_len == 7 && memcmp(cmd, "bootapp", 7) == 0)
     {
         const char* app_flag = strstr(args, "--app ");
         const char* list_flag = strstr(args, "--list");
 
-        if(list_flag) 
+        if (app_flag)
         {
+            const char* app_ptr = app_flag + 6;
+            char app_name_buf[64];
+            int i = 0;
 
-            print_info("Available applications:\n");
-
-            print(" - terminal\n");
-            print(" - suaedit\n");
-            print(" - taskmgr\n");
-            print(" - settings\n");
-
-            static char application_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
-
-            uint32_t application_count = napp_list(application_names, NAPP_MAX_APPLICATIONS);
-
-            print_info("Applications in /bin:\n");
-
-            if (application_count == 0)
+            if (*app_ptr == '"')
             {
-                print(" (none)\n");
+                app_ptr++;
+                while (*app_ptr && *app_ptr != '"' && i < 63)
+                {
+                    app_name_buf[i++] = *app_ptr++;
+                }
             }
-
-            for (uint32_t i = 0; i < application_count; i++)
+            else
             {
-                print(" - ");
-                print(application_names[i]);
+                while (*app_ptr && *app_ptr != ' ' && i < 63)
+                {
+                    app_name_buf[i++] = *app_ptr++;
+                }
+            }
+            app_name_buf[i] = '\0';
+
+            int exit_code = 0;
+            if (napp_run(app_name_buf, &exit_code))
+            {
+                print_info("Application exited with code: ");
+                print_num8(exit_code);
                 print("\n");
             }
-
-            print("\nUsage:\n");
-            print(" bootapp --app \"application_name\"\n");
-
-        }
-        else if(app_flag) 
-        {
-            const char* app_name = app_flag + 6;
-
-            if (*app_name == '"') 
+            else
             {
-                app_name++;
-
-                char app_name_buf[64] = {0};
-
-                size_t len = 0;
-                while (app_name[len] != '\0' && app_name[len] != '"') 
-                {
-                    len++;
-                }
-
-                if (len < sizeof(app_name_buf)) 
-                {
-                    for (size_t i = 0; i < len; i++) 
-                    {
-                        app_name_buf[i] = app_name[i];
-                    }
-
-                    app_name_buf[len] = '\0';
-                }
-
-                if (strncmp(app_name_buf, "terminal", 8)) 
-                {
-                    terminal.visible = true;
-                    terminal.id = current_id;
-                    current_id++;
-                    register_window(&terminal);
-                }
-                else if (strncmp(app_name_buf, "suaedit", 7)) 
-                {
-                    suaedit.visible = true;
-                    suaedit.id = current_id;
-                    current_id++;
-                    register_window(&suaedit);
-                }
-                else if (strncmp(app_name_buf, "taskmgr", 7)) 
-                {
-                    task_manager.visible = true;
-                    task_manager.id = current_id;
-                    current_id++;
-                    register_window(&task_manager);
-                }
-                else if (strncmp(app_name_buf, "settings", 8)) 
-                {
-                    settings.visible = true;
-                    settings.id = current_id;
-                    current_id++;
-                    register_window(&settings);
-                }
-                else if (!napp_run(app_name_buf, nullptr))
-                {
-                    print_error("Unknown app\n");
-                }
+                print_error("Failed to run application\n");
             }
         }
-        else 
+        else if (list_flag)
+        {
+            static char app_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
+            uint32_t count = napp_list(app_names, NAPP_MAX_APPLICATIONS);
+
+            print_info("Available applications:\n");
+            for (uint32_t i = 0; i < count; i++)
+            {
+                print(" - ");
+                print(app_names[i]);
+                print("\n");
+            }
+        }
+        else
         {
             print_error("Syntax error!\n");
             print_info("Usage:\n");
@@ -1000,8 +891,8 @@ void execute_command(const char *cmd)
             print("  bootapp --app \"app_name\"\n");
         }
     }
-    // 21. Command: beep
-    else if (cmd_name_len == 4 && strncmp(cmd, "beep", 4)) 
+    // 23. Command: beep
+    else if (cmd_name_len == 4 && memcmp(cmd, "beep", 4) == 0) 
     {
         int freq = 1000; // Default freqency in Hz
         int dur = 200;   // Default time in ms
@@ -1090,8 +981,8 @@ void execute_command(const char *cmd)
             print("  beep --freq \"frequency\" --dur \"time\"\n");
         }
     }
-    // 22. Command: calc
-    else if (cmd_name_len == 4 && strncmp(cmd, "calc", 4)) 
+    // 24. Command: calc
+    else if (cmd_name_len == 4 && memcmp(cmd, "calc", 4) == 0) 
     {
         const char* op_flag  = strstr(args, "--op ");
         const char* num1_flag = strstr(args, "--num1 ");
@@ -1167,28 +1058,28 @@ void execute_command(const char *cmd)
             int result = 0;
 
             // Calculations
-            if (strncmp(op_buf, "add", 3)) 
+            if (memcmp(op_buf, "add", 3) == 0) 
             {
                 result = n1 + n2;
                 print_info("Result: ");
                 print_num8(result);
                 print("\n");
             } 
-            else if (strncmp(op_buf, "sub", 3)) 
+            else if (memcmp(op_buf, "sub", 3) == 0) 
             {
                 result = n1 - n2;
                 print_info("Result: ");
                 print_num8(result);
                 print("\n");
             } 
-            else if (strncmp(op_buf, "mul", 3)) 
+            else if (memcmp(op_buf, "mul", 3) == 0) 
             {
                 result = n1 * n2;
                 print_info("Result: ");
                 print_num8(result);
                 print("\n");
             } 
-            else if (strncmp(op_buf, "div", 3)) 
+            else if (memcmp(op_buf, "div", 3) == 0) 
             {
                 if (n2 == 0) 
                 {
@@ -1213,8 +1104,8 @@ void execute_command(const char *cmd)
             print_info("Usage: calc --op \"add|sub|mul|div\" --num1 [val] --num2 [val]\n");
         }
     }
-    // 23. Command: rand
-    else if (cmd_name_len == 4 && strncmp(cmd, "rand", 4)) 
+    // 25. Command: rand
+    else if (cmd_name_len == 4 && memcmp(cmd, "rand", 4) == 0) 
     {
         const char* min_flag = strstr(args, "--min ");
         const char* max_flag = strstr(args, "--max ");
@@ -1303,8 +1194,8 @@ void execute_command(const char *cmd)
             print_info("Usage: rand --min [val] --max [val]\n");
         }
     }
-    // 24. Command: inb
-    else if (cmd_name_len == 3 && strncmp(cmd, "inb", 3))
+    // 26. Command: inb
+    else if (cmd_name_len == 3 && memcmp(cmd, "inb", 3) == 0)
     {
         const char* port_flag = strstr(args, "--port ");
 
@@ -1327,8 +1218,8 @@ void execute_command(const char *cmd)
             print("\n");
         }
     }
-    // 25. Command: outb
-    else if (cmd_name_len == 4 && strncmp(cmd, "outb", 4))
+    // 27. Command: outb
+    else if (cmd_name_len == 4 && memcmp(cmd, "outb", 4) == 0)
     {
         const char* port_flag = strstr(args, "--port ");
         const char* val_flag  = strstr(args, "--val ");
@@ -1352,8 +1243,8 @@ void execute_command(const char *cmd)
             print("\n");
         }
     }
-    // 26. Command: asciiart
-    else if(cmd_name_len == 8 && strncmp(cmd, "asciiart", 8))
+    // 28. Command: asciiart
+    else if(cmd_name_len == 8 && memcmp(cmd, "asciiart", 8) == 0)
     {
         const char* text_flag = strstr(args, "--text ");
 
@@ -1386,14 +1277,14 @@ void execute_command(const char *cmd)
             print_ascii_art(buffer);
         }
     }
-    // 27. Command: safe_mode
-    else if(cmd_name_len == 9 && strncmp(cmd, "safe_mode", 9))
+    // 29. Command: safe_mode
+    else if(cmd_name_len == 9 && memcmp(cmd, "safe_mode", 9) == 0)
     {
         print_info("Safe mode ON\n");
         safe_mode = true;
     }
-    // 28. Command: cd
-    else if(cmd_name_len == 2 && strncmp(cmd, "cd", 2))
+    // 30. Command: cd
+    else if(cmd_name_len == 2 && memcmp(cmd, "cd", 2) == 0)
     {
         const char* arg = args;
         
@@ -1406,7 +1297,7 @@ void execute_command(const char *cmd)
         {
             strcpy(new_path, "/home");
         }
-        else if (strncmp(arg, "..", 2) && (arg[2] == '\0' || arg[2] == ' '))
+        else if (memcmp(arg, "..", 2) == 0 && (arg[2] == '\0' || arg[2] == ' '))
         {
             strcpy(new_path, current_path);
             char* last_slash = strrchr(new_path, '/');
@@ -1482,7 +1373,7 @@ void execute_command(const char *cmd)
         strcpy(sbin_path, "/sbin/");
         strcat(sbin_path, cmd_name);
 
-        if (napp_exists_path(sbin_path))
+        if (system_file_exists(sbin_path))
         {
             napp_set_current_path(current_path);
 

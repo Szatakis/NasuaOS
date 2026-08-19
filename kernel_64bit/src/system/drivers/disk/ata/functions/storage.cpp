@@ -11,7 +11,7 @@
 static uint64_t total_storage_bytes = 0;
 static uint64_t used_storage_bytes = 0;
 
-static bool storage_uses_ram = false;
+bool storage_uses_ram = false;
 
 bool storage_read_sector(uint32_t lba, uint8_t* buffer)
 {
