@@ -20,7 +20,7 @@ extern bool storage_uses_ram;
 static bool clawfs_mounted = false;
 
 // Deletion tombstone list (files deleted from ClawFS)
-static deletion_tombstone_t deleted_files[64];
+static deletion_tombstone_t deleted_files[MAX_TOMBSTONES];
 static uint32_t deleted_count = 0;
 
 // Storage detection
@@ -35,11 +35,14 @@ void file_resolver_init()
     deleted_count = 0;
     
     // Clear tombstone list
-    for (uint32_t i = 0; i < 64; i++)
+    for (uint32_t i = 0; i < MAX_TOMBSTONES; i++)
     {
         deleted_files[i].path[0] = '\0';
         deleted_files[i].deleted = false;
     }
+    
+    // Load tombstones from disk on initialization
+    file_resolver_load_tombstones();
 }
 
 void file_resolver_mount(bool mount)
@@ -61,6 +64,71 @@ bool file_resolver_is_mounted()
     return clawfs_mounted;
 }
 
+// Save tombstone list to disk
+void file_resolver_save_tombstones()
+{
+    Uart::puts("[File Resolver] Saving tombstones to disk...\n");
+    
+    // Clear buffer and write tombstone data
+    void* buffer = kmalloc(512);
+    if (buffer == nullptr) {
+        return;
+    }
+    
+    memclear(buffer, 512);
+    
+    // Write tombstone data
+    deletion_tombstone_t* tombstone_data = (deletion_tombstone_t*)buffer;
+    for (uint32_t i = 0; i < deleted_count && i < MAX_TOMBSTONES; i++)
+    {
+        strcpy(tombstone_data[i].path, deleted_files[i].path);
+        tombstone_data[i].deleted = deleted_files[i].deleted;
+    }
+    
+    // Write to fixed sector
+    storage_write_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer);
+    
+    kfree(buffer);
+    
+    Uart::puts("[File Resolver] Tombstones saved.\n");
+}
+
+// Load tombstone list from disk
+void file_resolver_load_tombstones()
+{
+    Uart::puts("[File Resolver] Loading tombstones from disk...\n");
+    
+    void* buffer = kmalloc(512);
+    if (buffer == nullptr) {
+        return;
+    }
+    
+    // Read from fixed sector
+    if (!storage_read_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer)) {
+        Uart::puts("[File Resolver] Failed to read tombstones.\n");
+        kfree(buffer);
+        return;
+    }
+    
+    // Read tombstone data
+    deletion_tombstone_t* tombstone_data = (deletion_tombstone_t*)buffer;
+    deleted_count = 0;
+    
+    for (uint32_t i = 0; i < MAX_TOMBSTONES; i++)
+    {
+        if (tombstone_data[i].path[0] != '\0' && tombstone_data[i].deleted)
+        {
+            strcpy(deleted_files[deleted_count].path, tombstone_data[i].path);
+            deleted_files[deleted_count].deleted = true;
+            deleted_count++;
+        }
+    }
+    
+    kfree(buffer);
+    
+    Uart::puts("[File Resolver] Tombstones loaded.\n");
+}
+
 // Deletion tombstone management
 void file_resolver_mark_deleted(const char* path)
 {
@@ -72,16 +140,21 @@ void file_resolver_mark_deleted(const char* path)
         if (strcmp(deleted_files[i].path, path) == 0)
         {
             deleted_files[i].deleted = true;
+            // Save to disk
+            file_resolver_save_tombstones();
             return;
         }
     }
     
     // Add to list if space available
-    if (deleted_count < 64)
+    if (deleted_count < MAX_TOMBSTONES)
     {
         strcpy(deleted_files[deleted_count].path, path);
         deleted_files[deleted_count].deleted = true;
         deleted_count++;
+        
+        // Save to disk
+        file_resolver_save_tombstones();
         
         Uart::puts("[File Resolver] Marked as deleted: ");
         Uart::puts(path);
@@ -109,6 +182,9 @@ void file_resolver_undelete(const char* path)
             
             deleted_count--;
             
+            // Save to disk
+            file_resolver_save_tombstones();
+            
             Uart::puts("[File Resolver] Removed from deletion list: ");
             Uart::puts(path);
             Uart::puts("\n");
@@ -120,11 +196,14 @@ void file_resolver_undelete(const char* path)
 void file_resolver_clear_deletions()
 {
     deleted_count = 0;
-    for (uint32_t i = 0; i < 64; i++)
+    for (uint32_t i = 0; i < MAX_TOMBSTONES; i++)
     {
         deleted_files[i].path[0] = '\0';
         deleted_files[i].deleted = false;
     }
+    
+    // Save to disk
+    file_resolver_save_tombstones();
     
     Uart::puts("[File Resolver] Cleared deletion tombstones\n");
 }

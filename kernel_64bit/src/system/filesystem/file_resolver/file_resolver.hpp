@@ -27,6 +27,10 @@ struct deletion_tombstone_t
     bool deleted;
 };
 
+// Tombstone storage sector
+#define TOMBSTONE_SECTOR 1024
+#define MAX_TOMBSTONES 60
+
 // Initialize the file resolver
 void file_resolver_init();
 
@@ -54,13 +58,19 @@ bool format_commands();
 // Add file to deletion tombstone list (when deleted from ClawFS while mounted)
 void file_resolver_mark_deleted(const char* path);
 
-// Remove file from deletion tombstone list (when restored or unmounted)
+// Remove file from deletion tombstone list (when restored)
 void file_resolver_undelete(const char* path);
 
-// Clear all deletion tombstones (when unmounting)
+// Clear all deletion tombstones (when formatting)
 void file_resolver_clear_deletions();
 
 // Check if file is marked as deleted
 bool file_resolver_is_deleted(const char* path);
+
+// Save tombstone list to disk
+void file_resolver_save_tombstones();
+
+// Load tombstone list from disk
+void file_resolver_load_tombstones();
 
 #endif // FILE_RESOLVER_HPP
