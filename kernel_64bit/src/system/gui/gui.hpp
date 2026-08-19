@@ -9,7 +9,7 @@ extern const uint32_t menu_h;
 extern uint32_t menu_x;
 extern uint32_t menu_y;
 extern const int panel_width;
-extern bool is_menu_start_open;
+extern bool menu_start_open;
 
 extern size_t bar_h;
 extern size_t bar_h_scaled;

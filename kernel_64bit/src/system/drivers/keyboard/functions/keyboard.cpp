@@ -257,7 +257,7 @@ void handle_keyboard()
         // Left Windows
         if (scancode == 0x5B) 
         {
-            if (!is_menu_start_open) 
+            if (!menu_start_open) 
             {
                 open_start_menu();
             } 
@@ -271,7 +271,7 @@ void handle_keyboard()
         // Right Windows
         if (scancode == 0x5C) 
         {
-            if (!is_menu_start_open) 
+            if (!menu_start_open) 
             {
                 open_start_menu();
             } 

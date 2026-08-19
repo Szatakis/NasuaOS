@@ -451,7 +451,7 @@ void handle_left_click(bool cmd_enter)
     // START MENU BUTTON
     if (is_mouse_over_start(mouse_x, mouse_y))
     {
-        if (!is_menu_start_open)
+        if (!menu_start_open)
         {
             open_start_menu();
         }
@@ -463,7 +463,7 @@ void handle_left_click(bool cmd_enter)
         return;
     }
 
-    if (is_menu_start_open)
+    if (menu_start_open)
     {
         const int start_menu_left = (int)menu_x;
         const int start_menu_top = (int)menu_y;
@@ -496,7 +496,7 @@ void handle_left_click(bool cmd_enter)
 
 
     // START MENU
-    if (is_menu_start_open)
+    if (menu_start_open)
     {
         // Kernel applications
         for (int i = 0; i < kernel_app_count; i++)

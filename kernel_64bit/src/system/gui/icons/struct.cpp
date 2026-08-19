@@ -16,7 +16,7 @@ typedef struct
 } ButtonArea;
 
 int start_y = static_cast<int>(fb->height) - bar_h_scaled;  
-bool is_menu_start_open = false;
+bool menu_start_open = false;
 
 ButtonArea start_button = { 0, 0, 0, 0 }; 
 

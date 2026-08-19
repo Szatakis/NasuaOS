@@ -18,7 +18,6 @@ uint32_t menu_x = 0;
 uint32_t menu_y = 0;
 
 extern bool start_hover;
-extern bool is_menu_start_open;
 
 void draw_start_menu_f(int x, int y, int w, int h) 
 {
@@ -30,7 +29,7 @@ void draw_start_menu_f(int x, int y, int w, int h)
 
 void draw_start_menu() 
 {
-    if (!fb || !is_menu_start_open) 
+    if (!fb || !menu_start_open) 
     {
         return;
     }
@@ -48,12 +47,12 @@ void open_start_menu()
         return;
     }
 
-    is_menu_start_open = true;
+    menu_start_open = true;
 }
 
 void close_start_menu() 
 {
-    is_menu_start_open = false;
+    menu_start_open = false;
 }
 
 void update_gui_state(int mouse_x, int mouse_y) 

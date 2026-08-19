@@ -31,7 +31,7 @@ extern int icons_start_x;
 extern int icons_start_y;
 extern int icons_offset;
 
-extern bool is_menu_start_open;
+extern bool menu_start_open;
 extern bool start_hover;
 
 void draw_start_button(size_t x, size_t y);
