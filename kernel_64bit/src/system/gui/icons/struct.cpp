@@ -4,6 +4,7 @@
 #include "libs/libc/libc.hpp"
 
 bool start_hover = false;
+bool dtc_bootcheck = false;
 
 int icons_start_x = 0;
 int icons_start_y = 0;
@@ -81,7 +82,17 @@ void draw_start_menu_napp_icons()
 
     for (int i = 0; i < start_menu_napp_count; i++)
     {
-        const int row = kernel_app_count + i;
+        if (strcmp(start_menu_napps[i], "bootcheck") == 0)
+        {
+            dtc_bootcheck = true;
+            continue;
+        }
+
+        int row = kernel_app_count + i;
+        if(dtc_bootcheck)
+        {
+            row--;
+        }
         const int y = icons_start_y + row * icons_offset;
 
         const uint32_t* icon = strcmp(start_menu_napps[i], "calculator") == 0 ? calculator_icon : suaedit_icon;
@@ -97,13 +108,11 @@ bool is_mouse_over_start(int mouse_x, int mouse_y)
     {
         return true;
     }
+
     return false;
 }
 
 bool is_mouse_over_icon(int mx, int my, int x, int y, int w, int h)
 {
-    return mx >= x &&
-           mx < x + w &&
-           my >= y &&
-           my < y + h;
+    return mx >= x && mx < x + w && my >= y && my < y + h;
 }

@@ -162,7 +162,7 @@ void draw_terminal(window_struct* win)
     int win_inner_h = win->height - title - 4;
 
     int start_x = win->pos_x + 8;
-    int start_y = win->pos_y + title + 6;
+    int start_y = win->pos_y + 30;
     print_at8("NasuaOS Terminal", start_x, start_y, COLOR_TERM_INFO);
 
     int char_w = 8 + FONT_SPACING_W;

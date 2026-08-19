@@ -11,6 +11,7 @@
 #include "system/vars/info_vars/info_vars.hpp"
 #include "system/gui/gui.hpp"
 
+#include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
 
 int32_t mouse_x = 200;
@@ -516,7 +517,17 @@ void handle_left_click(bool cmd_enter)
         // Applications shipped as .napp packages in the rootfs
         for (int i = 0; i < start_menu_napp_count; i++)
         {
-            const int row = kernel_app_count + i;
+            if (strcmp(start_menu_napps[i], "bootcheck") == 0)
+            {
+                continue;
+            }
+
+            int row = kernel_app_count + i;
+
+            if(dtc_bootcheck)
+            {
+                row--;
+            }
 
             if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x + 50, icons_start_y + row * icons_offset, 250, 32))
             {
