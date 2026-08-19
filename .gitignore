@@ -2,6 +2,7 @@
 
 *.iso
 *.hdd
+*.img
 
 /limine-binary
 /edk2-bins

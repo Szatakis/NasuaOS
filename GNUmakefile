@@ -23,11 +23,14 @@ override FS_NAME := clawfs_disk
 BOOT_OPTIONS := $(wildcard utilities/boot_options/*/)
 BOOT_OPTIONS := $(patsubst %/,%,$(BOOT_OPTIONS))
 
-# Detect WSL
-DEBUG_WSL ?= true
+# Detect WSL / Force Linux
+DEBUG_WSL ?= false
+DEBUG_LINUX ?= false
 DEBUG_BUILD ?= false
 
-ifeq ($(DEBUG_WSL),true)
+ifeq ($(DEBUG_LINUX),true)
+	IS_WSL := 0
+else ifeq ($(DEBUG_WSL),true)
 	IS_WSL := 1
 else
 	IS_WSL := $(shell grep -qi microsoft /proc/version 2>/dev/null && echo 1 || echo 0)
@@ -106,8 +109,8 @@ ifeq ($(IS_WSL),1)
 		-audiodev sdl,id=snd0 \
 		-machine pcspk-audiodev=snd0 \
 		-device piix3-usb-uhci \
-    	-device ich9-usb-ehci1 \
-    	-device qemu-xhci \
+		-device ich9-usb-ehci1 \
+		-device qemu-xhci \
 		$(QEMUFLAGS)
 else
 	$(QEMU_X86_64) \
@@ -279,7 +282,7 @@ else
 		-device qemu-xhci \
 		-device usb-kbd \
 		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-loongarch64.fd,readonly=on \
+		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-loongarch64.fd,readonly=on \
 		-cdrom $(IMAGE_NAME).iso \
 		$(QEMUFLAGS)
 endif
@@ -309,7 +312,7 @@ else
 		-device qemu-xhci \
 		-device usb-kbd \
 		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-loongarch64.fd,readonly=on \
+		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-loongarch64.fd,readonly=on \
 		-hda $(IMAGE_NAME).hdd \
 		$(QEMUFLAGS)
 endif
