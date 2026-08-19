@@ -11,8 +11,9 @@
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
 #define NAPP_ABI_VERSION 2
-#define NAPP_HEADER_SIZE 64
 #define NAPP_NAME_LENGTH 32
+#define NAPP_DESCRIPTION_LENGTH 48
+#define NAPP_HEADER_SIZE 96
 
 struct napp_header
 {
@@ -22,8 +23,7 @@ struct napp_header
     uint32_t entry_offset;
 
     char name[NAPP_NAME_LENGTH];
-
-    uint32_t reserved[4];
+    char description[NAPP_DESCRIPTION_LENGTH];
 } __attribute__((packed));
 
 // Colors of the system theme, usable by graphical applications.
@@ -115,10 +115,10 @@ struct napp_api
 typedef int (*napp_entry)(const struct napp_api* api);
 
 // Emits the header and pins the entry point right behind it.
-#define NAPP_APPLICATION(app_name)                                             \
+#define NAPP_APPLICATION(app_name, app_description)                                \
     extern "C" __attribute__((section(".napp_entry"), used))                   \
     int _start(const napp_api* api);                                           \
-                                                                               \
+                                                                                \
     __attribute__((section(".napp_header"), used))                             \
     const napp_header napp_application_header =                                \
     {                                                                          \
@@ -127,5 +127,5 @@ typedef int (*napp_entry)(const struct napp_api* api);
         NAPP_HEADER_SIZE,                                                      \
         NAPP_HEADER_SIZE,                                                      \
         app_name,                                                              \
-        { 0, 0, 0, 0 }                                                         \
+        app_description                                                        \
     }

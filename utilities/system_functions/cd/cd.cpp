@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("cd");
+NAPP_APPLICATION("cd", "Change the current working directory");
 
 static void strcpy(char* dest, const char* src)
 {

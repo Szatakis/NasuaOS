@@ -10,39 +10,45 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 |--------|------|-------|-------------|
 | 0x00 | 4 | magic | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NPPA") |
 | 0x04 | 4 | abi_version | `2` (current ABI version) |
-| 0x08 | 4 | header_size | Size of the header (64 bytes) |
+| 0x08 | 4 | header_size | Size of the header (96 bytes) |
 | 0x0C | 4 | entry_offset | Offset from start of file to `_start` function |
-| 0x10 | 4 | code_size | Size of the code (`.text`) section in bytes |
-| 0x14 | 4 | rodata_size | Size of the read-only data (`.rodata`) section |
-| 0x18 | 4 | data_size | Size of the initialized data (`.data`) section |
-| 0x1C | 4 | bss_size | Size of the uninitialized data (`.bss`) section |
-| 0x20 | 32 | name | Null-terminated application name |
+| 0x10 | 32 | name | Null-terminated application name |
+| 0x30 | 48 | description | Null-terminated short description (shown in `help`) |
 
-**Total header size**: 64 bytes
+**Total header size**: 96 bytes
 
 ```cpp
+#define NAPP_NAME_LENGTH 32
+#define NAPP_DESCRIPTION_LENGTH 48
+#define NAPP_HEADER_SIZE 96
+
 struct napp_header
 {
-    uint32_t magic;          // 0x5050414E
-    uint32_t abi_version;    // 2
-    uint32_t header_size;    // 64
+    uint32_t magic;                    // 0x5050414E
+    uint32_t abi_version;              // 2
+    uint32_t header_size;              // 96
     uint32_t entry_offset;
-    uint32_t code_size;
-    uint32_t rodata_size;
-    uint32_t data_size;
-    uint32_t bss_size;
-    char     name[32];
-};
+    char     name[NAPP_NAME_LENGTH];   // 32
+    char     description[NAPP_DESCRIPTION_LENGTH];  // 48
+} __attribute__((packed));
 ```
+
+### Description Field
+
+The `description` field stores a short human-readable description of the application. It is read by the shell's `help` command (pages 11+) when listing `/sbin` commands. If a binary lacks a valid description (e.g., compiled with an older header), the fallback text `"No description available."` is displayed.
+
+### Backward Compatibility
+
+Older NAPP binaries compiled with the previous header format (`NAPP_HEADER_SIZE = 64`) are still executable. The loader checks `header->header_size >= sizeof(napp_header)` (96) to determine whether the description field is present. Binaries with `header_size = 64` are detected as legacy and receive the default description.
 
 ## NAPP vs Flat Binary
 
 | File Type | Header | Usage |
 |-----------|--------|-------|
 | `.napp` | Yes (NAPP header) | GUI/interactive applications loaded from `/bin` |
-| Flat binary | No header | `/sbin` commands (loaded directly, header-less ELF) |
+| Flat binary | Yes (NAPP header) | `/sbin` system commands |
 
-Both types are valid NAPP executables. The `.napp` format includes the structured header for metadata. `/sbin` commands are compiled as flat binaries without the NAPP header wrapper — they are still NAPP applications but in a minimal flat-binary form.
+Both types are NAPP executables with a valid `NAPP_HEADER`. The `.napp` format is used for `/bin` applications, while `/sbin` commands are flat binaries that also contain an NAPP header (but without the `.napp` extension). The loader checks the magic value to validate the header.
 
 ## Magic Value
 
@@ -79,8 +85,12 @@ The `_start` function receives a pointer to a `napp_api` structure that provides
 All NAPP applications declare their name using the `NAPP_APPLICATION` macro:
 
 ```cpp
-NAPP_APPLICATION("my_app");
+NAPP_APPLICATION("my_app", "Short description of the app");
 ```
+
+The macro takes two arguments:
+- **`app_name`** — The application name (max 32 chars)
+- **`app_description`** — A short description shown in the help system (max 48 chars)
 
 This macro sets up the `_napp_name` symbol used by the loader. The name should match the directory and binary name in `/bin`.
 

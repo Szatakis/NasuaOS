@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("mkdir");
+NAPP_APPLICATION("mkdir", "Create a new directory");
 
 static bool is_flag(const char* arg, const char* flag)
 {

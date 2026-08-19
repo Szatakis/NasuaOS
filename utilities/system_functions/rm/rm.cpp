@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("rm");
+NAPP_APPLICATION("rm", "Remove a file or an empty directory");
 
 static bool strcmp(const char* s1, const char* s2)
 {

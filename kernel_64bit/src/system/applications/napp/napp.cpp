@@ -837,9 +837,91 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
 
 // sbin listing
 
-uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], uint32_t max_names)
+#define NAPP_SBIN_DEFAULT_DESC "No description available."
+
+// Read the NAPP header description from a file on the FAT rootfs.
+// Returns true when a non-empty description was extracted, false otherwise.
+static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint32_t desc_size)
 {
-    if (!rootfs_mounted || names == nullptr || max_names == 0)
+    fat_entry_info info;
+    if (!fat_stat(&rootfs_volume, path, &info) || info.directory)
+    {
+        return false;
+    }
+
+    if (info.size < sizeof(napp_header))
+    {
+        return false;
+    }
+
+    void* image = kmalloc(info.size);
+    if (image == nullptr)
+    {
+        return false;
+    }
+
+    uint32_t read_size = 0;
+    bool ok = fat_read_file(&rootfs_volume, path, image, info.size, &read_size);
+
+    bool found = false;
+    if (ok && read_size >= sizeof(napp_header))
+    {
+        const napp_header* h = (const napp_header*)image;
+
+        if (h->magic == NAPP_MAGIC &&
+            h->abi_version == NAPP_ABI_VERSION &&
+            h->header_size >= sizeof(napp_header) &&
+            h->description[0] != '\0')
+        {
+            uint32_t i = 0;
+            while (h->description[i] && i < desc_size - 1)
+            {
+                desc_buffer[i] = h->description[i];
+                i++;
+            }
+            desc_buffer[i] = '\0';
+            found = true;
+        }
+    }
+
+    kfree(image);
+    return found;
+}
+
+// Read the NAPP header description from a ClawFS file stored as disk sectors.
+// Returns true when a non-empty description was extracted, false otherwise.
+static bool read_sbin_description_clawfs(uint32_t data_sector, char* desc_buffer, uint32_t desc_size)
+{
+    uint8_t sector_buf[512];
+
+    if (!storage_read_sector(data_sector, sector_buf))
+    {
+        return false;
+    }
+
+    const napp_header* h = (const napp_header*)sector_buf;
+
+    if (h->magic == NAPP_MAGIC &&
+        h->abi_version == NAPP_ABI_VERSION &&
+        h->header_size >= sizeof(napp_header) &&
+        h->description[0] != '\0')
+    {
+        uint32_t i = 0;
+        while (h->description[i] && i < desc_size - 1)
+        {
+            desc_buffer[i] = h->description[i];
+            i++;
+        }
+        desc_buffer[i] = '\0';
+        return true;
+    }
+
+    return false;
+}
+
+uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], char descriptions[][NAPP_MAX_NAME], uint32_t max_names)
+{
+    if (!rootfs_mounted || names == nullptr || descriptions == nullptr || max_names == 0)
     {
         return 0;
     }
@@ -856,6 +938,12 @@ uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], uint32_t max_names)
             continue;
         }
 
+        // Skip hidden/internal entries (names starting with '.')
+        if (files[i].name[0] == '.')
+        {
+            continue;
+        }
+
         // Copy name directly — flat binaries have no extension
         uint32_t j = 0;
         while (files[i].name[j] && j < NAPP_MAX_NAME - 1)
@@ -864,7 +952,99 @@ uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], uint32_t max_names)
             j++;
         }
         names[found][j] = '\0';
+
+        // Read description from the NAPP header on the FAT rootfs
+        char sbin_path[64];
+        strcpy(sbin_path, NAPP_SBIN_DIRECTORY);
+        strcat(sbin_path, "/");
+        strcat(sbin_path, files[i].name);
+
+        if (!read_sbin_description_fat(sbin_path, descriptions[found], NAPP_MAX_NAME))
+        {
+            strcpy(descriptions[found], NAPP_SBIN_DEFAULT_DESC);
+        }
+
         found++;
+    }
+
+    // When the ClawFS overlay is mounted, also scan /sbin on ClawFS for
+    // commands that were added there (not present in the ISO rootfs).
+    if (file_resolver_is_mounted() && clawfs_exists())
+    {
+        uint32_t sbin_sector = get_sector_by_path(NAPP_SBIN_DIRECTORY);
+        if (sbin_sector != 0)
+        {
+            uint8_t dir_buffer[512];
+            if (storage_read_sector(sbin_sector, dir_buffer))
+            {
+                CLAWFSEntry* entries = (CLAWFSEntry*)dir_buffer;
+
+                for (int j = 0; j < 12 && found < max_names; j++)
+                {
+                    if (entries[j].name[0] == '\0' || entries[j].type != CLAWFS_FILE)
+                    {
+                        continue;
+                    }
+
+                    // Skip hidden/internal entries
+                    if (entries[j].name[0] == '.')
+                    {
+                        continue;
+                    }
+
+                    // Skip files marked as deleted via tombstones
+                    char tombstone_path[256];
+                    strcpy(tombstone_path, NAPP_SBIN_DIRECTORY);
+                    strcat(tombstone_path, "/");
+                    strcat(tombstone_path, entries[j].name);
+                    if (file_resolver_is_deleted(tombstone_path))
+                    {
+                        continue;
+                    }
+
+                    // Skip if already listed from FAT
+                    bool already_listed = false;
+                    for (uint32_t k = 0; k < found; k++)
+                    {
+                        if (strcmp(names[k], entries[j].name) == 0)
+                        {
+                            already_listed = true;
+                            break;
+                        }
+                    }
+
+                    if (already_listed)
+                    {
+                        continue;
+                    }
+
+                    // Copy name
+                    uint32_t m = 0;
+                    while (entries[j].name[m] && m < NAPP_MAX_NAME - 1)
+                    {
+                        names[found][m] = entries[j].name[m];
+                        m++;
+                    }
+                    names[found][m] = '\0';
+
+                    // Read description from the NAPP header on ClawFS
+                    if (!read_sbin_description_clawfs(entries[j].data_sector, descriptions[found], NAPP_MAX_NAME))
+                    {
+                        // Fallback: try reading from the FAT rootfs
+                        char fat_path[64];
+                        strcpy(fat_path, NAPP_SBIN_DIRECTORY);
+                        strcat(fat_path, "/");
+                        strcat(fat_path, entries[j].name);
+                        if (!read_sbin_description_fat(fat_path, descriptions[found], NAPP_MAX_NAME))
+                        {
+                            strcpy(descriptions[found], NAPP_SBIN_DEFAULT_DESC);
+                        }
+                    }
+
+                    found++;
+                }
+            }
+        }
     }
 
     return found;

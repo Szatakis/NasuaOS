@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("mv");
+NAPP_APPLICATION("mv", "Move or rename a file or directory");
 
 static void strcpy(char* dest, const char* src)
 {

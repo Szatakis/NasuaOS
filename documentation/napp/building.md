@@ -154,7 +154,7 @@ utilities/applications/my_app/
 ```cpp
 #include <napp.h>
 
-NAPP_APPLICATION("my_app");
+NAPP_APPLICATION("my_app", "A brief description of what the app does");
 
 int _start(const napp_api* api)
 {

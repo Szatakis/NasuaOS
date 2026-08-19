@@ -108,7 +108,7 @@ typedef void (*napp_window_mouse)(const napp_api*, int, int, int);
 ```cpp
 #include <napp.h>
 
-NAPP_APPLICATION("my_app");
+NAPP_APPLICATION("my_app", "A brief description of the app");
 
 void on_draw(const napp_api* api)
 {

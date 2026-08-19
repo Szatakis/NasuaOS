@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("ls");
+NAPP_APPLICATION("ls", "List files and directories in a path");
 
 int _start(const napp_api* api)
 {

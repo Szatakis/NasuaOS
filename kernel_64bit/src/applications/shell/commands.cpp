@@ -111,7 +111,8 @@ void execute_command(const char *cmd)
         uint32_t page = 1; // default page
 
         static char sbin_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
-        uint32_t sbin_count = napp_list_sbin(sbin_names, NAPP_MAX_APPLICATIONS);
+        static char sbin_descs[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
+        uint32_t sbin_count = napp_list_sbin(sbin_names, sbin_descs, NAPP_MAX_APPLICATIONS);
         uint32_t sbin_pages = (sbin_count + HELP_COMMANDS_PER_PAGE - 1) / HELP_COMMANDS_PER_PAGE;
 
 
@@ -353,9 +354,31 @@ void execute_command(const char *cmd)
                         continue;
                     }
 
-                    print(" -");
-                    print(sbin_names[i]);
-                    print("\n");
+                    // Format: " -<name>" padded to 37 chars, then "- <description>"
+                    char line_buf[256];
+                    uint32_t pos = 0;
+
+                    line_buf[pos++] = ' ';
+                    line_buf[pos++] = '-';
+
+                    uint32_t name_len = strlen(sbin_names[i]);
+                    for (uint32_t c = 0; c < name_len; c++)
+                        line_buf[pos++] = sbin_names[i][c];
+
+                    while (pos < 37)
+                        line_buf[pos++] = ' ';
+
+                    line_buf[pos++] = '-';
+                    line_buf[pos++] = ' ';
+
+                    uint32_t desc_len = strlen(sbin_descs[i]);
+                    for (uint32_t c = 0; c < desc_len && pos < sizeof(line_buf) - 2; c++)
+                        line_buf[pos++] = sbin_descs[i][c];
+
+                    line_buf[pos++] = '\n';
+                    line_buf[pos] = '\0';
+
+                    print(line_buf);
                 }
             }
         }
