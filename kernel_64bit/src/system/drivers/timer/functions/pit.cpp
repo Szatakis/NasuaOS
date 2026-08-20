@@ -64,8 +64,6 @@ void sleep(uint64_t ms)
 
     while((ticks - start) < wait_ticks)
     {
-        asm volatile(
-            "hlt"
-        );
+        asm volatile("hlt");
     }
 }

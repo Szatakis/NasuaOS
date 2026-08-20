@@ -60,13 +60,19 @@ static int build_argv(const char* args, const char** argv, int max_args)
             if (buf[i] == '\0') break;
         }
         
-        if (buf[i] == '\0') break;
+        if (buf[i] == '\0')
+        {
+            break;
+        }
         
         // Start of argument
         argv[argc] = &buf[i];
         argc++;
         
-        if (argc >= max_args) break;
+        if (argc >= max_args)
+        {
+            break;
+        }
         
         // Find end of argument
         while (buf[i] != '\0' && buf[i] != ' ')
@@ -135,7 +141,7 @@ void execute_command(const char *cmd)
 
         if (*arg_check != '\0') 
         {
-            if (!memcmp(arg_check, "--page ", 7) == 0) 
+            if (memcmp(arg_check, "--page ", 7) != 0) 
             {
                 print_error("Syntax error!\n");
                 print_info("Usage: help --page [1-");
@@ -155,6 +161,16 @@ void execute_command(const char *cmd)
             const char* page_num = page_flag + 7;
 
             page = parse_number(page_num);
+        }
+
+        if (page < 1 || page > total_pages)
+        {
+            print_error("Invalid page number!\n");
+            print_info("Valid pages: 1-");
+            print_num8(total_pages);
+            print("\n");
+            print_cmd();
+            return;
         }
 
         if (page == 1) 
@@ -177,7 +193,7 @@ void execute_command(const char *cmd)
             print("   --file <file_name.file_ext>       - (Optional) Save the text output into a file\n");
             print(" -asciiart                           - Convert text into large ASCII banner\n");
             print("    --text <string>                  - (Required) Text to transform\n");
-        } 
+        }
 
         else if (page == 2) 
         {
@@ -277,6 +293,16 @@ void execute_command(const char *cmd)
             print(" -debug                              - Enable or disable debug mode\n");
             print("   --on                              - (Required 1 of 2) Enable debug mode\n");
             print("   --off                             - (Required 1 of 2) Disable debug mode\n");
+            print(" -beep                               - Play a sound through the PC speaker");
+            print("   --freq [frequency]                - (Optional) Set beep frequency in Hz");
+            print("   --dur [time]                      - (Optional) Set beep duration in milliseconds");
+            print(" -calc                               - Perform a basic arithmetic calculation");
+            print("   --op <add|sub|mul|div>            - (Required) Select the arithmetic operation");
+            print("   --num1 [value]                    - (Required) First number");
+            print("   --num2 [value]                    - (Required) Second number");
+            print(" -rand                               - Generate a random number within a range");
+            print("   --min [value]                     - (Required) Minimum value of the range");
+            print("   --max [value]                     - (Required) Maximum value of the range");
         }
 
         else if (page == 7)
@@ -363,17 +389,23 @@ void execute_command(const char *cmd)
 
                     uint32_t name_len = strlen(sbin_names[i]);
                     for (uint32_t c = 0; c < name_len; c++)
+                    {
                         line_buf[pos++] = sbin_names[i][c];
+                    }
 
                     while (pos < 37)
+                    {
                         line_buf[pos++] = ' ';
+                    }
 
                     line_buf[pos++] = '-';
                     line_buf[pos++] = ' ';
 
                     uint32_t desc_len = strlen(sbin_descs[i]);
                     for (uint32_t c = 0; c < desc_len && pos < sizeof(line_buf) - 2; c++)
+                    {
                         line_buf[pos++] = sbin_descs[i][c];
+                    }
 
                     line_buf[pos++] = '\n';
                     line_buf[pos] = '\0';
@@ -495,12 +527,7 @@ void execute_command(const char *cmd)
             const char* date_ptr = set_flag + 6;
 
             // Validate format: DD.MM.YYYY-HH:MM:SS
-            if (strlen(date_ptr) < 19 ||
-                date_ptr[2] != '.' ||
-                date_ptr[5] != '.' ||
-                date_ptr[10] != '-' ||
-                date_ptr[13] != ':' ||
-                date_ptr[16] != ':')
+            if (strlen(date_ptr) < 19 || date_ptr[2] != '.' || date_ptr[5] != '.' || date_ptr[10] != '-' || date_ptr[13] != ':' || date_ptr[16] != ':')
             {
                 print_error("Syntax error!\n");
                 print_info("Usage: time --set <DD.MM.YYYY-HH:MM:SS>\n");
@@ -655,7 +682,7 @@ void execute_command(const char *cmd)
                 {
                     name_buf[i++] = *filename_ptr++;
                 }
-            } 
+            }
             else 
             {
                 while (*filename_ptr && *filename_ptr != ' ' && i < 63) 
@@ -666,7 +693,7 @@ void execute_command(const char *cmd)
             name_buf[i] = '\0';
 
             clawfs_create_file_in(current_path, name_buf);
-        } 
+        }
         else 
         {
             print_error("Syntax error!\n");
@@ -979,7 +1006,7 @@ void execute_command(const char *cmd)
                     freq_buf[i] = freq_arg[i];
                     i++;
                 }
-            } 
+            }
             else 
             {
                 while (freq_arg[i] != ' ' && freq_arg[i] != '\0' && i < 15) 
@@ -1009,7 +1036,7 @@ void execute_command(const char *cmd)
                     dur_buf[i] = dur_arg[i];
                     i++;
                 }
-            } 
+            }
             else 
             {
                 while (dur_arg[i] != ' ' && dur_arg[i] != '\0' && i < 15) 
@@ -1037,7 +1064,7 @@ void execute_command(const char *cmd)
             sleep(10);
 
             beep(freq, dur);
-        } 
+        }
         else 
         {
             print_error("Invalid arguments!\n");
@@ -1068,7 +1095,7 @@ void execute_command(const char *cmd)
             {
                 op_arg++;
                 while (op_arg[i] != '"' && op_arg[i] != '\0' && i < 7) { op_buf[i] = op_arg[i]; i++; }
-            } 
+            }
             else 
             {
                 while (op_arg[i] != ' ' && op_arg[i] != '\0' && i < 7) { op_buf[i] = op_arg[i]; i++; }
@@ -1086,7 +1113,7 @@ void execute_command(const char *cmd)
                     num1_buf[i] = num1_arg[i]; 
                     i++; 
                 }
-            } 
+            }
             else 
             {
                 while (num1_arg[i] != ' ' && num1_arg[i] != '\0' && i < 15) 
@@ -1108,7 +1135,7 @@ void execute_command(const char *cmd)
                     num2_buf[i] = num2_arg[i]; 
                     i++; 
                 }
-            } 
+            }
             else 
             {
                 while (num2_arg[i] != ' ' && num2_arg[i] != '\0' && i < 15) 
@@ -1117,6 +1144,7 @@ void execute_command(const char *cmd)
                     i++; 
                 }
             }
+
             num2_buf[i] = '\0';
 
             int n1 = atoi(num1_buf);
@@ -1124,33 +1152,33 @@ void execute_command(const char *cmd)
             int result = 0;
 
             // Calculations
-            if (memcmp(op_buf, "add", 3) == 0) 
+            if (strcmp(op_buf, "add") == 0) 
             {
                 result = n1 + n2;
                 print_info("Result: ");
                 print_num8(result);
                 print("\n");
-            } 
-            else if (memcmp(op_buf, "sub", 3) == 0) 
+            }
+            else if (strcmp(op_buf, "sub") == 0) 
             {
                 result = n1 - n2;
                 print_info("Result: ");
                 print_num8(result);
                 print("\n");
-            } 
-            else if (memcmp(op_buf, "mul", 3) == 0) 
+            }
+            else if (strcmp(op_buf, "mul") == 0) 
             {
                 result = n1 * n2;
                 print_info("Result: ");
                 print_num8(result);
                 print("\n");
-            } 
-            else if (memcmp(op_buf, "div", 3) == 0) 
+            }
+            else if (strcmp(op_buf, "div") == 0) 
             {
                 if (n2 == 0) 
                 {
                     print_error("Division by zero error!\n");
-                } 
+                }
                 else 
                 {
                     result = n1 / n2;
@@ -1158,15 +1186,15 @@ void execute_command(const char *cmd)
                     print_num8(result);
                     print("\n");
                 }
-            } 
+            }
             else 
             {
                 print_error("Unknown operation! Use: add, sub, mul, div\n");
             }
-        } 
+        }
         else 
         {
-            print_error("Syntax error! Missing required arguments.\n");
+            print_error("Syntax error!\n");
             print_info("Usage: calc --op <add|sub|mul|div> --num1 [val] --num2 [val]\n");
         }
     }
@@ -1196,7 +1224,7 @@ void execute_command(const char *cmd)
                     min_buf[i] = min_arg[i];
                     i++;
                 }
-            } 
+            }
             else 
             {
                 while (min_arg[i] != ' ' && min_arg[i] != '\0' && i < 15) 
@@ -1208,6 +1236,7 @@ void execute_command(const char *cmd)
             min_buf[i] = '\0';
             min_val = atoi(min_buf);
         }
+
         if (max_flag) 
         {
             const char* max_arg = max_flag + 6;
@@ -1223,7 +1252,7 @@ void execute_command(const char *cmd)
                     max_buf[i] = max_arg[i];
                     i++;
                 }
-            } 
+            }
             else 
             {
                 while (max_arg[i] != ' ' && max_arg[i] != '\0' && i < 15) 
@@ -1237,16 +1266,15 @@ void execute_command(const char *cmd)
             has_max = 1;
         }
 
-
         if (has_max) 
         {
             if (min_val > max_val) 
             {
                 print_error("Invalid range! Min cannot be greater than Max.\n");
-            } 
+            }
             else 
             {
-                int range = max_val - min_val + 1;
+                int64_t range = (int64_t)max_val - (int64_t)min_val + 1;
                 
                 int random_num = min_val + ((system_rand() & 0x7fffffff) % range);
                 
@@ -1254,7 +1282,7 @@ void execute_command(const char *cmd)
                 print_num8(random_num);
                 print("\n");
             }
-        } 
+        }
         else 
         {
             print_error("Syntax error!\n");
@@ -1271,12 +1299,11 @@ void execute_command(const char *cmd)
         {
             print_error("Syntax error!\n");
             print_info("Usage: inb --port [0xHEX]\n");
-        } 
+        }
         else {
             const char* port_str = port_flag + 7;
 
             uint16_t port = (uint16_t)parse_hex(port_str);
-
             uint8_t value = inb(port);
 
             print("Port ");
@@ -1328,7 +1355,9 @@ void execute_command(const char *cmd)
 
 
             if(text_flag[0] == '"')
+            {
                 text_flag++;
+            }
 
 
             char buffer[128];
@@ -1353,6 +1382,48 @@ void execute_command(const char *cmd)
     {
         print_info("Safe mode ON\n");
         safe_mode = true;
+    }
+
+    // 27. Command: uart
+    else if (cmd_name_len == 4 && memcmp(cmd, "uart", 4) == 0)
+    {
+        const char* text_flag = strstr(args, "--text ");
+
+        if (!text_flag)
+        {
+            print_error("Syntax error!\n");
+            print_info("Usage: uart --text <text>\n");
+        }
+        else
+        {
+            const char* text_ptr = text_flag + 7;
+            char text_buf[256];
+            int i = 0;
+
+            if (*text_ptr == '"')
+            {
+                text_ptr++;
+
+                while (*text_ptr && *text_ptr != '"' && i < 255)
+                {
+                    text_buf[i++] = *text_ptr++;
+                }
+            }
+            else
+            {
+                while (*text_ptr && *text_ptr != ' ' && i < 255)
+                {
+                    text_buf[i++] = *text_ptr++;
+                }
+            }
+
+            text_buf[i] = '\0';
+
+            Uart::puts(text_buf);
+            Uart::puts("\r\n");
+
+            print_info("Text sent over UART.\n");
+        }
     }
 
 
@@ -1395,11 +1466,13 @@ void execute_command(const char *cmd)
         }
 
         print_error("Unknown command: ");
+        
         for (size_t i = 0; i < cmd_name_len; i++) 
         {
             single_char_buf[0] = cmd[i];
             print(single_char_buf);
         }
+
         print("\n");
     }
     

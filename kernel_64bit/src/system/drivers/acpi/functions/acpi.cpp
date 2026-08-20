@@ -186,12 +186,16 @@ static uint16_t parse_aml_element(uint8_t** ptr)
     {
         // ZeroOp
         case 0x00:
+        {
             return 0;
+        }
 
 
         // OneOp
         case 0x01:
+        {
             return 1;
+        }
 
 
         // BytePrefix
@@ -217,10 +221,14 @@ static uint16_t parse_aml_element(uint8_t** ptr)
 
         // OnesOp
         case 0xFF:
+        {
             return 0xFFFF;
+        }
 
         default:
+        {
             return 0;
+        }
     }
 }
 
@@ -364,7 +372,6 @@ bool acpi_init()
 
     if(rsdp->revision >= 2 && rsdp->xsdt_address)
     {
-
         root = (ACPISDTHeader*)phys_to_virt(rsdp->xsdt_address);
 
         xsdt = true;
@@ -373,7 +380,6 @@ bool acpi_init()
     {
         root =(ACPISDTHeader*)phys_to_virt(rsdp->rsdt_address);
     }
-
 
 
     if(!root)
@@ -456,14 +462,7 @@ bool acpi_init()
     {
         uint32_t len = dsdt->Length - sizeof(ACPISDTHeader);
 
-
-        if(
-            parse_s5_from_aml(
-                (uint8_t*)dsdt +
-                sizeof(ACPISDTHeader),
-                len
-            )
-        )
+        if(parse_s5_from_aml((uint8_t*)dsdt + sizeof(ACPISDTHeader), len))
         {
             print("ACPI: _S5 found in DSDT\n");
             return true;
@@ -513,13 +512,7 @@ bool acpi_init()
         {
             uint32_t len = table->Length - sizeof(ACPISDTHeader);
 
-            if(
-                parse_s5_from_aml(
-                    (uint8_t*)table +
-                    sizeof(ACPISDTHeader),
-                    len
-                )
-            )
+            if(parse_s5_from_aml((uint8_t*)table + sizeof(ACPISDTHeader), len))
             {
                 print("ACPI: _S5 found in SSDT\n");
                 return true;
@@ -647,7 +640,6 @@ void acpi_shutdown()
 
 void acpi_reboot()
 {
-
     print_warn("NasuaOS: Restarting\n");
 
     asm volatile("cli");
@@ -657,7 +649,6 @@ void acpi_reboot()
     {
         io_wait();
     }
-
 
 
     outb(0x64, 0xFE);

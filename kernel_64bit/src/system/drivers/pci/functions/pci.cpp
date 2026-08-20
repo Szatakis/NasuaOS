@@ -98,12 +98,7 @@ static const char* pci_class_name(uint8_t class_code, uint8_t subclass)
 
 uint32_t pci_config_read32(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset)
 {
-    uint32_t address =
-        (1u << 31) |
-        ((uint32_t)bus << 16) |
-        ((uint32_t)slot << 11) |
-        ((uint32_t)function << 8) |
-        (offset & 0xFC);
+    uint32_t address = (1u << 31) | ((uint32_t)bus << 16) | ((uint32_t)slot << 11) | ((uint32_t)function << 8) | (offset & 0xFC);
 
     outl(0xCF8, address);
 
@@ -125,7 +120,6 @@ uint16_t pci_config_read16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t 
 uint8_t pci_config_read8(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset)
 {
     uint32_t value = pci_config_read32(bus, slot, function, offset);
-
     uint8_t shift = (uint8_t)((offset & 3) * 8);
 
     return (uint8_t)((value >> shift) & 0xFF);
@@ -168,14 +162,6 @@ void pci_scan()
     Uart::puts("[PCI] Scanning PCI bus\n");
 
     bool found_device = false;
-
-    /*
-        PCI:
-
-        256 buses
-        32 devices per bus
-        up to 8 functions per device
-     */
 
     for (uint16_t bus = 0; bus < 256; bus++)
     {
@@ -280,9 +266,7 @@ void pci_scan()
     }
 
 
-    /*
-        USB summary
-    */
+    //USB summary
 
     Uart::puts("[PCI] USB controller summary:\n");
 
@@ -313,11 +297,8 @@ void pci_scan()
     }
 
 
-    /*
-        Pick the best available USB controller.
-    
-        We want USB 2.0 first. Next usb 1.1. Next 3.x
-     */
+    //Pick the best available USB controller.
+    //We want USB 2.0 first. Next usb 1.1. Next 3.x
 
     if (found_ehci)
     {

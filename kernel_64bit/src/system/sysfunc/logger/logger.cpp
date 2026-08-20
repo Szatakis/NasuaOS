@@ -129,20 +129,28 @@ static void print_log_entry(LogEntry* entry)
     switch(entry->level) 
     {
         case INFO:
+        {
             print("INFO");
             break;
+        }
 
         case WARN:
+        {
             print("WARN");
             break;
+        }
 
         case ERROR:
+        {
             print("ERROR");
             break;
+        }
 
         case DEBUG:
+        {
             print("DEBUG");
             break;
+        }
     }
 
     print("] ");

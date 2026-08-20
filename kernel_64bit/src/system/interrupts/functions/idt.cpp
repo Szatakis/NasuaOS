@@ -47,10 +47,7 @@ void idt_init()
 
     for(int i = 0; i < 256; i++)
     {
-        set_gate(
-            i,
-            (void*)isr_default
-        );
+        set_gate(i, (void*)isr_default);
     }
 
     // CPU Exceptions
@@ -93,22 +90,13 @@ void idt_init()
 
     uint16_t cs;
 
-    asm volatile(
-        "mov %%cs, %0"
-        :
-        "=r"(cs)
-    );
+    asm volatile("mov %%cs, %0" : "=r"(cs));
 
     Uart::puts("[IDT] CS: ");
     Uart::puthex(cs);
     Uart::puts("\n");
 
-    asm volatile(
-        "lidt %0"
-        :
-        :
-        "m"(idtr)
-    );
+    asm volatile("lidt %0" : : "m"(idtr));
 
     Uart::puts("[IDT] Loaded\n");
     log(INFO,"IDT","Loaded");

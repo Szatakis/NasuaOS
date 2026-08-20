@@ -58,8 +58,7 @@ namespace {
     volatile std::uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
 
     __attribute__((used, section(".limine_requests")))
-    volatile limine_framebuffer_request framebuffer_request = 
-    {
+    volatile limine_framebuffer_request framebuffer_request = {
         .id = LIMINE_FRAMEBUFFER_REQUEST_ID,
         .revision = 0,
         .response = nullptr
@@ -120,6 +119,7 @@ void iqu_init()
         execute_command("safe_mode");
         Uart::puts("SAFE MODE ENABLED\n");
     }
+
     if(debug_mode)
     {
         execute_command("debug --on");
@@ -161,6 +161,7 @@ void pre_check()
                     {
                         safe_mode = true;
                     }
+
                     if (find_in_string(content, "DEBUG"))
                     {
                         debug_mode = true;
@@ -177,6 +178,7 @@ void pre_check()
                     {
                         safe_mode = true;
                     }
+
                     if (find_in_string(content, "DEBUG"))
                     {
                         debug_mode = true;
@@ -206,7 +208,8 @@ extern "C" void kmain()
             handle_keyboard();
         }
         
-        if(redraw && !kernel_panicked) {
+        if(redraw && !kernel_panicked) 
+        {
             redraw = false;
 
             clear_screen();
@@ -227,8 +230,15 @@ extern "C" void kmain()
 
 // CRT
 extern "C" {
-    int __cxa_atexit(void (*)(void*), void*, void*) { return 0; }
-    void __cxa_pure_virtual() { hcf(); }
+    int __cxa_atexit(void (*)(void*), void*, void*) 
+    { 
+        return 0; 
+    }
+
+    void __cxa_pure_virtual() 
+    { 
+        hcf(); 
+    }
 
     void* __dso_handle;
 }

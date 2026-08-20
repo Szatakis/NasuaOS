@@ -16,10 +16,7 @@ static uint64_t read_cr2()
 {
     uint64_t value;
 
-    asm volatile(
-        "mov %%cr2, %0"
-        : "=r"(value)
-    );
+    asm volatile("mov %%cr2, %0" : "=r"(value));
 
     return value;
 }
@@ -104,20 +101,12 @@ void page_fault_handler(Registers* regs)
 
         log(ERROR,"PAGE FAULT","Page fault in MMIO/PCI address");
 
-        kernel_panic(
-            "Page Fault in MMIO/PCI address",
-            err_buf,
-            rip_buf,
-            rsp_buf,
-            addr_buf
-        );
+        kernel_panic("Page Fault in MMIO/PCI address", err_buf, rip_buf, rsp_buf, addr_buf);
 
         return;
     }
 
-    /*
-        Normal demand paging.
-    */
+    //Normal demand paging.
 
     uint64_t page = pmm_alloc_page();
 
@@ -127,13 +116,7 @@ void page_fault_handler(Registers* regs)
 
         log(ERROR, "PAGE FAULT", "OUT OF MEMORY");
 
-        kernel_panic(
-            "Page Fault - Out of Memory",
-            err_buf,
-            rip_buf,
-            rsp_buf,
-            addr_buf
-        );
+        kernel_panic("Page Fault - Out of Memory", err_buf, rip_buf, rsp_buf, addr_buf);
 
         return;
     }
@@ -141,24 +124,21 @@ void page_fault_handler(Registers* regs)
     bool page_exists = (error & 0x1) != 0;  
     bool is_write    = (error & 0x2) != 0;
 
-    if (page_exists && is_write) {
+    if (page_exists && is_write)
+    {
         Uart::puts("[PAGE FAULT] Write violation on read-only page!\n");
         log(ERROR, "PAGE FAULT", "Attempted write to read-only memory");
     
-        kernel_panic(
-            "Access Violation - Write to Read-Only Memory",
-            err_buf,
-            rip_buf,
-            rsp_buf,
-            addr_buf
-        );
+        kernel_panic("Access Violation - Write to Read-Only Memory", err_buf, rip_buf, rsp_buf, addr_buf);
+
         return;
     }
 
     uint64_t virtual_page = addr & ~0xFFFULL;
 
     // Only show verbose mapping info if debug mode is enabled
-    if (debug_mode) {
+    if (debug_mode)
+    {
         Uart::puts("[PAGE FAULT] Mapping normal RAM page\n");
 
         Uart::puts("[PAGE FAULT] Virtual: ");
@@ -175,7 +155,8 @@ void page_fault_handler(Registers* regs)
     vmm_map_page(virtual_page, page, PAGE_WRITE);
 
     // Only log if debug mode is enabled
-    if (debug_mode) {
+    if (debug_mode)
+    {
         Uart::puts("[PAGE FAULT] Page allocated\n");
         log(INFO, "PAGE FAULT", "Page allocated");
     }

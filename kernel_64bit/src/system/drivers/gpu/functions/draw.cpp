@@ -18,12 +18,18 @@
 // HELPERS
 void put_pixel(size_t x, size_t y, uint32_t color) 
 {
-    if (!fb) return;
+    if (!fb) 
+    {
+        return;
+    }
 
     uint32_t* bb_ptr = get_backbuffer();
     size_t pitch = get_backbuffer_pitch();
 
-    if (x >= fb->width || y >= fb->height) return;
+    if (x >= fb->width || y >= fb->height) 
+    {
+        return;
+    }
 
     bb_ptr[y * pitch + x] = color;
 }
@@ -98,7 +104,10 @@ void draw_char16(unsigned char c, size_t x, size_t y, uint32_t color)
 
 void fill_block(size_t x, size_t y, uint32_t color, size_t size_x, size_t size_y) 
 {
-    if (!fb) return;
+    if (!fb) 
+    {
+        return;
+    }
 
     uint32_t* bb_ptr = get_backbuffer();
     size_t pitch = get_backbuffer_pitch();
@@ -114,7 +123,10 @@ void fill_block(size_t x, size_t y, uint32_t color, size_t size_x, size_t size_y
 
 void draw_rect(int x1, int y1, int x2, int y2, uint32_t color) 
 {
-    if (!fb) return;
+    if (!fb) 
+    {
+        return;
+    }
 
     if (x1 > x2) 
     { 
@@ -122,6 +134,7 @@ void draw_rect(int x1, int y1, int x2, int y2, uint32_t color)
         x2 = x1 - x2;
         x1 = x1 - x2;
     }
+    
     if (y1 > y2) 
     { 
         y1 = y1 + y2;

@@ -115,12 +115,7 @@ bool apic_available()
 {
     uint32_t eax, ebx, ecx, edx;
 
-    asm volatile(
-        "cpuid"
-        : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-        : "a"(1)
-        : "cc"
-    );
+    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(1) : "cc");
 
     // CPUID.1:EDX bit 9 = APIC on chip
     return (edx & (1u << 9)) != 0;
@@ -134,13 +129,7 @@ uint64_t apic_read_base()
     uint32_t eax;
     uint32_t edx;
 
-    asm volatile(
-        "mov %2, %%ecx\n"
-        "rdmsr"
-        : "=a"(eax), "=d"(edx)
-        : "r"(IA32_APIC_BASE_MSR)
-        : "ecx"
-    );
+    asm volatile("mov %2, %%ecx\n" "rdmsr" : "=a"(eax), "=d"(edx) : "r"(IA32_APIC_BASE_MSR) : "ecx");
 
     return ((uint64_t)edx << 32) | eax;
 }
@@ -150,18 +139,7 @@ static void apic_write_base(uint64_t value)
     uint32_t eax = value & 0xFFFFFFFF;
     uint32_t edx = value >> 32;
 
-    asm volatile(
-        "mov %0, %%eax\n"
-        "mov %1, %%edx\n"
-        "mov $0x1B, %%ecx\n"
-        "wrmsr"
-        :
-        : "r"(eax),
-          "r"(edx)
-        : "eax",
-          "edx",
-          "ecx"
-    );
+    asm volatile("mov %0, %%eax\n" "mov %1, %%edx\n" "mov $0x1B, %%ecx\n" "wrmsr" : : "r"(eax), "r"(edx) : "eax", "edx", "ecx");
 }
 
 bool apic_enabled()

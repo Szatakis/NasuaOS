@@ -43,22 +43,13 @@ void keyboard_init()
     // włącz klawiaturę
     uint8_t cmd = 0xAE;
 
-    asm volatile(
-        "outb %0, $0x64"
-        :
-        : "a"(cmd)
-    );
-
+    asm volatile("outb %0, $0x64" : : "a"(cmd));
 
 
     // włącz skanowanie klawiatury
     uint8_t enable = 0xF4;
 
-    asm volatile(
-        "outb %0, $0x60"
-        :
-        : "a"(enable)
-    );
+    asm volatile("outb %0, $0x60" : : "a"(enable));
 }
 
 uint8_t read_scancode()
@@ -68,25 +59,15 @@ uint8_t read_scancode()
 
     while(true)
     {
-
-        asm volatile(
-            "inb $0x64, %0"
-            : "=a"(status)
-        );
+        asm volatile("inb $0x64, %0" : "=a"(status));
 
 
         // dane w buforze klawiatury
         if(status & 1)
         {
-
             uint8_t code;
 
-
-            asm volatile(
-                "inb $0x60, %0"
-                : "=a"(code)
-            );
-
+            asm volatile("inb $0x60, %0" : "=a"(code));
 
             return code;
         }
@@ -97,7 +78,9 @@ uint8_t read_scancode()
 void backspace()
 {
     if(input_pos == 0)
+    {
         return;
+    }
 
 
     input_pos--;
@@ -108,15 +91,11 @@ void backspace()
     }
 
 
-    clear_char(
-        cursor_x,
-        cursor_y
-    );
+    clear_char(cursor_x, cursor_y);
 }
 
 void read_line()
 {
-
     input_pos = 0;
 
 
@@ -127,8 +106,9 @@ void read_line()
 
 
         if(sc & 0x80)
+        {
             continue;
-
+        }
 
 
         if(sc == 0x1C)
@@ -141,7 +121,6 @@ void read_line()
         }
 
 
-
         if(sc == 0x0E)
         {
             backspace();
@@ -149,25 +128,18 @@ void read_line()
         }
 
 
-
         char c = keymap[sc];
 
 
         if(c)
         {
-
             if(input_pos < 127)
             {
-
                 input_buffer[input_pos++] = c;
 
 
                 putchar(c);
-
             }
-
         }
-
     }
-
 }

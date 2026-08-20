@@ -31,9 +31,7 @@ void* kmalloc(size_t size)
     }
 
     uint64_t total_size = size + sizeof(heap_header);
-
     uint64_t pages = (total_size + PAGE_SIZE - 1) / PAGE_SIZE;
-
     uint64_t start = heap_current;
 
     for(uint64_t i = 0;i < pages; i++)
@@ -63,7 +61,6 @@ void* kmalloc(size_t size)
     heap_header* header = (heap_header*)start;
 
     header->size = size;
-
     header->pages = pages;
 
     return (void*)(start + sizeof(heap_header));
@@ -77,17 +74,13 @@ void kfree(void* ptr)
     }
 
     uint64_t address = (uint64_t)ptr;
-
     heap_header* header = (heap_header*)(address - sizeof(heap_header));
-
     uint64_t start = address - sizeof(heap_header);
-
     uint64_t pages = header->pages;
 
     for(uint64_t i = 0; i < pages; i++)
     {
         uint64_t virt = start + i * PAGE_SIZE;
-
         uint64_t phys = vmm_translate(virt);
 
         if(phys)

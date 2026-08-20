@@ -31,7 +31,9 @@ static bool ata_wait_not_busy()
         uint8_t status = inb(ATA_PORT_COMMAND);
 
         if (!(status & ATA_SR_BSY))
+        {
             return true;
+        }
     }
 
     return false;
@@ -44,13 +46,19 @@ static bool ata_wait_drq()
         uint8_t status = inb(ATA_PORT_COMMAND);
 
         if (status & ATA_SR_ERR)
+        {
             return false;
+        }
 
         if (status & ATA_SR_DF)
+        {
             return false;
+        }
 
         if (!(status & ATA_SR_BSY) && (status & ATA_SR_DRQ))
+        {
             return true;
+        }
     }
 
     return false;
@@ -59,7 +67,9 @@ static bool ata_wait_drq()
 bool ata_identify(uint32_t* sectors)
 {
     if (sectors == nullptr)
+    {
         return false;
+    }
 
     *sectors = 0;
 
@@ -79,32 +89,44 @@ bool ata_identify(uint32_t* sectors)
         status = inb(ATA_PORT_COMMAND);
 
         if (status == 0)
+        {
             return false;
+        }
 
         if (status & ATA_SR_ERR)
+        {
             return false;
+        }
 
         if (status & ATA_SR_DF)
+        {
             return false;
+        }
 
         if (!(status & ATA_SR_BSY) && (status & ATA_SR_DRQ))
+        {
             break;
+        }
 
         if (t == ATA_TIMEOUT - 1)
+        {
             return false;
+        }
     }
 
     uint16_t identify[256];
 
     for (int i = 0; i < 256; i++)
+    {
         identify[i] = inw(ATA_PORT_DATA);
+    }
 
-    *sectors =
-        ((uint32_t)identify[61] << 16) |
-        identify[60];
+    *sectors = ((uint32_t)identify[61] << 16) | identify[60];
 
     if (*sectors == 0)
+    {
         return false;
+    }
 
     return true;
 }

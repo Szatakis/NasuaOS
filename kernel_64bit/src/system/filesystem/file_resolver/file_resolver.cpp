@@ -53,8 +53,9 @@ void file_resolver_mount(bool mount)
     {
         print_info("ClawFS overlay mounted.\n");
         Uart::puts("[File Resolver] ClawFS overlay mounted.\n");
-    } 
-    else {
+    }
+    else 
+    {
         print_info("ClawFS overlay unmounted.\n");
         Uart::puts("[File Resolver] ClawFS overlay unmounted.\n");
         // Tombstones persist but only apply when mounted
@@ -246,7 +247,8 @@ static bool clawfs_file_exists(const char* path)
     if (exists) 
     {
         Uart::puts("EXISTS\n");
-    } else 
+    }
+    else 
     {
         Uart::puts("NOT FOUND\n");
     }
@@ -548,8 +550,9 @@ bool format_commands()
         if (copy_file_to_clawfs(src_path, dst_path)) 
         {
             copied++;
-        } 
-        else {
+        }
+        else 
+        {
             skipped++;
             print(" [SKIPPED]");
         }
@@ -585,8 +588,9 @@ bool format_commands()
         if (copy_file_to_clawfs(src_path, dst_path)) 
         {
             copied++;
-        } 
-        else {
+        }
+        else 
+        {
             skipped++;
             print(" [SKIPPED]");
         }

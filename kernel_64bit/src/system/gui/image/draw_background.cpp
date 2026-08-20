@@ -86,10 +86,6 @@ void draw_background()
 
     for(size_t y = 0; y < fb->height; y++)
     {
-        memcpy(
-            bb + y * background_pitch,
-            background_buffer + y * background_pitch,
-            fb->width * sizeof(uint32_t)
-        );
+        memcpy(bb + y * background_pitch, background_buffer + y * background_pitch, fb->width * sizeof(uint32_t));
     }
 }

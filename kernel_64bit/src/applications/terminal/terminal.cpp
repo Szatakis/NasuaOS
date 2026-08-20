@@ -56,7 +56,7 @@ void terminal_write_char(char c)
             terminal_data.output[terminal_data.output_count][0] = '\0';
             terminal_data.output_count++;
             terminal_data.col_cursor = 0;
-        } 
+        }
         else 
         {
             for (int i = 0; i < TERM_MAX_ROWS - 1; i++) 
@@ -80,7 +80,7 @@ void terminal_write_char(char c)
     {
         terminal_data.output[line][terminal_data.col_cursor++] = c;
         terminal_data.output[line][terminal_data.col_cursor] = '\0';
-    } 
+    }
     else 
     {
         terminal_write_char('\n');
@@ -112,7 +112,7 @@ void terminal_key(window_struct* win, char key)
             active_terminal_redirect = true;
             execute_command(term->input);
             active_terminal_redirect = false;
-        } 
+        }
         else 
         {
             terminal_write_char('\n');
@@ -190,7 +190,7 @@ void draw_terminal(window_struct* win)
         {
             strcpy(temp_line, term->output[i]);
             strcat(temp_line, term->input);
-        } 
+        }
         else 
         {
             strcpy(temp_line, term->output[i]);
@@ -200,7 +200,7 @@ void draw_terminal(window_struct* win)
         if (len == 0) 
         {
             total_visual_rows += 1;
-        } 
+        }
         else 
         {
             total_visual_rows += (len + max_cols - 1) / max_cols;
@@ -226,7 +226,7 @@ void draw_terminal(window_struct* win)
         {
             strcpy(temp_line, term->output[i]);
             strcat(temp_line, term->input);
-        } 
+        }
         else 
         {
             strcpy(temp_line, term->output[i]);
@@ -240,7 +240,7 @@ void draw_terminal(window_struct* win)
                 curr_y += line_height;
             }
             current_visual_row++;
-        } 
+        }
         else 
         {
             int offset = 0;

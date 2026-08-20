@@ -63,12 +63,7 @@ bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags)
             return false;
         }
 
-        pml4[pml4_i] =
-            ((uint64_t)pdpt -
-            get_hhdm_offset())
-            |
-            PAGE_PRESENT |
-            PAGE_WRITE;
+        pml4[pml4_i] = ((uint64_t)pdpt - get_hhdm_offset()) | PAGE_PRESENT | PAGE_WRITE;
     }
     else
     {
@@ -86,12 +81,7 @@ bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags)
             return false;
         }
 
-        pdpt[pdpt_i] =
-            ((uint64_t)pd -
-            get_hhdm_offset())
-            |
-            PAGE_PRESENT |
-            PAGE_WRITE;
+        pdpt[pdpt_i] = ((uint64_t)pd - get_hhdm_offset()) | PAGE_PRESENT | PAGE_WRITE;
     }
     else
     {
@@ -109,36 +99,19 @@ bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags)
             return false;
         }
 
-        pd[pd_i] =
-            ((uint64_t)pt -
-            get_hhdm_offset())
-            |
-            PAGE_PRESENT |
-            PAGE_WRITE;
+        pd[pd_i] = ((uint64_t)pt - get_hhdm_offset()) | PAGE_PRESENT | PAGE_WRITE;
     }
     else
     {
         pt = phys_to_virt(pd[pd_i]&~0xFFF);
     }
 
-    pt[pt_i] =
-        (phys & ~0xFFF)
-        |
-        flags
-        |
-        PAGE_PRESENT;
+    pt[pt_i] = (phys & ~0xFFF) | flags | PAGE_PRESENT;
     
     // Clear NX bit to allow execution from heap (needed for flat binaries)
     pt[pt_i] &= ~(1ULL << 63);
 
-    asm volatile(
-        "invlpg (%0)"
-        :
-        :
-        "r"(virt)
-        :
-        "memory"
-    );
+    asm volatile("invlpg (%0)" : : "r"(virt) : "memory");
 
     return true;
 }
@@ -179,14 +152,7 @@ bool vmm_unmap_page(uint64_t virt)
 
     pt[pt_i]=0;
 
-    asm volatile(
-        "invlpg (%0)"
-        :
-        :
-        "r"(virt)
-        :
-        "memory"
-    );
+    asm volatile("invlpg (%0)" : : "r"(virt) : "memory");
 
     return true;
 }

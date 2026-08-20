@@ -91,7 +91,6 @@ void pmm_init()
     }
 
     total_pages = highest / PAGE_SIZE;
-
     bitmap_size = (total_pages + 7) / 8;
 
     static uint8_t bitmap_storage[1024 * 1024];
@@ -112,7 +111,6 @@ void pmm_init()
     }
 
     used_pages = total_pages;
-
     free_pages = 0;
 
     for(uint64_t i = 0; i < 256; i++)
@@ -130,7 +128,6 @@ void pmm_init()
         }
 
         uint64_t start = align_up(entry->base, PAGE_SIZE);
-
         uint64_t end = entry->base + entry->length;
 
         for(uint64_t addr = start; addr + PAGE_SIZE <= end; addr += PAGE_SIZE)
@@ -151,7 +148,6 @@ void pmm_init()
 
     for(uint64_t addr = 0; addr < 0x100000; addr += PAGE_SIZE)
     {
-
         uint64_t page = addr / PAGE_SIZE;
 
         if(!test_bit(page))
@@ -182,7 +178,6 @@ uint64_t pmm_alloc_page()
 {
     for(uint64_t i = 0; i < total_pages; i++)
     {
-
         if(!test_bit(i))
         {
             set_bit(i);

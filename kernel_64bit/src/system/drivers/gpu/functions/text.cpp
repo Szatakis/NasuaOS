@@ -246,9 +246,13 @@ void print_hex(uint32_t value)
             char c;
 
             if (digit < 10)
+            {
                 c = '0' + digit;
+            }
             else
+            {
                 c = 'A' + (digit - 10);
+            }
 
             print_char8(c);
         }
@@ -333,7 +337,8 @@ void delete_last_char(size_t font_size)
     {
         text_col--;
         text_buffer[text_row][text_col].ch = ' ';
-    } else if (text_row > 0) 
+    }
+    else if (text_row > 0) 
     {
         text_row--;
 

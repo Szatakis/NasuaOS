@@ -11,7 +11,6 @@ extern bool cursor_state;
 
 void putchar(char c)
 {
-
     clear_cursor();
 
 
@@ -22,17 +21,9 @@ void putchar(char c)
     }
     else
     {
-
-        draw_char(
-            c,
-            cursor_x,
-            cursor_y,
-            text_color
-        );
-
+        draw_char(c, cursor_x, cursor_y, text_color);
 
         cursor_x += CHAR_WIDTH;
-
     }
 
 

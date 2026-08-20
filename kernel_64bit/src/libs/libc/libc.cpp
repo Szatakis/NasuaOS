@@ -101,8 +101,15 @@ bool strncmp(const char *s1, const char *s2, size_t n)
 {
     for (size_t i = 0; i < n; i++) 
     {
-        if (s1[i] != s2[i]) return false;
-        if (s1[i] == '\0') return true;
+        if (s1[i] != s2[i]) 
+        {
+            return false;
+        }
+
+        if (s1[i] == '\0') 
+        {
+            return true;
+        }
     }
     return true;
 }
@@ -111,7 +118,11 @@ const char* strchr(const char *str, char c)
 {
     while (*str) 
     {
-        if (*str == c) return str;
+        if (*str == c) 
+        {
+            return str;
+        }
+
         str++;
     }
     return nullptr;
@@ -133,6 +144,7 @@ const char* strstr(const char *haystack, const char *needle)
             h++;
             n++;
         }
+
         if (!*n) 
         {
             return haystack;
@@ -288,7 +300,8 @@ int atoi(const char* str)
     {
         sign = -1;
         i++;
-    } else if (str[i] == '+') 
+    }
+    else if (str[i] == '+') 
     {
         i++;
     }
@@ -302,7 +315,8 @@ int atoi(const char* str)
     return sign * res;
 }
 
-uint32_t parse_hex(const char* str) {
+uint32_t parse_hex(const char* str) 
+{
     if (!str)
     {
         return 0;
@@ -435,7 +449,8 @@ bool find_in_string(const char* str, const char* target)
     return false;
 }
 
-void memclear(void* ptr, size_t size) {
+void memclear(void* ptr, size_t size) 
+{
     uint8_t* p = (uint8_t*)ptr;
 
     for(size_t i = 0; i < size; i++) 
@@ -444,13 +459,16 @@ void memclear(void* ptr, size_t size) {
     }
 }
 
-bool is_empty_or_whitespace(const char* str) {
-    if (str == nullptr || *str == '\0') {
+bool is_empty_or_whitespace(const char* str) 
+{
+    if (str == nullptr || *str == '\0') 
+    {
         return true; 
     }
 
     while (*str) {
-        if (*str != ' ' && *str != '\t' && *str != '\n' && *str != '\r') {
+        if (*str != ' ' && *str != '\t' && *str != '\n' && *str != '\r') 
+        {
             return false;
         }
         

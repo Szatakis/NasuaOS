@@ -11,11 +11,7 @@ static uint64_t read_cr3()
 {
     uint64_t value;
 
-    asm volatile(
-        "mov %%cr3, %0"
-        :
-        "=r"(value)
-    );
+    asm volatile("mov %%cr3, %0" : "=r"(value));
 
     return value;
 }

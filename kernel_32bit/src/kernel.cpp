@@ -34,14 +34,12 @@ uint32_t input_pos = 0;
 extern "C"
 void kmain(uint32_t mbi)
 {
-
-
     if(!graphics_init(mbi))
     {
-
         while(1)
+        {
             asm volatile("hlt");
-
+        }
     }
 
     clear_screen(0x000000);
@@ -57,5 +55,4 @@ void kmain(uint32_t mbi)
         read_line();
         shell();
     }
-
 }

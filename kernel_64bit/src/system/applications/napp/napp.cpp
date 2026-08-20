@@ -70,23 +70,23 @@ static void napp_api_print_info(const char* text)
     if (text != nullptr) 
     { 
         print_info(text);
-    } 
-} 
+    }
+}
 
 static void napp_api_print_warn(const char* text) 
 { 
     if (text != nullptr) 
     { 
         print_warn(text);
-    } 
-} 
+    }
+}
 
 static void napp_api_print_error(const char* text) 
 { 
     if (text != nullptr) 
     { 
         print_error(text);
-    } 
+    }
 }
 
 static void napp_api_print_line(const char* text)
@@ -204,10 +204,21 @@ static uint32_t napp_api_clawfs_resolve_path(const char* cur_path, const char* r
     char abs[256];
     uint32_t i = 0;
     const char* p = cur_path;
-    while (*p && i < 254) { abs[i++] = *p++; }
-    if (i > 0 && abs[i-1] != '/') { abs[i++] = '/'; }
+    while (*p && i < 254) 
+    { 
+        abs[i++] = *p++; 
+    }
+
+    if (i > 0 && abs[i-1] != '/') 
+    { 
+        abs[i++] = '/'; 
+    }
     const char* r = rel;
-    while (*r && i < 254) { abs[i++] = *r++; }
+
+    while (*r && i < 254) 
+    { 
+        abs[i++] = *r++; 
+    }
     abs[i] = '\0';
 
     return get_sector_by_path(abs);
@@ -734,7 +745,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         Uart::puts("[NAPP] Running from ClawFS: ");
         Uart::puts(path);
         Uart::puts("\n");
-    } 
+    }
     else {
         // Load from rootfs (FAT)
         fat_entry_info info;
@@ -868,10 +879,7 @@ static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint3
     {
         const napp_header* h = (const napp_header*)image;
 
-        if (h->magic == NAPP_MAGIC &&
-            h->abi_version == NAPP_ABI_VERSION &&
-            h->header_size >= sizeof(napp_header) &&
-            h->description[0] != '\0')
+        if (h->magic == NAPP_MAGIC && h->abi_version == NAPP_ABI_VERSION && h->header_size >= sizeof(napp_header) && h->description[0] != '\0')
         {
             uint32_t i = 0;
             while (h->description[i] && i < desc_size - 1)
@@ -901,10 +909,7 @@ static bool read_sbin_description_clawfs(uint32_t data_sector, char* desc_buffer
 
     const napp_header* h = (const napp_header*)sector_buf;
 
-    if (h->magic == NAPP_MAGIC &&
-        h->abi_version == NAPP_ABI_VERSION &&
-        h->header_size >= sizeof(napp_header) &&
-        h->description[0] != '\0')
+    if (h->magic == NAPP_MAGIC && h->abi_version == NAPP_ABI_VERSION && h->header_size >= sizeof(napp_header) && h->description[0] != '\0')
     {
         uint32_t i = 0;
         while (h->description[i] && i < desc_size - 1)
@@ -981,16 +986,11 @@ uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], char descriptions[][NAPP_MA
 
                 for (int j = 0; j < 12 && found < max_names; j++)
                 {
-                    if (entries[j].name[0] == '\0' || entries[j].type != CLAWFS_FILE)
+                    if (entries[j].name[0] == '\0' || entries[j].type != CLAWFS_FILE || entries[j].name[0] == '.')
                     {
                         continue;
                     }
 
-                    // Skip hidden/internal entries
-                    if (entries[j].name[0] == '.')
-                    {
-                        continue;
-                    }
 
                     // Skip files marked as deleted via tombstones
                     char tombstone_path[256];

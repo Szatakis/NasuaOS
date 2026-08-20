@@ -39,7 +39,9 @@ static void mouse_wait_write()
     while (timeout--)
     {
         if (!(inb(0x64) & 0x02))
+        {
             return;
+        }
     }
 }
 
@@ -52,7 +54,9 @@ static void mouse_wait_read()
     while (timeout--)
     {
         if (inb(0x64) & 0x01)
+        {
             return;
+        }
     }
 }
 
@@ -377,40 +381,35 @@ void mouse_handle_byte(uint8_t data)
 
 
     // LEFT BUTTON
-    if ((new_buttons & 0x01) &&
-        !(old_mouse_buttons & 0x01))
+    if ((new_buttons & 0x01) && !(old_mouse_buttons & 0x01))
     {
         handle_left_click(false);
     }
 
 
     // RIGHT BUTTON
-    if ((new_buttons & 0x02) &&
-        !(old_mouse_buttons & 0x02))
+    if ((new_buttons & 0x02) && !(old_mouse_buttons & 0x02))
     {
         handle_right_click(false);
     }
 
 
     // MIDDLE BUTTON
-    if ((new_buttons & 0x04) &&
-        !(old_mouse_buttons & 0x04))
+    if ((new_buttons & 0x04) && !(old_mouse_buttons & 0x04))
     {
         handle_middle_click(false);
     }
 
 
     // BUTTON 4 - BACK
-    if ((new_buttons & 0x08) &&
-        !(old_mouse_buttons & 0x08))
+    if ((new_buttons & 0x08) && !(old_mouse_buttons & 0x08))
     {
         mouse_back_click();
     }
 
 
     // BUTTON 5 - FORWARD
-    if ((new_buttons & 0x10) &&
-        !(old_mouse_buttons & 0x10))
+    if ((new_buttons & 0x10) && !(old_mouse_buttons & 0x10))
     {
         mouse_forward_click();
     }

@@ -10,11 +10,7 @@ extern volatile limine_mp_request mp_request;
 
 static inline void cpuid(uint32_t leaf, uint32_t subleaf, uint32_t& eax, uint32_t& ebx, uint32_t& ecx, uint32_t& edx)
 {
-    asm volatile(
-        "cpuid"
-        : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-        : "a"(leaf), "c"(subleaf)
-    );
+    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(leaf), "c"(subleaf));
 }
 
 void init_cpu_cores() {
@@ -48,15 +44,15 @@ void cpu_get_brand(char* brand)
 
 const char* get_architecture()
 {
-#if defined(__x86_64__)
-    return "x86_64";
-#elif defined(__i386__)
-    return "x86";
-#elif defined(__aarch64__)
-    return "ARM64";
-#elif defined(__arm__)
-    return "ARM";
-#else
-    return "Unknown";
-#endif
+    #if defined(__x86_64__)
+        return "x86_64";
+    #elif defined(__i386__)
+        return "x86";
+    #elif defined(__aarch64__)
+        return "ARM64";
+    #elif defined(__arm__)
+        return "ARM";
+    #else
+        return "Unknown";
+    #endif
 }

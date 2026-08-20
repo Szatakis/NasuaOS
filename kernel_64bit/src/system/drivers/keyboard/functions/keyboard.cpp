@@ -29,7 +29,8 @@ extern window_struct* apps[];
 
 char scancode_to_ascii_normal(uint8_t scancode) 
 {
-    switch (scancode) {
+    switch (scancode) 
+    {
         case 0x1E: return 'a'; case 0x30: return 'b'; case 0x2E: return 'c';
         case 0x20: return 'd'; case 0x12: return 'e'; case 0x21: return 'f';
         case 0x23: return 'h'; case 0x17: return 'i'; case 0x26: return 'l';
@@ -59,7 +60,8 @@ char scancode_to_ascii_normal(uint8_t scancode)
 
 char scancode_to_ascii_shift(uint8_t scancode) 
 {
-    switch (scancode) {
+    switch (scancode) 
+    {
         case 0x1E: return 'A'; case 0x30: return 'B'; case 0x2E: return 'C';
         case 0x20: return 'D'; case 0x12: return 'E'; case 0x21: return 'F';
         case 0x23: return 'H'; case 0x17: return 'I'; case 0x26: return 'L';
@@ -260,7 +262,7 @@ void handle_keyboard()
             if (!menu_start_open) 
             {
                 open_start_menu();
-            } 
+            }
             else 
             {
                 close_start_menu();
@@ -274,7 +276,7 @@ void handle_keyboard()
             if (!menu_start_open) 
             {
                 open_start_menu();
-            } 
+            }
             else 
             {
                 close_start_menu();
@@ -294,7 +296,7 @@ void handle_keyboard()
                     {
                         replace_current_command(cmd);
                     }
-                } 
+                }
                 else if (scancode == 0x50) 
                 { // SHIFT + DOWN
                     const char* cmd = history_navigate_down();
@@ -303,7 +305,7 @@ void handle_keyboard()
                         replace_current_command(cmd);
                     }
                 }
-            } 
+            }
             else 
             {
                 // Mouse moving
@@ -408,6 +410,7 @@ void handle_keyboard()
                 send_key_to_window(c);
             }
         }
+        
         if(shell_input_enabled && !is_mouse_over_any_window(mouse_x, mouse_y))
         {
             if(cmd_idx < 63)

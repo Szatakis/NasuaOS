@@ -451,7 +451,9 @@ void print_ascii_art(const char* text)
 
             // lover case letters -> upper case letters
             if(c >= 'a' && c <= 'z')
+            {
                 c -= 32;
+            }
 
             int index = -1;
 
@@ -488,9 +490,13 @@ void print_ascii_art(const char* text)
             }
 
             if(index >= 0)
+            {
                 print(font[index][row]);
+            }
             else
+            {
                 print("     ");
+            }
 
             print(" ");
         }

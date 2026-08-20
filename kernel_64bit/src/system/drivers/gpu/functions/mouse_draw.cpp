@@ -20,8 +20,15 @@ void handle_mouse()
             int px = mouse_x + x;
             int py = mouse_y + y;
 
-            if (px < 0 || py < 0) continue;
-            if ((size_t)px >= fb->width || (size_t)py >= fb->height) continue;
+            if (px < 0 || py < 0) 
+            {
+                continue;
+            }
+
+            if ((size_t)px >= fb->width || (size_t)py >= fb->height) 
+            {
+                continue;
+            }
 
             char p = arrow_cursor[y][x];
             uint32_t color = 0;
@@ -29,11 +36,11 @@ void handle_mouse()
             if (p == 'W') 
             {
                 color = COLOR_MOUSE;
-            } 
+            }
             else if (p == 'B') 
             {
                 color = 0x00000000;
-            } 
+            }
             else 
             {
                 continue;

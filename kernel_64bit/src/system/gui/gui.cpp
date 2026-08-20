@@ -60,7 +60,7 @@ void update_gui_state(int mouse_x, int mouse_y)
     if (is_mouse_over_start(mouse_x, mouse_y)) 
     {
         start_hover = true;
-    } 
+    }
     else 
     {
         start_hover = false;

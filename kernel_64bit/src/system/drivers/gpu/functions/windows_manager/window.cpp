@@ -32,7 +32,11 @@ static int find_window_index(window_struct* window)
 
 void register_window(window_struct* window) 
 {
-    if (!window || window_count >= MAX_WINDOWS) return;
+    if (!window || window_count >= MAX_WINDOWS) 
+    {
+        return;
+    }
+
     for (int i = 0; i < window_count; i++) 
     {
         if (window_list[i] == window) 
@@ -92,7 +96,10 @@ void unregister_window(window_struct* window)
 
 void minimize_window(window_struct* window)
 {
-    if (!window || find_window_index(window) < 0) return;
+    if (!window || find_window_index(window) < 0) 
+    {
+        return;
+    }
 
     window->visible = false;
     window->minimized = true;
@@ -285,14 +292,33 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
                 int min_my = win->drag_offset_y;
                 int max_my = (int)fb->height - (int)bar_h_scaled - win->height + win->drag_offset_y;
 
-                if (max_mx < min_mx) max_mx = min_mx;
-                if (max_my < min_my) max_my = min_my;
+                if (max_mx < min_mx) 
+                {
+                    max_mx = min_mx;
+                }
 
-                if (eff_mouse_x < min_mx) eff_mouse_x = min_mx;
-                else if (eff_mouse_x > max_mx) eff_mouse_x = max_mx;
+                if (max_my < min_my)
+                {
+                    max_my = min_my;
+                }
 
-                if (eff_mouse_y < min_my) eff_mouse_y = min_my;
-                else if (eff_mouse_y > max_my) eff_mouse_y = max_my;
+                if (eff_mouse_x < min_mx) 
+                {
+                    eff_mouse_x = min_mx;
+                }
+                else if (eff_mouse_x > max_mx) 
+                {
+                    eff_mouse_x = max_mx;
+                }
+
+                if (eff_mouse_y < min_my) 
+                {
+                    eff_mouse_y = min_my;
+                }
+                else if (eff_mouse_y > max_my) 
+                {
+                    eff_mouse_y = max_my;
+                }
 
                 // Keep the real cursor locked to the constrained drag position
                 // so the cursor never drifts past the window's valid range.
@@ -321,7 +347,7 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
                 if (win->resize_right && !win->resize_bottom) 
                 {
                     eff_mouse_y = win->resize_start_mouse_y;
-                } 
+                }
                 else if (win->resize_bottom && !win->resize_right) 
                 {
                     eff_mouse_x = win->resize_start_mouse_x;
@@ -532,9 +558,7 @@ void handle_window_mouse_click(int mouse_x, int mouse_y)
 
         if (is_mouse_over_window(win, mouse_x, mouse_y)) 
         {
-
             bring_window_to_front(i);
-
 
             if(win->mouse_click)
             {
@@ -559,7 +583,10 @@ void draw_windows()
 
 static void draw_app_icon_16(const char* name, int x, int y)
 {
-    if (!name || !fb) return;
+    if (!name || !fb) 
+    {
+        return;
+    }
 
     const uint32_t* icon_data = nullptr;
     if (strcmp(name, "Terminal") == 0)
@@ -585,7 +612,12 @@ static void draw_app_icon_16(const char* name, int x, int y)
     }
 
     uint32_t* bb_ptr = get_backbuffer();
-    if (!bb_ptr) return;
+
+    if (!bb_ptr) 
+    {
+        return;
+    }
+
     size_t pitch = get_backbuffer_pitch();
 
     for (size_t iy = 0; iy < 16; iy++)
@@ -596,12 +628,16 @@ static void draw_app_icon_16(const char* name, int x, int y)
             size_t py = y + iy;
 
             if (px >= fb->width || py >= fb->height)
+            {
                 continue;
+            }
 
             uint32_t color = icon_data[(iy * 2) * 32 + (ix * 2)];
 
             if (color == 0x000000)
+            {
                 continue;
+            }
 
             bb_ptr[py * pitch + px] = color;
         }
@@ -772,7 +808,7 @@ void draw_window(window_struct* window)
     if (window->pos_x >= 0 && window->pos_y >= 0) 
     {
         fill_block(window->pos_x, window->pos_y, COLOR_WINDOW, window->width, window->height);
-    } 
+    }
     else 
     {
         int draw_x = window->pos_x < 0 ? 0 : window->pos_x;

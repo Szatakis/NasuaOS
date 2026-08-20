@@ -33,24 +33,26 @@ size_t get_backbuffer_pitch()
 // Copy backbuffer to physical framebuffer (VRAM)
 void render_frame() 
 {
-    if (!fb || !fb->address) return;
+    if (!fb || !fb->address) 
+    {
+        return;
+    }
 
     uint32_t* fb_ptr = (uint32_t*)fb->address;
     size_t fb_pitch = fb->pitch / 4;
 
     for (size_t y = 0; y < backbuffer_height; y++) 
     {
-        __builtin_memcpy(
-            &fb_ptr[y * fb_pitch], 
-            &backbuffer[y * backbuffer_pitch], 
-            backbuffer_width * sizeof(uint32_t)
-        );
+        __builtin_memcpy(&fb_ptr[y * fb_pitch], &backbuffer[y * backbuffer_pitch], backbuffer_width * sizeof(uint32_t));
     }
 }
 
 void clear_screen() 
 {
-    if (!fb) return;
+    if (!fb) 
+    {
+        return;
+    }
 
     uint32_t* bb_ptr = backbuffer;
     uint32_t bg_color = COLOR_NASUA_BG;

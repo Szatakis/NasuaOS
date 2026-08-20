@@ -161,29 +161,10 @@ static void draw_debug_box(size_t scr_w, size_t scr_h)
     size_t text_block_y = header_y + CH_H + 4;
     size_t text_block_h = CH_H * 3;
 
-    fill_block(
-        dbg_px + HORIZ_PAD,
-        text_block_y,
-        COL_BORDER,
-        DBG_BOX_COLS * CH_W,
-        text_block_h
-    );
+    fill_block(dbg_px + HORIZ_PAD, text_block_y, COL_BORDER, DBG_BOX_COLS * CH_W, text_block_h);
 
-    draw_string_clipped(
-        dbg_px + HORIZ_PAD + CH_W,
-        text_block_y + 2,
-        "Scan this code for",
-        COL_TEXT_DIM,
-        DBG_BOX_COLS - 2
-    );
-
-    draw_string_clipped(
-        dbg_px + HORIZ_PAD + CH_W,
-        text_block_y + 2 + CH_H,
-        "kernel debug information.",
-        COL_TEXT_DIM,
-        DBG_BOX_COLS - 2
-    );
+    draw_string_clipped(dbg_px + HORIZ_PAD + CH_W, text_block_y + 2, "Scan this code for", COL_TEXT_DIM, DBG_BOX_COLS - 2);
+    draw_string_clipped(dbg_px + HORIZ_PAD + CH_W, text_block_y + 2 + CH_H, "kernel debug information.", COL_TEXT_DIM, DBG_BOX_COLS - 2);
 
     size_t bmp_x = dbg_px + (DBG_BOX_PX_W - 128) / 2;
     size_t bmp_y = dbg_py + (DBG_BOX_PX_H - 128) / 2 + 20;

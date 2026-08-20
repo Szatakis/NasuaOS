@@ -20,29 +20,19 @@ void reboot()
     uint8_t status;
 
 
-    // czekaj aż kontroler będzie gotowy
+    // Wait for controller to be ready
     do
     {
-        asm volatile(
-            "inb $0x64, %0"
-            : "=a"(status)
-        );
-
+        asm volatile("inb $0x64, %0" : "=a"(status));
     } while(status & 0x02);
 
 
 
-    // reset CPU
-    asm volatile(
-        "movb $0xFE, %%al\n"
-        "outb %%al, $0x64"
-        :
-        :
-        : "ax"
-    );
+    // CPU reset
+    asm volatile("movb $0xFE, %%al\n" "outb %%al, $0x64" : : : "ax");
 
 
-    // awaryjnie zatrzymaj CPU
+    // Fallback
     while(true)
     {
         asm volatile("hlt");
@@ -54,22 +44,13 @@ void check_modules(uint32_t mbi_addr)
     multiboot_tag* tag;
 
 
-    for(
-        tag = (multiboot_tag*)(mbi_addr + 8);
-        tag->type != 0;
-        tag = (multiboot_tag*)((uint8_t*)tag + ((tag->size + 7) & ~7))
-    )
+    for(tag = (multiboot_tag*)(mbi_addr + 8); tag->type != 0; tag = (multiboot_tag*)((uint8_t*)tag + ((tag->size + 7) & ~7)))
     {
 
         if(tag->type == 3)
         {
-            multiboot_tag_module* module =
-                (multiboot_tag_module*)tag;
-
-
-            const char* data =
-                (const char*)(uintptr_t)module->mod_start;
-
+            multiboot_tag_module* module = (multiboot_tag_module*)tag;
+            const char* data = (const char*)(uintptr_t)module->mod_start;
 
 
             if(contains(data,"SAFE_MODE"))
