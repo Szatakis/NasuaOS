@@ -51,19 +51,7 @@ Install the required packages:
 ```bash
 sudo apt update
 
-sudo apt install \
-    git \
-    curl \
-    gcc \
-    g++ \
-    cmake \
-    xorriso \
-    clang \
-    lld \
-    nasm \
-    mtools \
-    python3 \
-    qemu-system-x86
+sudo apt install git curl gcc g++ cmake xorriso clang lld nasm mtools python3 qemu-system-x86
 ```
 
 Clone the repository:
