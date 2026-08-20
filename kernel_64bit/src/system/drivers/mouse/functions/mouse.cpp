@@ -540,7 +540,7 @@ void handle_left_click(bool cmd_enter)
         // SHUTDOWN
         if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x, menu_y + menu_h - 80, 32, 32))
         {
-            acpi_shutdown();
+            Acpi::shutdown();
 
             return;
         }
@@ -549,7 +549,7 @@ void handle_left_click(bool cmd_enter)
         // REBOOT
         if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x, menu_y + menu_h - 40, 32, 32))
         {
-            acpi_reboot();
+            Acpi::reboot();
 
             return;
         }

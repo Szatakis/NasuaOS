@@ -4,10 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
-bool acpi_init(); // Inits ACPI
-void acpi_shutdown(); //Shutdowns PC
-void acpi_reboot(); // Reboots PC
-
+class Acpi
+{
+public:
+    static bool init();       // Inits ACPI
+    static void shutdown();   // Shutdowns PC
+    static void reboot();     // Reboots PC
+};
 
 #endif

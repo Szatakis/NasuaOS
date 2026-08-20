@@ -589,13 +589,13 @@ void execute_command(const char *cmd)
     // 6. Command: reboot
     else if (cmd_name_len == 6 && memcmp(cmd, "reboot", 6) == 0)
     {
-        acpi_reboot();
+        Acpi::reboot();
     }
 
     // 7. Command: shutdown
     else if (cmd_name_len == 8 && memcmp(cmd, "shutdown", 8) == 0)
     {
-        acpi_shutdown();
+        Acpi::shutdown();
     }
 
     // 8. Command: format

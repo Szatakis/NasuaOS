@@ -4,18 +4,13 @@
 #include <limine.h>
 
 #include "system/drivers/gpu/driver.hpp"
-
 #include "applications/shell/commands.hpp"
-
 #include "libs/asm/asm.hpp"
-
 
 extern "C" volatile struct limine_rsdp_request rsdp_request;
 extern "C" volatile struct limine_hhdm_request hhdm_request;
 
-
 // GLOBAL ACPI VARIABLES
-
 static uint32_t SMI_CMD = 0;
 static uint8_t ACPI_ENABLE = 0;
 
@@ -31,18 +26,14 @@ static uint16_t SCI_EN = (1 << 0);
 
 
 // ACPI STRUCTURES
-
 struct __attribute__((packed)) ACPISDTHeader
 {
     char Signature[4];
-
     uint32_t Length;
     uint8_t Revision;
     uint8_t Checksum;
-
     char OEMID[6];
     char OEMTableID[8];
-
     uint32_t OEMRevision;
     uint32_t CreatorID;
     uint32_t CreatorRevision;
@@ -52,22 +43,15 @@ struct __attribute__((packed)) ACPISDTHeader
 struct __attribute__((packed)) RSDP
 {
     char signature[8];
-
     uint8_t checksum;
-
     char oemid[6];
-
     uint8_t revision;
-
     uint32_t rsdt_address;
 
     // ACPI 2.0+
-
     uint32_t length;
     uint64_t xsdt_address;
-
     uint8_t extended_checksum;
-
     uint8_t reserved[3];
 };
 
@@ -78,7 +62,6 @@ struct __attribute__((packed)) GAS
     uint8_t BitWidth;
     uint8_t BitOffset;
     uint8_t AccessSize;
-
     uint64_t Address;
 };
 
@@ -88,56 +71,37 @@ struct __attribute__((packed)) FADT
 {
     ACPISDTHeader header;
 
-
     uint32_t FirmwareCtrl;
     uint32_t Dsdt;
 
-
     uint8_t reserved;
     uint8_t PreferredPMProfile;
-
     uint16_t SCI_Interrupt;
 
-
     uint32_t SMI_CommandPort;
-
     uint8_t AcpiEnable;
     uint8_t AcpiDisable;
-
     uint8_t S4BIOS_REQ;
     uint8_t PSTATE_Control;
 
-
     uint32_t PM1aEventBlock;
     uint32_t PM1bEventBlock;
-
-
     uint32_t PM1aControlBlock;
     uint32_t PM1bControlBlock;
-
-
     uint32_t PM2ControlBlock;
     uint32_t PMTimerBlock;
-
-
     uint32_t GPE0Block;
     uint32_t GPE1Block;
 
-
     uint8_t PM1EventLength;
     uint8_t PM1ControlLength;
-
-
     uint8_t reserved2[10];
-
 
     uint64_t X_FirmwareCtrl;
     uint64_t X_Dsdt;
 
-
     GAS X_PM1aControlBlock;
     GAS X_PM1bControlBlock;
-
 
     uint8_t rest[64];
 };
@@ -151,12 +115,10 @@ static void* phys_to_virt(uint64_t addr)
         return nullptr;
     }
 
-
     if (!hhdm_request.response)
     {
         return (void*)addr;
     }
-
 
     return (void*)(addr + hhdm_request.response->offset);
 }
@@ -190,21 +152,17 @@ static uint16_t parse_aml_element(uint8_t** ptr)
             return 0;
         }
 
-
         // OneOp
         case 0x01:
         {
             return 1;
         }
 
-
         // BytePrefix
         case 0x0A:
         {
             uint8_t value = **ptr;
-
             (*ptr)++;
-
             return value;
         }
 
@@ -212,12 +170,9 @@ static uint16_t parse_aml_element(uint8_t** ptr)
         case 0x0B:
         {
             uint16_t value = (*ptr)[0] | ((*ptr)[1] << 8);
-
-            (*ptr)+=2;
-
+            (*ptr) += 2;
             return value;
         }
-
 
         // OnesOp
         case 0xFF:
@@ -242,49 +197,39 @@ static bool parse_s5_from_aml(uint8_t* aml, uint32_t length)
         {
             uint8_t* ptr = &aml[i+4];
 
-
             // Must be NameOp
             if(*ptr != 0x12)
             {
                 continue;
             }
 
-
             ptr++;
-
 
             // PkgLength
             uint8_t lead = *ptr++;
             uint8_t extra = (lead >> 6);
 
-
             ptr += extra;
-
 
             // NumElements
             ptr++;
 
-
             SLP_TYPa = parse_aml_element(&ptr);
             SLP_TYPb = parse_aml_element(&ptr);
-
 
             return true;
         }
     }
-
 
     return false;
 }
 
 
 // TABLE SEARCH
-
 static void* find_table(ACPISDTHeader* root, const char* name)
 {
     bool xsdt = acpi_sig(root->Signature, "XSDT");
     bool rsdt = acpi_sig(root->Signature, "RSDT");
-
 
     if(!xsdt && !rsdt)
     {
@@ -292,7 +237,6 @@ static void* find_table(ACPISDTHeader* root, const char* name)
     }
 
     uint32_t entries;
-
 
     if(xsdt)
     {
@@ -303,10 +247,7 @@ static void* find_table(ACPISDTHeader* root, const char* name)
         entries = (root->Length - sizeof(ACPISDTHeader)) / 4;
     }
 
-
-
     uint8_t* ptr = (uint8_t*)root + sizeof(ACPISDTHeader);
-
 
     for(uint32_t i = 0; i < entries; i++)
     {
@@ -339,14 +280,12 @@ static void* find_table(ACPISDTHeader* root, const char* name)
         }
     }
 
-
     return nullptr;
 }
 
 
 // ACPI INIT
-
-bool acpi_init()
+bool Acpi::init()
 {
     if(!rsdp_request.response)
     {
@@ -354,33 +293,25 @@ bool acpi_init()
         return false;
     }
 
-
     RSDP* rsdp = (RSDP*)rsdp_request.response->address;
-
 
     if(!rsdp)
     {
         return false;
     }
 
-
     ACPISDTHeader* root = nullptr;
-
-
     bool xsdt = false;
-
 
     if(rsdp->revision >= 2 && rsdp->xsdt_address)
     {
         root = (ACPISDTHeader*)phys_to_virt(rsdp->xsdt_address);
-
         xsdt = true;
     }
     else
     {
-        root =(ACPISDTHeader*)phys_to_virt(rsdp->rsdt_address);
+        root = (ACPISDTHeader*)phys_to_virt(rsdp->rsdt_address);
     }
-
 
     if(!root)
     {
@@ -399,9 +330,8 @@ bool acpi_init()
         print("Using RSDT\n");
     }
 
-
     // FIND FACP
-    FADT* facp = (FADT*)find_table(root,"FACP");
+    FADT* facp = (FADT*)find_table(root, "FACP");
 
     if(!facp)
     {
@@ -421,7 +351,6 @@ bool acpi_init()
         PM1a_CNT = facp->PM1aControlBlock;
     }
 
-
     if(facp->header.Length >= 160 && facp->X_PM1bControlBlock.Address != 0 && facp->X_PM1bControlBlock.AddressSpace == 0)
     {
         PM1b_CNT = (uint32_t)facp->X_PM1bControlBlock.Address;
@@ -431,16 +360,13 @@ bool acpi_init()
         PM1b_CNT = facp->PM1bControlBlock;
     }
 
-
     PM1a_EVT = facp->PM1aEventBlock;
     SMI_CMD = facp->SMI_CommandPort;
     ACPI_ENABLE = facp->AcpiEnable;
 
-
     print("ACPI: PM1a=");
     print_num8(PM1a_CNT);
     print("\n");
-
 
     // DSDT
     uint64_t dsdt_addr;
@@ -456,8 +382,6 @@ bool acpi_init()
 
     ACPISDTHeader* dsdt = (ACPISDTHeader*)phys_to_virt(dsdt_addr);
 
-
-
     if(dsdt)
     {
         uint32_t len = dsdt->Length - sizeof(ACPISDTHeader);
@@ -469,10 +393,8 @@ bool acpi_init()
         }
     }
 
-
     // SSDT SEARCH
     uint32_t entries;
-
 
     if(xsdt)
     {
@@ -483,9 +405,7 @@ bool acpi_init()
         entries = (root->Length - sizeof(ACPISDTHeader)) / 4;
     }
 
-
     uint8_t* ptr = (uint8_t*)root + sizeof(ACPISDTHeader);
-
 
     for(uint32_t i = 0; i < entries; i++)
     {
@@ -500,7 +420,6 @@ bool acpi_init()
             addr = ((uint32_t*)ptr)[i];
         }
 
-
         ACPISDTHeader* table = (ACPISDTHeader*)phys_to_virt(addr);
 
         if(!table)
@@ -508,7 +427,7 @@ bool acpi_init()
             continue;
         }
 
-        if(acpi_sig(table->Signature,"SSDT"))
+        if(acpi_sig(table->Signature, "SSDT"))
         {
             uint32_t len = table->Length - sizeof(ACPISDTHeader);
 
@@ -520,7 +439,6 @@ bool acpi_init()
         }
     }
 
-
     print_error("ACPI: _S5 not found\n");
 
     return false;
@@ -528,7 +446,6 @@ bool acpi_init()
 
 
 // ACPI ENABLE
-
 static bool acpi_enable()
 {
     if(PM1a_CNT == 0)
@@ -537,13 +454,11 @@ static bool acpi_enable()
         return false;
     }
 
-    // ACPI is alredy active
-
+    // ACPI is already active
     if((inw((uint16_t)PM1a_CNT) & SCI_EN) != 0)
     {
         return true;
     }
-
 
     if(SMI_CMD == 0 || ACPI_ENABLE == 0)
     {
@@ -553,12 +468,9 @@ static bool acpi_enable()
 
     print("ACPI: Enabling ACPI mode\n");
 
-
     outb((uint16_t)SMI_CMD, ACPI_ENABLE);
 
-
     // Wait for BIOS to handle ACPI
-
     for(int i = 0; i < 300; i++)
     {
         if((inw((uint16_t)PM1a_CNT) & SCI_EN) != 0)
@@ -580,13 +492,11 @@ static bool acpi_enable()
 
 
 // SHUTDOWN
-
-void acpi_shutdown()
+void Acpi::shutdown()
 {
     print_warn("NasuaOS: Shutting down\n");
 
-
-    if(!acpi_init())
+    if(!Acpi::init())
     {
         print_error("ACPI: initialization failed\n");
 
@@ -598,7 +508,6 @@ void acpi_shutdown()
         }
     }
 
-
     if(!acpi_enable())
     {
         print_error("ACPI: cannot enable\n");
@@ -608,7 +517,6 @@ void acpi_shutdown()
     asm volatile("cli");
 
     // clean events
-
     if(PM1a_EVT)
     {
         outw((uint16_t)PM1a_EVT, 0xFFFF);
@@ -616,10 +524,8 @@ void acpi_shutdown()
 
     print("ACPI: Sending sleep command\n");
 
-
     uint16_t slp_a = (SLP_TYPa << 10) | SLP_EN;
     uint16_t slp_b = (SLP_TYPb << 10) | SLP_EN;
-
 
     outw((uint16_t)PM1a_CNT, slp_a);
 
@@ -627,7 +533,6 @@ void acpi_shutdown()
     {
         outw((uint16_t)PM1b_CNT, slp_b);
     }
-
 
     while(true)
     {
@@ -637,19 +542,16 @@ void acpi_shutdown()
 
 
 // REBOOT
-
-void acpi_reboot()
+void Acpi::reboot()
 {
     print_warn("NasuaOS: Restarting\n");
 
     asm volatile("cli");
 
-
     while(inb(0x64) & 0x02)
     {
         io_wait();
     }
-
 
     outb(0x64, 0xFE);
 
