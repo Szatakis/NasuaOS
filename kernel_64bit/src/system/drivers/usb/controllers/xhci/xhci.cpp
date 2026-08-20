@@ -1,7 +1,12 @@
 #include "xhci.hpp"
 #include "../../driver.hpp"
 
-void xhci_init()
+namespace Xhci
+{
+
+void init()
 {
     Uart::puts("[XHCI] Initializing XHCI\n");
+}
+
 }

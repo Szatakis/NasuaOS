@@ -110,7 +110,7 @@ static void napp_api_print_hex(uint32_t value)
 
 static void napp_api_sleep_ms(uint32_t milliseconds)
 {
-    sleep(milliseconds);
+    Timer::sleep(milliseconds);
 }
 
 static void napp_api_serial_log(const char* text)

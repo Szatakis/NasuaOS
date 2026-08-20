@@ -1,7 +1,12 @@
 #include "ohci.hpp"
 #include "../../driver.hpp"
 
-void ohci_init()
+namespace Ohci
+{
+
+void init()
 {
     Uart::puts("[OHCI] Initializing OHCI\n");
+}
+
 }

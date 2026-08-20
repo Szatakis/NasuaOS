@@ -16,32 +16,36 @@
 
 #define RTC_REGISTER_A    0x0A
 #define RTC_REGISTER_B    0x0B
-#define RTC_REGISTER_D   0x0D
+#define RTC_REGISTER_D    0x0D
 
-static uint8_t bcd_to_binary(uint8_t bcd) 
+namespace Rtc
+{
+
+static uint8_t bcd_to_binary(uint8_t bcd)
 {
     return (bcd & 0x0F) + ((bcd >> 4) * 10);
 }
 
-static uint8_t binary_to_bcd(uint8_t binary) 
+static uint8_t binary_to_bcd(uint8_t binary)
 {
     return ((binary / 10) << 4) + (binary % 10);
 }
 
-static bool rtc_update_in_progress() 
+static bool rtc_update_in_progress()
 {
     outb(RTC_CMOS_ADDRESS, RTC_REGISTER_A);
     return (inb(RTC_CMOS_DATA) & 0x80) != 0;
 }
 
-static uint8_t read_rtc_register(int reg) 
+static uint8_t read_rtc_register(int reg)
 {
     while (rtc_update_in_progress());
+
     outb(RTC_CMOS_ADDRESS, reg);
     return inb(RTC_CMOS_DATA);
 }
 
-RtcTime get_rtc_time() 
+RtcTime get_time()
 {
     RtcTime time;
     uint8_t regB;
@@ -56,7 +60,7 @@ RtcTime get_rtc_time()
     outb(RTC_CMOS_ADDRESS, RTC_REGISTER_B);
     regB = inb(RTC_CMOS_DATA);
 
-    if (!(regB & 0x04)) 
+    if (!(regB & 0x04))
     {
         time.second = bcd_to_binary(time.second);
         time.minute = bcd_to_binary(time.minute);
@@ -66,17 +70,17 @@ RtcTime get_rtc_time()
         time.year   = bcd_to_binary(time.year);
     }
 
-    // Support for 12 hour format (if bit 1 in B register is active)
-    if (!(regB & 0x02) && (time.hour & 0x80)) 
+    if (!(regB & 0x02) && (time.hour & 0x80))
     {
         time.hour = ((time.hour & 0x7F) + 12) % 24;
     }
 
-    time.year += 2000; 
+    time.year += 2000;
+
     return time;
 }
 
-void set_rtc_time(RtcTime time) 
+void set_time(RtcTime time)
 {
     uint8_t regB;
 
@@ -86,7 +90,7 @@ void set_rtc_time(RtcTime time)
     outb(RTC_CMOS_ADDRESS, RTC_REGISTER_B);
     outb(RTC_CMOS_DATA, regB | 0x80);
 
-    if (!(regB & 0x04)) 
+    if (!(regB & 0x04))
     {
         time.second = binary_to_bcd(time.second);
         time.minute = binary_to_bcd(time.minute);
@@ -96,26 +100,35 @@ void set_rtc_time(RtcTime time)
         time.year   = binary_to_bcd(time.year % 100);
     }
 
-    outb(RTC_CMOS_ADDRESS, RTC_SEC);  outb(RTC_CMOS_DATA, time.second);
-    outb(RTC_CMOS_ADDRESS, RTC_MIN);  outb(RTC_CMOS_DATA, time.minute);
-    outb(RTC_CMOS_ADDRESS, RTC_HOUR); outb(RTC_CMOS_DATA, time.hour);
-    outb(RTC_CMOS_ADDRESS, RTC_DAY);  outb(RTC_CMOS_DATA, time.day);
-    outb(RTC_CMOS_ADDRESS, RTC_MONTH);outb(RTC_CMOS_DATA, time.month);
-    outb(RTC_CMOS_ADDRESS, RTC_YEAR); outb(RTC_CMOS_DATA, time.year);
+    outb(RTC_CMOS_ADDRESS, RTC_SEC);
+    outb(RTC_CMOS_DATA, time.second);
+
+    outb(RTC_CMOS_ADDRESS, RTC_MIN);
+    outb(RTC_CMOS_DATA, time.minute);
+
+    outb(RTC_CMOS_ADDRESS, RTC_HOUR);
+    outb(RTC_CMOS_DATA, time.hour);
+
+    outb(RTC_CMOS_ADDRESS, RTC_DAY);
+    outb(RTC_CMOS_DATA, time.day);
+
+    outb(RTC_CMOS_ADDRESS, RTC_MONTH);
+    outb(RTC_CMOS_DATA, time.month);
+
+    outb(RTC_CMOS_ADDRESS, RTC_YEAR);
+    outb(RTC_CMOS_DATA, time.year);
 
     outb(RTC_CMOS_ADDRESS, RTC_REGISTER_B);
     outb(RTC_CMOS_DATA, regB & ~0x80);
 }
 
-bool is_rtc_battery_ok(void) 
+bool is_battery_ok()
 {
-    // Chose register D
     outb(RTC_CMOS_ADDRESS, RTC_REGISTER_D);
-    
-    // Read status
+
     uint8_t regD = inb(RTC_CMOS_DATA);
-    
-    // Bit 7 (0x80) is VRT (Valid RAM and Time). 
-    // If bit true battery good
+
     return (regD & 0x80) != 0;
+}
+
 }

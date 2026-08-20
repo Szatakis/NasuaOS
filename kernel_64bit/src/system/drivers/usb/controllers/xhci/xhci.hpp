@@ -1,6 +1,9 @@
 #ifndef XHCI_H
 #define XHCI_H
 
-void xhci_init();
+namespace Xhci
+{
+    void init();
+}
 
 #endif // XHCI_H

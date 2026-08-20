@@ -6,6 +6,9 @@
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/drivers/uart/driver.hpp"
 
+namespace Pci
+{
+
 bool found_uhci = false;
 bool found_ohci = false;
 bool found_ehci = false;
@@ -96,7 +99,7 @@ static const char* pci_class_name(uint8_t class_code, uint8_t subclass)
     return "Unknown";
 }
 
-uint32_t pci_config_read32(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset)
+uint32_t config_read32(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset)
 {
     uint32_t address = (1u << 31) | ((uint32_t)bus << 16) | ((uint32_t)slot << 11) | ((uint32_t)function << 8) | (offset & 0xFC);
 
@@ -105,9 +108,9 @@ uint32_t pci_config_read32(uint8_t bus, uint8_t slot, uint8_t function, uint8_t 
     return inl(0xCFC);
 }
 
-uint16_t pci_config_read16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset)
+uint16_t config_read16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset)
 {
-    uint32_t value = pci_config_read32(bus, slot, function, offset);
+    uint32_t value = config_read32(bus, slot, function, offset);
 
     if (offset & 2)
     {
@@ -117,9 +120,9 @@ uint16_t pci_config_read16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t 
     return (uint16_t)(value & 0xFFFF);
 }
 
-uint8_t pci_config_read8(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset)
+uint8_t config_read8(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset)
 {
-    uint32_t value = pci_config_read32(bus, slot, function, offset);
+    uint32_t value = config_read32(bus, slot, function, offset);
     uint8_t shift = (uint8_t)((offset & 3) * 8);
 
     return (uint8_t)((value >> shift) & 0xFF);
@@ -157,7 +160,7 @@ static void print_pci_device(uint8_t bus, uint8_t slot, uint8_t function, uint16
     Uart::puts("]\n");
 }
 
-void pci_scan()
+void scan()
 {
     Uart::puts("[PCI] Scanning PCI bus\n");
 
@@ -167,7 +170,7 @@ void pci_scan()
     {
         for (uint8_t slot = 0; slot < 32; slot++)
         {
-            uint16_t vendor = pci_config_read16((uint8_t)bus, slot, 0, 0x00);
+            uint16_t vendor = config_read16((uint8_t)bus, slot, 0, 0x00);
 
             if (vendor == 0xFFFF)
             {
@@ -175,12 +178,12 @@ void pci_scan()
             }
 
 
-            uint8_t header_type = pci_config_read8((uint8_t)bus, slot, 0, 0x0E);
+            uint8_t header_type = config_read8((uint8_t)bus, slot, 0, 0x0E);
             uint8_t function_count = (header_type & 0x80) ? 8 : 1;
 
             for (uint8_t function = 0; function < function_count; function++)
             {
-                vendor = pci_config_read16((uint8_t)bus, slot, function, 0x00);
+                vendor = config_read16((uint8_t)bus, slot, function, 0x00);
 
                 if (vendor == 0xFFFF)
                 {
@@ -191,10 +194,10 @@ void pci_scan()
                 found_device = true;
 
 
-                uint16_t device = pci_config_read16((uint8_t)bus, slot, function,0x02);
-                uint8_t class_code = pci_config_read8((uint8_t)bus, slot, function, 0x0B);
-                uint8_t subclass = pci_config_read8((uint8_t)bus, slot, function, 0x0A);
-                uint8_t prog_if = pci_config_read8((uint8_t)bus, slot, function, 0x09);
+                uint16_t device = config_read16((uint8_t)bus, slot, function,0x02);
+                uint8_t class_code = config_read8((uint8_t)bus, slot, function, 0x0B);
+                uint8_t subclass = config_read8((uint8_t)bus, slot, function, 0x0A);
+                uint8_t prog_if = config_read8((uint8_t)bus, slot, function, 0x09);
 
 
                 print_pci_device((uint8_t)bus, slot, function, vendor, device, class_code, subclass, prog_if);
@@ -327,11 +330,13 @@ void pci_scan()
     }
 }
 
-void pci_init()
+void init()
 {
     Uart::puts("[PCI] Initializing PCI\n");
 
-    pci_scan();
+    scan();
 
     Uart::puts("[PCI] PCI initialization complete\n");
+}
+
 }

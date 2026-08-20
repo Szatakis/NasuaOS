@@ -1,7 +1,12 @@
 #include "ehci.hpp"
 #include "../../driver.hpp"
 
-void ehci_init()
+namespace Ehci
+{
+
+void init()
 {
     Uart::puts("[EHCI] Initializing EHCI\n");
+}
+
 }

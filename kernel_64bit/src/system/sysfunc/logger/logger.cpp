@@ -39,7 +39,7 @@ LogLevel parse_log_level(const char* level)
 struct LogEntry
 {
     LogLevel level;
-    RtcTime time;
+    Rtc::RtcTime time;
     char subsystem[16];
     char message[128];
 };
@@ -61,7 +61,7 @@ void log(LogLevel level, const char* subsystem, const char* message)
 {
     uint32_t id = log_index % LOG_BUFFER_SIZE;
 
-    logs[id].time = get_rtc_time();
+    logs[id].time = Rtc::get_time();
     logs[id].level = level;
 
     int i = 0;
@@ -90,7 +90,7 @@ void log(LogLevel level, const char* subsystem, const char* message)
     }
 }
 
-static void print_time(RtcTime time) 
+static void print_time(Rtc::RtcTime time) 
 {
     print("[");
 

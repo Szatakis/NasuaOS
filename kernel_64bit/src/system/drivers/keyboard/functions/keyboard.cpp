@@ -225,7 +225,7 @@ void handle_keyboard()
     {
         uint8_t mouse_data = inb(0x60);
 
-        mouse_handle_byte(mouse_data);
+        Mouse::handle_byte(mouse_data);
 
         return;
     }
@@ -311,21 +311,21 @@ void handle_keyboard()
                 // Mouse moving
                 int speed = 5;
 
-                if (scancode == 0x48 && mouse_y >= speed)
+                if (scancode == 0x48 && Mouse::y >= speed)
                 {
-                    mouse_y -= speed;
+                    Mouse::y -= speed;
                 }
-                else if (scancode == 0x50 && mouse_y + 5 < (int)fb->height)
+                else if (scancode == 0x50 && Mouse::y + 5 < (int)fb->height)
                 {
-                    mouse_y += speed;
+                    Mouse::y += speed;
                 }
-                else if (scancode == 0x4B && mouse_x >= speed)
+                else if (scancode == 0x4B && Mouse::x >= speed)
                 {
-                    mouse_x -= speed;
+                    Mouse::x -= speed;
                 }
-                else if (scancode == 0x4D && mouse_x + 4 < (int)fb->width)
+                else if (scancode == 0x4D && Mouse::x + 4 < (int)fb->width)
                 {
-                    mouse_x += speed;
+                    Mouse::x += speed;
                 }
             }
             return;
@@ -367,12 +367,12 @@ void handle_keyboard()
     {
         if(active_window)
         {
-            if(is_mouse_over_any_window(mouse_x, mouse_y)) 
+            if(is_mouse_over_any_window(Mouse::x, Mouse::y)) 
             {
                 send_key_to_window('\b');
             }
         }
-        if(shell_input_enabled && !is_mouse_over_any_window(mouse_x, mouse_y)) 
+        if(shell_input_enabled && !is_mouse_over_any_window(Mouse::x, Mouse::y)) 
         {
             if (cmd_idx > 0) 
             {
@@ -387,11 +387,11 @@ void handle_keyboard()
     // ENTER
     if (scancode == 0x1C) 
     {
-        handle_left_click(true);
+        Mouse::left_click(true);
 
         if(active_window)
         {
-            if(is_mouse_over_any_window(mouse_x, mouse_y)) 
+            if(is_mouse_over_any_window(Mouse::x, Mouse::y)) 
             {
                 send_key_to_window('\n');
             }
@@ -405,13 +405,13 @@ void handle_keyboard()
     {
         if(active_window)
         {
-            if(is_mouse_over_any_window(mouse_x, mouse_y)) 
+            if(is_mouse_over_any_window(Mouse::x, Mouse::y)) 
             {
                 send_key_to_window(c);
             }
         }
         
-        if(shell_input_enabled && !is_mouse_over_any_window(mouse_x, mouse_y))
+        if(shell_input_enabled && !is_mouse_over_any_window(Mouse::x, Mouse::y))
         {
             if(cmd_idx < 63)
             {

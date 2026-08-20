@@ -1,6 +1,9 @@
 #ifndef EHCI_H
 #define EHCI_H
 
-void ehci_init();
+namespace Ehci
+{
+    void init();
+}
 
 #endif // EHCI_H

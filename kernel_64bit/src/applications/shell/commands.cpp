@@ -534,7 +534,7 @@ void execute_command(const char *cmd)
             }
             else
             {
-                RtcTime new_time;
+                Rtc::RtcTime new_time;
 
                 new_time.day    = parse_digits(date_ptr, 2);
                 new_time.month  = parse_digits(date_ptr + 3, 2);
@@ -544,14 +544,14 @@ void execute_command(const char *cmd)
                 new_time.minute = parse_digits(date_ptr + 14, 2);
                 new_time.second = parse_digits(date_ptr + 17, 2);
 
-                set_rtc_time(new_time);
+                Rtc::set_time(new_time);
 
                 print_info("System time updated successfully!\n");
             }
         }
         else if (get_flag)
         {
-            RtcTime time = get_rtc_time();
+            Rtc::RtcTime time = Rtc::get_time();
             
             // Display date: DD.MM.YYYY
             print_num_padded(time.day);
@@ -573,7 +573,7 @@ void execute_command(const char *cmd)
         }
         else if (status_flag)
         {
-            bool battery_ok = is_rtc_battery_ok();
+            bool battery_ok = Rtc::is_battery_ok();
 
             print_info("RTC battery: ");
             print(battery_ok ? "OK" : "low");
@@ -802,7 +802,7 @@ void execute_command(const char *cmd)
     // 15. Command: uptime
     else if (cmd_name_len == 6 && memcmp(cmd, "uptime", 6) == 0)
     {
-        print_uptime();
+        Rtc::print_uptime();
     }
 
     // 16. Command: panic
@@ -1059,7 +1059,7 @@ void execute_command(const char *cmd)
             print_num8(dur);
             print(" ms\n");
 
-            sleep(10);
+            Timer::sleep(10);
 
             Audio::beep(freq, dur);
         }

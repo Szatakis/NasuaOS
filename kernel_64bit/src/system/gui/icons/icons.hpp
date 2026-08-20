@@ -34,8 +34,6 @@ extern int icons_offset;
 extern bool menu_start_open;
 extern bool start_hover;
 
-extern bool dtc_bootcheck;
-
 void draw_start_button(size_t x, size_t y);
 bool is_mouse_over_start(int mouse_x, int mouse_y);
 

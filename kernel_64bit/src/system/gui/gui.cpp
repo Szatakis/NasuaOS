@@ -69,6 +69,6 @@ void update_gui_state(int mouse_x, int mouse_y)
 
 void update_windows_gui() 
 {
-    update_windows_positions(mouse_x, mouse_y);
+    update_windows_positions(Mouse::x, Mouse::y);
     draw_windows(); 
 }

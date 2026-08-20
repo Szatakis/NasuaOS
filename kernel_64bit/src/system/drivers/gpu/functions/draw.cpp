@@ -167,7 +167,7 @@ void update_time()
         return;
     }
 
-    RtcTime time = get_rtc_time();
+    Rtc::RtcTime time = Rtc::get_time();
 
     char time_buf[9];
     char date_buf[11];
@@ -232,7 +232,7 @@ void update_bottom_bar()
 
 void update_gui() 
 {
-    update_gui_state(mouse_x, mouse_y);
+    update_gui_state(Mouse::x, Mouse::y);
 
     update_bottom_bar();
     draw_text_buffer();

@@ -1,7 +1,12 @@
 #include "uhci.hpp"
 #include "../../driver.hpp"
 
-void uhci_init()
+namespace Uhci
+{
+
+void init()
 {
     Uart::puts("[UHCI] Initializing UHCI\n");
+}
+
 }

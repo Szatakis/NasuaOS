@@ -99,16 +99,16 @@ void iqu_init()
     heap_init();
     Apic::controller_init();
     idt_init();
-    pit_init();
+    Timer::pit_init();
 
     asm volatile("sti");
 
     Disk::init();
 
-    pci_init();
-    usb_init();
+    Pci::init();
+    Usb::init();
 
-    mouse_init();
+    Mouse::init();
 
     image_init();
 
@@ -208,9 +208,9 @@ extern "C" void kmain()
             handle_keyboard();
         }
         
-        if(redraw && !kernel_panicked) 
+        if(Timer::redraw && !kernel_panicked) 
         {
-            redraw = false;
+            Timer::redraw = false;
 
             clear_screen();
 

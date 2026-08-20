@@ -4,6 +4,7 @@
 
 #include "applications/shell/commands.hpp"
 #include "system/sysfunc/command_history/history.hpp"
+#include "system/drivers/gpu/functions/windows_manager/window.hpp"
 
 #include "applications/applications.hpp"
 #include "system/applications/napp/napp.hpp"
@@ -14,8 +15,11 @@
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
 
-int32_t mouse_x = 200;
-int32_t mouse_y = 145;
+namespace Mouse
+{
+
+int32_t x = 200;
+int32_t y = 145;
 
 bool mouse_connected = false;
 
@@ -26,8 +30,6 @@ static uint8_t mouse_packet[4];
 static uint8_t mouse_packet_index = 0;
 
 static uint8_t mouse_id = 0;
-
-extern window_struct* apps[];
 
 
 // PS/2 CONTROLLER
@@ -89,7 +91,7 @@ static uint8_t mouse_read()
 
 
 // MOUSE INITIALIZATION
-void mouse_init()
+void init()
 {
     mouse_connected = false;
     mouse_id = 0;
@@ -291,42 +293,42 @@ void mouse_init()
 
 
 // CURSOR POSITION
-void mouse_update_position(int32_t dx, int32_t dy)
+void update_position(int32_t dx, int32_t dy)
 {
-    mouse_x += dx;
-    mouse_y -= dy;
+    x += dx;
+    y -= dy;
 
     // Left boundary
-    if (mouse_x < 0)
+    if (x < 0)
     {
-        mouse_x = 0;
+        x = 0;
     }
 
     // Top boundary
-    if (mouse_y < 0)
+    if (y < 0)
     {
-        mouse_y = 0;
+        y = 0;
     }
 
     if (fb)
     {
         // Right boundary
-        if (mouse_x >= (int32_t)fb->width)
+        if (x >= (int32_t)fb->width)
         {
-            mouse_x = fb->width - 1;
+            x = fb->width - 1;
         }
 
         // Bottom boundary
-        if (mouse_y >= (int32_t)fb->height)
+        if (y >= (int32_t)fb->height)
         {
-            mouse_y = fb->height - 1;
+            y = fb->height - 1;
         }
     }
 }
 
 
 // MOUSE PACKET
-void mouse_handle_byte(uint8_t data)
+void handle_byte(uint8_t data)
 {
     // First byte synchronization
     if (mouse_packet_index == 0)
@@ -368,7 +370,7 @@ void mouse_handle_byte(uint8_t data)
     int8_t dx = (int8_t)mouse_packet[1];
     int8_t dy = (int8_t)mouse_packet[2];
 
-    mouse_update_position(dx, dy);
+    update_position(dx, dy);
 
     uint8_t new_buttons = flags & 0x07;
 
@@ -383,35 +385,35 @@ void mouse_handle_byte(uint8_t data)
     // LEFT BUTTON
     if ((new_buttons & 0x01) && !(old_mouse_buttons & 0x01))
     {
-        handle_left_click(false);
+        left_click(false);
     }
 
 
     // RIGHT BUTTON
     if ((new_buttons & 0x02) && !(old_mouse_buttons & 0x02))
     {
-        handle_right_click(false);
+        right_click(false);
     }
 
 
     // MIDDLE BUTTON
     if ((new_buttons & 0x04) && !(old_mouse_buttons & 0x04))
     {
-        handle_middle_click(false);
+        middle_click(false);
     }
 
 
     // BUTTON 4 - BACK
     if ((new_buttons & 0x08) && !(old_mouse_buttons & 0x08))
     {
-        mouse_back_click();
+        back_click();
     }
 
 
     // BUTTON 5 - FORWARD
     if ((new_buttons & 0x10) && !(old_mouse_buttons & 0x10))
     {
-        mouse_forward_click();
+        forward_click();
     }
 
 
@@ -430,11 +432,11 @@ void mouse_handle_byte(uint8_t data)
 
         if (wheel > 0)
         {
-            mouse_scroll_up();
+            scroll_up();
         }
         else if (wheel < 0)
         {
-            mouse_scroll_down();
+            scroll_down();
         }
     }
 
@@ -446,10 +448,10 @@ void mouse_handle_byte(uint8_t data)
 
 
 // LEFT CLICK
-void handle_left_click(bool cmd_enter)
+void left_click(bool cmd_enter)
 {
     // START MENU BUTTON
-    if (is_mouse_over_start(mouse_x, mouse_y))
+    if (is_mouse_over_start(x, y))
     {
         if (!menu_start_open)
         {
@@ -470,7 +472,7 @@ void handle_left_click(bool cmd_enter)
         const int start_menu_right = (int)(menu_x + menu_w);
         const int start_menu_bottom = (int)(menu_y + menu_h);
 
-        if (mouse_x < start_menu_left || mouse_x >= start_menu_right || mouse_y < start_menu_top || mouse_y >= start_menu_bottom)
+        if (x < start_menu_left || x >= start_menu_right || y < start_menu_top || y >= start_menu_bottom)
         {
             close_start_menu();
         }
@@ -478,18 +480,18 @@ void handle_left_click(bool cmd_enter)
 
 
     // TASKBAR
-    if (is_mouse_over_taskbar(mouse_x, mouse_y))
+    if (is_mouse_over_taskbar(x, y))
     {
-        handle_window_mouse_click(mouse_x, mouse_y);
+        handle_window_mouse_click(x, y);
 
         return;
     }
 
 
     // WINDOW
-    if (is_mouse_over_any_window(mouse_x, mouse_y))
+    if (is_mouse_over_any_window(x, y))
     {
-        handle_window_mouse_click(mouse_x, mouse_y);
+        handle_window_mouse_click(x, y);
 
         return;
     }
@@ -501,7 +503,7 @@ void handle_left_click(bool cmd_enter)
         // Kernel applications
         for (int i = 0; i < kernel_app_count; i++)
         {
-            if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x + 50, icons_start_y + i * icons_offset, 250, 32))
+            if (is_mouse_over_icon(x, y, icons_start_x + 50, icons_start_y + i * icons_offset, 250, 32))
             {
                 apps[i]->visible = true;
                 apps[i]->id = current_id++;
@@ -516,19 +518,9 @@ void handle_left_click(bool cmd_enter)
         // Applications shipped as .napp packages in the rootfs
         for (int i = 0; i < start_menu_napp_count; i++)
         {
-            if (strcmp(start_menu_napps[i], "bootcheck") == 0)
-            {
-                continue;
-            }
-
             int row = kernel_app_count + i;
 
-            if(dtc_bootcheck)
-            {
-                row--;
-            }
-
-            if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x + 50, icons_start_y + row * icons_offset, 250, 32))
+            if (is_mouse_over_icon(x, y, icons_start_x + 50, icons_start_y + row * icons_offset, 250, 32))
             {
                 napp_run(start_menu_napps[i], nullptr);
 
@@ -538,7 +530,7 @@ void handle_left_click(bool cmd_enter)
 
 
         // SHUTDOWN
-        if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x, menu_y + menu_h - 80, 32, 32))
+        if (is_mouse_over_icon(x, y, icons_start_x, menu_y + menu_h - 80, 32, 32))
         {
             Acpi::shutdown();
 
@@ -547,7 +539,7 @@ void handle_left_click(bool cmd_enter)
 
 
         // REBOOT
-        if (is_mouse_over_icon(mouse_x, mouse_y, icons_start_x, menu_y + menu_h - 40, 32, 32))
+        if (is_mouse_over_icon(x, y, icons_start_x, menu_y + menu_h - 40, 32, 32))
         {
             Acpi::reboot();
 
@@ -573,42 +565,67 @@ void handle_left_click(bool cmd_enter)
 
 
 // RIGHT CLICK
-void handle_right_click(bool cmd_enter)
+void right_click(bool cmd_enter)
 {
     (void)cmd_enter;
 }
 
 
 // MIDDLE CLICK
-void handle_middle_click(bool cmd_enter)
+void middle_click(bool cmd_enter)
 {
     (void)cmd_enter;
 }
 
 
 // Mouse scroll up
-void mouse_scroll_up()
+void scroll_up()
 {
     
 }
 
 
 // Mouse scroll down
-void mouse_scroll_down()
+void scroll_down()
 {
 
 }
 
 
 // BACK CLICK
-void mouse_back_click()
+void back_click()
 {
 
 }
 
 
 // FORWARD CLICK
-void mouse_forward_click()
+void forward_click()
 {
+
+}
+
+const char arrow_cursor[CURSOR_H][CURSOR_W] =
+{
+    {'W','.','.','.','.','.','.','.','.','.','.','.'},
+    {'W','W','.','.','.','.','.','.','.','.','.','.'},
+    {'W','B','W','.','.','.','.','.','.','.','.','.'},
+    {'W','B','B','W','.','.','.','.','.','.','.','.'},
+    {'W','B','B','B','W','.','.','.','.','.','.','.'},
+    {'W','B','B','B','B','W','.','.','.','.','.','.'},
+    {'W','B','B','B','B','B','W','.','.','.','.','.'},
+    {'W','B','B','B','B','B','B','W','.','.','.','.'},
+    {'W','B','B','B','B','B','B','B','W','.','.','.'},
+    {'W','B','B','B','B','B','B','B','B','W','.','.'},
+    {'W','B','B','B','B','B','W','W','W','W','W','.'},
+    {'W','B','B','W','B','B','W','.','.','.','.','.'},
+    {'W','B','W','.','W','B','B','W','.','.','.','.'},
+    {'W','W','.','.','W','B','B','W','.','.','.','.'},
+    {'.','.','.','.','.','W','B','B','W','.','.','.'},
+    {'.','.','.','.','.','W','B','B','W','.','.','.'},
+    {'.','.','.','.','.','.','W','B','B','W','.','.'},
+    {'.','.','.','.','.','.','W','B','B','W','.','.'},
+    {'.','.','.','.','.','.','.','W','W','W','.','.'}
+};
 
 }

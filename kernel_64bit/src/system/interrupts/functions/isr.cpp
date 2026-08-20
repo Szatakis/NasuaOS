@@ -48,7 +48,7 @@ void isr_handler(Registers* regs)
     // PIT timer tick
     if (regs->vector == 32)
     {
-        pit_handler();
+        Timer::pit_handler();
         return;
     }
 

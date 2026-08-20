@@ -1,24 +1,33 @@
 #include "../driver.hpp"
+
 #include "../controllers/controllers.hpp"
 
 #include "system/drivers/pci/driver.hpp"
 
-void usb_init()
+namespace Usb
 {
-    if(found_ehci)
+
+void init()
+{
+    if (Pci::found_ehci)
     {
-        ehci_init();
+        Ehci::init();
     }
-    if(found_ohci)
+
+    if (Pci::found_ohci)
     {
-        ohci_init();
+        Ohci::init();
     }
-    if(found_uhci)
+
+    if (Pci::found_uhci)
     {
-        uhci_init();
+        Uhci::init();
     }
-    if(found_xhci)
+
+    if (Pci::found_xhci)
     {
-        xhci_init();
+        Xhci::init();
     }
+}
+
 }

@@ -39,6 +39,6 @@ void Audio::pc_speaker_off()
 void Audio::beep(uint32_t freq, uint32_t duration)
 {
     pc_speaker_on(freq);
-    sleep(duration);
+    Timer::sleep(duration);
     pc_speaker_off();
 }

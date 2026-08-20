@@ -12,6 +12,13 @@
 #define MAX_WINDOWS 13
 #define MAX_TASKBAR_WINDOWS 5
 
+window_struct* apps[] = {
+    &terminal,
+    &settings,
+    &suaedit,
+    &task_manager
+};
+
 window_struct* active_window = nullptr;
 
 static window_struct* window_list[MAX_WINDOWS];
@@ -322,8 +329,8 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
 
                 // Keep the real cursor locked to the constrained drag position
                 // so the cursor never drifts past the window's valid range.
-                mouse_x = eff_mouse_x;
-                mouse_y = eff_mouse_y;
+                Mouse::x = eff_mouse_x;
+                Mouse::y = eff_mouse_y;
             }
 
             win->pos_x = eff_mouse_x - win->drag_offset_x;
@@ -425,8 +432,8 @@ void update_windows_positions(int current_mouse_x, int current_mouse_y)
                 }
 
                 // Lock the real cursor to the constrained resize position.
-                mouse_x = eff_mouse_x;
-                mouse_y = eff_mouse_y;
+                Mouse::x = eff_mouse_x;
+                Mouse::y = eff_mouse_y;
             }
         }
     }

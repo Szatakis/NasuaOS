@@ -4,8 +4,6 @@
 
 #include "system/gui/vars/colors.hpp"
 
-extern const char arrow_cursor[][CURSOR_W];
-
 void handle_mouse() 
 {
     if (!fb) return;
@@ -17,8 +15,8 @@ void handle_mouse()
     {
         for (int x = 0; x < CURSOR_W; x++) 
         {
-            int px = mouse_x + x;
-            int py = mouse_y + y;
+            int px = Mouse::x + x;
+            int py = Mouse::y + y;
 
             if (px < 0 || py < 0) 
             {
@@ -30,7 +28,7 @@ void handle_mouse()
                 continue;
             }
 
-            char p = arrow_cursor[y][x];
+            char p = Mouse::arrow_cursor[y][x];
             uint32_t color = 0;
 
             if (p == 'W') 

@@ -1,6 +1,9 @@
 #ifndef OHCI_H
 #define OHCI_H
 
-void ohci_init();
+namespace Ohci
+{
+    void init();
+}
 
 #endif // OHCI_H

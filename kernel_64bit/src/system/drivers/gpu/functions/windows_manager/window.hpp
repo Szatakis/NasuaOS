@@ -3,11 +3,6 @@
 
 #include "applications/applications.hpp"
 
-window_struct* apps[] = {
-    &terminal,
-    &settings,
-    &suaedit,
-    &task_manager
-};
+extern window_struct* apps[];
 
 #endif
