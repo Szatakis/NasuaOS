@@ -142,12 +142,12 @@ static uint32_t napp_api_clawfs_get_sector(const char* path)
 
 static bool napp_api_clawfs_read_sector(uint32_t sector, void* buffer)
 {
-    return storage_read_sector(sector, (uint8_t*)buffer);
+    return Disk::read_sector(sector, (uint8_t*)buffer);
 }
 
 static bool napp_api_clawfs_write_sector(uint32_t sector, const void* buffer)
 {
-    return storage_write_sector(sector, (uint8_t*)buffer);
+    return Disk::write_sector(sector, (uint8_t*)buffer);
 }
 
 static void napp_api_clawfs_mkdir(const char* parent_path, const char* dir_name)
@@ -724,7 +724,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         
         for (uint32_t i = 0; i < sectors_to_read; i++) 
         {
-            if (!storage_read_sector(resolve.data_sector + i, image_ptr + (i * 512))) 
+            if (!Disk::read_sector(resolve.data_sector + i, image_ptr + (i * 512))) 
             {
                 log(ERROR, "NAPP", "Failed to read from ClawFS");
                 kfree(image);
@@ -902,7 +902,7 @@ static bool read_sbin_description_clawfs(uint32_t data_sector, char* desc_buffer
 {
     uint8_t sector_buf[512];
 
-    if (!storage_read_sector(data_sector, sector_buf))
+    if (!Disk::read_sector(data_sector, sector_buf))
     {
         return false;
     }
@@ -980,7 +980,7 @@ uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], char descriptions[][NAPP_MA
         if (sbin_sector != 0)
         {
             uint8_t dir_buffer[512];
-            if (storage_read_sector(sbin_sector, dir_buffer))
+            if (Disk::read_sector(sbin_sector, dir_buffer))
             {
                 CLAWFSEntry* entries = (CLAWFSEntry*)dir_buffer;
 

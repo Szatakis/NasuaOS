@@ -1,14 +1,11 @@
 #include "../driver.hpp"
-
 #include "system/drivers/timer/driver.hpp"
-
 #include "libs/asm/asm.hpp"
 
 #define PIT_FREQ 1193182
 #define SPEAKER_PORT 0x61
 
-
-void pc_speaker_on(uint32_t frequency)
+void Audio::pc_speaker_on(uint32_t frequency)
 {
     if (frequency == 0)
     {
@@ -32,15 +29,14 @@ void pc_speaker_on(uint32_t frequency)
     outb(SPEAKER_PORT, tmp | 3);
 }
 
-
-void pc_speaker_off()
+void Audio::pc_speaker_off()
 {
     uint8_t tmp = inb(SPEAKER_PORT);
 
     outb(SPEAKER_PORT, tmp & ~3);
 }
 
-void beep(uint32_t freq, uint32_t duration)
+void Audio::beep(uint32_t freq, uint32_t duration)
 {
     pc_speaker_on(freq);
     sleep(duration);

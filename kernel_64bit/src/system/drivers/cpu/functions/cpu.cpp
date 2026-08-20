@@ -13,7 +13,7 @@ static inline void cpuid(uint32_t leaf, uint32_t subleaf, uint32_t& eax, uint32_
     asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(leaf), "c"(subleaf));
 }
 
-void init_cpu_cores() {
+void Cpu::init_cores() {
     if(mp_request.response)
     {
         Uart::puts("[CPU] MP available\n");
@@ -21,7 +21,7 @@ void init_cpu_cores() {
     }
 }
 
-void cpu_get_brand(char* brand)
+void Cpu::get_brand(char* brand)
 {
     uint32_t eax, ebx, ecx, edx;
 
@@ -42,7 +42,7 @@ void cpu_get_brand(char* brand)
     brand[48] = '\0';
 }
 
-const char* get_architecture()
+const char* Cpu::get_architecture()
 {
     #if defined(__x86_64__)
         return "x86_64";

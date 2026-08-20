@@ -81,7 +81,7 @@ uint32_t find_entry_in_dir(uint32_t dir_sector, const char* name, CLAWFSEntry* o
 {
     uint8_t buffer[512];
 
-    if (!storage_read_sector(dir_sector, buffer))
+    if (!Disk::read_sector(dir_sector, buffer))
     {
         return 0;
     }
@@ -172,7 +172,7 @@ void setup_entry(CLAWFSEntry* e, const char* name, uint32_t type, uint32_t secto
 
     memclear(zero_buf, sizeof(zero_buf));
 
-    storage_write_sector(sector, zero_buf);
+    Disk::write_sector(sector, zero_buf);
 }
 
 
@@ -197,7 +197,7 @@ void clawfs_format()
     header->version = CLAWFS_VERSION;
     header->entryCount = 0;
 
-    storage_write_sector(CLAWFS_START_LBA, buffer);
+    Disk::write_sector(CLAWFS_START_LBA, buffer);
 
 
     // Root directory
@@ -216,7 +216,7 @@ void clawfs_format()
     setup_entry(&entries[6], "var", CLAWFS_DIRECTORY, 108);
     setup_entry(&entries[6], "lib", CLAWFS_DIRECTORY, 109);
 
-    storage_write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
+    Disk::write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
 
 
     // Default filesystem structure
@@ -255,14 +255,14 @@ void clawfs_format_clr()
     header->version = CLAWFS_VERSION;
     header->entryCount = 0;
 
-    storage_write_sector(CLAWFS_START_LBA, buffer);
+    Disk::write_sector(CLAWFS_START_LBA, buffer);
 
 
     // Root directory
     uint8_t root_buffer[512];
     memclear(root_buffer, sizeof(root_buffer));
 
-    storage_write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
+    Disk::write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
 
     print_info("Format complete.\n");
 }
@@ -289,7 +289,7 @@ void clawfs_mkdir(const char* parent_path, const char* dir_name)
 
     uint8_t buffer[512];
 
-    if (!storage_read_sector(parent_sector, buffer))
+    if (!Disk::read_sector(parent_sector, buffer))
     {
         print_error("Failed to read parent directory!\n");
 
@@ -306,7 +306,7 @@ void clawfs_mkdir(const char* parent_path, const char* dir_name)
 
             setup_entry(&entries[i], dir_name, CLAWFS_DIRECTORY, sector);
 
-            storage_write_sector(parent_sector, buffer);
+            Disk::write_sector(parent_sector, buffer);
 
             print_info("Dir created.\n");
 
@@ -339,7 +339,7 @@ void clawfs_create_file_in(const char* path, const char* name)
 
     uint8_t buffer[512];
 
-    if (!storage_read_sector(target_sector, buffer))
+    if (!Disk::read_sector(target_sector, buffer))
     {
         print_error("Failed to read directory!\n");
 
@@ -367,9 +367,9 @@ void clawfs_create_file_in(const char* path, const char* name)
 
             memclear(zero_buffer, sizeof(zero_buffer));
 
-            storage_write_sector(entries[i].data_sector, zero_buffer);
+            Disk::write_sector(entries[i].data_sector, zero_buffer);
 
-            storage_write_sector(target_sector, buffer);
+            Disk::write_sector(target_sector, buffer);
 
             print_info("File created.\n");
 
@@ -402,7 +402,7 @@ void clawfs_dir(const char* path)
 
     uint8_t buffer[512];
 
-    if (!storage_read_sector(target, buffer))
+    if (!Disk::read_sector(target, buffer))
     {
         print_error("Failed to read directory!\n");
 
@@ -438,7 +438,7 @@ bool clawfs_exists()
 
     memclear(buffer, sizeof(buffer));
 
-    if (!storage_read_sector(CLAWFS_START_LBA, buffer))
+    if (!Disk::read_sector(CLAWFS_START_LBA, buffer))
     {
         return false;
     }
@@ -480,7 +480,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
 
     uint8_t buffer[512];
 
-    if (!storage_read_sector(parent_sector, buffer))
+    if (!Disk::read_sector(parent_sector, buffer))
     {
         print_error("Failed to read parent directory!\n");
 
@@ -511,7 +511,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
         {
             uint8_t dir_buffer[512];
 
-            if (!storage_read_sector(entries[i].data_sector, dir_buffer))
+            if (!Disk::read_sector(entries[i].data_sector, dir_buffer))
             {
                 print_error("Failed to read directory!\n");
 
@@ -534,7 +534,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
         // Delete entry
         memclear(&entries[i], sizeof(CLAWFSEntry));
 
-        if (!storage_write_sector(parent_sector, buffer))
+        if (!Disk::write_sector(parent_sector, buffer))
         {
             print_error("Failed to update directory!\n");
 

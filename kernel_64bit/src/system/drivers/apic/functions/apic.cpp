@@ -4,15 +4,12 @@
 #include "system/drivers/memory/driver.hpp"
 #include "system/drivers/uart/driver.hpp"
 #include "system/interrupts/interrupts.hpp"
-
 #include "system/sysfunc/logger/logger.hpp"
-
 #include "libs/asm/asm.hpp"
-
 
 #define IA32_APIC_BASE_MSR 0x1B
 
-// Default LAPIC  addres (compatibile with IA32_APIC_BASE MSR in most of the systems) 
+// Default LAPIC addres (compatibile with IA32_APIC_BASE MSR in most of the systems) 
 // used only as fallback if MSR returns 0.
 #define LAPIC_BASE_PHYS_DEFAULT 0xFEE00000ULL
 
@@ -70,7 +67,7 @@ static void map_mmio_once(bool& already_mapped, uint64_t phys_base)
 
 static inline volatile uint32_t* lapic_reg(uint32_t offset)
 {
-    uint64_t base = apic_read_base() & 0xFFFFF000ULL;
+    uint64_t base = Apic::read_base() & 0xFFFFF000ULL;
 
     if(!base)
     {
@@ -111,7 +108,7 @@ static void ioapic_write(uint8_t reg, uint32_t value)
 
 // CPUID
 
-bool apic_available()
+bool Apic::available()
 {
     uint32_t eax, ebx, ecx, edx;
 
@@ -124,7 +121,7 @@ bool apic_available()
 
 // Local APIC: base MSR
 
-uint64_t apic_read_base()
+uint64_t Apic::read_base()
 {
     uint32_t eax;
     uint32_t edx;
@@ -142,19 +139,19 @@ static void apic_write_base(uint64_t value)
     asm volatile("mov %0, %%eax\n" "mov %1, %%edx\n" "mov $0x1B, %%ecx\n" "wrmsr" : : "r"(eax), "r"(edx) : "eax", "edx", "ecx");
 }
 
-bool apic_enabled()
+bool Apic::enabled()
 {
-    uint64_t base = apic_read_base();
+    uint64_t base = read_base();
 
     return (base & (1ULL << 11)) != 0;
 }
 
-void apic_enable()
+void Apic::enable()
 {
     Uart::puts("[APIC] Enabling...\n");
     log(INFO,"APIC","Enabling...");
 
-    uint64_t base = apic_read_base();
+    uint64_t base = read_base();
 
     if(base & (1ULL << 11))
     {
@@ -171,12 +168,12 @@ void apic_enable()
     log(INFO,"APIC","Enabled");
 }
 
-void apic_disable()
+void Apic::disable()
 {
     Uart::puts("[APIC] Disabling...\n");
     log(INFO,"APIC","Disabling...");
 
-    uint64_t base = apic_read_base();
+    uint64_t base = read_base();
 
     if(!(base & (1ULL << 11)))
     {
@@ -196,27 +193,26 @@ void apic_disable()
 
 // Local APIC: init / EOI
 
-void lapic_init()
+void Apic::init()
 {
     Uart::puts("[LAPIC] Initializing...\n");
     log(INFO,"LAPIC","Initializing...");
 
-    apic_enable();
+    enable();
 
     *lapic_reg(LAPIC_REG_TPR) = 0;
-
     *lapic_reg(LAPIC_REG_SVR) = 0xFF | LAPIC_SVR_ENABLE;
 
     Uart::puts("[LAPIC] Ready\n");
     log(INFO,"LAPIC","Ready");
 }
 
-void lapic_send_eoi()
+void Apic::send_eoi()
 {
     *lapic_reg(LAPIC_REG_EOI) = 0;
 }
 
-static uint32_t lapic_get_id()
+uint32_t Apic::get_id()
 {
     return (*lapic_reg(LAPIC_REG_ID)) >> 24;
 }
@@ -224,7 +220,7 @@ static uint32_t lapic_get_id()
 
 // I/O APIC
 
-void ioapic_mask_irq(uint8_t irq)
+void IOApic::mask_irq(uint8_t irq)
 {
     uint8_t low_reg = IOAPIC_REG_REDTBL + irq * 2;
 
@@ -232,7 +228,7 @@ void ioapic_mask_irq(uint8_t irq)
     ioapic_write(low_reg + 1, 0);
 }
 
-void ioapic_set_irq(uint8_t irq, uint8_t vector, uint32_t dest_apic_id)
+void IOApic::set_irq(uint8_t irq, uint8_t vector, uint32_t dest_apic_id)
 {
     uint8_t low_reg = IOAPIC_REG_REDTBL + irq * 2;
     uint8_t high_reg = low_reg + 1;
@@ -245,7 +241,7 @@ void ioapic_set_irq(uint8_t irq, uint8_t vector, uint32_t dest_apic_id)
     ioapic_write(low_reg, low);
 }
 
-void ioapic_init()
+void IOApic::init()
 {
     Uart::puts("[IOAPIC] Initializing...\n");
     log(INFO,"IOAPIC","Initializing...");
@@ -253,11 +249,11 @@ void ioapic_init()
     // mask all 24 lines IRQ on start
     for(uint8_t irq = 0; irq < 24; irq++)
     {
-        ioapic_mask_irq(irq);
+        mask_irq(irq);
     }
 
     // IRQ0 (PIT) -> vector 32, on pin choosed by MADT
-    ioapic_set_irq((uint8_t)g_ioapic_pin_irq0, 32, lapic_get_id());
+    set_irq((uint8_t)g_ioapic_pin_irq0, 32, Apic::get_id());
 
     Uart::puts("[IOAPIC] IRQ0 -> vector 32 (pin: ");
     Uart::puthex(g_ioapic_pin_irq0);
@@ -271,16 +267,16 @@ void ioapic_init()
 
 // Choose interrupts controller
 
-bool apic_is_active()
+bool Apic::is_active()
 {
     return g_apic_active;
 }
 
-void interrupts_controller_init()
+void Apic::controller_init()
 {
     MadtInfo madt = madt_parse();
 
-    if(apic_available() && madt.valid && madt.has_ioapic)
+    if(available() && madt.valid && madt.has_ioapic)
     {
         Uart::puts("[IRQ] APIC + IOAPIC available (MADT), using LAPIC + IOAPIC\n");
         log(INFO,"IRQ","APIC + IOAPIC available (MADT), using LAPIC + IOAPIC");
@@ -293,8 +289,8 @@ void interrupts_controller_init()
         outb(0x22, 0x70);
         outb(0x23, 0x01);
 
-        lapic_init();
-        ioapic_init();
+        Apic::init();
+        IOApic::init();
 
         g_apic_active = true;
     }
@@ -303,7 +299,7 @@ void interrupts_controller_init()
         Uart::puts("[IRQ] No usable IOAPIC (MADT), using legacy 8259 PIC\n");
         log(INFO,"IRQ","No usable IOAPIC (MADT), using legacy 8259 PIC");
 
-        apic_disable();
+        disable();
         pic_remap();
 
         g_apic_active = false;

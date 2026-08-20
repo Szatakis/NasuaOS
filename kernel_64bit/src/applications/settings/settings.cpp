@@ -198,7 +198,7 @@ static void draw_system_page(int x, int y, int w, int h)
 
     // Architecture
     draw_text_clipped("Architecture:", x, y + 50, right, bottom, 0x9AA4B2);
-    draw_text_clipped(get_architecture(), x + 160, y + 50, right, bottom, COLOR_WHITE);
+    draw_text_clipped(Cpu::get_architecture(), x + 160, y + 50, right, bottom, COLOR_WHITE);
 
 
     // Kernel
@@ -244,7 +244,7 @@ static void draw_system_page(int x, int y, int w, int h)
     char storage[10];
     char storage_mb[10];
 
-    uint64_to_string(storage_total() / (1024 * 1024), storage_mb, sizeof(storage));
+    uint64_to_string(Disk::total() / (1024 * 1024), storage_mb, sizeof(storage));
 
     strcpy(storage, storage_mb);
     strcat(storage, " MB");

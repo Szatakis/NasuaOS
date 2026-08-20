@@ -705,7 +705,7 @@ void execute_command(const char *cmd)
     else if (cmd_name_len == 4 && memcmp(cmd, "info", 4) == 0)
     {
         char cpu_name[48];
-        cpu_get_brand(cpu_name);
+        Cpu::get_brand(cpu_name);
 
         auto print_line = [](const char* label, const char* value)
         {
@@ -715,8 +715,6 @@ void execute_command(const char *cmd)
             print(value);
             print("\n");
         };
-
-        cpu_get_brand(cpu_name);
 
         // Section: Software
         print_info("Software information\n");
@@ -752,12 +750,12 @@ void execute_command(const char *cmd)
         print(CMD_TEXT_GRAY);
         print("Storage Total:  ");
         print(CMD_TEXT_WHITE);
-        print_num8(storage_total() / (1024 * 1024));
+        print_num8(Disk::total() / (1024 * 1024));
         print("MB\n");
         print(CMD_TEXT_GRAY);
         print("Storage Used:   ");
         print(CMD_TEXT_WHITE);
-        print_num8(storage_used() / (1024 * 1024));
+        print_num8(Disk::used() / (1024 * 1024));
         print("MB\n");
         print("\n");
 
@@ -1063,7 +1061,7 @@ void execute_command(const char *cmd)
 
             sleep(10);
 
-            beep(freq, dur);
+            Audio::beep(freq, dur);
         }
         else 
         {

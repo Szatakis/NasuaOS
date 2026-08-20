@@ -2,7 +2,7 @@
 
 #include "system/filesystem/clawfs/clawfs.hpp"
 #include "system/filesystem/fat/fat.hpp"
-#include "system/drivers/disk/ata/driver.hpp"
+#include "system/drivers/disk/driver.hpp"
 #include "system/drivers/gpu/driver.hpp"
 #include "system/drivers/uart/driver.hpp"
 #include "system/drivers/memory/driver.hpp"
@@ -13,9 +13,6 @@
 extern fat_volume rootfs_volume;
 extern bool rootfs_mounted;
 
-// External storage flag from storage.cpp
-extern bool storage_uses_ram;
-
 // Mount state
 static bool clawfs_mounted = false;
 
@@ -23,10 +20,9 @@ static bool clawfs_mounted = false;
 static deletion_tombstone_t deleted_files[MAX_TOMBSTONES];
 static uint32_t deleted_count = 0;
 
-// Storage detection
 bool storage_uses_ata()
 {
-    return !storage_uses_ram;
+    return !Disk::storage_is_ram();
 }
 
 void file_resolver_init()
@@ -90,7 +86,7 @@ void file_resolver_save_tombstones()
     }
     
     // Write to fixed sector
-    storage_write_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer);
+    Disk::write_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer);
     
     kfree(buffer);
     
@@ -109,7 +105,7 @@ void file_resolver_load_tombstones()
     }
     
     // Read from fixed sector
-    if (!storage_read_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer)) 
+    if (!Disk::read_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer)) 
     {
         Uart::puts("[File Resolver] Failed to read tombstones.\n");
         kfree(buffer);
@@ -449,7 +445,7 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     // Write to ClawFS sectors
     for (uint32_t i = 0; i < sectors_needed; i++) 
     {
-        storage_write_sector(entry.data_sector + i, (uint8_t*)buffer + (i * 512));
+        Disk::write_sector(entry.data_sector + i, (uint8_t*)buffer + (i * 512));
     }
     
     kfree(buffer);
@@ -459,7 +455,7 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     
     // Write back the directory entry with updated size
     uint8_t dir_buffer[512];
-    if (storage_read_sector(parent_sector, dir_buffer)) 
+    if (Disk::read_sector(parent_sector, dir_buffer)) 
     {
         CLAWFSEntry* entries = (CLAWFSEntry*)dir_buffer;
         for (int i = 0; i < 12; i++) 
@@ -481,7 +477,7 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
             if (match)
             {
                 entries[i].entry_count = bytes_to_copy;
-                storage_write_sector(parent_sector, dir_buffer);
+                Disk::write_sector(parent_sector, dir_buffer);
                 break;
             }
         }

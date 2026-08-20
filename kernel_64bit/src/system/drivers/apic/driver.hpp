@@ -1,33 +1,37 @@
-#pragma once
+#ifndef APIC_H
+#define APIC_H
+
 #include <stdint.h>
+#include <stdbool.h>
 
-//CPUID
+class Apic
+{
+public:
+    // CPUID
+    static bool available();
 
-// true if CPU has Local APIC (CPUID.1:EDX.APIC[9])
-bool apic_available();
+    // Local APIC: Base MSR
+    static uint64_t read_base();
+    static bool enabled();
+    static void enable();   // ustawia bit Global Enable w IA32_APIC_BASE
+    static void disable();  // czysci bit Global Enable w IA32_APIC_BASE
 
-//Local APIC
+    // Local APIC: init / EOI / ID
+    static void init();       // wlacza LAPIC (Spurious Vector Register) i zeruje TPR
+    static void send_eoi();   // wysyla EOI do Local APIC
+    static uint32_t get_id();
 
-uint64_t apic_read_base();
-bool apic_enabled();
+    // Controller state & choice
+    static bool is_active();
+    static void controller_init();
+};
 
-void apic_enable();   // ustawia bit Global Enable w IA32_APIC_BASE
-void apic_disable();  // czysci bit Global Enable w IA32_APIC_BASE
+class IOApic
+{
+public:
+    static void init();
+    static void mask_irq(uint8_t irq);
+    static void set_irq(uint8_t irq, uint8_t vector, uint32_t dest_apic_id);
+};
 
-void lapic_init();       // wlacza LAPIC (Spurious Vector Register) i zeruje TPR
-void lapic_send_eoi();   // wysyla EOI do Local APIC
-
-//I/O APIC 
-
-void ioapic_init();
-void ioapic_mask_irq(uint8_t irq);
-void ioapic_set_irq(uint8_t irq, uint8_t vector, uint32_t dest_apic_id);
-
-//Choose interrupts controller
-
-// true if kernel activly use APIC (LAPIC+IOAPIC) instead of 8259 PIC controller
-bool apic_is_active();
-
-// Detects anvibility of APIC. If anvible use LAPIC/IOAPIC.
-// If not anvible use 8259 PIC.
-void interrupts_controller_init();
+#endif

@@ -34,9 +34,9 @@ void pic_send_eoi(uint8_t irq)
 
 void irq_send_eoi(uint8_t irq)
 {
-    if(apic_is_active())
+    if(Apic::is_active())
     {
-        lapic_send_eoi();
+        Apic::send_eoi();
         return;
     }
 

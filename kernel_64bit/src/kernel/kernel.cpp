@@ -91,19 +91,19 @@ void iqu_init()
 {
     Uart::init();
 
-    init_cpu_cores();
+    Cpu::init_cores();
     memory_init();
     paging_init();
     pmm_init();
     vmm_init();
     heap_init();
-    interrupts_controller_init();
+    Apic::controller_init();
     idt_init();
     pit_init();
 
     asm volatile("sti");
 
-    storage_init();
+    Disk::init();
 
     pci_init();
     usb_init();

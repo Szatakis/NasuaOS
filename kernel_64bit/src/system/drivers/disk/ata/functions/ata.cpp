@@ -24,183 +24,183 @@
 
 #define ATA_TIMEOUT 1000000
 
-static bool ata_wait_not_busy()
+namespace ATA_disk
 {
-    for (uint32_t i = 0; i < ATA_TIMEOUT; i++)
+    static bool wait_not_busy()
     {
-        uint8_t status = inb(ATA_PORT_COMMAND);
-
-        if (!(status & ATA_SR_BSY))
+        for (uint32_t i = 0; i < ATA_TIMEOUT; i++)
         {
-            return true;
-        }
-    }
+            uint8_t status = inb(ATA_PORT_COMMAND);
 
-    return false;
-}
-
-static bool ata_wait_drq()
-{
-    for (uint32_t i = 0; i < ATA_TIMEOUT; i++)
-    {
-        uint8_t status = inb(ATA_PORT_COMMAND);
-
-        if (status & ATA_SR_ERR)
-        {
-            return false;
+            if (!(status & ATA_SR_BSY))
+            {
+                return true;
+            }
         }
 
-        if (status & ATA_SR_DF)
-        {
-            return false;
-        }
-
-        if (!(status & ATA_SR_BSY) && (status & ATA_SR_DRQ))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool ata_identify(uint32_t* sectors)
-{
-    if (sectors == nullptr)
-    {
         return false;
     }
 
-    *sectors = 0;
-
-    outb(ATA_PORT_DRV_HEAD, 0xA0);
-
-    outb(ATA_PORT_SECT_COUNT, 0);
-    outb(ATA_PORT_LBA_LOW, 0);
-    outb(ATA_PORT_LBA_MID, 0);
-    outb(ATA_PORT_LBA_HIGH, 0);
-
-    outb(ATA_PORT_COMMAND, ATA_CMD_IDENTIFY);
-
-    uint8_t status = 0;
-
-    for (uint32_t t = 0; t < ATA_TIMEOUT; t++)
+    static bool wait_drq()
     {
-        status = inb(ATA_PORT_COMMAND);
-
-        if (status == 0)
+        for (uint32_t i = 0; i < ATA_TIMEOUT; i++)
         {
-            return false;
+            uint8_t status = inb(ATA_PORT_COMMAND);
+
+            if (status & ATA_SR_ERR)
+            {
+                return false;
+            }
+
+            if (status & ATA_SR_DF)
+            {
+                return false;
+            }
+
+            if (!(status & ATA_SR_BSY) && (status & ATA_SR_DRQ))
+            {
+                return true;
+            }
         }
 
-        if (status & ATA_SR_ERR)
-        {
-            return false;
-        }
-
-        if (status & ATA_SR_DF)
-        {
-            return false;
-        }
-
-        if (!(status & ATA_SR_BSY) && (status & ATA_SR_DRQ))
-        {
-            break;
-        }
-
-        if (t == ATA_TIMEOUT - 1)
-        {
-            return false;
-        }
-    }
-
-    uint16_t identify[256];
-
-    for (int i = 0; i < 256; i++)
-    {
-        identify[i] = inw(ATA_PORT_DATA);
-    }
-
-    *sectors = ((uint32_t)identify[61] << 16) | identify[60];
-
-    if (*sectors == 0)
-    {
         return false;
     }
 
-    return true;
-}
-
-void disk_read_sector(uint32_t lba, uint8_t* buffer)
-{
-    if (buffer == nullptr)
+    bool identify(uint32_t* sectors)
     {
-        return;
+        if (sectors == nullptr)
+        {
+            return false;
+        }
+
+        *sectors = 0;
+
+        outb(ATA_PORT_DRV_HEAD, 0xA0);
+
+        outb(ATA_PORT_SECT_COUNT, 0);
+        outb(ATA_PORT_LBA_LOW, 0);
+        outb(ATA_PORT_LBA_MID, 0);
+        outb(ATA_PORT_LBA_HIGH, 0);
+
+        outb(ATA_PORT_COMMAND, ATA_CMD_IDENTIFY);
+
+        for (uint32_t t = 0; t < ATA_TIMEOUT; t++)
+        {
+            uint8_t status = inb(ATA_PORT_COMMAND);
+
+            if (status == 0)
+            {
+                return false;
+            }
+
+            if (status & ATA_SR_ERR)
+            {
+                return false;
+            }
+
+            if (status & ATA_SR_DF)
+            {
+                return false;
+            }
+
+            if (!(status & ATA_SR_BSY) && (status & ATA_SR_DRQ))
+            {
+                break;
+            }
+
+            if (t == ATA_TIMEOUT - 1)
+            {
+                return false;
+            }
+        }
+
+        uint16_t identify_data[256];
+
+        for (int i = 0; i < 256; i++)
+        {
+            identify_data[i] = inw(ATA_PORT_DATA);
+        }
+
+        *sectors =
+            ((uint32_t)identify_data[61] << 16) |
+            identify_data[60];
+
+        return *sectors != 0;
     }
 
-    if (!ata_wait_not_busy())
+    bool read_sector(uint32_t lba, uint8_t* buffer)
     {
-        return;
+        if (buffer == nullptr)
+        {
+            return false;
+        }
+
+        if (!wait_not_busy())
+        {
+            return false;
+        }
+
+        outb(ATA_PORT_DRV_HEAD, 0xE0 | ((lba >> 24) & 0x0F));
+
+        outb(ATA_PORT_SECT_COUNT, 1);
+
+        outb(ATA_PORT_LBA_LOW, (uint8_t)lba);
+        outb(ATA_PORT_LBA_MID, (uint8_t)(lba >> 8));
+        outb(ATA_PORT_LBA_HIGH, (uint8_t)(lba >> 16));
+
+        outb(ATA_PORT_COMMAND, ATA_CMD_READ_PIO);
+
+        if (!wait_drq())
+        {
+            return false;
+        }
+
+        uint16_t* ptr = (uint16_t*)buffer;
+
+        for (int i = 0; i < 256; i++)
+        {
+            ptr[i] = inw(ATA_PORT_DATA);
+        }
+
+        return true;
     }
 
-    outb(ATA_PORT_DRV_HEAD, 0xE0 | ((lba >> 24) & 0x0F));
-
-    outb(ATA_PORT_SECT_COUNT, 1);
-
-    outb(ATA_PORT_LBA_LOW, (uint8_t)lba);
-    outb(ATA_PORT_LBA_MID, (uint8_t)(lba >> 8));
-    outb(ATA_PORT_LBA_HIGH, (uint8_t)(lba >> 16));
-
-    outb(ATA_PORT_COMMAND, ATA_CMD_READ_PIO);
-
-    if (!ata_wait_drq())
+    bool write_sector(uint32_t lba, uint8_t* buffer)
     {
-        return;
+        if (buffer == nullptr)
+        {
+            return false;
+        }
+
+        if (!wait_not_busy())
+        {
+            return false;
+        }
+
+        outb(ATA_PORT_DRV_HEAD, 0xE0 | ((lba >> 24) & 0x0F));
+
+        outb(ATA_PORT_SECT_COUNT, 1);
+
+        outb(ATA_PORT_LBA_LOW, (uint8_t)lba);
+        outb(ATA_PORT_LBA_MID, (uint8_t)(lba >> 8));
+        outb(ATA_PORT_LBA_HIGH, (uint8_t)(lba >> 16));
+
+        outb(ATA_PORT_COMMAND, ATA_CMD_WRITE_PIO);
+
+        if (!wait_drq())
+        {
+            return false;
+        }
+
+        uint16_t* ptr = (uint16_t*)buffer;
+
+        for (int i = 0; i < 256; i++)
+        {
+            outw(ATA_PORT_DATA, ptr[i]);
+        }
+
+        outb(ATA_PORT_COMMAND, ATA_CMD_CACHE_FLUSH);
+
+        return wait_not_busy();
     }
-
-    uint16_t* ptr = (uint16_t*)buffer;
-
-    for (int i = 0; i < 256; i++)
-    {
-        ptr[i] = inw(ATA_PORT_DATA);
-    }
-}
-
-void disk_write_sector(uint32_t lba, uint8_t* buffer)
-{
-    if (buffer == nullptr)
-    {
-        return;
-    }
-
-    if (!ata_wait_not_busy())
-    {
-        return;
-    }
-
-    outb(ATA_PORT_DRV_HEAD, 0xE0 | ((lba >> 24) & 0x0F));
-
-    outb(ATA_PORT_SECT_COUNT, 1);
-
-    outb(ATA_PORT_LBA_LOW, (uint8_t)lba);
-    outb(ATA_PORT_LBA_MID, (uint8_t)(lba >> 8));
-    outb(ATA_PORT_LBA_HIGH, (uint8_t)(lba >> 16));
-
-    outb(ATA_PORT_COMMAND, ATA_CMD_WRITE_PIO);
-
-    if (!ata_wait_drq())
-    {
-        return;
-    }
-
-    uint16_t* ptr = (uint16_t*)buffer;
-
-    for (int i = 0; i < 256; i++)
-    {
-        outw(ATA_PORT_DATA, ptr[i]);
-    }
-
-    outb(ATA_PORT_COMMAND, ATA_CMD_CACHE_FLUSH);
-
-    ata_wait_not_busy();
 }

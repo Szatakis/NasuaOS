@@ -8,7 +8,7 @@ static uint64_t ram_pages[RAM_DISK_PAGE_COUNT];
 
 static bool ram_disk_enabled = false;
 
-bool ram_disk_init()
+bool RAM_Disk::init()
 {
     if (ram_disk_enabled)
     {
@@ -68,7 +68,7 @@ bool ram_disk_init()
     return true;
 }
 
-void ram_disk_shutdown()
+void RAM_Disk::shutdown()
 {
     if (!ram_disk_enabled)
     {
@@ -90,12 +90,12 @@ void ram_disk_shutdown()
     Uart::puts("[RAM Disk] Destroyed.\n");
 }
 
-bool ram_disk_is_enabled()
+bool RAM_Disk::is_enabled()
 {
     return ram_disk_enabled;
 }
 
-bool ram_disk_read_sector(uint32_t lba, uint8_t* buffer)
+bool RAM_Disk::read_sector(uint32_t lba, uint8_t* buffer)
 {
     if (!ram_disk_enabled)
     {
@@ -132,7 +132,7 @@ bool ram_disk_read_sector(uint32_t lba, uint8_t* buffer)
     return true;
 }
 
-bool ram_disk_write_sector(uint32_t lba, uint8_t* buffer)
+bool RAM_Disk::write_sector(uint32_t lba, uint8_t* buffer)
 {
     if (!ram_disk_enabled)
     {
@@ -167,12 +167,12 @@ bool ram_disk_write_sector(uint32_t lba, uint8_t* buffer)
     return true;
 }
 
-uint64_t ram_disk_size()
+uint64_t RAM_Disk::size()
 {
     return RAM_DISK_SIZE_BYTES;
 }
 
-uint32_t ram_disk_sector_count()
+uint32_t RAM_Disk::sector_count()
 {
     return RAM_DISK_SECTOR_COUNT;
 }

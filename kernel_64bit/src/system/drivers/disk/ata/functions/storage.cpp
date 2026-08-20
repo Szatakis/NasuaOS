@@ -11,112 +11,105 @@
 static uint64_t total_storage_bytes = 0;
 static uint64_t used_storage_bytes = 0;
 
-bool storage_uses_ram = false;
+static bool storage_uses_ram = false;
 
-bool storage_read_sector(uint32_t lba, uint8_t* buffer)
+namespace Disk
 {
-    if (storage_uses_ram)
+    bool read_sector(uint32_t lba, uint8_t* buffer)
     {
-        return ram_disk_read_sector(lba, buffer);
+        if (storage_uses_ram)
+        {
+            return RAM_Disk::read_sector(lba, buffer);
+        }
+
+        return ATA_disk::read_sector(lba, buffer);
     }
 
-    disk_read_sector(lba, buffer);
-
-    return true;
-}
-
-bool storage_write_sector(uint32_t lba, uint8_t* buffer)
-{
-    if (storage_uses_ram)
+    bool write_sector(uint32_t lba, uint8_t* buffer)
     {
-        return ram_disk_write_sector(lba, buffer);
+        if (storage_uses_ram)
+        {
+            return RAM_Disk::write_sector(lba, buffer);
+        }
+
+        return ATA_disk::write_sector(lba, buffer);
     }
 
-    disk_write_sector(lba, buffer);
-
-    return true;
-}
-
-void storage_init()
-{
-    total_storage_bytes = 0;
-    used_storage_bytes = 0;
-    storage_uses_ram = false;
-
-    uint32_t sectors = 0;
-
-    if (ata_identify(&sectors))
+    void init()
     {
-        total_storage_bytes = (uint64_t)sectors * 512;
-
+        total_storage_bytes = 0;
+        used_storage_bytes = 0;
         storage_uses_ram = false;
 
-        Uart::puts("[Storage] Disk detected.\n");
+        uint32_t sectors = 0;
 
-        
-        Uart::puts("[Storage] Disk detected.\n");
-    }
-    else
-    {
-        Uart::puts("[Storage] No disk detected.\n");
-
-        Uart::puts("[Storage] Creating 64 MB RAM disk...\n");
-
-        if (!ram_disk_init())
+        if (ATA_disk::identify(&sectors))
         {
-            Uart::puts("[Storage] Failed to create RAM disk!\n");
+            total_storage_bytes = (uint64_t)sectors * 512;
 
+            Uart::puts("[Storage] Disk detected.\n");
+        }
+        else
+        {
+            Uart::puts("[Storage] No disk detected.\n");
+            Uart::puts("[Storage] Creating 64 MB RAM disk...\n");
+
+            if (!RAM_Disk::init())
+            {
+                Uart::puts("[Storage] Failed to create RAM disk!\n");
+                return;
+            }
+
+            storage_uses_ram = true;
+            total_storage_bytes = RAM_Disk::size();
+
+            Uart::puts("[Storage] RAM disk created.\n");
+        }
+
+        uint8_t header_buffer[512];
+
+        memclear(header_buffer, sizeof(header_buffer));
+
+        if (!Disk::read_sector(CLAWFS_START_LBA, header_buffer))
+        {
+            used_storage_bytes = 0;
             return;
         }
 
-        storage_uses_ram = true;
+        CLAWFSHeader* header = (CLAWFSHeader*)header_buffer;
 
-        total_storage_bytes = ram_disk_size();
+        if (memcmp(header->signature, "CLAWFS", 6) != 0)
+        {
+            used_storage_bytes = 0;
+            return;
+        }
 
-        Uart::puts("[Storage] RAM disk created.\n");
+        uint32_t entries_sectors =
+            (header->entryCount + 15) / 16;
+
+        if (entries_sectors == 0)
+        {
+            entries_sectors = 1;
+        }
+
+        uint32_t data_sectors = header->entryCount;
+
+        used_storage_bytes =
+            (uint64_t)(1 + entries_sectors + data_sectors) * 512;
     }
 
-    uint8_t header_buffer[512];
-
-    memclear(header_buffer, sizeof(header_buffer));
-
-    if (!storage_read_sector(CLAWFS_START_LBA, header_buffer))
+    bool storage_is_ram()
     {
-        used_storage_bytes = 0;
-        return;
+        return storage_uses_ram;
     }
 
-    CLAWFSHeader* header = (CLAWFSHeader*)header_buffer;
-
-    if (memcmp(header->signature, "CLAWFS", 6) != 0)
+    uint64_t total()
     {
-        used_storage_bytes = 0;
-        return;
+        return total_storage_bytes;
     }
 
-    uint32_t entries_sectors = (header->entryCount + 15) / 16;
-
-    if (entries_sectors == 0)
+    uint64_t used()
     {
-        entries_sectors = 1;
+        return used_storage_bytes;
     }
-
-    uint32_t data_sectors = header->entryCount;
-
-    used_storage_bytes = (uint64_t)(1 + entries_sectors + data_sectors) * 512;
-}
-
-bool storage_is_ram()
-{
-    return storage_uses_ram;
-}
-
-uint64_t storage_total()
-{
-    return total_storage_bytes;
-}
-
-uint64_t storage_used()
-{
-    return used_storage_bytes;
 }
