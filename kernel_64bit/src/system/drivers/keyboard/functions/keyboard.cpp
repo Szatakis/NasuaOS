@@ -16,6 +16,12 @@
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
 
+extern bool debug_mode;
+extern window_struct* apps[];
+
+namespace Keyboard
+{
+
 char command_buffer[64];
 size_t cmd_idx = 0;
 
@@ -24,8 +30,6 @@ bool caps_lock = false;
 bool extended_scancode = false;
 
 bool shell_input_enabled = true;
-
-extern window_struct* apps[];
 
 char scancode_to_ascii_normal(uint8_t scancode) 
 {
@@ -186,11 +190,6 @@ void print_sc(uint8_t scancode)
     Uart::puts(hex);
     Uart::puts("\n");
 }
-
-extern bool debug_mode;
-
-extern char scancode_to_ascii_normal(uint8_t);
-extern char scancode_to_ascii_shift(uint8_t);
 
 static void replace_current_command(const char* new_cmd) 
 {
@@ -420,4 +419,6 @@ void handle_keyboard()
             }
         }
     }
+}
+
 }

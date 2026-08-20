@@ -205,7 +205,7 @@ extern "C" void kmain()
     {
         while (inb(0x64) & 1) 
         {
-            handle_keyboard();
+            Keyboard::handle_keyboard();
         }
         
         if(Timer::redraw && !kernel_panicked) 

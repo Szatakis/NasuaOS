@@ -350,7 +350,7 @@ void delete_last_char(size_t font_size)
 
 void clear_line() 
 {
-    size_t start_col = text_col - cmd_idx;
+    size_t start_col = text_col - Keyboard::cmd_idx;
     
     for (size_t c = start_col; c < text_col; c++) 
     {
@@ -359,11 +359,11 @@ void clear_line()
     
     text_col = start_col;
 
-    for (size_t i = 0; i < sizeof(command_buffer); i++) 
+    for (size_t i = 0; i < sizeof(Keyboard::command_buffer); i++) 
     {
-        command_buffer[i] = '\0';
+        Keyboard::command_buffer[i] = '\0';
     }
-    cmd_idx = 0;
+    Keyboard::cmd_idx = 0;
 }
 
 void print_info(const char* msg) 

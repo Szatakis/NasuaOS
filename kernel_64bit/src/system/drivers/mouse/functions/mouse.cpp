@@ -549,17 +549,17 @@ void left_click(bool cmd_enter)
 
 
     // SHELL ENTER
-    else if (shell_input_enabled && cmd_enter)
+    else if (Keyboard::shell_input_enabled && cmd_enter)
     {
-        command_buffer[cmd_idx] = '\0';
+        Keyboard::command_buffer[Keyboard::cmd_idx] = '\0';
 
-        history_add(command_buffer);
+        history_add(Keyboard::command_buffer);
         history_reset_nav();
 
-        execute_command(command_buffer);
+        execute_command(Keyboard::command_buffer);
 
-        cmd_idx = 0;
-        command_buffer[0] = '\0';
+        Keyboard::cmd_idx = 0;
+        Keyboard::command_buffer[0] = '\0';
     }
 }
 
