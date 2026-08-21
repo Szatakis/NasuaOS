@@ -2,6 +2,8 @@
 
 #include "system/gui/vars/colors.hpp"
 
+#include "system/drivers/memory/driver.hpp"
+
 #include "applications/shell/commands.hpp"
 
 limine_framebuffer* fb = nullptr;
@@ -43,7 +45,7 @@ void render_frame()
 
     for (size_t y = 0; y < backbuffer_height; y++) 
     {
-        __builtin_memcpy(&fb_ptr[y * fb_pitch], &backbuffer[y * backbuffer_pitch], backbuffer_width * sizeof(uint32_t));
+        Memory::memcpy(&fb_ptr[y * fb_pitch], &backbuffer[y * backbuffer_pitch], backbuffer_width * sizeof(uint32_t));
     }
 }
 

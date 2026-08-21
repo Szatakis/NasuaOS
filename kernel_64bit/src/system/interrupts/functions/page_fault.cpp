@@ -108,7 +108,7 @@ void page_fault_handler(Registers* regs)
 
     //Normal demand paging.
 
-    uint64_t page = pmm_alloc_page();
+    uint64_t page = Memory::pmm::alloc_page();
 
     if(!page)
     {
@@ -152,7 +152,7 @@ void page_fault_handler(Registers* regs)
         Uart::puts("\n");
     }
 
-    vmm_map_page(virtual_page, page, PAGE_WRITE);
+    Memory::vmm::map_page(virtual_page, page, Memory::vmm::PAGE_WRITE);
 
     // Only log if debug mode is enabled
     if (debug_mode)

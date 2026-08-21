@@ -69,7 +69,7 @@ void file_resolver_save_tombstones()
     Uart::puts("[File Resolver] Saving tombstones to disk...\n");
     
     // Clear buffer and write tombstone data
-    void* buffer = kmalloc(512);
+    void* buffer = Memory::heap::kmalloc(512);
     if (buffer == nullptr) 
     {
         return;
@@ -88,7 +88,7 @@ void file_resolver_save_tombstones()
     // Write to fixed sector
     Disk::write_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer);
     
-    kfree(buffer);
+    Memory::heap::kfree(buffer);
     
     Uart::puts("[File Resolver] Tombstones saved.\n");
 }
@@ -98,7 +98,7 @@ void file_resolver_load_tombstones()
 {
     Uart::puts("[File Resolver] Loading tombstones from disk...\n");
     
-    void* buffer = kmalloc(512);
+    void* buffer = Memory::heap::kmalloc(512);
     if (buffer == nullptr) 
     {
         return;
@@ -108,7 +108,7 @@ void file_resolver_load_tombstones()
     if (!Disk::read_sector(TOMBSTONE_SECTOR, (uint8_t*)buffer)) 
     {
         Uart::puts("[File Resolver] Failed to read tombstones.\n");
-        kfree(buffer);
+        Memory::heap::kfree(buffer);
         return;
     }
     
@@ -126,7 +126,7 @@ void file_resolver_load_tombstones()
         }
     }
     
-    kfree(buffer);
+    Memory::heap::kfree(buffer);
     
     Uart::puts("[File Resolver] Tombstones loaded.\n");
 }
@@ -426,7 +426,7 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     uint32_t bytes_to_copy = src_info.size;
     uint32_t sectors_needed = (bytes_to_copy + 511) / 512;
     
-    void* buffer = kmalloc(sectors_needed * 512);
+    void* buffer = Memory::heap::kmalloc(sectors_needed * 512);
     if (buffer == nullptr) 
     {
         return false;
@@ -438,7 +438,7 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     
     if (!fat_read_file(&rootfs_volume, src_path, buffer, bytes_to_copy, &read_size) || read_size != bytes_to_copy) 
     {
-        kfree(buffer);
+        Memory::heap::kfree(buffer);
         return false;
     }
     
@@ -448,7 +448,7 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
         Disk::write_sector(entry.data_sector + i, (uint8_t*)buffer + (i * 512));
     }
     
-    kfree(buffer);
+    Memory::heap::kfree(buffer);
     
     // Update the entry to store the actual file size
     entry.entry_count = bytes_to_copy;

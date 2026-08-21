@@ -599,7 +599,7 @@ bool fat_read_file(fat_volume* volume, const char* path, void* buffer, uint32_t 
 
         uint32_t chunk = (remaining < cluster_size) ? remaining : cluster_size;
 
-        memcpy(output + copied, data, chunk);
+        Memory::memcpy(output + copied, data, chunk);
 
         copied += chunk;
         remaining -= chunk;

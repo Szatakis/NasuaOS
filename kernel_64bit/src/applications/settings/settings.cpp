@@ -232,7 +232,7 @@ static void draw_system_page(int x, int y, int w, int h)
 
     char memory[10];
 
-    strcpy(memory, memory_total());
+    strcpy(memory, Memory::total());
     strcat(memory, " MB");
 
     draw_text_clipped(memory, x + 160, y + 146, right, bottom, COLOR_WHITE);

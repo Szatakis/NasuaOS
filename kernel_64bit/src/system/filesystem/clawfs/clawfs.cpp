@@ -192,7 +192,7 @@ void clawfs_format()
 
     CLAWFSHeader* header = (CLAWFSHeader*)buffer;
 
-    memcpy(header->signature, "CLAWFS", 6);
+    Memory::memcpy(header->signature, "CLAWFS", 6);
 
     header->version = CLAWFS_VERSION;
     header->entryCount = 0;
@@ -250,7 +250,7 @@ void clawfs_format_clr()
 
     CLAWFSHeader* header = (CLAWFSHeader*)buffer;
 
-    memcpy(header->signature, "CLAWFS", 6);
+    Memory::memcpy(header->signature, "CLAWFS", 6);
 
     header->version = CLAWFS_VERSION;
     header->entryCount = 0;
@@ -445,7 +445,7 @@ bool clawfs_exists()
 
     CLAWFSHeader* header = (CLAWFSHeader*)buffer;
 
-    if (memcmp(header->signature, "CLAWFS", 6) != 0)
+    if (Memory::memcmp(header->signature, "CLAWFS", 6) != 0)
     {
         return false;
     }

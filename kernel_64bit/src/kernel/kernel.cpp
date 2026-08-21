@@ -38,13 +38,6 @@ volatile limine_rsdp_request rsdp_request = {
 };
 
 __attribute__((used, section(".limine_requests")))
-volatile limine_hhdm_request hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST_ID,
-    .revision = 0,
-    .response = nullptr
-};
-
-__attribute__((used, section(".limine_requests")))
 volatile limine_mp_request mp_request = {
     .id = LIMINE_MP_REQUEST_ID,
     .revision = 0,
@@ -92,11 +85,11 @@ void iqu_init()
     Uart::init();
 
     Cpu::init_cores();
-    memory_init();
-    paging_init();
-    pmm_init();
-    vmm_init();
-    heap_init();
+    Memory::init();
+    Memory::paging::init();
+    Memory::pmm::init();
+    Memory::vmm::init();
+    Memory::heap::init();
     Apic::controller_init();
     idt_init();
     Timer::pit_init();

@@ -78,7 +78,7 @@ namespace Disk
 
         CLAWFSHeader* header = (CLAWFSHeader*)header_buffer;
 
-        if (memcmp(header->signature, "CLAWFS", 6) != 0)
+        if (Memory::memcmp(header->signature, "CLAWFS", 6) != 0)
         {
             used_storage_bytes = 0;
             return;

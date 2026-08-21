@@ -179,7 +179,7 @@ void kernel_panic(const char* message, const char* error_code, const char* rip, 
     kernel_panicked = true;
 
     char cpu_name[49];
-    memset(cpu_name, 0, sizeof(cpu_name));
+    Memory::memset(cpu_name, 0, sizeof(cpu_name));
     Cpu::get_brand(cpu_name);
 
     clear_screen();

@@ -60,7 +60,7 @@ static void map_mmio_once(bool& already_mapped, uint64_t phys_base)
     uint64_t phys_page = phys_base & ~0xFFFULL;
     uint64_t virt_page = hhdm_offset() + phys_page;
 
-    vmm_map_page(virt_page, phys_page, PAGE_WRITE);
+    Memory::vmm::map_page(virt_page, phys_page, Memory::vmm::PAGE_WRITE);
 
     already_mapped = true;
 }

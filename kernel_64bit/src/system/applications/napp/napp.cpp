@@ -362,7 +362,7 @@ static bool napp_api_open_window(const napp_window_config* config)
         return false;
     }
 
-    memset(slot, 0, sizeof(napp_window_slot));
+    Memory::memset(slot, 0, sizeof(napp_window_slot));
 
     strcpy(slot->owner, loading_application);
     strcpy(slot->title, config->title != nullptr ? config->title : loading_application);
@@ -576,7 +576,7 @@ bool napp_run(const char* name, int* exit_code)
         return false;
     }
 
-    void* image = kmalloc(info.size);
+    void* image = Memory::heap::kmalloc(info.size);
 
     if (image == nullptr)
     {
@@ -591,7 +591,7 @@ bool napp_run(const char* name, int* exit_code)
     {
         log(ERROR, "NAPP", "Failed to read application");
 
-        kfree(image);
+        Memory::heap::kfree(image);
 
         return false;
     }
@@ -607,7 +607,7 @@ bool napp_run(const char* name, int* exit_code)
             *exit_code = 0;
         }
 
-        kfree(image);
+        Memory::heap::kfree(image);
         return true;
     }
 
@@ -628,7 +628,7 @@ bool napp_run(const char* name, int* exit_code)
         if (header->entry_offset < header->header_size || header->entry_offset >= info.size)
         {
             log(ERROR, "NAPP", "Invalid application entry point");
-            kfree(image);
+            Memory::heap::kfree(image);
             return false;
         }
 
@@ -657,7 +657,7 @@ bool napp_run(const char* name, int* exit_code)
     // its image has to stay mapped.
     if (opened_windows == 0 || !remember_image(name, image))
     {
-        kfree(image);
+        Memory::heap::kfree(image);
     }
 
     Uart::puts("[NAPP] Application finished\n");
@@ -702,7 +702,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     {
         // Load from ClawFS
         image_size = resolve.size;
-        image = kmalloc(image_size);
+        image = Memory::heap::kmalloc(image_size);
         
         if (image == nullptr) 
         {
@@ -727,7 +727,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
             if (!Disk::read_sector(resolve.data_sector + i, image_ptr + (i * 512))) 
             {
                 log(ERROR, "NAPP", "Failed to read from ClawFS");
-                kfree(image);
+                Memory::heap::kfree(image);
                 return false;
             }
         }
@@ -762,7 +762,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         }
 
         image_size = info.size;
-        image = kmalloc(image_size);
+        image = Memory::heap::kmalloc(image_size);
 
         if (image == nullptr) 
         {
@@ -774,7 +774,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         if (!fat_read_file(&rootfs_volume, path, image, image_size, &read_size) || read_size != image_size) 
         {
             log(ERROR, "NAPP", "Failed to read flat binary");
-            kfree(image);
+            Memory::heap::kfree(image);
 
             return false;
         }
@@ -807,7 +807,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         if (header->entry_offset < header->header_size || header->entry_offset >= image_size)
         {
             log(ERROR, "NAPP", "Invalid application entry point");
-            kfree(image);
+            Memory::heap::kfree(image);
             return false;
         }
 
@@ -836,7 +836,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     kernel_napp_api.argc = 0;
     kernel_napp_api.argv = nullptr;
 
-    kfree(image);
+    Memory::heap::kfree(image);
 
     if (exit_code != nullptr)
     {
@@ -865,7 +865,7 @@ static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint3
         return false;
     }
 
-    void* image = kmalloc(info.size);
+    void* image = Memory::heap::kmalloc(info.size);
     if (image == nullptr)
     {
         return false;
@@ -892,7 +892,7 @@ static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint3
         }
     }
 
-    kfree(image);
+    Memory::heap::kfree(image);
     return found;
 }
 

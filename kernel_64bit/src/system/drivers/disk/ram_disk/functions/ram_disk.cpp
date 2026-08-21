@@ -26,7 +26,7 @@ bool RAM_Disk::init()
 
     for (uint64_t i = 0; i < RAM_DISK_PAGE_COUNT; i++)
     {
-        uint64_t phys = pmm_alloc_page();
+        uint64_t phys = Memory::pmm::alloc_page();
 
         if (phys == 0)
         {
@@ -41,7 +41,7 @@ bool RAM_Disk::init()
             {
                 if (ram_pages[j] != 0)
                 {
-                    pmm_free_page(ram_pages[j]);
+                    Memory::pmm::free_page(ram_pages[j]);
 
                     ram_pages[j] = 0;
                 }
@@ -79,7 +79,7 @@ void RAM_Disk::shutdown()
     {
         if (ram_pages[i] != 0)
         {
-            pmm_free_page(ram_pages[i]);
+            Memory::pmm::free_page(ram_pages[i]);
 
             ram_pages[i] = 0;
         }
@@ -123,11 +123,11 @@ bool RAM_Disk::read_sector(uint32_t lba, uint8_t* buffer)
         return false;
     }
 
-    uint8_t* source = (uint8_t*)(phys + get_hhdm_offset());
+    uint8_t* source = (uint8_t*)(phys + Memory::paging::get_hhdm_offset());
 
     source += sector_index * 512;
 
-    memcpy(buffer, source, 512);
+    Memory::memcpy(buffer, source, 512);
 
     return true;
 }
@@ -158,11 +158,11 @@ bool RAM_Disk::write_sector(uint32_t lba, uint8_t* buffer)
         return false;
     }
 
-    uint8_t* destination = (uint8_t*)(phys + get_hhdm_offset());
+    uint8_t* destination = (uint8_t*)(phys + Memory::paging::get_hhdm_offset());
 
     destination += sector_index * 512;
 
-    memcpy(destination, buffer, 512);
+    Memory::memcpy(destination, buffer, 512);
 
     return true;
 }

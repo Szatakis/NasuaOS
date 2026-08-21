@@ -24,7 +24,7 @@ void image_init()
 
     background_pitch = get_backbuffer_pitch();
     background_size = background_pitch * fb->height * sizeof(uint32_t);
-    background_buffer = (uint32_t*)kmalloc(background_size);
+    background_buffer = (uint32_t*)Memory::heap::kmalloc(background_size);
 
     if(!background_buffer)
     {
@@ -86,6 +86,6 @@ void draw_background()
 
     for(size_t y = 0; y < fb->height; y++)
     {
-        memcpy(bb + y * background_pitch, background_buffer + y * background_pitch, fb->width * sizeof(uint32_t));
+        Memory::memcpy(bb + y * background_pitch, background_buffer + y * background_pitch, fb->width * sizeof(uint32_t));
     }
 }

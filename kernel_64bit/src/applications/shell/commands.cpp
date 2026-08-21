@@ -110,7 +110,7 @@ void execute_command(const char *cmd)
 
     print(CMD_TEXT_WHITE);
     // Command: help
-    if (cmd_name_len == 4 && memcmp(cmd, "help", 4) == 0) 
+    if (cmd_name_len == 4 && Memory::memcmp(cmd, "help", 4) == 0) 
     {
         const char* arg_check = args;
 
@@ -141,7 +141,7 @@ void execute_command(const char *cmd)
 
         if (*arg_check != '\0') 
         {
-            if (memcmp(arg_check, "--page ", 7) != 0) 
+            if (Memory::memcmp(arg_check, "--page ", 7) != 0) 
             {
                 print_error("Syntax error!\n");
                 print_info("Usage: help --page [1-");
@@ -417,7 +417,7 @@ void execute_command(const char *cmd)
     }
 
     // 2. Command: clear
-    else if (cmd_name_len == 5 && memcmp(cmd, "clear", 5) == 0)
+    else if (cmd_name_len == 5 && Memory::memcmp(cmd, "clear", 5) == 0)
     {
         if (active_terminal_redirect)
         {
@@ -431,7 +431,7 @@ void execute_command(const char *cmd)
     }
 
     // 3. Command: echo
-    else if (cmd_name_len == 4 && memcmp(cmd, "echo", 4) == 0)
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "echo", 4) == 0)
     {
         const char* text_flag = strstr(args, "--text ");
         const char* color_flag = strstr(args, "--color ");
@@ -508,13 +508,13 @@ void execute_command(const char *cmd)
     }
 
     // 4. Command: fetch
-    else if (cmd_name_len == 5 && memcmp(cmd, "fetch", 5) == 0)
+    else if (cmd_name_len == 5 && Memory::memcmp(cmd, "fetch", 5) == 0)
     {
         fetch();
     }
 
     // 5. Command: time
-    else if (cmd_name_len == 4 && memcmp(cmd, "time", 4) == 0)
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "time", 4) == 0)
     {
         const char* set_flag = strstr(args, "--set ");
         const char* get_flag = strstr(args, "--get");
@@ -587,19 +587,19 @@ void execute_command(const char *cmd)
     }
 
     // 6. Command: reboot
-    else if (cmd_name_len == 6 && memcmp(cmd, "reboot", 6) == 0)
+    else if (cmd_name_len == 6 && Memory::memcmp(cmd, "reboot", 6) == 0)
     {
         Acpi::reboot();
     }
 
     // 7. Command: shutdown
-    else if (cmd_name_len == 8 && memcmp(cmd, "shutdown", 8) == 0)
+    else if (cmd_name_len == 8 && Memory::memcmp(cmd, "shutdown", 8) == 0)
     {
         Acpi::shutdown();
     }
 
     // 8. Command: format
-    else if(cmd_name_len == 6 && memcmp(cmd,"format", 6) == 0)
+    else if(cmd_name_len == 6 && Memory::memcmp(cmd,"format", 6) == 0)
     {
         while (*args == ' ')
         {
@@ -644,7 +644,7 @@ void execute_command(const char *cmd)
     }
 
     // 9. Command: mount
-    else if(cmd_name_len == 5 && memcmp(cmd, "mount", 5) == 0)
+    else if(cmd_name_len == 5 && Memory::memcmp(cmd, "mount", 5) == 0)
     {
         if (clawfs_exists())
         {
@@ -658,13 +658,13 @@ void execute_command(const char *cmd)
     }
 
     // 10. Command: unmount
-    else if(cmd_name_len == 7 && memcmp(cmd, "unmount", 7) == 0)
+    else if(cmd_name_len == 7 && Memory::memcmp(cmd, "unmount", 7) == 0)
     {
         file_resolver_mount(false);
     }
 
     // 11. Command: touch
-    else if (cmd_name_len == 5 && memcmp(cmd, "touch", 5) == 0) 
+    else if (cmd_name_len == 5 && Memory::memcmp(cmd, "touch", 5) == 0) 
     {
         const char* filename_flag = strstr(args, "--file ");
 
@@ -702,7 +702,7 @@ void execute_command(const char *cmd)
     }
 
     // 12. Command: info
-    else if (cmd_name_len == 4 && memcmp(cmd, "info", 4) == 0)
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "info", 4) == 0)
     {
         char cpu_name[48];
         Cpu::get_brand(cpu_name);
@@ -728,12 +728,12 @@ void execute_command(const char *cmd)
         print(CMD_TEXT_GRAY);
         print("Total RAM:      ");
         print(CMD_TEXT_WHITE);
-        print(memory_total());
+        print(Memory::total());
         print("MB\n");
         print(CMD_TEXT_GRAY);
         print("Used RAM:       ");
         print(CMD_TEXT_WHITE);
-        print_num8(memory_used() / (1024 * 1024));
+        print_num8(Memory::used() / (1024 * 1024));
         print("MB\n");
         print("\n");
 
@@ -771,13 +771,13 @@ void execute_command(const char *cmd)
     }
 
     // 13. Command: source
-    else if (cmd_name_len == 6 && memcmp(cmd, "source", 6) == 0)
+    else if (cmd_name_len == 6 && Memory::memcmp(cmd, "source", 6) == 0)
     {
         print_info("NasuaOS Source Code: https://github.com/szatakis/NasuaOS\n");
     }
 
     // 14. Command: debug
-    else if (cmd_name_len == 5 && memcmp(cmd, "debug", 5) == 0)
+    else if (cmd_name_len == 5 && Memory::memcmp(cmd, "debug", 5) == 0)
     {
         const char* on_flag = strstr(args, "--on");
         const char* off_flag = strstr(args, "--off");
@@ -800,25 +800,25 @@ void execute_command(const char *cmd)
     }
 
     // 15. Command: uptime
-    else if (cmd_name_len == 6 && memcmp(cmd, "uptime", 6) == 0)
+    else if (cmd_name_len == 6 && Memory::memcmp(cmd, "uptime", 6) == 0)
     {
         Rtc::print_uptime();
     }
 
     // 16. Command: panic
-    else if (cmd_name_len == 5 && memcmp(cmd, "panic", 5) == 0)
+    else if (cmd_name_len == 5 && Memory::memcmp(cmd, "panic", 5) == 0)
     {
         kernel_panic("User-triggered panic for debugging");
     }
 
     // 17. Command: resolution
-    else if (cmd_name_len == 10 && memcmp(cmd, "resolution", 10) == 0)
+    else if (cmd_name_len == 10 && Memory::memcmp(cmd, "resolution", 10) == 0)
     {
         print_resolution();
     }
 
     // 18. Command: logs
-    else if (cmd_name_len == 4 && memcmp(cmd, "logs", 4) == 0)
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "logs", 4) == 0)
     {
         const char* show_flag = strstr(args, "--show");
         const char* clear_flag = strstr(args, "--clear");
@@ -879,7 +879,7 @@ void execute_command(const char *cmd)
     }
 
     // 19. Command: bootapp
-    else if (cmd_name_len == 7 && memcmp(cmd, "bootapp", 7) == 0)
+    else if (cmd_name_len == 7 && Memory::memcmp(cmd, "bootapp", 7) == 0)
     {
         const char* app_flag = strstr(args, "--app ");
         const char* list_flag = strstr(args, "--list");
@@ -982,7 +982,7 @@ void execute_command(const char *cmd)
     }
 
     // 20. Command: beep
-    else if (cmd_name_len == 4 && memcmp(cmd, "beep", 4) == 0) 
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "beep", 4) == 0) 
     {
         int freq = 1000; // Default freqency in Hz
         int dur = 200;   // Default time in ms
@@ -1073,7 +1073,7 @@ void execute_command(const char *cmd)
     }
 
     // 21. Command: calc
-    else if (cmd_name_len == 4 && memcmp(cmd, "calc", 4) == 0) 
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "calc", 4) == 0) 
     {
         const char* op_flag  = strstr(args, "--op ");
         const char* num1_flag = strstr(args, "--num1 ");
@@ -1198,7 +1198,7 @@ void execute_command(const char *cmd)
     }
 
     // 22. Command: rand
-    else if (cmd_name_len == 4 && memcmp(cmd, "rand", 4) == 0) 
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "rand", 4) == 0) 
     {
         const char* min_flag = strstr(args, "--min ");
         const char* max_flag = strstr(args, "--max ");
@@ -1289,7 +1289,7 @@ void execute_command(const char *cmd)
     }
 
     // 23. Command: inb
-    else if (cmd_name_len == 3 && memcmp(cmd, "inb", 3) == 0)
+    else if (cmd_name_len == 3 && Memory::memcmp(cmd, "inb", 3) == 0)
     {
         const char* port_flag = strstr(args, "--port ");
 
@@ -1313,7 +1313,7 @@ void execute_command(const char *cmd)
     }
 
     // 24. Command: outb
-    else if (cmd_name_len == 4 && memcmp(cmd, "outb", 4) == 0)
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "outb", 4) == 0)
     {
         const char* port_flag = strstr(args, "--port ");
         const char* val_flag  = strstr(args, "--val ");
@@ -1339,7 +1339,7 @@ void execute_command(const char *cmd)
     }
 
     // 25. Command: asciiart
-    else if(cmd_name_len == 8 && memcmp(cmd, "asciiart", 8) == 0)
+    else if(cmd_name_len == 8 && Memory::memcmp(cmd, "asciiart", 8) == 0)
     {
         const char* text_flag = strstr(args, "--text ");
 
@@ -1376,14 +1376,14 @@ void execute_command(const char *cmd)
     }
 
     // 26. Command: safe_mode
-    else if(cmd_name_len == 9 && memcmp(cmd, "safe_mode", 9) == 0)
+    else if(cmd_name_len == 9 && Memory::memcmp(cmd, "safe_mode", 9) == 0)
     {
         print_info("Safe mode ON\n");
         safe_mode = true;
     }
 
     // 27. Command: uart
-    else if (cmd_name_len == 4 && memcmp(cmd, "uart", 4) == 0)
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "uart", 4) == 0)
     {
         const char* text_flag = strstr(args, "--text ");
 
