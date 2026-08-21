@@ -2,8 +2,8 @@
 
 #include "pic.hpp"
 #include "page_fault.hpp"
-#include "system/drivers/uart/driver.hpp"
-#include "system/drivers/timer/driver.hpp"
+#include "drivers/uart/driver.hpp"
+#include "drivers/timer/driver.hpp"
 
 #include "kernel/kernel_panic/kernel_panic.hpp"
 

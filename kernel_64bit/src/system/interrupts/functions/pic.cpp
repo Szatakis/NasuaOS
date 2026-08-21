@@ -1,7 +1,7 @@
 #include "pic.hpp"
 
-#include "system/drivers/apic/driver.hpp"
-#include "system/drivers/uart/driver.hpp"
+#include "drivers/apic/driver.hpp"
+#include "drivers/uart/driver.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
 

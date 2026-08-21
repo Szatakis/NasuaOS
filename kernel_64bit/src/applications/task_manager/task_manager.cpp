@@ -1,11 +1,11 @@
 #include "task_manager.hpp"
 
-void draw_task_manager(window_struct* win)
+void draw_task_manager(Gpu::Window_Manager::window_struct* win)
 {
     (void)win;
 }
 
-window_struct task_manager = 
+Gpu::Window_Manager::window_struct task_manager = 
 {
     .name = "Task Manager",
     .id = 0,

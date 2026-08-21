@@ -1,9 +1,9 @@
 #include "kernel_panic.hpp"
 
-#include "system/drivers/gpu/driver.hpp"
-#include "system/drivers/memory/driver.hpp"
-#include "system/drivers/cpu/driver.hpp"
-#include "system/drivers/timer/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/memory/driver.hpp"
+#include "drivers/cpu/driver.hpp"
+#include "drivers/timer/driver.hpp"
 #include "system/gui/vars/colors.hpp"
 
 #include "libs/libc/libc.hpp"
@@ -54,7 +54,7 @@ static void draw_string_clipped(size_t x, size_t y, const char* str, uint32_t co
     size_t drawn = 0;
     while (*str && drawn < max_chars)
     {
-        draw_char8((unsigned char)*str, x, y, color);
+        Gpu::draw_char8((unsigned char)*str, x, y, color);
         x += CH_W;
         str++;
         drawn++;
@@ -63,7 +63,7 @@ static void draw_string_clipped(size_t x, size_t y, const char* str, uint32_t co
 
 static void panic_fill_row(uint32_t color)
 {
-    fill_block(box_px, row_y(), color, BOX_PX_W, CH_H);
+    Gpu::fill_block(box_px, row_y(), color, BOX_PX_W, CH_H);
     prow++;
 }
 
@@ -72,15 +72,15 @@ static void panic_text_row(const char* text, uint32_t text_color)
     size_t y = row_y();
     size_t x = box_px;
 
-    fill_block(x, y, COL_BORDER, HORIZ_PAD, CH_H);
+    Gpu::fill_block(x, y, COL_BORDER, HORIZ_PAD, CH_H);
     x += HORIZ_PAD;
 
-    fill_block(x, y, COL_PANEL, BOX_COLS * CH_W, CH_H);
+    Gpu::fill_block(x, y, COL_PANEL, BOX_COLS * CH_W, CH_H);
 
     draw_string_clipped(x, y + 2, text ? text : "", text_color, BOX_COLS);
 
     x += BOX_COLS * CH_W;
-    fill_block(x, y, COL_BORDER, HORIZ_PAD, CH_H);
+    Gpu::fill_block(x, y, COL_BORDER, HORIZ_PAD, CH_H);
 
     prow++;
 }
@@ -93,14 +93,14 @@ static void panic_center_row(const char* text, uint32_t text_color)
     size_t y = row_y();
     size_t x = box_px;
 
-    fill_block(x, y, COL_BORDER, HORIZ_PAD, CH_H);
+    Gpu::fill_block(x, y, COL_BORDER, HORIZ_PAD, CH_H);
     x += HORIZ_PAD;
 
-    fill_block(x, y, COL_PANEL, BOX_COLS * CH_W, CH_H);
+    Gpu::fill_block(x, y, COL_PANEL, BOX_COLS * CH_W, CH_H);
 
     draw_string_clipped(x + (pad_chars * CH_W), y + 2, text ? text : "", text_color, BOX_COLS - pad_chars);
 
-    fill_block(box_px + BOX_PX_W - HORIZ_PAD, y, COL_BORDER, HORIZ_PAD, CH_H);
+    Gpu::fill_block(box_px + BOX_PX_W - HORIZ_PAD, y, COL_BORDER, HORIZ_PAD, CH_H);
 
     prow++;
 }
@@ -110,17 +110,17 @@ static void panic_kv_row(const char* key, const char* value)
     size_t y = row_y();
     size_t x = box_px;
 
-    fill_block(x, y, COL_BORDER, HORIZ_PAD, CH_H);
+    Gpu::fill_block(x, y, COL_BORDER, HORIZ_PAD, CH_H);
     x += HORIZ_PAD;
 
-    fill_block(x, y, COL_PANEL, BOX_COLS * CH_W, CH_H);
+    Gpu::fill_block(x, y, COL_PANEL, BOX_COLS * CH_W, CH_H);
 
     draw_string_clipped(x + CH_W, y + 2, key ? key : "", COL_TEXT_DIM, 13);
 
     size_t val_offset = 14 * CH_W;
     draw_string_clipped(x + val_offset, y + 2, (value && *value) ? value : "N/A", COL_TEXT_BRIGHT, BOX_COLS - 14);
 
-    fill_block(box_px + BOX_PX_W - HORIZ_PAD, y, COL_BORDER, HORIZ_PAD, CH_H);
+    Gpu::fill_block(box_px + BOX_PX_W - HORIZ_PAD, y, COL_BORDER, HORIZ_PAD, CH_H);
 
     prow++;
 }
@@ -134,7 +134,7 @@ static void draw_bitmap_128x128(size_t x, size_t y)
         for (size_t i = 0; i < 128; ++i)
         {
             uint32_t col = debug_qr_code[j * 128 + i];
-            put_pixel(x + i, y + j, col);
+            Gpu::put_pixel(x + i, y + j, col);
         }
     }
 }
@@ -152,16 +152,16 @@ static void draw_debug_box(size_t scr_w, size_t scr_h)
     size_t dbg_px = box_px + BOX_PX_W + BOX_GAP;
     size_t dbg_py = box_py;
 
-    fill_block(dbg_px, dbg_py, COL_PANEL, DBG_BOX_PX_W, DBG_BOX_PX_H);
-    draw_rect((int)dbg_px, (int)dbg_py, (int)(dbg_px + DBG_BOX_PX_W), (int)(dbg_py + DBG_BOX_PX_H), COL_BORDER);
+    Gpu::fill_block(dbg_px, dbg_py, COL_PANEL, DBG_BOX_PX_W, DBG_BOX_PX_H);
+    Gpu::draw_rect((int)dbg_px, (int)dbg_py, (int)(dbg_px + DBG_BOX_PX_W), (int)(dbg_py + DBG_BOX_PX_H), COL_BORDER);
 
     size_t header_y = dbg_py + 2;
-    fill_block(dbg_px, header_y, COL_HEADER, DBG_BOX_PX_W, CH_H);
+    Gpu::fill_block(dbg_px, header_y, COL_HEADER, DBG_BOX_PX_W, CH_H);
 
     size_t text_block_y = header_y + CH_H + 4;
     size_t text_block_h = CH_H * 3;
 
-    fill_block(dbg_px + HORIZ_PAD, text_block_y, COL_BORDER, DBG_BOX_COLS * CH_W, text_block_h);
+    Gpu::fill_block(dbg_px + HORIZ_PAD, text_block_y, COL_BORDER, DBG_BOX_COLS * CH_W, text_block_h);
 
     draw_string_clipped(dbg_px + HORIZ_PAD + CH_W, text_block_y + 2, "Scan this code for", COL_TEXT_DIM, DBG_BOX_COLS - 2);
     draw_string_clipped(dbg_px + HORIZ_PAD + CH_W, text_block_y + 2 + CH_H, "kernel debug information.", COL_TEXT_DIM, DBG_BOX_COLS - 2);
@@ -182,17 +182,17 @@ void kernel_panic(const char* message, const char* error_code, const char* rip, 
     Memory::memset(cpu_name, 0, sizeof(cpu_name));
     Cpu::get_brand(cpu_name);
 
-    clear_screen();
+    Gpu::clear_screen(COLOR_NASUA_BG);
 
-    size_t scr_w = fb ? fb->width : 800;
-    size_t scr_h = fb ? fb->height : 600;
+    size_t scr_w = Gpu::fb ? Gpu::fb->width : 800;
+    size_t scr_h = Gpu::fb ? Gpu::fb->height : 600;
 
     box_px = (scr_w > BOX_PX_W) ? (scr_w - BOX_PX_W) / 2 : 0;
     box_py = (scr_h > BOX_PX_H) ? (scr_h - BOX_PX_H) / 2 : 0;
     prow = 0;
 
-    fill_block(box_px, box_py, COL_PANEL, BOX_PX_W, BOX_PX_H);
-    draw_rect((int)box_px, (int)box_py, (int)(box_px + BOX_PX_W), (int)(box_py + BOX_PX_H), COL_BORDER);
+    Gpu::fill_block(box_px, box_py, COL_PANEL, BOX_PX_W, BOX_PX_H);
+    Gpu::draw_rect((int)box_px, (int)box_py, (int)(box_px + BOX_PX_W), (int)(box_py + BOX_PX_H), COL_BORDER);
 
     prow = 0;
 
@@ -216,7 +216,7 @@ void kernel_panic(const char* message, const char* error_code, const char* rip, 
 
     draw_debug_box(scr_w, scr_h);
 
-    render_frame();
+    Gpu::render_frame();
 
     disable_interrupts();
 

@@ -1,20 +1,19 @@
 #include "shell.hpp"
 
-#include "../../system/drivers/video/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/keyboard/driver.hpp"
 
-#include "../../system/sysfunc/sysfunc.hpp"
+#include "system/sysfunc/sysfunc.hpp"
 
-#include "../../libs/libc/libc.hpp"
-
-extern char input_buffer[128];
-extern uint32_t cursor_x;
-extern uint32_t cursor_y;
+#include "libs/libc/libc.hpp"
 
 void shell()
 {
-    if(strcmp(input_buffer,"help"))
+    char* cmd = Keyboard::input_buffer;
+
+    if(strcmp(cmd,"help") == 0)
     {
-        print(
+        Gpu::print(
             "Commands:\n"
             "help\n"
             "clear\n"
@@ -25,41 +24,41 @@ void shell()
             "halt\n\n"
         );
     }
-    else if(strcmp(input_buffer,"clear"))
+    else if(strcmp(cmd,"clear") == 0)
     {
-        clear_screen(background_color);
-        cursor_x = 0;
-        cursor_y = 0;
+        Gpu::clear_screen(Gpu::background_color);
+        Gpu::cursor_x = 0;
+        Gpu::cursor_y = 0;
     }
-    else if(strcmp(input_buffer,"info"))
+    else if(strcmp(cmd,"info") == 0)
     {
-        print(
+        Gpu::print(
             "Mode: protected mode\n"
             "Kernel: NasuaOS 32bit\n"
             "Graphics: framebuffer\n\n"
         );
     }
-    else if(strcmp(input_buffer,"fetch"))
+    else if(strcmp(cmd,"fetch") == 0)
     {
-        fetch();
+        Gpu::fetch();
     }
-    else if(strcmp(input_buffer,"version"))
+    else if(strcmp(cmd,"version") == 0)
     {
-        print(
+        Gpu::print(
             "NasuaOS 32bit\n"
             "Version: 0.8.0\n\n"
         );
     }
-    else if(strcmp(input_buffer,"reboot"))
+    else if(strcmp(cmd,"reboot") == 0)
     {
         reboot();
     }
-    else if(strcmp(input_buffer,"halt"))
+    else if(strcmp(cmd,"halt") == 0)
     {
         halt();
     }
     else
     {
-        print("Unknown command\n");
+        Gpu::print("Unknown command\n");
     }
 }

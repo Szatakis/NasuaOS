@@ -466,7 +466,6 @@ ifeq ($(ARCH),loongarch64)
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
 		iso_root -o $(IMAGE_NAME).iso
 endif
-	rm -rf iso_root
 
 $(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys $(GENERATED_LIMINE)
 	rm -f $(IMAGE_NAME).hdd

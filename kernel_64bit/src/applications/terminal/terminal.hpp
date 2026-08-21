@@ -1,10 +1,10 @@
 #pragma once
 
-#include "system/drivers/gpu/driver.hpp"
+#include "drivers/gpu/driver.hpp"
 
 #include "system/gui/vars/colors.hpp"
 
-extern window_struct terminal;
+extern Gpu::Window_Manager::window_struct terminal;
 
 extern bool active_terminal_redirect;
 

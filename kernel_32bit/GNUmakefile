@@ -24,7 +24,10 @@ CFLAGS := \
 	-Wall \
 	-Wextra \
 	-mno-sse \
-	-mno-sse2
+	-mno-sse2 \
+	-I src \
+	-I ../resources \
+	-I ../utilities/applications/include
 
 LDFLAGS := \
 	-m32 \
@@ -33,6 +36,10 @@ LDFLAGS := \
 
 
 TARGET := $(BIN_DIR)/kernel_32bit
+
+RESOURCES_DIR := ../resources
+RESOURCES_CPP_SRC := $(shell find $(RESOURCES_DIR)/libs $(RESOURCES_DIR)/drivers/keyboard $(RESOURCES_DIR)/drivers/gpu -type f -name "*.cpp" 2>/dev/null)
+RESOURCES_OBJ := $(patsubst $(RESOURCES_DIR)/%.cpp,$(OBJ_DIR)/resources/%.o,$(RESOURCES_CPP_SRC))
 
 
 # wszystkie pliki źródłowe
@@ -47,7 +54,8 @@ SRC := $(CPP_SRC) $(C_SRC) $(ASM_SRC)
 # zamiana src/x.cpp -> obj-x86_32/x.o
 OBJ := $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(CPP_SRC)) \
        $(patsubst %.c,$(OBJ_DIR)/%.o,$(C_SRC)) \
-       $(patsubst %.asm,$(OBJ_DIR)/%.o,$(ASM_SRC))
+       $(patsubst %.asm,$(OBJ_DIR)/%.o,$(ASM_SRC)) \
+       $(RESOURCES_OBJ)
 
 
 
@@ -81,6 +89,11 @@ $(OBJ_DIR)/%.o: %.c
 $(OBJ_DIR)/%.o: %.asm
 	@mkdir -p $(dir $@)
 	$(AS) -f elf32 $< -o $@
+
+# Shared resources
+$(OBJ_DIR)/resources/%.o: $(RESOURCES_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 
 .PHONY: clean

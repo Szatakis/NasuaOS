@@ -1,8 +1,8 @@
 #include "clawfs.hpp"
 
-#include "system/drivers/gpu/driver.hpp"
-#include "system/drivers/disk/driver.hpp"
-#include "system/drivers/memory/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/disk/driver.hpp"
+#include "drivers/memory/driver.hpp"
 
 #include "applications/shell/commands.hpp"
 
@@ -179,7 +179,7 @@ void setup_entry(CLAWFSEntry* e, const char* name, uint32_t type, uint32_t secto
 // Format CLAWFS
 void clawfs_format()
 {
-    print_info("Formatting CLAWFS...\n");
+    Gpu::print_info("Formatting CLAWFS...\n");
 
     // Reset allocation pointer.
     next_free_sector = 108;
@@ -231,13 +231,13 @@ void clawfs_format()
     clawfs_mkdir("/home/user", "images");
     clawfs_mkdir("/home/user","videos");
 
-    print_info("Format complete.\n");
+    Gpu::print_info("Format complete.\n");
 }
 
 // Format Clear CLAWFS
 void clawfs_format_clr()
 {
-    print_info("Formatting CLAWFS...\n");
+    Gpu::print_info("Formatting CLAWFS...\n");
 
     // Reset allocation pointer.
     next_free_sector = 108;
@@ -264,7 +264,7 @@ void clawfs_format_clr()
 
     Disk::write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
 
-    print_info("Format complete.\n");
+    Gpu::print_info("Format complete.\n");
 }
 
 
@@ -273,7 +273,7 @@ void clawfs_mkdir(const char* parent_path, const char* dir_name)
 {
     if (parent_path == nullptr || dir_name == nullptr)
     {
-        print_error("Invalid path or directory name!\n");
+        Gpu::print_error("Invalid path or directory name!\n");
 
         return;
     }
@@ -282,7 +282,7 @@ void clawfs_mkdir(const char* parent_path, const char* dir_name)
 
     if (parent_sector == 0)
     {
-        print_error("Parent not found!\n");
+        Gpu::print_error("Parent not found!\n");
 
         return;
     }
@@ -291,7 +291,7 @@ void clawfs_mkdir(const char* parent_path, const char* dir_name)
 
     if (!Disk::read_sector(parent_sector, buffer))
     {
-        print_error("Failed to read parent directory!\n");
+        Gpu::print_error("Failed to read parent directory!\n");
 
         return;
     }
@@ -308,13 +308,13 @@ void clawfs_mkdir(const char* parent_path, const char* dir_name)
 
             Disk::write_sector(parent_sector, buffer);
 
-            print_info("Dir created.\n");
+            Gpu::print_info("Dir created.\n");
 
             return;
         }
     }
 
-    print_error("Directory is full!\n");
+    Gpu::print_error("Directory is full!\n");
 }
 
 
@@ -323,7 +323,7 @@ void clawfs_create_file_in(const char* path, const char* name)
 {
     if (path == nullptr || name == nullptr)
     {
-        print_error("Invalid path or file name!\n");
+        Gpu::print_error("Invalid path or file name!\n");
 
         return;
     }
@@ -332,7 +332,7 @@ void clawfs_create_file_in(const char* path, const char* name)
 
     if (target_sector == 0)
     {
-        print_error("Path not found!\n");
+        Gpu::print_error("Path not found!\n");
 
         return;
     }
@@ -341,7 +341,7 @@ void clawfs_create_file_in(const char* path, const char* name)
 
     if (!Disk::read_sector(target_sector, buffer))
     {
-        print_error("Failed to read directory!\n");
+        Gpu::print_error("Failed to read directory!\n");
 
         return;
     }
@@ -371,13 +371,13 @@ void clawfs_create_file_in(const char* path, const char* name)
 
             Disk::write_sector(target_sector, buffer);
 
-            print_info("File created.\n");
+            Gpu::print_info("File created.\n");
 
             return;
         }
     }
 
-    print_error("Directory is full!\n");
+    Gpu::print_error("Directory is full!\n");
 }
 
 
@@ -386,7 +386,7 @@ void clawfs_dir(const char* path)
 {
     if (path == nullptr)
     {
-        print_error("Invalid path!\n");
+        Gpu::print_error("Invalid path!\n");
 
         return;
     }
@@ -395,7 +395,7 @@ void clawfs_dir(const char* path)
 
     if (target == 0)
     {
-        print_error("Dir not found!\n");
+        Gpu::print_error("Dir not found!\n");
 
         return;
     }
@@ -404,7 +404,7 @@ void clawfs_dir(const char* path)
 
     if (!Disk::read_sector(target, buffer))
     {
-        print_error("Failed to read directory!\n");
+        Gpu::print_error("Failed to read directory!\n");
 
         return;
     }
@@ -417,15 +417,15 @@ void clawfs_dir(const char* path)
         {
             if (entries[i].type == CLAWFS_DIRECTORY)
             {
-                print("<DIR>  ");
+                Gpu::print("<DIR>  ");
             }
             else
             {
-                print("       ");
+                Gpu::print("       ");
             }
 
-            print(entries[i].name);
-            print("\n");
+            Gpu::print(entries[i].name);
+            Gpu::print("\n");
         }
     }
 }
@@ -464,7 +464,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
 {
     if (parent_path == nullptr || name == nullptr)
     {
-        print_error("Invalid path or name!\n");
+        Gpu::print_error("Invalid path or name!\n");
 
         return;
     }
@@ -473,7 +473,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
 
     if (parent_sector == 0)
     {
-        print_error("Parent directory not found!\n");
+        Gpu::print_error("Parent directory not found!\n");
 
         return;
     }
@@ -482,7 +482,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
 
     if (!Disk::read_sector(parent_sector, buffer))
     {
-        print_error("Failed to read parent directory!\n");
+        Gpu::print_error("Failed to read parent directory!\n");
 
         return;
     }
@@ -513,7 +513,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
 
             if (!Disk::read_sector(entries[i].data_sector, dir_buffer))
             {
-                print_error("Failed to read directory!\n");
+                Gpu::print_error("Failed to read directory!\n");
 
                 return;
             }
@@ -524,7 +524,7 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
             {
                 if (sub_entries[j].name[0] != '\0')
                 {
-                    print_error("Directory is not empty!\n");
+                    Gpu::print_error("Directory is not empty!\n");
 
                     return;
                 }
@@ -536,22 +536,22 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
 
         if (!Disk::write_sector(parent_sector, buffer))
         {
-            print_error("Failed to update directory!\n");
+            Gpu::print_error("Failed to update directory!\n");
 
             return;
         }
 
-        print_info("Removed successfully.\n");
+        Gpu::print_info("Removed successfully.\n");
 
         return;
     }
 
     if (type == CLAWFS_FILE)
     {
-        print_error("File not found!\n");
+        Gpu::print_error("File not found!\n");
     }
     else if (type == CLAWFS_DIRECTORY)
     {
-        print_error("Directory not found!\n");
+        Gpu::print_error("Directory not found!\n");
     }
 }

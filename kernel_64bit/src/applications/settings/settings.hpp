@@ -1,6 +1,6 @@
 #pragma once
 
-#include "system/drivers/gpu/driver.hpp"
+#include "drivers/gpu/driver.hpp"
 #include "system/gui/vars/colors.hpp"
 
-extern window_struct settings;
+extern Gpu::Window_Manager::window_struct settings;

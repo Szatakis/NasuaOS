@@ -1,12 +1,12 @@
 #include "suaedit.hpp"
 #include "suascript/suascript.hpp"
 
-void draw_suaedit(window_struct* win)
+void draw_suaedit(Gpu::Window_Manager::window_struct* win)
 {
     (void)win;
 }
 
-window_struct suaedit = 
+Gpu::Window_Manager::window_struct suaedit = 
 {
     .name = "SuaEdit",
     .id = 0,

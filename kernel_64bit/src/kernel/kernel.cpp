@@ -187,9 +187,16 @@ extern "C" void kmain()
 {
     pre_check();
 
-    fb = framebuffer_request.response->framebuffers[0];
-    init_backbuffer(fb->width, fb->height, fb->pitch);
-    init_text_buffer();
+    static framebuffer_info fb_info;
+    limine_framebuffer* limine_fb = framebuffer_request.response->framebuffers[0];
+    fb_info.address = (uint64_t)limine_fb->address;
+    fb_info.pitch = limine_fb->pitch;
+    fb_info.width = limine_fb->width;
+    fb_info.height = limine_fb->height;
+    fb_info.bpp = limine_fb->bpp;
+    Gpu::fb = &fb_info;
+    Gpu::init_backbuffer(fb_info.width, fb_info.height, fb_info.pitch);
+    Gpu::init_text_buffer();
 
     iqu_init();
 
@@ -205,16 +212,16 @@ extern "C" void kmain()
         {
             Timer::redraw = false;
 
-            clear_screen();
+            Gpu::clear_screen(COLOR_NASUA_BG);
 
             draw_background();
 
-            update_gui();
+            Gpu::update_gui();
             update_windows_gui();
 
-            handle_mouse();
+            Gpu::handle_mouse();
 
-            render_frame();
+            Gpu::render_frame();
         }
 
         asm volatile("hlt");

@@ -36,7 +36,7 @@ void terminal_clear_output()
     terminal_data.col_cursor = 0;
 
     active_terminal_redirect = true;
-    print_cmd();
+    Gpu::print_cmd();
     active_terminal_redirect = false;
 }
 
@@ -98,7 +98,7 @@ void terminal_write_string(const char* str)
     }
 }
 
-void terminal_key(window_struct* win, char key) 
+void terminal_key(Gpu::Window_Manager::window_struct* win, char key) 
 {
     terminal_state* term = (terminal_state*)win->userdata;
 
@@ -117,7 +117,7 @@ void terminal_key(window_struct* win, char key)
         {
             terminal_write_char('\n');
             active_terminal_redirect = true;
-            print_cmd();
+            Gpu::print_cmd();
             active_terminal_redirect = false;
         }
 
@@ -143,7 +143,7 @@ void terminal_key(window_struct* win, char key)
     }
 }
 
-void draw_terminal(window_struct* win) 
+void draw_terminal(Gpu::Window_Manager::window_struct* win) 
 {
     terminal_state* term = (terminal_state*)win->userdata;
 
@@ -163,9 +163,9 @@ void draw_terminal(window_struct* win)
 
     int start_x = win->pos_x + 8;
     int start_y = win->pos_y + 30;
-    print_at8("NasuaOS Terminal", start_x, start_y, COLOR_TERM_INFO);
+    Gpu::print_at8("NasuaOS Terminal", start_x, start_y, COLOR_TERM_INFO);
 
-    int char_w = 8 + FONT_SPACING_W;
+    int char_w = 8 + Gpu::FONT_SPACING_W;
     int line_height = 12;
     int content_start_y = start_y + 16;
     int available_height = win_inner_h - 22;
@@ -261,12 +261,12 @@ void draw_terminal(window_struct* win)
                     }
                     chunk[chunk_len] = '\0';
 
-                    print_at8(chunk, start_x, curr_y, COLOR_WHITE);
+                    Gpu::print_at8(chunk, start_x, curr_y, COLOR_WHITE);
 
                     if (is_last_line && (offset + chunk_len >= len)) 
                     {
                         int cursor_x_pos = start_x + chunk_len * char_w;
-                        print_at8("_", cursor_x_pos, curr_y, COLOR_GRAY);
+                        Gpu::print_at8("_", cursor_x_pos, curr_y, COLOR_GRAY);
                     }
 
                     curr_y += line_height;
@@ -279,7 +279,7 @@ void draw_terminal(window_struct* win)
     }
 }
 
-window_struct terminal = 
+Gpu::Window_Manager::window_struct terminal = 
 {
     .name = "Terminal",
     .id = 0,

@@ -1,10 +1,10 @@
 #include "napp.hpp"
 
-#include "system/drivers/gpu/driver.hpp"
-#include "system/drivers/disk/ata/driver.hpp"
-#include "system/drivers/memory/driver.hpp"
-#include "system/drivers/timer/driver.hpp"
-#include "system/drivers/uart/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/disk/ata/driver.hpp"
+#include "drivers/memory/driver.hpp"
+#include "drivers/timer/driver.hpp"
+#include "drivers/uart/driver.hpp"
 
 #include "system/filesystem/fat/fat.hpp"
 #include "system/filesystem/clawfs/clawfs.hpp"
@@ -35,7 +35,7 @@ struct napp_window_slot
     char owner[NAPP_MAX_NAME];
     char title[NAPP_MAX_NAME];
 
-    window_struct window;
+    Gpu::Window_Manager::window_struct window;
     napp_window view;
 
     napp_window_draw draw;
@@ -61,7 +61,7 @@ static void napp_api_print(const char* text)
 {
     if (text != nullptr)
     {
-        print(text);
+        Gpu::print(text);
     }
 }
 
@@ -69,7 +69,7 @@ static void napp_api_print_info(const char* text)
 { 
     if (text != nullptr) 
     { 
-        print_info(text);
+        Gpu::print_info(text);
     }
 }
 
@@ -77,7 +77,7 @@ static void napp_api_print_warn(const char* text)
 { 
     if (text != nullptr) 
     { 
-        print_warn(text);
+        Gpu::print_warn(text);
     }
 }
 
@@ -85,7 +85,7 @@ static void napp_api_print_error(const char* text)
 { 
     if (text != nullptr) 
     { 
-        print_error(text);
+        Gpu::print_error(text);
     }
 }
 
@@ -93,19 +93,19 @@ static void napp_api_print_line(const char* text)
 {
     if (text != nullptr)
     {
-        print(text);
-        print("\n");
+        Gpu::print(text);
+        Gpu::print("\n");
     }
 }
 
 static void napp_api_print_dec(uint32_t value)
 {
-    print_num8(value);
+    Gpu::print_num8(value);
 }
 
 static void napp_api_print_hex(uint32_t value)
 {
-    print_hex(value);
+    Gpu::print_hex(value);
 }
 
 static void napp_api_sleep_ms(uint32_t milliseconds)
@@ -231,7 +231,7 @@ static void napp_api_fill_block(int x, int y, uint32_t color, int width, int hei
         return;
     }
 
-    fill_block((size_t)x, (size_t)y, color, (size_t)width, (size_t)height);
+    Gpu::fill_block((size_t)x, (size_t)y, color, (size_t)width, (size_t)height);
 }
 
 static void napp_api_draw_text(const char* text, int x, int y, uint32_t color)
@@ -241,17 +241,17 @@ static void napp_api_draw_text(const char* text, int x, int y, uint32_t color)
         return;
     }
 
-    print_at8(text, (size_t)x, (size_t)y, color);
+    Gpu::print_at8(text, (size_t)x, (size_t)y, color);
 }
 
-static int window_title_height(const window_struct* window)
+static int window_title_height(const Gpu::Window_Manager::window_struct* window)
 {
     int title = window->height / 10;
 
     return title < 18 ? 18 : title;
 }
 
-static napp_window_slot* slot_of(window_struct* window)
+static napp_window_slot* slot_of(Gpu::Window_Manager::window_struct* window)
 {
     for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
     {
@@ -264,7 +264,7 @@ static napp_window_slot* slot_of(window_struct* window)
     return nullptr;
 }
 
-static napp_window_slot* sync_slot(window_struct* window)
+static napp_window_slot* sync_slot(Gpu::Window_Manager::window_struct* window)
 {
     napp_window_slot* slot = slot_of(window);
 
@@ -282,7 +282,7 @@ static napp_window_slot* sync_slot(window_struct* window)
     return slot;
 }
 
-static void napp_window_draw_trampoline(window_struct* window)
+static void napp_window_draw_trampoline(Gpu::Window_Manager::window_struct* window)
 {
     napp_window_slot* slot = sync_slot(window);
 
@@ -292,7 +292,7 @@ static void napp_window_draw_trampoline(window_struct* window)
     }
 }
 
-static void napp_window_key_trampoline(window_struct* window, char key)
+static void napp_window_key_trampoline(Gpu::Window_Manager::window_struct* window, char key)
 {
     napp_window_slot* slot = sync_slot(window);
 
@@ -302,7 +302,7 @@ static void napp_window_key_trampoline(window_struct* window, char key)
     }
 }
 
-static void napp_window_mouse_trampoline(window_struct* window, int mouse_x, int mouse_y)
+static void napp_window_mouse_trampoline(Gpu::Window_Manager::window_struct* window, int mouse_x, int mouse_y)
 {
     napp_window_slot* slot = sync_slot(window);
 
@@ -333,7 +333,7 @@ static void show_window(napp_window_slot* slot)
 
     current_id++;
 
-    register_window(&slot->window);
+    Gpu::Window_Manager::register_window(&slot->window);
 }
 
 static bool napp_api_open_window(const napp_window_config* config)

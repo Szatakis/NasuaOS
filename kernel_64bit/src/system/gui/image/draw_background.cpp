@@ -2,8 +2,8 @@
 
 #include "system/gui/gui.hpp"
 #include "system/gui/vars/colors.hpp"
-#include "system/drivers/gpu/driver.hpp"
-#include "system/drivers/memory/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/memory/driver.hpp"
 
 
 static uint32_t* background_buffer = nullptr;
@@ -17,13 +17,13 @@ size_t bar_h_scaled = 0;
 
 void image_init()
 {
-    if(!fb)
+    if(!Gpu::fb)
     {
         return;
     }
 
-    background_pitch = get_backbuffer_pitch();
-    background_size = background_pitch * fb->height * sizeof(uint32_t);
+    background_pitch = Gpu::get_backbuffer_pitch();
+    background_size = background_pitch * Gpu::fb->height * sizeof(uint32_t);
     background_buffer = (uint32_t*)Memory::heap::kmalloc(background_size);
 
     if(!background_buffer)
@@ -31,7 +31,7 @@ void image_init()
         return;
     }
 
-    bar_h_scaled = (bar_h * fb->height) / 720;
+    bar_h_scaled = (bar_h * Gpu::fb->height) / 720;
     if(bar_h > bar_h_scaled)
     {
         bar_h = bar_h + bar_h_scaled;
@@ -39,26 +39,26 @@ void image_init()
         bar_h = bar_h - bar_h_scaled;
     }
 
-    for(size_t y = 0; y < fb->height; y++)
+    for(size_t y = 0; y < Gpu::fb->height; y++)
     {
-        for(size_t x = 0; x < fb->width; x++)
+        for(size_t x = 0; x < Gpu::fb->width; x++)
         {
             background_buffer[y * background_pitch + x] = COLOR_NASUA_BG;
         }
     }
 
-    for(size_t y = 0; y < fb->height; y++)
+    for(size_t y = 0; y < Gpu::fb->height; y++)
     {
-        size_t src_y = (y * background_height) / fb->height;
+        size_t src_y = (y * background_height) / Gpu::fb->height;
 
         if(src_y >= background_height)
         {
             src_y = background_height - 1;
         }
 
-        for(size_t x = 0; x < fb->width; x++)
+        for(size_t x = 0; x < Gpu::fb->width; x++)
         {
-            size_t src_x = (x * background_width) / fb->width;
+            size_t src_x = (x * background_width) / Gpu::fb->width;
 
             if(src_x >= background_width)
             {
@@ -72,20 +72,20 @@ void image_init()
 
 void draw_background()
 {
-    if(!fb || !background_buffer)
+    if(!Gpu::fb || !background_buffer)
     {
         return;
     }
 
-    uint32_t* bb = get_backbuffer();
+    uint32_t* bb = Gpu::get_backbuffer();
 
     if(!bb) 
     {
         return;
     }
 
-    for(size_t y = 0; y < fb->height; y++)
+    for(size_t y = 0; y < Gpu::fb->height; y++)
     {
-        Memory::memcpy(bb + y * background_pitch, background_buffer + y * background_pitch, fb->width * sizeof(uint32_t));
+        Memory::memcpy(bb + y * background_pitch, background_buffer + y * background_pitch, Gpu::fb->width * sizeof(uint32_t));
     }
 }

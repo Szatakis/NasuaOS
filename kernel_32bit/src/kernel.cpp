@@ -10,31 +10,21 @@
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
 
-//DEBUG VARS
+#ifdef __i386__
 bool safe_mode = false;
 bool debug_mode = false;
+#endif
 
-//Sys vars
-framebuffer fb;
-uint32_t* buffer = nullptr;
-
-
-uint32_t cursor_x = 0;
-uint32_t cursor_y = 0;
-
-uint32_t max_cols = 1280 / CHAR_WIDTH;
-uint32_t max_rows = 720 / CHAR_HEIGHT;
-
-bool cursor_state = true;
-
-char input_buffer[128];
-
-uint32_t input_pos = 0;
+#ifdef __i386__
+char Keyboard::input_buffer[128];
+uint32_t Keyboard::input_pos = 0;
+#endif
 
 extern "C"
 void kmain(uint32_t mbi)
 {
-    if(!graphics_init(mbi))
+#ifdef __i386__
+    if(!Gpu::graphics_init(mbi))
     {
         while(1)
         {
@@ -42,17 +32,17 @@ void kmain(uint32_t mbi)
         }
     }
 
-    clear_screen(0x000000);
-    keyboard_init();
+    Gpu::clear_screen(0x000000);
+    Keyboard::keyboard_init();
 
-
-    fetch();
+    Gpu::fetch();
     check_modules(mbi);
 
     while(true)
     {
-        print("> ");
-        read_line();
+        Gpu::print("> ");
+        Keyboard::read_line();
         shell();
     }
+#endif
 }

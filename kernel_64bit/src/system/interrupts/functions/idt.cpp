@@ -1,7 +1,7 @@
 #include "idt.hpp"
 
 #include "isr.hpp"
-#include "system/drivers/uart/driver.hpp"
+#include "drivers/uart/driver.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
 

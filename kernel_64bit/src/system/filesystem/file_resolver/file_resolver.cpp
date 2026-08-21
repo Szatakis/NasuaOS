@@ -2,10 +2,10 @@
 
 #include "system/filesystem/clawfs/clawfs.hpp"
 #include "system/filesystem/fat/fat.hpp"
-#include "system/drivers/disk/driver.hpp"
-#include "system/drivers/gpu/driver.hpp"
-#include "system/drivers/uart/driver.hpp"
-#include "system/drivers/memory/driver.hpp"
+#include "drivers/disk/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/uart/driver.hpp"
+#include "drivers/memory/driver.hpp"
 #include "system/applications/napp/napp.hpp"
 #include "libs/libc/libc.hpp"
 
@@ -47,12 +47,12 @@ void file_resolver_mount(bool mount)
     
     if (mount) 
     {
-        print_info("ClawFS overlay mounted.\n");
+        Gpu::print_info("ClawFS overlay mounted.\n");
         Uart::puts("[File Resolver] ClawFS overlay mounted.\n");
     }
     else 
     {
-        print_info("ClawFS overlay unmounted.\n");
+        Gpu::print_info("ClawFS overlay unmounted.\n");
         Uart::puts("[File Resolver] ClawFS overlay unmounted.\n");
         // Tombstones persist but only apply when mounted
     }
@@ -378,7 +378,7 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     
     if (src_info.size == 0) 
     {
-        print_error("Empty file in rootfs\n");
+        Gpu::print_error("Empty file in rootfs\n");
         return false;
     }
     
@@ -486,15 +486,15 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
     // Remove from deletion tombstone if it was there
     file_resolver_undelete(dst_path);
     
-    print_info("Copied: ");
-    print(src_path);
-    print(" -> ");
-    print(dst_path);
-    print(" (");
-    print_num8(bytes_to_copy);
-    print(" bytes, ");
-    print_num8(sectors_needed);
-    print(" sectors)\n");
+    Gpu::print_info("Copied: ");
+    Gpu::print(src_path);
+    Gpu::print(" -> ");
+    Gpu::print(dst_path);
+    Gpu::print(" (");
+    Gpu::print_num8(bytes_to_copy);
+    Gpu::print(" bytes, ");
+    Gpu::print_num8(sectors_needed);
+    Gpu::print(" sectors)\n");
     
     return true;
 }
@@ -504,11 +504,11 @@ bool format_commands()
 {
     if (!rootfs_mounted) 
     {
-        print_error("Rootfs not available\n");
+        Gpu::print_error("Rootfs not available\n");
         return false;
     }
     
-    print_info("Formatting commands - copying from rootfs to ClawFS...\n");
+    Gpu::print_info("Formatting commands - copying from rootfs to ClawFS...\n");
     Uart::puts("[File Resolver] Formatting commands...\n");
     
     // Clear any existing deletion tombstones
@@ -521,7 +521,7 @@ bool format_commands()
     uint32_t copied = 0;
     uint32_t skipped = 0;
     
-    print_info("Processing /bin directory...\n");
+    Gpu::print_info("Processing /bin directory...\n");
     
     for (uint32_t i = 0; i < bin_count; i++) 
     {
@@ -539,9 +539,9 @@ bool format_commands()
         strcpy(dst_path, "/bin/");
         strcat(dst_path, bin_entries[i].name);
         
-        print("  Processing: ");
-        print(bin_entries[i].name);
-        print("...");
+        Gpu::print("  Processing: ");
+        Gpu::print(bin_entries[i].name);
+        Gpu::print("...");
         
         if (copy_file_to_clawfs(src_path, dst_path)) 
         {
@@ -550,16 +550,16 @@ bool format_commands()
         else 
         {
             skipped++;
-            print(" [SKIPPED]");
+            Gpu::print(" [SKIPPED]");
         }
-        print("\n");
+        Gpu::print("\n");
     }
     
     // List and copy /sbin files
     static fat_entry_info sbin_entries[64];
     uint32_t sbin_count = fat_list_directory(&rootfs_volume, "/sbin", sbin_entries, 64);
     
-    print_info("Processing /sbin directory...\n");
+    Gpu::print_info("Processing /sbin directory...\n");
     
     for (uint32_t i = 0; i < sbin_count; i++) 
     {
@@ -577,9 +577,9 @@ bool format_commands()
         strcpy(dst_path, "/sbin/");
         strcat(dst_path, sbin_entries[i].name);
         
-        print("  Processing: ");
-        print(sbin_entries[i].name);
-        print("...");
+        Gpu::print("  Processing: ");
+        Gpu::print(sbin_entries[i].name);
+        Gpu::print("...");
         
         if (copy_file_to_clawfs(src_path, dst_path)) 
         {
@@ -588,16 +588,16 @@ bool format_commands()
         else 
         {
             skipped++;
-            print(" [SKIPPED]");
+            Gpu::print(" [SKIPPED]");
         }
-        print("\n");
+        Gpu::print("\n");
     }
     
-    print_info("Format complete. Copied ");
-    print_num8(copied);
-    print(" files, skipped ");
-    print_num8(skipped);
-    print(" files.\n");
+    Gpu::print_info("Format complete. Copied ");
+    Gpu::print_num8(copied);
+    Gpu::print(" files, skipped ");
+    Gpu::print_num8(skipped);
+    Gpu::print(" files.\n");
     
     Uart::puts("[File Resolver] Format complete.\n");
     

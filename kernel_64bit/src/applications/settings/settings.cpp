@@ -1,9 +1,9 @@
 #include "settings.hpp"
 
-#include "system/drivers/gpu/driver.hpp"
-#include "system/drivers/cpu/driver.hpp"
-#include "system/drivers/memory/driver.hpp"
-#include "system/drivers/disk/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/cpu/driver.hpp"
+#include "drivers/memory/driver.hpp"
+#include "drivers/disk/driver.hpp"
 #include "system/gui/gui.hpp"
 #include "system/gui/vars/colors.hpp"
 
@@ -51,7 +51,7 @@ static void draw_text_clipped(const char* text, int x, int y, int right_limit, i
 
     while (text[i] && i < max_chars)
     {
-        draw_char8((unsigned char)text[i], x + i * CHAR_WIDTH, y, color);
+        Gpu::draw_char8((unsigned char)text[i], x + i * CHAR_WIDTH, y, color);
 
         i++;
     }
@@ -137,7 +137,7 @@ static void draw_panel(int x, int y, int w, int h, uint32_t color)
         return;
     }
 
-    fill_block(x, y, color, w, h);
+    Gpu::fill_block(x, y, color, w, h);
 }
 
 
@@ -170,7 +170,7 @@ static void draw_page_button(int x, int y, int w, int h, const char* text, bool 
     }
 
     draw_panel(x, y, w, h, bg);
-    draw_rect(x, y, x + w, y + h, border);
+    Gpu::draw_rect(x, y, x + w, y + h, border);
     draw_text_clipped(text, x + 10, y + ((h - (CHAR_HEIGHT / 2)) / 2), x + w - 10, y + h, text_color);
 }
 
@@ -214,11 +214,11 @@ static void draw_system_page(int x, int y, int w, int h)
     // Resolution
     draw_text_clipped("Resolution:", x, y + 116, right, bottom, 0x9AA4B2);
 
-    if (fb)
+    if (Gpu::fb)
     {
         char resolution[32];
 
-        format_resolution(resolution, sizeof(resolution), fb->width, fb->height);
+        format_resolution(resolution, sizeof(resolution), Gpu::fb->width, Gpu::fb->height);
         draw_text_clipped(resolution, x + 160, y + 116, right, bottom, COLOR_WHITE);
     }
     else
@@ -266,9 +266,9 @@ static void draw_empty_page(int x, int y, int w, int h)
 
 
 // SETTINGS DRAW
-void draw_settings(window_struct* win)
+void draw_settings(Gpu::Window_Manager::window_struct* win)
 {
-    if (!win || !fb)
+    if (!win || !Gpu::fb)
     {
         return;
     }
@@ -394,7 +394,7 @@ void draw_settings(window_struct* win)
 
 
 // MOUSE CLICK
-static void settings_mouse_click(window_struct* win, int mouse_x, int mouse_y)
+static void settings_mouse_click(Gpu::Window_Manager::window_struct* win, int mouse_x, int mouse_y)
 {
     if (!win)
     {
@@ -450,7 +450,7 @@ static void settings_mouse_click(window_struct* win, int mouse_x, int mouse_y)
 
 
 // SETTINGS WINDOW
-window_struct settings =
+Gpu::Window_Manager::window_struct settings =
 {
     .name = "Settings",
     .id = 0,

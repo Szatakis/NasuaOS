@@ -1,8 +1,8 @@
 #include "logger.hpp"
 #include <stdint.h>
 
-#include "system/drivers/gpu/driver.hpp"
-#include "system/drivers/rtc/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/rtc/driver.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -12,22 +12,22 @@
 
 LogLevel parse_log_level(const char* level)
 {
-    if(strncmp(level, "INFO", 4))
+    if(strcmp(level, "INFO") == 0)
     {
         return INFO;
     }
 
-    if(strncmp(level, "WARN", 4))
+    if(strcmp(level, "WARN") == 0)
     {
         return WARN;
     }
 
-    if(strncmp(level, "ERROR", 5))
+    if(strcmp(level, "ERROR") == 0)
     {
         return ERROR;
     }
 
-    if(strncmp(level, "DEBUG", 5))
+    if(strcmp(level, "DEBUG") == 0)
     {
         return DEBUG;
     }
@@ -92,72 +92,72 @@ void log(LogLevel level, const char* subsystem, const char* message)
 
 static void print_time(Rtc::RtcTime time) 
 {
-    print("[");
+    Gpu::print("[");
 
     if(time.hour < 10) 
     {
-        print("0");
+        Gpu::print("0");
     }
 
-    print_num8(time.hour);
-    print(":");
+    Gpu::print_num8(time.hour);
+    Gpu::print(":");
 
 
     if(time.minute < 10) 
     {
-        print("0");
+        Gpu::print("0");
     }
 
-    print_num8(time.minute);
-    print(":");
+    Gpu::print_num8(time.minute);
+    Gpu::print(":");
 
 
     if(time.second < 10) 
     {
-        print("0");
+        Gpu::print("0");
     }
 
-    print_num8(time.second);
-    print("]");
+    Gpu::print_num8(time.second);
+    Gpu::print("]");
 }
 
 static void print_log_entry(LogEntry* entry) 
 {
     print_time(entry->time);
-    print("[");
+    Gpu::print("[");
 
     switch(entry->level) 
     {
         case INFO:
         {
-            print("INFO");
+            Gpu::print("INFO");
             break;
         }
 
         case WARN:
         {
-            print("WARN");
+            Gpu::print("WARN");
             break;
         }
 
         case ERROR:
         {
-            print("ERROR");
+            Gpu::print("ERROR");
             break;
         }
 
         case DEBUG:
         {
-            print("DEBUG");
+            Gpu::print("DEBUG");
             break;
         }
     }
 
-    print("] ");
-    print(entry->subsystem);
-    print(": ");
-    print(entry->message);
-    print("\n");
+    Gpu::print("] ");
+    Gpu::print(entry->subsystem);
+    Gpu::print(": ");
+    Gpu::print(entry->message);
+    Gpu::print("\n");
 }
 
 void print_logs_level(LogLevel level) 

@@ -1,8 +1,8 @@
 #ifndef DRIVERS_H
 #define DRIVERS_H
 
-#include "keyboard/driver.hpp"
-#include "multiboot/multiboot.hpp"
-#include "video/driver.hpp"
+#include "drivers/keyboard/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "system/drivers/multiboot/multiboot.hpp"
 
 #endif // DRIVERS_H

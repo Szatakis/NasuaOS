@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "system/applications/napp/napp.hpp"
-#include "system/drivers/gpu/driver.hpp"
+#include "drivers/gpu/driver.hpp"
 #include "../vars/colors.hpp"
 
 // Applications built into the kernel, shown at the top of the start menu.
@@ -48,10 +48,10 @@ bool is_mouse_over_icon(int mx, int my, int x, int y, int w, int h);
 template <size_t width, size_t height>
 void draw_icon(const uint32_t* icon, size_t start_x, size_t start_y)
 {
-    if (!fb) return;
+    if (!Gpu::fb) return;
 
-    uint32_t* bb_ptr = get_backbuffer();
-    size_t pitch = get_backbuffer_pitch();
+    uint32_t* bb_ptr = Gpu::get_backbuffer();
+    size_t pitch = Gpu::get_backbuffer_pitch();
 
     for (size_t y = 0; y < height; y++)
     {
@@ -60,7 +60,7 @@ void draw_icon(const uint32_t* icon, size_t start_x, size_t start_y)
             size_t px = start_x + x;
             size_t py = start_y + y;
 
-            if (px >= fb->width || py >= fb->height)
+            if (px >= Gpu::fb->width || py >= Gpu::fb->height)
                 continue;
 
             uint32_t color = icon[y * width + x];

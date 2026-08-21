@@ -92,6 +92,7 @@ override SHARED_FLAGS := \
 override CPPFLAGS_C := \
     -I src \
     -I ../utilities/applications/include \
+    -I ../resources \
     -I limine-protocol/include \
     -isystem freestanding-c-hdrs/$(ARCH)/include \
     $(CPPFLAGS) \
@@ -213,6 +214,10 @@ override LDFLAGS += \
 override SRCFILES := $(shell find -L src cc-runtime/src -type f -not -path 'src/arch/*' 2>/dev/null | LC_ALL=C sort)
 # Add architecture specific files, if they exist.
 override SRCFILES += $(shell find -L src/arch/$(ARCH) -type f 2>/dev/null | LC_ALL=C sort)
+# Add shared resources files (shared between 32-bit and 64-bit kernels).
+RESOURCES_DIR := ../resources
+override RESOURCES_SRCFILES := $(shell find -L $(RESOURCES_DIR)/libs $(RESOURCES_DIR)/drivers -type f -name '*.cpp' 2>/dev/null | LC_ALL=C sort)
+override RESOURCES_OBJ := $(patsubst $(RESOURCES_DIR)/%.cpp,obj-$(ARCH)/resources/%.cpp.o,$(RESOURCES_SRCFILES))
 # Obtain the object and header dependencies file names.
 override CFILES := $(filter %.c,$(SRCFILES))
 override CXXFILES := $(filter %.cpp,$(SRCFILES))
@@ -224,6 +229,7 @@ override OBJ := $(addprefix obj-$(ARCH)/,$(CFILES:.c=.c.o) $(CXXFILES:.cpp=.cpp.
 ifeq ($(ARCH),x86_64)
 override OBJ += $(addprefix obj-$(ARCH)/,$(NASMFILES:.asm=.asm.o))
 endif
+override OBJ += $(RESOURCES_OBJ)
 override HEADER_DEPS := $(addprefix obj-$(ARCH)/,$(CFILES:.c=.c.d) $(CXXFILES:.cpp=.cpp.d) $(ASFILES:.S=.S.d))
 
 # Default target. This must come first, before header dependencies.
@@ -250,6 +256,16 @@ obj-$(ARCH)/%.cpp.o: %.cpp GNUmakefile
 
 # Compilation rules for *.S files.
 obj-$(ARCH)/%.S.o: %.S GNUmakefile
+	mkdir -p "$(dir $@)"
+	$(CC) $(CFLAGS) $(CPPFLAGS_C) -c $< -o $@
+
+# Compilation rules for shared resources *.cpp files.
+obj-$(ARCH)/resources/%.cpp.o: $(RESOURCES_DIR)/%.cpp GNUmakefile
+	mkdir -p "$(dir $@)"
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS_CXX) -c $< -o $@
+
+# Compilation rules for shared resources *.c files.
+obj-$(ARCH)/resources/%.c.o: $(RESOURCES_DIR)/%.c GNUmakefile
 	mkdir -p "$(dir $@)"
 	$(CC) $(CFLAGS) $(CPPFLAGS_C) -c $< -o $@
 

@@ -1,7 +1,7 @@
 #include "madt.hpp"
 #include <limine.h>
 
-#include "system/drivers/uart/driver.hpp"
+#include "drivers/uart/driver.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
 

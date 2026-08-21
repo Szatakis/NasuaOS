@@ -1,6 +1,6 @@
 #include "asciiart.hpp"
 
-#include "system/drivers/gpu/driver.hpp"
+#include "drivers/gpu/driver.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -491,16 +491,16 @@ void print_ascii_art(const char* text)
 
             if(index >= 0)
             {
-                print(font[index][row]);
+                Gpu::print(font[index][row]);
             }
             else
             {
-                print("     ");
+                Gpu::print("     ");
             }
 
-            print(" ");
+            Gpu::print(" ");
         }
 
-        print("\n");
+        Gpu::print("\n");
     }
 }

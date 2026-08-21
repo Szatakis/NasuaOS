@@ -10,12 +10,12 @@
 #include <cstddef>
 #include <limine.h>
 
-#include "system/drivers/audio/driver.hpp"
-#include "system/drivers/disk/driver.hpp"
-#include "system/drivers/memory/driver.hpp"
-#include "system/drivers/rtc/driver.hpp"
-#include "system/drivers/uart/driver.hpp"
-#include "system/drivers/gpu/driver.hpp"
+#include "drivers/audio/driver.hpp"
+#include "drivers/disk/driver.hpp"
+#include "drivers/memory/driver.hpp"
+#include "drivers/rtc/driver.hpp"
+#include "drivers/uart/driver.hpp"
+#include "drivers/gpu/driver.hpp"
 
 
 void compile_code(char* code);

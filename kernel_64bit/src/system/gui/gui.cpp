@@ -1,13 +1,11 @@
 #include "gui.hpp"
 
 #include "./icons/icons.hpp"
-#include "system/drivers/gpu/driver.hpp"
-#include "system/drivers/memory/driver.hpp"
-#include "system/drivers/keyboard/driver.hpp"
-#include "system/drivers/mouse/driver.hpp"
+#include "drivers/gpu/driver.hpp"
+#include "drivers/memory/driver.hpp"
+#include "drivers/keyboard/driver.hpp"
+#include "drivers/mouse/driver.hpp"
 #include "./vars/colors.hpp"
-
-extern limine_framebuffer* fb;
 
 bool last_start_hover = false;
 
@@ -21,28 +19,28 @@ extern bool start_hover;
 
 void draw_start_menu_f(int x, int y, int w, int h) 
 {
-    draw_rect(x, y, x + w, y + h, COLOR_NASUA_START_MENU);
-    draw_rect(x, y, x + panel_width, y + h, COLOR_NASUA_START_MENU_P);
+    Gpu::draw_rect(x, y, x + w, y + h, COLOR_NASUA_START_MENU);
+    Gpu::draw_rect(x, y, x + panel_width, y + h, COLOR_NASUA_START_MENU_P);
 
     draw_start_menu_system_icons(x, y, panel_width, w, h);
 }
 
 void draw_start_menu() 
 {
-    if (!fb || !menu_start_open) 
+    if (!Gpu::fb || !menu_start_open) 
     {
         return;
     }
 
     menu_x = 0;
-    menu_y = fb->height - bar_h_scaled - menu_h;
+    menu_y = Gpu::fb->height - bar_h_scaled - menu_h;
 
     draw_start_menu_f(menu_x, menu_y, menu_w, menu_h);
 }
 
 void open_start_menu() 
 {
-    if (!fb) 
+    if (!Gpu::fb) 
     {
         return;
     }
@@ -69,6 +67,6 @@ void update_gui_state(int mouse_x, int mouse_y)
 
 void update_windows_gui() 
 {
-    update_windows_positions(Mouse::x, Mouse::y);
-    draw_windows(); 
+    Gpu::Window_Manager::update_windows_positions(Mouse::x, Mouse::y);
+    Gpu::Window_Manager::draw_windows(); 
 }

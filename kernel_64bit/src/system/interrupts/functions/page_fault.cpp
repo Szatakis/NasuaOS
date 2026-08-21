@@ -1,7 +1,7 @@
 #include "page_fault.hpp"
 
-#include "system/drivers/memory/driver.hpp"
-#include "system/drivers/uart/driver.hpp"
+#include "drivers/memory/driver.hpp"
+#include "drivers/uart/driver.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
 #include "kernel/kernel_panic/kernel_panic.hpp"
