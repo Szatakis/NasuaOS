@@ -59,11 +59,12 @@ char* next_path_token(char* str, const char* delim)
 // 102 = bin
 // 103 = sbin
 // 104 = dev
-// 105 = etc
+// 105 = mnt
 // 106 = home
-// 107 = tmp
+// 107 = etc
 // 108 = var
 // 109 = lib
+// 110 = tmp
 //
 // First dynamically allocated sector = 108
 //
@@ -210,11 +211,13 @@ void clawfs_format()
     setup_entry(&entries[0], "bin", CLAWFS_DIRECTORY, 102);
     setup_entry(&entries[1], "sbin", CLAWFS_DIRECTORY, 103);
     setup_entry(&entries[2], "dev", CLAWFS_DIRECTORY, 104);
-    setup_entry(&entries[3], "etc", CLAWFS_DIRECTORY, 105);
+    setup_entry(&entries[3], "mnt", CLAWFS_DIRECTORY, 105);
     setup_entry(&entries[4], "home", CLAWFS_DIRECTORY,106);
-    setup_entry(&entries[5], "tmp", CLAWFS_DIRECTORY, 107);
+    setup_entry(&entries[5], "etc", CLAWFS_DIRECTORY, 107);
     setup_entry(&entries[6], "var", CLAWFS_DIRECTORY, 108);
-    setup_entry(&entries[6], "lib", CLAWFS_DIRECTORY, 109);
+    setup_entry(&entries[7], "lib", CLAWFS_DIRECTORY, 109);
+    setup_entry(&entries[8], "proc", CLAWFS_DIRECTORY, 110);
+    setup_entry(&entries[9], "tmp", CLAWFS_DIRECTORY, 111);
 
     Disk::write_sector(CLAWFS_ROOT_SECTOR, root_buffer);
 
