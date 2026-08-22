@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("cat", "Display the contents of one or more files");
+NAPP_APPLICATION("cat", "Display the contents of one or more files", false);
 
 static bool is_flag(const char* arg, const char* flag)
 {

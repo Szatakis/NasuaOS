@@ -14,32 +14,37 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 | 0x0C | 4 | entry_offset | Offset from start of file to `_start` function |
 | 0x10 | 32 | name | Null-terminated application name |
 | 0x30 | 48 | description | Null-terminated short description (shown in `help`) |
+| 0x60 | 1 | show_in_start_menu | Whether the app appears in the Start Menu |
 
-**Total header size**: 96 bytes
+**Total header size**: 97 bytes (was 96; the `show_in_start_menu` field was added)
 
 ```cpp
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
-#define NAPP_HEADER_SIZE 96
+#define NAPP_HEADER_SIZE 96  // Legacy minimum (without show_in_start_menu)
 
 struct napp_header
 {
     uint32_t magic;                    // 0x5050414E
     uint32_t abi_version;              // 2
-    uint32_t header_size;              // 96
+    uint32_t header_size;              // sizeof(napp_header) = 97
     uint32_t entry_offset;
     char     name[NAPP_NAME_LENGTH];   // 32
     char     description[NAPP_DESCRIPTION_LENGTH];  // 48
+    bool     show_in_start_menu;       // 1 byte, present when header_size > 96
 } __attribute__((packed));
 ```
 
-### Description Field
+### Show In Start Menu Field
 
-The `description` field stores a short human-readable description of the application. It is read by the shell's `help` command (pages 11+) when listing `/sbin` commands. If a binary lacks a valid description (e.g., compiled with an older header), the fallback text `"No description available."` is displayed.
+The `show_in_start_menu` field controls whether an application appears in the
+Start Menu.  When `true`, the application icon and name are shown in the Start
+Menu.  When `false`, the application can still be launched via `bootapp --app
+<name>` but will not appear in the Start Menu.
 
-### Backward Compatibility
-
-Older NAPP binaries compiled with the previous header format (`NAPP_HEADER_SIZE = 64`) are still executable. The loader checks `header->header_size >= sizeof(napp_header)` (96) to determine whether the description field is present. Binaries with `header_size = 64` are detected as legacy and receive the default description.
+This field is only present when `header_size > NAPP_HEADER_SIZE` (96).  Older
+binaries compiled without this field default to `true`, so they remain visible
+in the Start Menu.
 
 ## NAPP vs Flat Binary
 
@@ -85,12 +90,13 @@ The `_start` function receives a pointer to a `napp_api` structure that provides
 All NAPP applications declare their name using the `NAPP_APPLICATION` macro:
 
 ```cpp
-NAPP_APPLICATION("my_app", "Short description of the app");
+NAPP_APPLICATION("my_app", "Short description of the app", true);
 ```
 
-The macro takes two arguments:
+The macro takes three arguments:
 - **`app_name`** — The application name (max 32 chars)
 - **`app_description`** — A short description shown in the help system (max 48 chars)
+- **`app_show_in_menu`** — Whether the application appears in the Start Menu (`true` for GUI apps shown in the menu, `false` for console/utility apps and games)
 
 This macro sets up the `_napp_name` symbol used by the loader. The name should match the directory and binary name in `/bin`.
 

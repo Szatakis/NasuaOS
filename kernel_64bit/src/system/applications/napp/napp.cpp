@@ -41,6 +41,10 @@ struct napp_window_slot
     napp_window_draw draw;
     napp_window_key key;
     napp_window_mouse mouse;
+
+    napp_window_tick tick;
+    int tick_interval_ms;
+    uint64_t last_tick;
 };
 
 struct napp_resident_image
@@ -119,6 +123,11 @@ static void napp_api_serial_log(const char* text)
     {
         Uart::puts(text);
     }
+}
+
+static uint64_t napp_api_get_ticks()
+{
+    return Timer::pit_get_ticks();
 }
 
 // wrapper
@@ -312,6 +321,16 @@ static void napp_window_mouse_trampoline(Gpu::Window_Manager::window_struct* win
     }
 }
 
+static void napp_window_tick_trampoline(Gpu::Window_Manager::window_struct* window)
+{
+    napp_window_slot* slot = sync_slot(window);
+
+    if (slot != nullptr && slot->tick != nullptr)
+    {
+        slot->tick(&slot->view);
+    }
+}
+
 static napp_window_slot* find_window_of(const char* application)
 {
     for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
@@ -371,6 +390,10 @@ static bool napp_api_open_window(const napp_window_config* config)
     slot->key = config->key;
     slot->mouse = config->mouse;
 
+    slot->tick = config->tick;
+    slot->tick_interval_ms = config->tick_interval_ms;
+    slot->last_tick = Timer::pit_get_ticks();
+
     slot->view.userdata = config->userdata;
 
     slot->window.name = slot->title;
@@ -428,7 +451,8 @@ static napp_api kernel_napp_api =
     napp_api_clawfs_create_file_in,
     napp_api_clawfs_dir,
     napp_api_clawfs_get_entry_type,
-    napp_api_clawfs_resolve_path
+    napp_api_clawfs_resolve_path,
+    napp_api_get_ticks
 };
 
 static bool remember_image(const char* name, void* image)
@@ -526,6 +550,92 @@ uint32_t napp_list(char names[][NAPP_MAX_NAME], uint32_t max_names)
     }
 
     return found;
+}
+
+// Reads the NAPP header of the named /bin application and returns the value of
+// its show_in_start_menu field.  Applications compiled with an older header
+// format (header_size <= NAPP_HEADER_SIZE) default to true so they remain
+// visible in the Start Menu.
+bool napp_should_show_in_start_menu(const char* name)
+{
+    if (!rootfs_mounted || name == nullptr || *name == '\0')
+    {
+        return false;
+    }
+
+    char path[256];
+    build_application_path(name, path);
+
+    fat_entry_info info;
+    if (!fat_stat(&rootfs_volume, path, &info) || info.directory)
+    {
+        return true;
+    }
+
+    if (info.size < NAPP_HEADER_SIZE)
+    {
+        return true;
+    }
+
+    uint8_t header_buf[NAPP_HEADER_SIZE + 8];
+    uint32_t read_size = 0;
+
+    if (!fat_read_file(&rootfs_volume, path, header_buf, sizeof(header_buf), &read_size))
+    {
+        return true;
+    }
+
+    if (read_size < NAPP_HEADER_SIZE)
+    {
+        return true;
+    }
+
+    const napp_header* header = (const napp_header*)header_buf;
+
+    if (header->magic != NAPP_MAGIC || header->abi_version != NAPP_ABI_VERSION)
+    {
+        return true;
+    }
+
+    // If the header carries the show_in_start_menu field, honour it.
+    // The field lives at offset NAPP_HEADER_SIZE (96); headers smaller than
+    // NAPP_HEADER_SIZE + 1 lack it, so we default to true (backward compat).
+    if (header->header_size <= NAPP_HEADER_SIZE)
+    {
+        return true;
+    }
+
+    return header->show_in_start_menu;
+}
+
+// Iterates all registered NAPP window slots and invokes the tick callback
+// of each window whose configured interval has elapsed.  Must be called from
+// the kernel main loop (100 Hz) alongside the rest of the GUI update.
+void napp_update_ticks()
+{
+    uint64_t current_ticks = Timer::pit_get_ticks();
+
+    for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
+    {
+        napp_window_slot* slot = &window_slots[i];
+
+        if (!slot->used || !slot->window.visible || slot->tick == nullptr || slot->tick_interval_ms <= 0)
+        {
+            continue;
+        }
+
+        uint64_t ticks_per_interval = (uint64_t)slot->tick_interval_ms / 10;
+        if (ticks_per_interval == 0)
+        {
+            ticks_per_interval = 1;
+        }
+
+        if (current_ticks - slot->last_tick >= ticks_per_interval)
+        {
+            slot->last_tick = current_ticks;
+            napp_window_tick_trampoline(&slot->window);
+        }
+    }
 }
 
 bool napp_exists(const char* name)
@@ -860,7 +970,7 @@ static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint3
         return false;
     }
 
-    if (info.size < sizeof(napp_header))
+    if (info.size < NAPP_HEADER_SIZE)
     {
         return false;
     }
@@ -875,11 +985,11 @@ static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint3
     bool ok = fat_read_file(&rootfs_volume, path, image, info.size, &read_size);
 
     bool found = false;
-    if (ok && read_size >= sizeof(napp_header))
+    if (ok && read_size >= NAPP_HEADER_SIZE)
     {
         const napp_header* h = (const napp_header*)image;
 
-        if (h->magic == NAPP_MAGIC && h->abi_version == NAPP_ABI_VERSION && h->header_size >= sizeof(napp_header) && h->description[0] != '\0')
+        if (h->magic == NAPP_MAGIC && h->abi_version == NAPP_ABI_VERSION && h->header_size >= NAPP_HEADER_SIZE && h->description[0] != '\0')
         {
             uint32_t i = 0;
             while (h->description[i] && i < desc_size - 1)
@@ -909,7 +1019,7 @@ static bool read_sbin_description_clawfs(uint32_t data_sector, char* desc_buffer
 
     const napp_header* h = (const napp_header*)sector_buf;
 
-    if (h->magic == NAPP_MAGIC && h->abi_version == NAPP_ABI_VERSION && h->header_size >= sizeof(napp_header) && h->description[0] != '\0')
+    if (h->magic == NAPP_MAGIC && h->abi_version == NAPP_ABI_VERSION && h->header_size >= NAPP_HEADER_SIZE && h->description[0] != '\0')
     {
         uint32_t i = 0;
         while (h->description[i] && i < desc_size - 1)

@@ -24,6 +24,11 @@ struct napp_header
 
     char name[NAPP_NAME_LENGTH];
     char description[NAPP_DESCRIPTION_LENGTH];
+
+    // When false, the application does not appear in the Start Menu.
+    // Present only when header_size > NAPP_HEADER_SIZE; older binaries
+    // default to true.
+    bool show_in_start_menu;
 } __attribute__((packed));
 
 // Colors of the system theme, usable by graphical applications.
@@ -51,6 +56,10 @@ typedef void (*napp_window_draw)(struct napp_window* window);
 typedef void (*napp_window_key)(struct napp_window* window, char key);
 typedef void (*napp_window_mouse)(struct napp_window* window, int mouse_x, int mouse_y);
 
+// Periodic callback invoked by the kernel at tick_interval_ms intervals.
+// Only called while the window is visible and the game/application is active.
+typedef void (*napp_window_tick)(struct napp_window* window);
+
 struct napp_window_config
 {
     const char* title;
@@ -66,6 +75,12 @@ struct napp_window_config
     napp_window_draw draw;
     napp_window_key key;
     napp_window_mouse mouse;
+
+    // Optional periodic callback, invoked every tick_interval_ms milliseconds.
+    // When tick is nullptr or tick_interval_ms <= 0, no periodic callback is
+    // registered and the field is simply ignored.
+    napp_window_tick tick;
+    int tick_interval_ms;
 };
 
 // Drawing and window services, only usable while a window callback runs or to
@@ -110,22 +125,30 @@ struct napp_api
     void (*clawfs_dir)(const char* path);
     int (*clawfs_get_entry_type)(const char* parent_path, const char* name);
     uint32_t (*clawfs_resolve_path)(const char* cur_path, const char* path);
+
+    // Monotonic tick counter (PIT ticks, 100 Hz = 10 ms per tick).
+    // Returns the number of timer ticks since boot.
+    uint64_t (*get_ticks)(void);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);
 
 // Emits the header and pins the entry point right behind it.
-#define NAPP_APPLICATION(app_name, app_description)                                \
+// The third parameter controls whether the application appears in the
+// Start Menu. Use false for utility/console apps and games that should
+// only be launched on demand.
+#define NAPP_APPLICATION(app_name, app_description, app_show_in_menu)             \
     extern "C" __attribute__((section(".napp_entry"), used))                   \
     int _start(const napp_api* api);                                           \
-                                                                                \
+                                                                              \
     __attribute__((section(".napp_header"), used))                             \
     const napp_header napp_application_header =                                \
     {                                                                          \
         NAPP_MAGIC,                                                            \
         NAPP_ABI_VERSION,                                                      \
-        NAPP_HEADER_SIZE,                                                      \
-        NAPP_HEADER_SIZE,                                                      \
+        sizeof(napp_header),                                                   \
+        sizeof(napp_header),                                                      \
         app_name,                                                              \
-        app_description                                                        \
+        app_description,                                                       \
+        app_show_in_menu                                                       \
     }

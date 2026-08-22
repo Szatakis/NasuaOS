@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("tree", "Display directory tree structure");
+NAPP_APPLICATION("tree", "Display directory tree structure", false);
 
 #define CLAWFS_FILE 0
 #define CLAWFS_DIRECTORY 1

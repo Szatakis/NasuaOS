@@ -77,7 +77,21 @@ int start_menu_napp_count = 0;
 
 void draw_start_menu_napp_icons()
 {
-    start_menu_napp_count = (int)napp_list(start_menu_napps, NAPP_MAX_APPLICATIONS);
+    int all_count = (int)napp_list(start_menu_napps, NAPP_MAX_APPLICATIONS);
+
+    // Filter out applications that opt out of the Start Menu.
+    start_menu_napp_count = 0;
+    for (int i = 0; i < all_count; i++)
+    {
+        if (napp_should_show_in_start_menu(start_menu_napps[i]))
+        {
+            if (start_menu_napp_count < i)
+            {
+                strcpy(start_menu_napps[start_menu_napp_count], start_menu_napps[i]);
+            }
+            start_menu_napp_count++;
+        }
+    }
 
     for (int i = 0; i < start_menu_napp_count; i++)
     {

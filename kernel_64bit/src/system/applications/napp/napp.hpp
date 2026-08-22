@@ -16,6 +16,15 @@ bool napp_rootfs_available();
 // Lists every application found in the rootfs /bin folder.
 uint32_t napp_list(char names[][NAPP_MAX_NAME], uint32_t max_names);
 
+// Returns whether the named /bin application should appear in the Start Menu.
+// Applications without a NAPP header or with an old header format default to
+// true.
+bool napp_should_show_in_start_menu(const char* name);
+
+// Advances periodic tick callbacks for all registered NAPP windows.
+// Called from the kernel main loop.
+void napp_update_ticks();
+
 bool napp_exists(const char* name);
 
 // Loads a flat binary from an absolute FAT rootfs path and runs it.

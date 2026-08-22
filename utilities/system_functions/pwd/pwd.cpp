@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("pwd", "Print the working directory");
+NAPP_APPLICATION("pwd", "Print the working directory", false);
 
 int _start(const napp_api* api)
 {

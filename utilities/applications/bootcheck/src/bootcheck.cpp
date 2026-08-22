@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("bootcheck", "Test the NAPP API and report results");
+NAPP_APPLICATION("bootcheck", "Test the NAPP API and report results", false);
 
 int _start(const napp_api* api)
 {

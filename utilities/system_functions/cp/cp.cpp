@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("cp", "Copy a file or directory");
+NAPP_APPLICATION("cp", "Copy a file or directory", false);
 
 static void strcpy(char* dest, const char* src)
 {
