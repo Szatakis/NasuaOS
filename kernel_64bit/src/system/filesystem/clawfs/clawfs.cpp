@@ -119,6 +119,12 @@ uint32_t get_sector_by_path(const char* path)
         return 0;
     }
 
+    // Make sure CLAWFS is actually formatted.
+    if (!clawfs_exists())
+    {
+        return 0;
+    }
+
     if (strcmp(path, "/") == 0)
     {
         return CLAWFS_ROOT_SECTOR;
@@ -145,6 +151,7 @@ uint32_t get_sector_by_path(const char* path)
         }
 
         current_dir = entry.data_sector;
+
         token = next_path_token(nullptr, "/");
     }
 
