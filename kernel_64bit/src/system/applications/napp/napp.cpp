@@ -577,35 +577,49 @@ bool napp_should_show_in_start_menu(const char* name)
         return true;
     }
 
-    uint8_t header_buf[NAPP_HEADER_SIZE + 8];
+    // fat_read_file rejects reads where buffer_size < file_size, so allocate
+    // a buffer large enough for the entire file (we only need the header but
+    // must read the whole image to extract it).
+    uint8_t* header_buf = (uint8_t*)Memory::heap::kmalloc(info.size);
+
+    if (header_buf == nullptr)
+    {
+        return true;
+    }
+
     uint32_t read_size = 0;
 
-    if (!fat_read_file(&rootfs_volume, path, header_buf, sizeof(header_buf), &read_size))
+    if (!fat_read_file(&rootfs_volume, path, header_buf, info.size, &read_size))
     {
+        Memory::heap::kfree(header_buf);
         return true;
     }
 
     if (read_size < NAPP_HEADER_SIZE)
     {
+        Memory::heap::kfree(header_buf);
         return true;
     }
 
     const napp_header* header = (const napp_header*)header_buf;
 
-    if (header->magic != NAPP_MAGIC || header->abi_version != NAPP_ABI_VERSION)
+    bool result = true;
+
+    if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
     {
-        return true;
+        // If the header carries the show_in_start_menu field, honour it.
+        // The field lives at offset NAPP_HEADER_SIZE (96); headers whose
+        // header_size <= NAPP_HEADER_SIZE lack it, so we default to true
+        // (backward compat).
+        if (header->header_size > NAPP_HEADER_SIZE)
+        {
+            result = header->show_in_start_menu;
+        }
     }
 
-    // If the header carries the show_in_start_menu field, honour it.
-    // The field lives at offset NAPP_HEADER_SIZE (96); headers smaller than
-    // NAPP_HEADER_SIZE + 1 lack it, so we default to true (backward compat).
-    if (header->header_size <= NAPP_HEADER_SIZE)
-    {
-        return true;
-    }
+    Memory::heap::kfree(header_buf);
 
-    return header->show_in_start_menu;
+    return result;
 }
 
 // Iterates all registered NAPP window slots and invokes the tick callback

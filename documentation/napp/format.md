@@ -85,6 +85,50 @@ int _start(const napp_api* api);
 
 The `_start` function receives a pointer to a `napp_api` structure that provides all system services (I/O, filesystem, GUI, etc.).
 
+## Window Configuration
+
+Applications that want a graphical window call `gui->open_window(&config)` with a
+`napp_window_config` struct:
+
+```cpp
+struct napp_window_config
+{
+    const char* title;
+    int width;
+    int height;
+    bool resizable;
+    bool can_maximize;
+    void* userdata;
+    napp_window_draw draw;
+    napp_window_key key;
+    napp_window_mouse mouse;
+    napp_window_tick tick;       // Optional periodic callback
+    int tick_interval_ms;        // Interval for tick callback (100 Hz kernel)
+};
+```
+
+### Tick Callback
+
+The `tick` callback is invoked by the kernel at `tick_interval_ms` intervals while
+the window is visible. When `tick` is `nullptr` or `tick_interval_ms <= 0`, no
+periodic callback is registered.
+
+```cpp
+typedef void (*napp_window_tick)(struct napp_window* window);
+```
+
+### Monotonic Tick Counter
+
+The `napp_api` struct provides a `get_ticks` function pointer that returns the
+number of PIT timer ticks since boot (100 Hz, i.e. 10 ms per tick):
+
+```cpp
+uint64_t (*get_ticks)(void);
+```
+
+This is useful for measuring elapsed time inside tick callbacks or animation
+timing logic.
+
 ## Application Name Macro
 
 All NAPP applications declare their name using the `NAPP_APPLICATION` macro:
