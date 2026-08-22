@@ -202,9 +202,9 @@ void execute_command(const char *cmd)
             itoa(total_pages, total_buf);
             Gpu::print(total_buf);
             Gpu::print("):\n");
-            Gpu::print(" -format                             - Format storage drive\n");
-            Gpu::print("   --commands                        - Copy system commands from ISO to ClawFS\n");
-            Gpu::print("   --clear                           - Completely wipe the disk without creating the base file structure\n");
+            Gpu::print(" -rand                               - Generate a random number within a range");
+            Gpu::print("   --min [value]                     - (Required) Minimum value of the range");
+            Gpu::print("   --max [value]                     - (Required) Maximum value of the range");
             Gpu::print(" -ls                                 - List files and directories in current path\n");
             Gpu::print("    --file <path>                    - (Optional) List contents of specified path\n");
             Gpu::print(" -touch                              - Create a new empty file\n");
@@ -255,10 +255,10 @@ void execute_command(const char *cmd)
             Gpu::print("    [path]                           - (Optional) Path to change to (default: /home)\n");
             Gpu::print(" -uart                               - Send data over serial port\n");
             Gpu::print("   --text <text>                     - (Required) Text string to transmit via UART\n");
-            Gpu::print(" -pwd                                - Display the current working directory\n");
-            Gpu::print(" -safe_mode                          - Enable safe mode for system debugging\n");
-            Gpu::print(" -inb                                - Read a byte from an I/O port\n");
-            Gpu::print("    --port [0xHEX]                   - (Required) Specify I/O port address\n");
+            Gpu::print(" -format                             - Format storage drive\n");
+            Gpu::print("   --commands                        - Copy system commands from ISO to ClawFS\n");
+            Gpu::print("   --clear                           - Completely wipe the disk without creating the base file structure\n");
+            Gpu::print("   --distclear                       - Completely wipe ClawFS and remove all filesystem data\n");
         }
 
         else if (page == 5)
@@ -300,9 +300,9 @@ void execute_command(const char *cmd)
             Gpu::print("   --op <add|sub|mul|div>            - (Required) Select the arithmetic operation");
             Gpu::print("   --num1 [value]                    - (Required) First number");
             Gpu::print("   --num2 [value]                    - (Required) Second number");
-            Gpu::print(" -rand                               - Generate a random number within a range");
-            Gpu::print("   --min [value]                     - (Required) Minimum value of the range");
-            Gpu::print("   --max [value]                     - (Required) Maximum value of the range");
+            Gpu::print(" -safe_mode                          - Enable safe mode for system debugging\n");
+            Gpu::print(" -inb                                - Read a byte from an I/O port\n");
+            Gpu::print("    --port [0xHEX]                   - (Required) Specify I/O port address\n");
         }
 
         else if (page == 7)
@@ -314,6 +314,7 @@ void execute_command(const char *cmd)
             Gpu::print("):\n");\
             Gpu::print(" -tree                                 - Display directory tree\n");
             Gpu::print("    --file <path>                      - (Optional) Directory to start from\n");
+            Gpu::print(" -pwd                                - Display the current working directory\n");
         }
 
         else if (page == 8)
@@ -630,10 +631,17 @@ void execute_command(const char *cmd)
                 clawfs_format_clr();
                 Gpu::print_info("Done.\n");
             }
+            else if (strcmp(args, "--distclear") == 0)
+            {
+                // Clear option
+                Gpu::print_info("Clearing Disk...\n");
+                clawfs_format_dclr();
+                Gpu::print_info("Done.\n");
+            }
             else
             {
                 Gpu::print_error("Syntax error!\n");
-                Gpu::print_info("Usage: format [--commands | --clear]\n");
+                Gpu::print_info("Usage: format [--commands | --clear | --distclear]\n");
             }
         }
         else

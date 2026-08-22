@@ -264,7 +264,7 @@ void clawfs_format_clr()
     Gpu::print_info("Formatting CLAWFS...\n");
 
     // Reset allocation pointer.
-    next_free_sector = 108;
+    next_free_sector = 102;
 
 
     // Header
@@ -291,6 +291,24 @@ void clawfs_format_clr()
     Gpu::print_info("Format complete.\n");
 }
 
+void clawfs_format_dclr()
+{
+    Gpu::print_info("Clearing CLAWFS...\n");
+
+    uint8_t empty_sector[512];
+    memclear(empty_sector, sizeof(empty_sector));
+
+    uint32_t end_sector = next_free_sector;
+
+    for (uint32_t sector = CLAWFS_START_LBA; sector < end_sector; sector++)
+    {
+        Disk::write_sector(sector, empty_sector);
+    }
+
+    next_free_sector = CLAWFS_START_LBA;
+
+    Gpu::print_info("CLAWFS completely cleared.\n");
+}
 
 // Make directory
 void clawfs_mkdir(const char* parent_path, const char* dir_name)

@@ -25,6 +25,8 @@ struct CLAWFSEntry
 
 void clawfs_format();
 void clawfs_format_clr();
+void clawfs_format_dclr();
+
 void clawfs_dir(const char* path);
 bool clawfs_exists();
 void clawfs_create_file(const char* name);
