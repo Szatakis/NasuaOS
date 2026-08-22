@@ -22,20 +22,32 @@ static void strcpy(char* dest, const char* src)
 
 static void strcat(char* dest, const char* src)
 {
-    while (*dest) dest++;
+    while (*dest) 
+    {
+        dest++;
+    }
+
     while ((*dest++ = *src++));
 }
 
 static bool streq(const char* s1, const char* s2)
 {
-    while (*s1 && *s1 == *s2) { s1++; s2++; }
+    while (*s1 && *s1 == *s2) 
+    { 
+        s1++; 
+        s2++; 
+    }
+
     return *s1 == *s2;
 }
 
 static int strlen(const char* s)
 {
     int len = 0;
-    while (s[len]) len++;
+    while (s[len]) 
+    {
+        len++;
+    }
     return len;
 }
 
@@ -44,7 +56,10 @@ static char* strrchr(const char* str, int ch)
     char* last = nullptr;
     while (*str)
     {
-        if (*str == ch) last = (char*)str;
+        if (*str == ch) 
+        {
+            last = (char*)str;
+        }
         str++;
     }
     return last;
@@ -268,15 +283,10 @@ int _start(const napp_api* api)
     }
     else if (api->argc == 3)
     {
-        if (api->argv[1][0] != '-' ||
-            api->argv[1][1] != 'f' ||
-            api->argv[1][2] != 'i' ||
-            api->argv[1][3] != 'l' ||
-            api->argv[1][4] != 'e' ||
-            api->argv[1][5] != '\0')
+    if (api->argv[1][0] != '-' || api->argv[1][1] != '-' || api->argv[1][2] != 'f' || api->argv[1][3] != 'i' || api->argv[1][4] != 'l' || api->argv[1][5] != 'e' || api->argv[1][6] != '\0')
         {
             api->print_error("Syntax error!\n");
-            api->print("Usage: tree -file <directory_path>\n");
+            api->print("Usage: tree --file <directory_path>\n");
             return 1;
         }
 
@@ -285,7 +295,7 @@ int _start(const napp_api* api)
     else
     {
         api->print_error("Syntax error!\n");
-        api->print("Usage: tree -file <directory_path>\n");
+        api->print("Usage: tree --file <directory_path>\n");
         return 1;
     }
 

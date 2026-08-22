@@ -230,7 +230,7 @@ void clawfs_format()
     clawfs_mkdir("/home", "root");
 
     clawfs_mkdir("/home/user","desktop");
-    clawfs_mkdir("/home/user", "Documents");
+    clawfs_mkdir("/home/user", "documents");
     clawfs_mkdir("/home/user", "images");
     clawfs_mkdir("/home/user","videos");
 
