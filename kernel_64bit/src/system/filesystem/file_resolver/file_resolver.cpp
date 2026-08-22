@@ -539,7 +539,7 @@ bool format_commands()
         strcpy(dst_path, "/bin/");
         strcat(dst_path, bin_entries[i].name);
         
-        Gpu::print("  Processing: ");
+        Gpu::print("Processing: ");
         Gpu::print(bin_entries[i].name);
         Gpu::print("...");
         
@@ -577,7 +577,7 @@ bool format_commands()
         strcpy(dst_path, "/sbin/");
         strcat(dst_path, sbin_entries[i].name);
         
-        Gpu::print("  Processing: ");
+        Gpu::print("Processing: ");
         Gpu::print(sbin_entries[i].name);
         Gpu::print("...");
         
