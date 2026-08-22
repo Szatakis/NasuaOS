@@ -180,7 +180,7 @@ static int napp_api_clawfs_get_entry_type(const char* parent_path, const char* n
     }
 
     CLAWFSEntry entry;
-    if (find_entry_in_dir(parent_sector, name, &entry) != 0)
+    if (find_entry_in_dir(parent_sector, name, &entry) == 0)
     {
         return -1;
     }

@@ -206,7 +206,7 @@ void execute_command(const char *cmd)
             Gpu::print("   --commands                        - Copy system commands from ISO to ClawFS\n");
             Gpu::print("   --clear                           - Completely wipe the disk without creating the base file structure\n");
             Gpu::print(" -ls                                 - List files and directories in current path\n");
-            Gpu::print("    [path]                           - (Optional) List contents of specified path\n");
+            Gpu::print("    --file <path>                    - (Optional) List contents of specified path\n");
             Gpu::print(" -touch                              - Create a new empty file\n");
             Gpu::print("   --file <file_name.file_ext>       - (Required) Name of the file to create\n");
             Gpu::print(" -mount                              - Mount ClawFS overlay for command override\n");
@@ -311,7 +311,9 @@ void execute_command(const char *cmd)
             char total_buf[16];
             itoa(total_pages, total_buf);
             Gpu::print(total_buf);
-            Gpu::print("):\n");
+            Gpu::print("):\n");\
+            Gpu::print(" -tree                                 - Display directory tree\n");
+            Gpu::print("    --file <path>                      - (Optional) Directory to start from\n");
         }
 
         else if (page == 8)

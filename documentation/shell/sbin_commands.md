@@ -30,6 +30,7 @@ The file resolver determines the source:
 | `mv` | Move/rename file | `--source`, `--destination` |
 | `pwd` | Print working directory | No flags |
 | `rm` | Remove file or directory | `--name`, `--type` |
+| `tree` | Display directory tree | `[path]` (no flags) |
 
 ## Help System
 
@@ -41,7 +42,7 @@ The `help` command documents `/sbin` commands starting from **page 11**. The num
 To view `/sbin` commands:
 
 ```
-user@nasua-os:/home> help --page 11
+user@nasua-pc:/home> help --page 11
 System commands from /sbin (Page 11/<total>):
  -cat
  -cd
@@ -51,6 +52,7 @@ System commands from /sbin (Page 11/<total>):
  -mv
  -pwd
  -rm
+ -tree
 ```
 
 If no commands are found in `/sbin` (e.g., rootfs not mounted or ClawFS not formatted), the help system displays:
@@ -77,8 +79,8 @@ cat --file <filename> [--file_n <filename>] ...
 File paths are resolved relative to the current working directory. Both absolute and relative paths are supported.
 
 ```
-user@nasua-os:/home> cd /home/user/desktop
-user@nasua-os:/home/user/desktop> cat --file notes.txt
+user@nasua-pc:/home> cd /home/user/desktop
+user@nasua-pc:/home/user/desktop> cat --file notes.txt
 Contents of notes.txt...
 ```
 
@@ -159,6 +161,20 @@ rm --name <name> --type <file|dir>
 | `--type` | Yes | `file` or `dir` |
 
 Directories must be empty before they can be removed. If `--type` is not specified, the command attempts to auto-detect the entry type.
+
+### tree
+
+Display a directory tree structure recursively.
+
+```
+tree [directory_path]
+tree
+tree /home/user
+```
+
+With no arguments, displays the tree starting from the current working directory. If a path is given, it is resolved relative to the current directory (or treated as absolute if it starts with `/`).
+
+Hidden entries (names starting with `.`) are not displayed. Only directories are traversed recursively; files are listed but not entered. Each entry is prefixed with `<DIR>` for directories or `<FILE>` for files, matching the `ls` output format.
 
 ## Copy-on-Write and Persistence
 

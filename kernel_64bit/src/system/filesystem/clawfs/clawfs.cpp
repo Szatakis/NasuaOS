@@ -183,7 +183,7 @@ void clawfs_format()
     Gpu::print_info("Formatting CLAWFS...\n");
 
     // Reset allocation pointer.
-    next_free_sector = 108;
+    next_free_sector = 112;
 
 
     // Header

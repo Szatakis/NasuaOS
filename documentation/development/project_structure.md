@@ -199,6 +199,7 @@ documentation/
 | `/sbin/mv` | `utilities/system_functions/mv/` |
 | `/sbin/pwd` | `utilities/system_functions/pwd/` |
 | `/sbin/rm` | `utilities/system_functions/rm/` |
+| `/sbin/tree` | `utilities/system_functions/tree/` |
 
 ## Configuration File Sources
 
