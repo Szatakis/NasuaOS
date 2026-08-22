@@ -64,7 +64,6 @@ namespace Memory
         uint64_t translate(uint64_t virt);
         void init();
     }
-
 }
 
 #endif

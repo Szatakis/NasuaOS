@@ -3,10 +3,8 @@
 
 namespace Uhci
 {
-
-void init()
-{
-    Uart::puts("[UHCI] Initializing UHCI\n");
-}
-
+    void init()
+    {
+        Uart::puts("[UHCI] Initializing UHCI\n");
+    }
 }

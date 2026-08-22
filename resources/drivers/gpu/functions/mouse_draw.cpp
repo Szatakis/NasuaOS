@@ -6,56 +6,55 @@
 
 #include "system/gui/vars/colors.hpp"
 
-namespace Gpu {
-
-void handle_mouse()
+namespace Gpu 
 {
-    if (!fb)
+    void handle_mouse()
     {
-        return;
-    }
-
-    uint32_t* bb_ptr = get_backbuffer();
-    size_t bb_pitch = get_backbuffer_pitch();
-
-    for (int y = 0; y < CURSOR_H; y++)
-    {
-        for (int x = 0; x < CURSOR_W; x++)
+        if (!fb)
         {
-            int px = Mouse::x + x;
-            int py = Mouse::y + y;
+            return;
+        }
 
-            if (px < 0 || py < 0)
-            {
-                continue;
-            }
+        uint32_t* bb_ptr = get_backbuffer();
+        size_t bb_pitch = get_backbuffer_pitch();
 
-            if ((size_t)px >= fb->width || (size_t)py >= fb->height)
+        for (int y = 0; y < CURSOR_H; y++)
+        {
+            for (int x = 0; x < CURSOR_W; x++)
             {
-                continue;
-            }
+                int px = Mouse::x + x;
+                int py = Mouse::y + y;
 
-            char p = Mouse::arrow_cursor[y][x];
-            uint32_t color = 0;
+                if (px < 0 || py < 0)
+                {
+                    continue;
+                }
 
-            if (p == 'W')
-            {
-                color = COLOR_MOUSE;
-            }
-            else if (p == 'B')
-            {
-                color = 0x00000000;
-            }
-            else
-            {
-                continue;
-            }
+                if ((size_t)px >= fb->width || (size_t)py >= fb->height)
+                {
+                    continue;
+                }
 
-            bb_ptr[py * bb_pitch + px] = color;
+                char p = Mouse::arrow_cursor[y][x];
+                uint32_t color = 0;
+
+                if (p == 'W')
+                {
+                    color = COLOR_MOUSE;
+                }
+                else if (p == 'B')
+                {
+                    color = 0x00000000;
+                }
+                else
+                {
+                    continue;
+                }
+
+                bb_ptr[py * bb_pitch + px] = color;
+            }
         }
     }
-}
-
 } // namespace Gpu
 
 #endif // __x86_64__

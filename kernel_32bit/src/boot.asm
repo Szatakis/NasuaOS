@@ -48,10 +48,8 @@ _start:
     ; Disable interrupts during early kernel initialization
     cli
 
-
     ; Initialize kernel stack
     mov esp, stack_top
-
 
     ; Pass Multiboot2 information structure to the kernel
     ;

@@ -102,4 +102,4 @@ clean:
 
 .PHONY: distclean
 distclean:
-	rm -rf obj-* bin-*
+	rm -rf obj-* bin-* .deps-obtained

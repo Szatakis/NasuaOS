@@ -1,3 +1,5 @@
+#ifdef __i386__
+
 #include <stdint.h>
 
 #include "applications/shell/shell.hpp"
@@ -10,20 +12,15 @@
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
 
-#ifdef __i386__
 bool safe_mode = false;
 bool debug_mode = false;
-#endif
 
-#ifdef __i386__
 char Keyboard::input_buffer[128];
 uint32_t Keyboard::input_pos = 0;
-#endif
 
 extern "C"
 void kmain(uint32_t mbi)
 {
-#ifdef __i386__
     if(!Gpu::graphics_init(mbi))
     {
         while(1)
@@ -44,5 +41,5 @@ void kmain(uint32_t mbi)
         Keyboard::read_line();
         shell();
     }
-#endif
 }
+#endif

@@ -3,10 +3,8 @@
 
 namespace Ehci
 {
-
-void init()
-{
-    Uart::puts("[EHCI] Initializing EHCI\n");
-}
-
+    void init()
+    {
+        Uart::puts("[EHCI] Initializing EHCI\n");
+    }
 }

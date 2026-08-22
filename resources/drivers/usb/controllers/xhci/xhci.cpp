@@ -3,10 +3,8 @@
 
 namespace Xhci
 {
-
-void init()
-{
-    Uart::puts("[XHCI] Initializing XHCI\n");
-}
-
+    void init()
+    {
+        Uart::puts("[XHCI] Initializing XHCI\n");
+    }
 }
