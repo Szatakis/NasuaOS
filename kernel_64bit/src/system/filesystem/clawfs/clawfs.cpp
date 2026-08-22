@@ -66,7 +66,7 @@ char* next_path_token(char* str, const char* delim)
 // 109 = lib
 // 110 = tmp
 //
-// First dynamically allocated sector = 108
+// First dynamically allocated sector = 112
 //
 
 static uint32_t next_free_sector = 112;
@@ -265,6 +265,7 @@ void clawfs_format()
     Gpu::print_info("Format complete.\n");
 }
 
+
 // Format Clear CLAWFS
 void clawfs_format_clr()
 {
@@ -298,6 +299,8 @@ void clawfs_format_clr()
     Gpu::print_info("Format complete.\n");
 }
 
+
+// Format Distclear Disk
 void clawfs_format_dclr()
 {
     Gpu::print_info("Clearing CLAWFS...\n");
@@ -316,6 +319,7 @@ void clawfs_format_dclr()
 
     Gpu::print_info("CLAWFS completely cleared.\n");
 }
+
 
 // Make directory
 void clawfs_mkdir(const char* parent_path, const char* dir_name)
