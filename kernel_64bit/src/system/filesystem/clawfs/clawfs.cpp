@@ -69,7 +69,7 @@ char* next_path_token(char* str, const char* delim)
 // First dynamically allocated sector = 108
 //
 
-static uint32_t next_free_sector = 108;
+static uint32_t next_free_sector = 112;
 
 uint32_t get_next_free_sector()
 {
@@ -223,16 +223,37 @@ void clawfs_format()
 
 
     // Default filesystem structure
-    clawfs_create_file_in("/bin", "kernel_bin");
-
-
+    // Home directory
     clawfs_mkdir("/home", "user");
     clawfs_mkdir("/home", "root");
 
-    clawfs_mkdir("/home/user","desktop");
+    clawfs_mkdir("/home/user", "desktop");
     clawfs_mkdir("/home/user", "documents");
     clawfs_mkdir("/home/user", "images");
-    clawfs_mkdir("/home/user","videos");
+    clawfs_mkdir("/home/user", "videos");
+    clawfs_mkdir("/home/user", "downloads");
+    clawfs_mkdir("/home/user", "uploads");
+    clawfs_mkdir("/home/user", "music");
+    clawfs_mkdir("/home/user", "projects");
+
+    // Var directory
+    clawfs_mkdir("/var", "log");
+    clawfs_mkdir("/var", "cache");
+
+    // Lib directory
+    clawfs_mkdir("/lib", "drivers");
+    clawfs_mkdir("/lib", "modules");
+    clawfs_mkdir("/lib", "runtime");
+
+    // Proc directory
+    clawfs_create_file_in("/proc", "cpuinfo");
+    clawfs_create_file_in("/proc", "meminfo");
+    clawfs_create_file_in("/proc", "uptime");
+    clawfs_create_file_in("/proc", "k_version");
+
+    // Bin directory
+    clawfs_create_file_in("/bin", "kernel_bin");
+
 
     Gpu::print_info("Format complete.\n");
 }
@@ -421,6 +442,10 @@ void clawfs_dir(const char* path)
             if (entries[i].type == CLAWFS_DIRECTORY)
             {
                 Gpu::print("<DIR>  ");
+            }
+            else if(entries[i].type == CLAWFS_FILE)
+            {
+                Gpu::print("<FILE> ");
             }
             else
             {
