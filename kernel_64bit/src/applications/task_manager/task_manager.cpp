@@ -45,5 +45,6 @@ Gpu::Window_Manager::window_struct task_manager =
     .userdata = nullptr,
     .draw_content = draw_task_manager,
     .key_press = nullptr,
-    .mouse_click = nullptr
+    .mouse_click = nullptr,
+    .mouse_button = 0
 };

@@ -46,5 +46,6 @@ Gpu::Window_Manager::window_struct suaedit =
     .userdata = nullptr,
     .draw_content = draw_suaedit,
     .key_press = nullptr,
-    .mouse_click = nullptr
+    .mouse_click = nullptr,
+    .mouse_button = 0
 };

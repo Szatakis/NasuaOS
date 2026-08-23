@@ -371,39 +371,6 @@ static void ms_reveal(int x, int y)
 }
 
 
-// FLAG
-static void ms_toggle_flag(int x, int y)
-{
-    if (!ms_inside(x, y) || ms_data.state != MS_PLAYING)
-    {
-        return;
-    }
-
-    ms_cell* cell = &ms_data.cells[ms_index(x, y)];
-
-    if (cell->revealed)
-    {
-        return;
-    }
-
-    if (!cell->flagged)
-    {
-        if (ms_data.flags >= ms_data.mines)
-        {
-            return;
-        }
-
-        cell->flagged = true;
-        ms_data.flags++;
-    }
-    else
-    {
-        cell->flagged = false;
-        ms_data.flags--;
-    }
-}
-
-
 // TEXT HELPERS
 static void ms_draw_number(int value, int x, int y)
 {
@@ -624,8 +591,6 @@ static void ms_tick(napp_window* win)
     {
         return;
     }
-
-    uint64_t ticks = 0;
 }
 
 
