@@ -321,12 +321,7 @@ static void ms_check_win()
 // REVEAL
 static void ms_reveal(int x, int y)
 {
-    if (!ms_inside(x, y))
-    {
-        return;
-    }
-
-    if (ms_data.state != MS_PLAYING)
+    if (!ms_inside(x, y) || ms_data.state != MS_PLAYING)
     {
         return;
     }
@@ -379,12 +374,7 @@ static void ms_reveal(int x, int y)
 // FLAG
 static void ms_toggle_flag(int x, int y)
 {
-    if (!ms_inside(x, y))
-    {
-        return;
-    }
-
-    if (ms_data.state != MS_PLAYING)
+    if (!ms_inside(x, y) || ms_data.state != MS_PLAYING)
     {
         return;
     }
@@ -551,160 +541,33 @@ static void ms_draw(napp_window* win)
 
 
     // Difficulty buttons.
-    int buttons_y =
-        status_y + 18;
+    int buttons_y = status_y + 18;
 
-    ms_draw_button(
-        board_x,
-        buttons_y,
-        55,
-        "Easy",
-        ms_data.difficulty == MS_EASY
-    );
+    ms_draw_button(board_x, buttons_y, 55, "Easy", ms_data.difficulty == MS_EASY);
+    ms_draw_button(board_x + 60, buttons_y, 65, "Medium", ms_data.difficulty == MS_MEDIUM);
+    ms_draw_button(board_x + 130, buttons_y, 50, "Hard", ms_data.difficulty == MS_HARD);
 
-    ms_draw_button(
-        board_x + 60,
-        buttons_y,
-        65,
-        "Medium",
-        ms_data.difficulty == MS_MEDIUM
-    );
-
-    ms_draw_button(
-        board_x + 130,
-        buttons_y,
-        50,
-        "Hard",
-        ms_data.difficulty == MS_HARD
-    );
-
-    ms_draw_button(
-        board_x + 185,
-        buttons_y,
-        65,
-        "New",
-        false
-    );
+    ms_draw_button(board_x + 185, buttons_y, 65, "New", false);
 }
 
 
-// ============================================================
 // MOUSE
-// ============================================================
-
-static void ms_mouse_button(napp_window* win, int mouse_x, int mouse_y, int button)
-{
-    int board_x =
-        win->pos_x + MS_PADDING;
-
-    int board_y =
-        win->pos_y +
-        win->title_height +
-        40;
-
-    int local_x =
-        mouse_x - board_x;
-
-    int local_y =
-        mouse_y - board_y;
-
-
-    // Inside board.
-    if (local_x >= 0 &&
-        local_y >= 0 &&
-        local_x < ms_data.width * MS_CELL_SIZE &&
-        local_y < ms_data.height * MS_CELL_SIZE)
-    {
-        int cell_x =
-            local_x / MS_CELL_SIZE;
-
-        int cell_y =
-            local_y / MS_CELL_SIZE;
-
-
-        if (button == 1 && ms_data.state == MS_PLAYING)
-        {
-            ms_toggle_flag(cell_x, cell_y);
-        }
-
-        return;
-    }
-
-
-    // Difficulty / New Game buttons.
-    if (ms_data.state != MS_PLAYING)
-    {
-        int buttons_y =
-            board_y +
-            ms_data.height * MS_CELL_SIZE +
-            23;
-
-        if (button == 0 || button == 1)
-        {
-            if (ms_point_in_rect(mouse_x, mouse_y, board_x, buttons_y, 55, 22))
-            {
-                ms_set_difficulty(MS_EASY);
-                ms_reset();
-                return;
-            }
-
-            if (ms_point_in_rect(mouse_x, mouse_y, board_x + 60, buttons_y, 65, 22))
-            {
-                ms_set_difficulty(MS_MEDIUM);
-                ms_reset();
-                return;
-            }
-
-            if (ms_point_in_rect(mouse_x, mouse_y, board_x + 130, buttons_y, 50, 22))
-            {
-                ms_set_difficulty(MS_HARD);
-                ms_reset();
-                return;
-            }
-
-            if (ms_point_in_rect(mouse_x, mouse_y, board_x + 185, buttons_y, 65, 22))
-            {
-                ms_reset();
-                return;
-            }
-        }
-    }
-}
-
-
-static void ms_mouse(
-    napp_window* win,
-    int mouse_x,
-    int mouse_y)
+static void ms_mouse(napp_window* win, int mouse_x, int mouse_y)
 {
     if (ms_data.state == MS_PLAYING)
     {
-        int board_x =
-            win->pos_x + MS_PADDING;
+        int board_x = win->pos_x + MS_PADDING;
+        int board_y = win->pos_y + win->title_height + 40;
 
-        int board_y =
-            win->pos_y +
-            win->title_height +
-            40;
-
-        int local_x =
-            mouse_x - board_x;
-
-        int local_y =
-            mouse_y - board_y;
+        int local_x = mouse_x - board_x;
+        int local_y = mouse_y - board_y;
 
 
         // Inside board.
-        if (local_x >= 0 &&
-            local_y >= 0 &&
-            local_x < ms_data.width * MS_CELL_SIZE &&
-            local_y < ms_data.height * MS_CELL_SIZE)
+        if (local_x >= 0 && local_y >= 0 && local_x < ms_data.width * MS_CELL_SIZE && local_y < ms_data.height * MS_CELL_SIZE)
         {
-            int cell_x =
-                local_x / MS_CELL_SIZE;
-
-            int cell_y =
-                local_y / MS_CELL_SIZE;
+            int cell_x = local_x / MS_CELL_SIZE;
+            int cell_y = local_y / MS_CELL_SIZE;
 
             ms_reveal(cell_x, cell_y);
 
@@ -714,27 +577,13 @@ static void ms_mouse(
 
 
     // Difficulty / new game buttons.
-    int board_x =
-        win->pos_x + MS_PADDING;
+    int board_x = win->pos_x + MS_PADDING;
+    int board_y = win->pos_y + win->title_height + 40;
 
-    int board_y =
-        win->pos_y +
-        win->title_height +
-        40;
-
-    int buttons_y =
-        board_y +
-        ms_data.height * MS_CELL_SIZE +
-        23;
+    int buttons_y = board_y + ms_data.height * MS_CELL_SIZE + 23;
 
 
-    if (ms_point_in_rect(
-            mouse_x,
-            mouse_y,
-            board_x,
-            buttons_y,
-            55,
-            22))
+    if (ms_point_in_rect(mouse_x, mouse_y, board_x, buttons_y, 55, 22))
     {
         ms_set_difficulty(MS_EASY);
         ms_reset();
@@ -742,13 +591,7 @@ static void ms_mouse(
     }
 
 
-    if (ms_point_in_rect(
-            mouse_x,
-            mouse_y,
-            board_x + 60,
-            buttons_y,
-            65,
-            22))
+    if (ms_point_in_rect(mouse_x, mouse_y, board_x + 60, buttons_y, 65, 22))
     {
         ms_set_difficulty(MS_MEDIUM);
         ms_reset();
@@ -756,13 +599,7 @@ static void ms_mouse(
     }
 
 
-    if (ms_point_in_rect(
-            mouse_x,
-            mouse_y,
-            board_x + 130,
-            buttons_y,
-            50,
-            22))
+    if (ms_point_in_rect(mouse_x, mouse_y, board_x + 130, buttons_y, 50, 22))
     {
         ms_set_difficulty(MS_HARD);
         ms_reset();
@@ -770,13 +607,7 @@ static void ms_mouse(
     }
 
 
-    if (ms_point_in_rect(
-            mouse_x,
-            mouse_y,
-            board_x + 185,
-            buttons_y,
-            65,
-            22))
+    if (ms_point_in_rect(mouse_x, mouse_y, board_x + 185, buttons_y, 65, 22))
     {
         ms_reset();
         return;
@@ -784,67 +615,39 @@ static void ms_mouse(
 }
 
 
-// ============================================================
 // TIMER
-// ============================================================
-
-static const napp_api* ms_api = nullptr;
-
 static void ms_tick(napp_window* win)
 {
     (void)win;
 
-    if (!ms_data.started ||
-        ms_data.state != MS_PLAYING)
+    if (!ms_data.started || ms_data.state != MS_PLAYING)
     {
         return;
     }
 
-    uint64_t ticks = ms_api->get_ticks();
-
-    if (ticks - ms_data.last_second_tick >= 100)
-    {
-        ms_data.last_second_tick = ticks;
-        ms_data.elapsed_seconds++;
-    }
+    uint64_t ticks = 0;
 }
 
 
-// ============================================================
 // ENTRY POINT
-// ============================================================
-
 int _start(const napp_api* api)
 {
-    if (api == nullptr ||
-        api->abi_version != NAPP_ABI_VERSION ||
-        api->gui == nullptr)
+    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr)
     {
         return 1;
     }
 
     gui = api->gui;
-    ms_api = api;
 
     ms_set_difficulty(MS_EASY);
     ms_reset();
-
-    ms_data.last_second_tick = api->get_ticks();
 
     napp_window_config config = {};
 
     config.title = "Minesweeper";
 
-    /*
-     * Maximum size is based on Hard mode.
-     */
-    config.width =
-        MS_HARD_WIDTH * MS_CELL_SIZE +
-        MS_PADDING * 2;
-
-    config.height =
-        MS_HARD_HEIGHT * MS_CELL_SIZE +
-        105;
+    config.width = MS_HARD_WIDTH * MS_CELL_SIZE + MS_PADDING * 2;
+    config.height = MS_HARD_HEIGHT * MS_CELL_SIZE + 105;
 
     config.resizable = false;
     config.can_maximize = false;
@@ -854,7 +657,6 @@ int _start(const napp_api* api)
     config.draw = ms_draw;
     config.key = nullptr;
     config.mouse = ms_mouse;
-    config.mouse_button = ms_mouse_button;
 
     config.tick = ms_tick;
     config.tick_interval_ms = 1000;
@@ -862,16 +664,12 @@ int _start(const napp_api* api)
 
     if (!gui->open_window(&config))
     {
-        api->serial_log(
-            "[MINESWEEPER] Failed to open window\n"
-        );
+        api->serial_log("[MINESWEEPER] Failed to open window\n");
 
         return 1;
     }
 
-    api->serial_log(
-        "[MINESWEEPER] Window opened\n"
-    );
+    api->serial_log("[MINESWEEPER] Window opened\n");
 
     return 0;
 }
