@@ -103,6 +103,7 @@ namespace Gpu {
         typedef void (*window_draw_callback)(struct window_struct*);
         typedef void (*window_key_callback)(window_struct*, char);
         typedef void (*window_mouse_callback)(window_struct*, int, int);
+        typedef void (*window_mouse_button_callback)(window_struct*, int, int, int);
 
         typedef struct window_struct {
             const char* name;
@@ -148,6 +149,7 @@ namespace Gpu {
             window_draw_callback draw_content;
             window_key_callback key_press;
             window_mouse_callback mouse_click;
+            window_mouse_button_callback mouse_button;
         } window_struct;
 
         extern window_struct* active_window;
@@ -167,7 +169,7 @@ namespace Gpu {
         bool is_mouse_over_window(window_struct* window, int mouse_x, int mouse_y);
         bool is_mouse_over_window_title(window_struct* window, int mouse_x, int mouse_y);
         window_button get_window_button(window_struct* window, int mouse_x, int mouse_y);
-        void handle_window_mouse_click(int mouse_x, int mouse_y);
+        void handle_window_mouse_click(int mouse_x, int mouse_y, int button);
 
         void register_window(window_struct* window);
         void unregister_window(window_struct* window);

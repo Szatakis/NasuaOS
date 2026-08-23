@@ -444,7 +444,7 @@ namespace Gpu::Window_Manager
     }
 
     // Windows clicks
-    void handle_window_mouse_click(int mouse_x, int mouse_y) 
+    void handle_window_mouse_click(int mouse_x, int mouse_y, int button)
     {
         for (int i = window_count - 1; i >= 0; i--) 
         {
@@ -475,6 +475,34 @@ namespace Gpu::Window_Manager
             }
         }
 
+        // For non-left clicks (right/middle), skip window management and
+        // forward directly to the window under the cursor.
+        if (button != 0)
+        {
+            for (int i = window_count - 1; i >= 0; i--)
+            {
+                window_struct* win = window_list[i];
+                if (!win || !win->visible)
+                {
+                    continue;
+                }
+
+                if (is_mouse_over_window(win, mouse_x, mouse_y))
+                {
+                    bring_window_to_front(i);
+
+                    if (win->mouse_button)
+                    {
+                        win->mouse_button(win, mouse_x, mouse_y, button);
+                    }
+
+                    return;
+                }
+            }
+            return;
+        }
+
+        // Left-click: window management (taskbar, buttons, drag, resize)
         window_struct* taskbar = get_taskbar_window_at(mouse_x, mouse_y);
         if (taskbar != nullptr)
         {

@@ -481,7 +481,7 @@ namespace Mouse
         // TASKBAR
         if (Gpu::Window_Manager::is_mouse_over_taskbar(x, y))
         {
-            Gpu::Window_Manager::handle_window_mouse_click(x, y);
+            Gpu::Window_Manager::handle_window_mouse_click(x, y, 0);
 
             return;
         }
@@ -490,7 +490,7 @@ namespace Mouse
         // WINDOW
         if (Gpu::Window_Manager::is_mouse_over_any_window(x, y))
         {
-            Gpu::Window_Manager::handle_window_mouse_click(x, y);
+            Gpu::Window_Manager::handle_window_mouse_click(x, y, 0);
 
             return;
         }
@@ -567,6 +567,34 @@ namespace Mouse
     void right_click(bool cmd_enter)
     {
         (void)cmd_enter;
+
+        if (!mouse_connected)
+        {
+            return;
+        }
+
+        if (menu_start_open)
+        {
+            // Clicking outside the start menu closes it
+            const int start_menu_left = (int)menu_x;
+            const int start_menu_top = (int)menu_y;
+            const int start_menu_right = (int)(menu_x + menu_w);
+            const int start_menu_bottom = (int)(menu_y + menu_h);
+
+            if (x < start_menu_left || x >= start_menu_right || y < start_menu_top || y >= start_menu_bottom)
+            {
+                close_start_menu();
+            }
+
+            return;
+        }
+
+        // Forward right-click to window under cursor
+        if (Gpu::Window_Manager::is_mouse_over_any_window(x, y))
+        {
+            Gpu::Window_Manager::handle_window_mouse_click(x, y, 1);
+            return;
+        }
     }
 
 

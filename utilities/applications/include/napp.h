@@ -56,6 +56,11 @@ typedef void (*napp_window_draw)(struct napp_window* window);
 typedef void (*napp_window_key)(struct napp_window* window, char key);
 typedef void (*napp_window_mouse)(struct napp_window* window, int mouse_x, int mouse_y);
 
+// Button-enabled mouse callback. The button parameter is 0 for left click,
+// 1 for right click, and 2 for middle click. Called for all mouse buttons
+// when mouse_button is set; otherwise mouse (left-click only) is used.
+typedef void (*napp_window_mouse_button)(struct napp_window* window, int mouse_x, int mouse_y, int button);
+
 // Periodic callback invoked by the kernel at tick_interval_ms intervals.
 // Only called while the window is visible and the game/application is active.
 typedef void (*napp_window_tick)(struct napp_window* window);
@@ -75,6 +80,7 @@ struct napp_window_config
     napp_window_draw draw;
     napp_window_key key;
     napp_window_mouse mouse;
+    napp_window_mouse_button mouse_button;
 
     // Optional periodic callback, invoked every tick_interval_ms milliseconds.
     // When tick is nullptr or tick_interval_ms <= 0, no periodic callback is

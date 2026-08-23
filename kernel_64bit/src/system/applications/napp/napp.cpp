@@ -41,6 +41,7 @@ struct napp_window_slot
     napp_window_draw draw;
     napp_window_key key;
     napp_window_mouse mouse;
+    napp_window_mouse_button mouse_button;
 
     napp_window_tick tick;
     int tick_interval_ms;
@@ -321,6 +322,16 @@ static void napp_window_mouse_trampoline(Gpu::Window_Manager::window_struct* win
     }
 }
 
+static void napp_window_mouse_button_trampoline(Gpu::Window_Manager::window_struct* window, int mouse_x, int mouse_y, int button)
+{
+    napp_window_slot* slot = sync_slot(window);
+
+    if (slot != nullptr && slot->mouse_button != nullptr)
+    {
+        slot->mouse_button(&slot->view, mouse_x, mouse_y, button);
+    }
+}
+
 static void napp_window_tick_trampoline(Gpu::Window_Manager::window_struct* window)
 {
     napp_window_slot* slot = sync_slot(window);
@@ -389,6 +400,7 @@ static bool napp_api_open_window(const napp_window_config* config)
     slot->draw = config->draw;
     slot->key = config->key;
     slot->mouse = config->mouse;
+    slot->mouse_button = config->mouse_button;
 
     slot->tick = config->tick;
     slot->tick_interval_ms = config->tick_interval_ms;
@@ -407,6 +419,7 @@ static bool napp_api_open_window(const napp_window_config* config)
     slot->window.draw_content = napp_window_draw_trampoline;
     slot->window.key_press = napp_window_key_trampoline;
     slot->window.mouse_click = napp_window_mouse_trampoline;
+    slot->window.mouse_button = napp_window_mouse_button_trampoline;
 
     slot->used = true;
 
