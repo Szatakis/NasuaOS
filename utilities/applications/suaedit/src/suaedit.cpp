@@ -3,10 +3,23 @@
 NAPP_APPLICATION("suaedit", "Text editor", true);
 
 static const napp_gui* gui = nullptr;
+static const napp_api* api = nullptr;
+
+// Forward declarations for terminal functions
+static void terminal_write_char(char c);
+static void terminal_write_string(const char* str);
 
 // Application state
 static int active_activity_tab = 0; // 0: Explorer, 1: Search, 2: Source Control, 3: Run/Debug, 4: Extensions
 static const int ACTIVITY_COUNT = 5;
+
+// Terminal panel state
+static bool terminal_panel_visible = false;
+static char terminal_input[256];
+static int terminal_cursor = 0;
+static char terminal_output[64][256];
+static int terminal_output_count = 0;
+static int terminal_scroll_offset = 0;
 
 // Color scheme
 static const uint32_t COLOR_MENU_BAR    = 0xFF323233;
@@ -196,12 +209,16 @@ static void draw_suaedit(napp_window* win)
     int editor_x = content_x + activity_bar_w + side_bar_w;
     int editor_w = content_w - activity_bar_w - side_bar_w;
     
-    if (editor_w > 0) {
-        gui->fill_block(editor_x, middle_y, COLOR_EDITOR_BG, editor_w, middle_h);
+    // Terminal panel dimensions
+    int terminal_panel_h = terminal_panel_visible ? 200 : 0;
+    int editor_h = middle_h - terminal_panel_h;
+    
+    if (editor_w > 0 && editor_h > 0) {
+        gui->fill_block(editor_x, middle_y, COLOR_EDITOR_BG, editor_w, editor_h);
         
         // Empty tab
         const int tab_h = 35;
-        if (middle_h > tab_h) 
+        if (editor_h > tab_h) 
         {
             gui->fill_block(editor_x, middle_y, COLOR_EDITOR_TAB, editor_w, tab_h);
             
@@ -220,8 +237,191 @@ static void draw_suaedit(napp_window* win)
             }
         }
     }
+    
+    // TERMINAL PANEL (bottom panel when visible)
+    if (terminal_panel_visible && terminal_panel_h > 0 && editor_w > 0)
+    {
+        int terminal_y = middle_y + editor_h;
+        gui->fill_block(editor_x, terminal_y, 0xFF1E1E1E, editor_w, terminal_panel_h);
+        
+        // Terminal panel header
+        gui->fill_block(editor_x, terminal_y, 0xFF252526, editor_w, 24);
+        gui->draw_text("TERMINAL", editor_x + 8, terminal_y + 8, COLOR_TEXT_WHITE);
+        
+        // Terminal content area
+        int terminal_content_y = terminal_y + 24;
+        int terminal_content_h = terminal_panel_h - 24;
+        
+        if (terminal_content_h > 0 && editor_w > 16)
+        {
+            // Initialize terminal output if empty
+            if (terminal_output_count == 0 || terminal_output[0][0] == '\0')
+            {
+                terminal_output_count = 1;
+                terminal_output[0][0] = '\0';
+                terminal_write_string("NasuaOS Terminal Integrated in SuaEdit\n$ ");
+            }
+            
+            // Draw terminal output
+            int line_height = 12;
+            int max_visible_lines = terminal_content_h / line_height;
+            if (max_visible_lines < 1) max_visible_lines = 1;
+            
+            int start_line = 0;
+            if (terminal_output_count > max_visible_lines)
+            {
+                start_line = terminal_output_count - max_visible_lines - terminal_scroll_offset;
+                if (start_line < 0) start_line = 0;
+            }
+            
+            int current_y = terminal_content_y + 4;
+            for (int i = start_line; i < terminal_output_count && current_y < terminal_y + terminal_panel_h - 4; i++)
+            {
+                gui->draw_text(terminal_output[i], editor_x + 8, current_y, COLOR_TEXT_NORMAL);
+                current_y += line_height;
+            }
+            
+            // Draw current input line
+            if (current_y < terminal_y + terminal_panel_h - 4)
+            {
+                char input_with_prompt[512];
+                int prompt_len = 0;
+                const char* prompt = "$ ";
+                while (prompt[prompt_len] != '\0') prompt_len++;
+                
+                for (int j = 0; j < prompt_len; j++)
+                {
+                    input_with_prompt[j] = prompt[j];
+                }
+                
+                int input_len = 0;
+                while (terminal_input[input_len] != '\0') input_len++;
+                
+                for (int j = 0; j < input_len; j++)
+                {
+                    input_with_prompt[prompt_len + j] = terminal_input[j];
+                }
+                input_with_prompt[prompt_len + input_len] = '\0';
+                
+                gui->draw_text(input_with_prompt, editor_x + 8, current_y, COLOR_TEXT_WHITE);
+                
+                // Draw cursor
+                int cursor_x = editor_x + 8 + (prompt_len + input_len) * 8;
+                gui->draw_text("_", cursor_x, current_y, COLOR_HIGHLIGHT);
+            }
+        }
+    }
 }
 
+
+static void terminal_write_char(char c)
+{
+    if (terminal_output_count == 0) 
+    {
+        terminal_output_count = 1;
+        terminal_output[0][0] = '\0';
+    }
+
+    if (c == '\n') 
+    {
+        terminal_scroll_offset = 0;
+        if (terminal_output_count < 64) 
+        {
+            terminal_output[terminal_output_count][0] = '\0';
+            terminal_output_count++;
+        }
+        else 
+        {
+            for (int i = 0; i < 63; i++) 
+            {
+                int j = 0;
+                while (terminal_output[i + 1][j] != '\0') 
+                {
+                    terminal_output[i][j] = terminal_output[i + 1][j];
+                    j++;
+                }
+                terminal_output[i][j] = '\0';
+            }
+            terminal_output[63][0] = '\0';
+        }
+        return;
+    }
+
+    int line = terminal_output_count - 1;
+    int len = 0;
+    while (terminal_output[line][len] != '\0') len++;
+    
+    if (len < 255) 
+    {
+        terminal_output[line][len] = c;
+        terminal_output[line][len + 1] = '\0';
+    }
+}
+
+static void terminal_write_string(const char* str) 
+{
+    while (*str) 
+    {
+        terminal_write_char(*str++);
+    }
+}
+
+static void suaedit_key(napp_window* win, char key)
+{
+    (void)win; // Unused parameter
+    
+    if (!terminal_panel_visible)
+    {
+        return;
+    }
+
+    if (key == '\n') 
+    {
+        if (terminal_cursor > 0) 
+        {
+            terminal_write_string(terminal_input);
+            terminal_write_char('\n');
+            
+            // Execute command using the kernel's shell command execution
+            if (api != nullptr && api->execute_command != nullptr)
+            {
+                api->execute_command(terminal_input);
+            }
+            else
+            {
+                terminal_write_string("Command execution not available.\n");
+            }
+            
+            // Add prompt for next line
+            terminal_write_string("$ ");
+        }
+        else 
+        {
+            terminal_write_char('\n');
+            terminal_write_string("$ ");
+        }
+
+        terminal_cursor = 0;
+        terminal_input[0] = '\0';
+        return;
+    }
+
+    if (key == '\b') 
+    {
+        if (terminal_cursor > 0) 
+        {
+            terminal_cursor--;
+            terminal_input[terminal_cursor] = '\0';
+        }
+        return;
+    }
+
+    if (terminal_cursor < 255) 
+    {
+        terminal_input[terminal_cursor++] = key;
+        terminal_input[terminal_cursor] = '\0';
+    }
+}
 
 static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
 {
@@ -242,6 +442,37 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
     }
 
     const int top_menu_h = 26;
+    
+    // Check clicks on the menu bar
+    if (mouse_y >= content_y && mouse_y < content_y + top_menu_h)
+    {
+        const char* menu_items[] = { "File", "Edit", "Selection", "View", "Go", "Run", "Terminal", "Help" };
+        int current_menu_x = content_x + 10;
+        
+        for (int i = 0; i < 8; i++) 
+        {
+            int len = 0;
+            while(menu_items[i][len] != '\0') len++;
+            int text_width = len * 8;
+            
+            if (mouse_x >= current_menu_x && mouse_x < current_menu_x + text_width)
+            {
+                // Terminal menu item clicked (index 6)
+                if (i == 6)
+                {
+                    terminal_panel_visible = !terminal_panel_visible;
+                }
+                return;
+            }
+            
+            current_menu_x += text_width + 10;
+            if (i < 7) 
+            {
+                current_menu_x += 10; 
+            }
+        }
+        return;
+    }
     
     int activity_bar_w = 48;
     if (activity_bar_w > content_w) 
@@ -273,14 +504,25 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
 }
 
 
-int _start(const napp_api* api)
+int _start(const napp_api* api_param)
 {
-    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr)
+    if (api_param == nullptr || api_param->abi_version != NAPP_ABI_VERSION || api_param->gui == nullptr)
     {
         return 1;
     }
 
-    gui = api->gui;
+    api = api_param;
+    gui = api_param->gui;
+
+    // Initialize terminal state
+    terminal_input[0] = '\0';
+    terminal_cursor = 0;
+    terminal_output_count = 0;
+    terminal_scroll_offset = 0;
+    for (int i = 0; i < 64; i++)
+    {
+        terminal_output[i][0] = '\0';
+    }
 
     napp_window_config config = {};
 
@@ -295,7 +537,7 @@ int _start(const napp_api* api)
     config.userdata = nullptr;
 
     config.draw = draw_suaedit;
-    config.key = nullptr;
+    config.key = suaedit_key;
     config.mouse = suaedit_mouse;
 
     if (!gui->open_window(&config))

@@ -13,6 +13,8 @@
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
 
+#include "applications/shell/commands.hpp"
+
 #include "libs/libc/libc.hpp"
 
 #define NAPP_DIRECTORY "/bin"
@@ -456,6 +458,11 @@ static const napp_gui kernel_napp_gui =
 
 // Updated at the start of each napp_run_path call so the binary sees the
 // shell's current working directory.
+static void napp_api_execute_command(const char* cmd)
+{
+    execute_command(cmd);
+}
+
 static napp_api kernel_napp_api =
 {
     NAPP_ABI_VERSION,
@@ -482,7 +489,8 @@ static napp_api kernel_napp_api =
     napp_api_clawfs_dir,
     napp_api_clawfs_get_entry_type,
     napp_api_clawfs_resolve_path,
-    napp_api_get_ticks
+    napp_api_get_ticks,
+    napp_api_execute_command
 };
 
 static bool remember_image(const char* name, void* image)

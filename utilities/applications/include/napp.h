@@ -136,6 +136,9 @@ struct napp_api
     // Monotonic tick counter (PIT ticks, 100 Hz = 10 ms per tick).
     // Returns the number of timer ticks since boot.
     uint64_t (*get_ticks)(void);
+
+    // Execute a shell command (for terminal applications)
+    void (*execute_command)(const char* cmd);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);
