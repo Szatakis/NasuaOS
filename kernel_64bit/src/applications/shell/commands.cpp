@@ -13,10 +13,6 @@
 #include "system/sysfunc/rand/rand.hpp"
 
 #include "applications/applications.hpp"
-#include "applications/settings/settings.hpp"
-#include "applications/terminal/terminal.hpp"
-#include "applications/suaedit/suaedit.hpp"
-#include "applications/task_manager/task_manager.hpp"
 #include "drivers/gpu/driver.hpp"
 #include "functions/functions.hpp"
 
@@ -930,11 +926,6 @@ void execute_command(const char *cmd)
                 Gpu::Window_Manager::register_window(&terminal);
                 app_launched = true;
             }
-            else if (strcmp(app_name_buf, "suaedit") == 0)
-            {
-                Gpu::Window_Manager::register_window(&suaedit);
-                app_launched = true;
-            }
             else if (strcmp(app_name_buf, "task_manager") == 0)
             {
                 Gpu::Window_Manager::register_window(&task_manager);
@@ -968,7 +959,6 @@ void execute_command(const char *cmd)
             Gpu::print_info("Built-in applications:\n");
             Gpu::print(" - settings\n");
             Gpu::print(" - terminal\n");
-            Gpu::print(" - suaedit\n");
             Gpu::print(" - task_manager\n");
             
             Gpu::print_info("/bin applications:\n");

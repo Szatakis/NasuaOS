@@ -62,10 +62,7 @@ void draw_start_menu_system_icons(int x, int y, int p, int w, int h)
     Gpu::print_at8("Terminal", icons_start_x + 85, icons_start_y + 12, COLOR_WHITE);
 
     draw_icon<32, 32>(settings_icon, icons_start_x + 50, icons_start_y + icons_offset);
-    Gpu::print_at8("Settings", icons_start_x + 85, icons_start_y + 12 + icons_offset, COLOR_WHITE); // not work yet
-
-    draw_icon<32, 32>(suaedit_icon, icons_start_x + 50, icons_start_y + 2 * icons_offset);
-    Gpu::print_at8("SuaEdit", icons_start_x + 85, icons_start_y + 12 + 2 * icons_offset, COLOR_WHITE); // not work yet
+    Gpu::print_at8("Settings", icons_start_x + 85, icons_start_y + 12 + icons_offset, COLOR_WHITE);
 
     draw_start_menu_napp_icons();
 }

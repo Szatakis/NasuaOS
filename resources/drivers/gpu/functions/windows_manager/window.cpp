@@ -19,7 +19,6 @@ namespace Gpu::Window_Manager
     window_struct* apps[] = {
         &terminal,
         &settings,
-        &suaedit,
         &task_manager
     };
 
@@ -635,10 +634,6 @@ namespace Gpu::Window_Manager
         else if (strcmp(name, "Settings") == 0)
         {
             icon_data = settings_icon;
-        }
-        else if (strcmp(name, "SuaEdit") == 0)
-        {
-            icon_data = suaedit_icon;
         }
         else if (strcmp(name, "Calculator") == 0)
         {
