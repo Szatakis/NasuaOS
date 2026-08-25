@@ -16,6 +16,7 @@ struct terminal_state
     char output[TERM_MAX_ROWS][TERM_MAX_COLS];
     int output_count;
     int col_cursor;
+    int scroll_offset;
 };
 
 terminal_state terminal_data = {
@@ -23,7 +24,8 @@ terminal_state terminal_data = {
     .cursor = 0,
     .output = {{0}},
     .output_count = 0,
-    .col_cursor = 0
+    .col_cursor = 0,
+    .scroll_offset = 0
 };
 
 void terminal_clear_output() 
@@ -51,6 +53,7 @@ void terminal_write_char(char c)
 
     if (c == '\n') 
     {
+        terminal_data.scroll_offset = 0;
         if (terminal_data.output_count < TERM_MAX_ROWS) 
         {
             terminal_data.output[terminal_data.output_count][0] = '\0';
@@ -136,6 +139,31 @@ void terminal_key(Gpu::Window_Manager::window_struct* win, char key)
         return;
     }
 
+    if (key == 0x0B)
+    {
+        int title = win->height / 10;
+        if (title < 18) title = 18;
+        int win_inner_h = win->height - title - 4;
+        int available_height = win_inner_h - 22;
+        int max_visible_lines = available_height / 12;
+        if (max_visible_lines < 1) max_visible_lines = 1;
+        term->scroll_offset += max_visible_lines;
+        return;
+    }
+
+    if (key == 0x0C)
+    {
+        int title = win->height / 10;
+        if (title < 18) title = 18;
+        int win_inner_h = win->height - title - 4;
+        int available_height = win_inner_h - 22;
+        int max_visible_lines = available_height / 12;
+        if (max_visible_lines < 1) max_visible_lines = 1;
+        term->scroll_offset -= max_visible_lines;
+        if (term->scroll_offset < 0) term->scroll_offset = 0;
+        return;
+    }
+
     if (term->cursor < 255) 
     {
         term->input[term->cursor++] = key;
@@ -211,7 +239,11 @@ void draw_terminal(Gpu::Window_Manager::window_struct* win)
     int start_visual_row = 0;
     if (total_visual_rows > max_visible_lines) 
     {
-        start_visual_row = total_visual_rows - max_visible_lines;
+        start_visual_row = total_visual_rows - max_visible_lines - term->scroll_offset;
+        if (start_visual_row < 0)
+        {
+            start_visual_row = 0;
+        }
     }
 
     // Step 3: Render visual rows

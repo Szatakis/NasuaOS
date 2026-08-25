@@ -13,6 +13,7 @@ namespace Keyboard
     extern bool caps_lock;
     extern bool extended_scancode;
     extern bool shell_input_enabled;
+    extern bool alt_pressed;
 
     extern const char keymap[128];
 

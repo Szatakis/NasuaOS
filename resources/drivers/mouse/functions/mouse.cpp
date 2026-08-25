@@ -568,11 +568,6 @@ namespace Mouse
     {
         (void)cmd_enter;
 
-        if (!mouse_connected)
-        {
-            return;
-        }
-
         if (menu_start_open)
         {
             // Clicking outside the start menu closes it
@@ -608,7 +603,7 @@ namespace Mouse
     // Mouse scroll up
     void scroll_up()
     {
-        
+
     }
 
 

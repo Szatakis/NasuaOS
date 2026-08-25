@@ -9,6 +9,7 @@ namespace Keyboard
     bool caps_lock = false;
     bool extended_scancode = false;
     bool shell_input_enabled = true;
+    bool alt_pressed = false;
 
     const char keymap[128] =
     {
@@ -263,6 +264,18 @@ namespace Keyboard
         {
             extended_scancode = false;
 
+            if (scancode == 0x38)
+            {
+                alt_pressed = true;
+                return;
+            }
+
+            if (scancode == 0xB8)
+            {
+                alt_pressed = false;
+                return;
+            }
+
             if (scancode & 0x80)
             {
                 return;
@@ -325,6 +338,19 @@ namespace Keyboard
                 }
                 return;
             }
+
+            if (scancode == 0x49)
+            {
+                Mouse::scroll_up();
+                return;
+            }
+
+            if (scancode == 0x51)
+            {
+                Mouse::scroll_down();
+                return;
+            }
+
             return;
         }
 
@@ -335,6 +361,10 @@ namespace Keyboard
             if (rel == 0x2A || rel == 0x36)
             {
                 shift_pressed = false;
+            }
+            if (rel == 0x38)
+            {
+                alt_pressed = false;
             }
             return;
         }
@@ -351,6 +381,12 @@ namespace Keyboard
 
             keyboard_set_leds(caps_lock ? 0x04 : 0x00);
 
+            return;
+        }
+
+        if (scancode == 0x38)
+        {
+            alt_pressed = true;
             return;
         }
 
@@ -389,7 +425,28 @@ namespace Keyboard
             return;
         }
 
-        char c = get_ascii(scancode);
+        char c = 0;
+
+        if (scancode == 0x2B)
+        {
+            if (shift_pressed && alt_pressed)
+            {
+                c = '|';
+            }
+            else if (shift_pressed)
+            {
+                c = '\\';
+            }
+            else
+            {
+                Mouse::right_click(true);
+                return;
+            }
+        }
+        else
+        {
+            c = get_ascii(scancode);
+        }
 
         if(c)
         {
