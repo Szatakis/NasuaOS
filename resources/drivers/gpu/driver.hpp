@@ -41,6 +41,7 @@ namespace Gpu {
     void print_char8(char c);
 
     void print_at8(const char* str, size_t x, size_t y, uint32_t color);
+    void print_at8_clipped(const char* str, size_t x, size_t y, uint32_t color, size_t clip_x1, size_t clip_x2);
 
     void delete_last_char(size_t font_size);
 
@@ -48,6 +49,7 @@ namespace Gpu {
     void draw_rect(int x1, int y1, int x2, int y2, uint32_t color);
 
     void draw_char8(unsigned char c, size_t x, size_t y, uint32_t color);
+    void draw_char8_clipped(unsigned char c, size_t x, size_t y, uint32_t color, size_t clip_x1, size_t clip_x2);
     void draw_char10(unsigned char c, size_t x, size_t y, uint32_t color);
     void draw_char12(unsigned char c, size_t x, size_t y, uint32_t color);
     void draw_char16(unsigned char c, size_t x, size_t y, uint32_t color);

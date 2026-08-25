@@ -32,6 +32,26 @@ namespace Gpu
         }
     }
 
+    void draw_char8_clipped(unsigned char c, size_t x, size_t y, uint32_t color, size_t clip_x1, size_t clip_x2)
+    {
+        for (int row = 0; row < 8; row++)
+        {
+            uint8_t bits = font8x8[c][row];
+
+            for (int col = 0; col < 8; col++)
+            {
+                if (bits & (1 << (7 - col)))
+                {
+                    size_t px = x + col;
+                    if (px >= clip_x1 && px < clip_x2)
+                    {
+                        put_pixel(px, y + row, color);
+                    }
+                }
+            }
+        }
+    }
+
     // FONT 10x10
     void draw_char10(unsigned char c, size_t x, size_t y, uint32_t color)
     {

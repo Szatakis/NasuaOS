@@ -272,6 +272,28 @@ namespace Gpu
         }
     }
 
+    void print_at8_clipped(const char* str, size_t x, size_t y, uint32_t color, size_t clip_x1, size_t clip_x2)
+    {
+        size_t start_x = x;
+        while (*str)
+        {
+            if (*str == '\n')
+            {
+                x = start_x;
+                y += 8 + FONT_SPACING_H;
+                str++;
+                continue;
+            }
+            if (x >= clip_x2)
+            {
+                break;
+            }
+            draw_char8_clipped(*str, x, y, color, clip_x1, clip_x2);
+            x += 8 + FONT_SPACING_W;
+            str++;
+        }
+    }
+
     void print_at10(const char* str, size_t x, size_t y, uint32_t color)
     {
         size_t start_x = x;
