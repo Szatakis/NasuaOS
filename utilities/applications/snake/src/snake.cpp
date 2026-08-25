@@ -13,7 +13,7 @@ static const napp_gui* gui = nullptr;
 
 #define SNAKE_PADDING 5
 
-#define SNAKE_WINDOW_WIDTH  (SNAKE_BOARD_SIZE + SNAKE_PADDING * 2)
+#define SNAKE_WINDOW_WIDTH (SNAKE_BOARD_SIZE + SNAKE_PADDING * 2)
 #define SNAKE_WINDOW_HEIGHT (SNAKE_BOARD_SIZE + 40)
 
 #define SNAKE_MAX_LENGTH 400
@@ -71,8 +71,7 @@ static bool snake_is_body(int x, int y)
 {
     for (int i = 0; i < snake_data.length; i++)
     {
-        if (snake_data.body[i].x == x &&
-            snake_data.body[i].y == y)
+        if (snake_data.body[i].x == x && snake_data.body[i].y == y)
         {
             return true;
         }

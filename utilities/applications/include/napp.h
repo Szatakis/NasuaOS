@@ -144,18 +144,18 @@ typedef int (*napp_entry)(const struct napp_api* api);
 // The third parameter controls whether the application appears in the
 // Start Menu. Use false for utility/console apps and games that should
 // only be launched on demand.
-#define NAPP_APPLICATION(app_name, app_description, app_show_in_menu)             \
-    extern "C" __attribute__((section(".napp_entry"), used))                   \
-    int _start(const napp_api* api);                                           \
-                                                                              \
-    __attribute__((section(".napp_header"), used))                             \
-    const napp_header napp_application_header =                                \
-    {                                                                          \
-        NAPP_MAGIC,                                                            \
-        NAPP_ABI_VERSION,                                                      \
-        sizeof(napp_header),                                                   \
-        sizeof(napp_header),                                                      \
-        app_name,                                                              \
-        app_description,                                                       \
-        app_show_in_menu                                                       \
+#define NAPP_APPLICATION(app_name, app_description, app_show_in_menu)       \
+    extern "C" __attribute__((section(".napp_entry"), used))                \
+    int _start(const napp_api* api);                                        \
+                                                                            \
+    __attribute__((section(".napp_header"), used))                          \
+    const napp_header napp_application_header =                             \
+    {                                                                       \
+        NAPP_MAGIC,                                                         \
+        NAPP_ABI_VERSION,                                                   \
+        sizeof(napp_header),                                                \
+        sizeof(napp_header),                                                \
+        app_name,                                                           \
+        app_description,                                                    \
+        app_show_in_menu                                                    \
     }

@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("calculator", "Graphical calculator with button callbacks", true);
+NAPP_APPLICATION("calculator", "Graphical calculator", true);
 
 /*
     ┌─────────────────────────┐
@@ -397,18 +397,25 @@ static void calculator_key(napp_window* win, char key)
         switch(calc->operation)
         {
             case '+':
+            {
                 result = calc->value1 + calc->value2;
                 break;
+            }
 
             case '-':
+            {
                 result = calc->value1 - calc->value2;
                 break;
+            }
 
             case '*':
+            {
                 result = calc->value1 * calc->value2;
                 break;
+            }
 
             case '/':
+            {
                 if(calc->value2 == 0)
                 {
                     calc_strcpy(calc->display, "Error");
@@ -422,6 +429,7 @@ static void calculator_key(napp_window* win, char key)
                 result = calc->value1 / calc->value2;
 
                 break;
+            }
         }
 
 
@@ -468,8 +476,8 @@ static void draw_calculator(napp_window* win)
     int y = win->pos_y + win->title_height + 65;
 
     // ROW 1
-    draw_button(x,       y, "AC");
-    draw_button(x + 65,  y, "CE");
+    draw_button(x, y, "AC");
+    draw_button(x + 65, y, "CE");
     draw_button(x + 130, y, "C");
     draw_button(x + 195, y, "<-");
 
@@ -477,8 +485,8 @@ static void draw_calculator(napp_window* win)
     // ROW 2
     y += 43;
 
-    draw_button(x,       y, "x2");
-    draw_button(x + 65,  y, "1/x");
+    draw_button(x, y, "x2");
+    draw_button(x + 65, y, "1/x");
     draw_button(x + 130, y, "%");
     draw_button(x + 195, y, "/");
 
@@ -486,8 +494,8 @@ static void draw_calculator(napp_window* win)
     // ROW 3
     y += 43;
 
-    draw_button(x,       y, "7");
-    draw_button(x + 65,  y, "8");
+    draw_button(x, y, "7");
+    draw_button(x + 65, y, "8");
     draw_button(x + 130, y, "9");
     draw_button(x + 195, y, "*");
 
@@ -495,8 +503,8 @@ static void draw_calculator(napp_window* win)
     // ROW 4
     y += 43;
 
-    draw_button(x,       y, "4");
-    draw_button(x + 65,  y, "5");
+    draw_button(x, y, "4");
+    draw_button(x + 65, y, "5");
     draw_button(x + 130, y, "6");
     draw_button(x + 195, y, "-");
 
@@ -504,8 +512,8 @@ static void draw_calculator(napp_window* win)
     // ROW 5
     y += 43;
 
-    draw_button(x,       y, "1");
-    draw_button(x + 65,  y, "2");
+    draw_button(x, y, "1");
+    draw_button(x + 65, y, "2");
     draw_button(x + 130, y, "3");
     draw_button(x + 195, y, "+");
 
@@ -513,8 +521,8 @@ static void draw_calculator(napp_window* win)
     // ROW 6
     y += 43;
 
-    draw_button(x,       y, "0");
-    draw_button(x + 65,  y, "+/-");
+    draw_button(x, y, "0");
+    draw_button(x + 65, y, "+/-");
     draw_button(x + 130, y, "sqrt");
     draw_button(x + 195, y, "=");
 }

@@ -383,27 +383,32 @@ static void ms_reveal(int x, int y)
 }
 
 
-// ============================================================
 // FLAG
-// ============================================================
-
 static void ms_toggle_flag(int x, int y)
 {
     if (!ms_inside(x, y))
+    {
         return;
+    }
 
     if (ms_data.state != MS_PLAYING)
+    {
         return;
+    }
 
     ms_cell* cell = &ms_data.cells[ms_index(x, y)];
 
     if (cell->revealed)
+    {
         return;
+    }
 
     if (!cell->flagged)
     {
         if (ms_data.flags >= ms_data.mines)
+        {
             return;
+        }
 
         cell->flagged = true;
         ms_data.flags++;
@@ -609,9 +614,7 @@ static void ms_mouse_button(napp_window* win, int mouse_x, int mouse_y, int butt
     int local_x = mouse_x - board_x;
     int local_y = mouse_y - board_y;
 
-    if (local_x >= 0 && local_y >= 0 &&
-        local_x < ms_data.width * MS_CELL_SIZE &&
-        local_y < ms_data.height * MS_CELL_SIZE)
+    if (local_x >= 0 && local_y >= 0 && local_x < ms_data.width * MS_CELL_SIZE && local_y < ms_data.height * MS_CELL_SIZE)
     {
         int cell_x = local_x / MS_CELL_SIZE;
         int cell_y = local_y / MS_CELL_SIZE;
@@ -692,8 +695,7 @@ static void ms_tick(napp_window* win)
 {
     (void)win;
 
-    if (!ms_data.started ||
-        ms_data.state != MS_PLAYING)
+    if (!ms_data.started || ms_data.state != MS_PLAYING)
     {
         return;
     }
