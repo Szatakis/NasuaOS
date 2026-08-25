@@ -96,6 +96,7 @@ struct napp_gui
     bool (*open_window)(const struct napp_window_config* config);
     void (*fill_block)(int x, int y, uint32_t color, int width, int height);
     void (*draw_text)(const char* text, int x, int y, uint32_t color);
+    void (*resize_window)(int width, int height);
 };
 
 // Services the kernel exposes to a running application.

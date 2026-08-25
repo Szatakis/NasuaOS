@@ -761,7 +761,18 @@ namespace Gpu::Window_Manager
 
             int text_x = (int)x + 28;
             int text_y = button_y + ((int)button_h - 8) / 2;
-            print_at8(win->name, text_x, text_y, fg);
+
+            // Truncate long names to fit within the button (92px / 8px per char = 11 chars).
+            char truncated[16];
+            int max_chars = 11;
+            int name_len = 0;
+            while (win->name[name_len] && name_len < max_chars)
+            {
+                truncated[name_len] = win->name[name_len];
+                name_len++;
+            }
+            truncated[name_len] = '\0';
+            print_at8(truncated, text_x, text_y, fg);
 
             x += button_w + button_spacing;
         }

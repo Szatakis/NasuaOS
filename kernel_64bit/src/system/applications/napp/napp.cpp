@@ -256,9 +256,8 @@ static void napp_api_draw_text(const char* text, int x, int y, uint32_t color)
 
 static int window_title_height(const Gpu::Window_Manager::window_struct* window)
 {
-    int title = window->height / 10;
-
-    return title < 18 ? 18 : title;
+    (void)window;
+    return WINDOW_TITLEBAR_HEIGHT;
 }
 
 static napp_window_slot* slot_of(Gpu::Window_Manager::window_struct* window)
@@ -366,7 +365,22 @@ static void show_window(napp_window_slot* slot)
     Gpu::Window_Manager::register_window(&slot->window);
 }
 
-static bool napp_api_open_window(const napp_window_config* config)
+static napp_window_slot* current_napp_slot = nullptr;
+
+void napp_api_resize_window(int width, int height)
+{
+    if (current_napp_slot == nullptr)
+    {
+        return;
+    }
+
+    current_napp_slot->window.width = width;
+    current_napp_slot->window.height = height;
+    current_napp_slot->window.restore_width = width;
+    current_napp_slot->window.restore_height = height;
+}
+
+bool napp_api_open_window(const napp_window_config* config)
 {
     if (config == nullptr || config->draw == nullptr || loading_application[0] == '\0')
     {
@@ -421,6 +435,8 @@ static bool napp_api_open_window(const napp_window_config* config)
     slot->window.mouse_click = napp_window_mouse_trampoline;
     slot->window.mouse_button = napp_window_mouse_button_trampoline;
 
+    current_napp_slot = slot;
+
     slot->used = true;
 
     show_window(slot);
@@ -434,7 +450,8 @@ static const napp_gui kernel_napp_gui =
 {
     napp_api_open_window,
     napp_api_fill_block,
-    napp_api_draw_text
+    napp_api_draw_text,
+    napp_api_resize_window
 };
 
 // Updated at the start of each napp_run_path call so the binary sees the
