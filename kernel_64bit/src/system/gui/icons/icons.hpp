@@ -25,6 +25,7 @@ extern const uint32_t terminal_icon[1024];
 extern const uint32_t calculator_icon[1024];
 extern const uint32_t settings_icon[1024];
 extern const uint32_t suaedit_icon[1024];
+extern const uint32_t task_manager_icon[1024];
 
 
 extern int icons_start_x;

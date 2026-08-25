@@ -639,6 +639,10 @@ namespace Gpu::Window_Manager
         {
             icon_data = calculator_icon;
         }
+        else if (strcmp(name, "Task Manager") == 0)
+        {
+            icon_data = task_manager_icon;
+        }
 
         if (!icon_data)
         {

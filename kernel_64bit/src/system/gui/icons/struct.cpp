@@ -64,6 +64,9 @@ void draw_start_menu_system_icons(int x, int y, int p, int w, int h)
     draw_icon<32, 32>(settings_icon, icons_start_x + 50, icons_start_y + icons_offset);
     Gpu::print_at8("Settings", icons_start_x + 85, icons_start_y + 12 + icons_offset, COLOR_WHITE);
 
+    draw_icon<32, 32>(task_manager_icon, icons_start_x + 50, icons_start_y + icons_offset * 2);
+    Gpu::print_at8("Task Manager", icons_start_x + 85, icons_start_y + 12 + icons_offset * 2, COLOR_WHITE);
+
     draw_start_menu_napp_icons();
 }
 
