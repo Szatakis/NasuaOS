@@ -34,7 +34,7 @@ NasuaOS is an experimental operating system focused on learning, low-level progr
 ## Documentation & Development
 
 [📚 Documentation](documentation/main_page.md)  
-[🔨 Build Instructions](documentation/build_instructions.md)  
+[🔨 Build Instructions](documentation/build_instructions/build_instructions.md)  
 [🤝 Contributing](CONTRIBUTING.md)  
 [📦 Download ISO/HDD builds](https://github.com/Szatakis/NasuaOS/tree/iso)
 
@@ -81,7 +81,7 @@ Additional technical information, architecture notes and driver documentation wi
 
 Currently NasuaOS can be built on Linux using GCC and CMake.
 
-[🔨 Build Instructions](documentation/build_instructions.md)  
+[🔨 Build Instructions](documentation/build_instructions/build_instructions.md)  
 
 ## Prebuilt Images
 
