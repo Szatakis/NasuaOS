@@ -19,55 +19,67 @@ CXX := g++
 LD := ld
 OBJCOPY := objcopy
 
+# Directories
+OBJ_DIR := obj
+
+# Sources and Object files placed inside obj/
 SOURCES := $(wildcard *.cpp) $(wildcard src/*.cpp)
-OBJECTS := $(SOURCES:.cpp=.o)
+OBJECTS := $(addprefix $(OBJ_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
 
 CXXFLAGS := \
-	-std=gnu++20 \
-	-O2 \
-	-Wall \
-	-Wextra \
-	-ffreestanding \
-	-fno-exceptions \
-	-fno-rtti \
-	-fno-stack-protector \
-	-fno-stack-check \
-	-fno-lto \
-	-fno-plt \
-	-fPIC \
-	-fvisibility=hidden \
-	-m64 \
-	-mno-red-zone \
-	-mno-mmx \
-	-mno-sse \
-	-mno-sse2 \
-	-mno-80387 \
-	-mcmodel=small \
-	-I $(INCLUDE_DIR)
+    -std=gnu++20 \
+    -O2 \
+    -Wall \
+    -Wextra \
+    -ffreestanding \
+    -fno-exceptions \
+    -fno-rtti \
+    -fno-stack-protector \
+    -fno-stack-check \
+    -fno-lto \
+    -fno-plt \
+    -fPIC \
+    -fvisibility=hidden \
+    -m64 \
+    -mno-red-zone \
+    -mno-mmx \
+    -mno-sse \
+    -mno-sse2 \
+    -mno-80387 \
+    -mcmodel=small \
+    -I $(INCLUDE_DIR)
 
 LDFLAGS := \
-	-m elf_x86_64 \
-	-static \
-	-nostdlib \
-	--no-dynamic-linker \
-	-T $(LINKER_SCRIPT)
+    -m elf_x86_64 \
+    -static \
+    -nostdlib \
+    --no-dynamic-linker \
+    -T $(LINKER_SCRIPT)
 
 .PHONY: all
-all: $(TARGET)
+all: $(OBJ_DIR) $(TARGET)
 
-$(TARGET): $(ELF)
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+$(TARGET): $(OBJ_DIR)/$(ELF)
 	$(OBJCOPY) -O binary $< $@
 
-$(ELF): $(OBJECTS) $(LINKER_SCRIPT)
+$(OBJ_DIR)/$(ELF): $(OBJECTS) $(LINKER_SCRIPT)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
-%.o: %.cpp
+# Pattern rule to compile .cpp files into obj/
+$(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Support for optional src/ subfolder source files
+$(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:
-	rm -f $(OBJECTS) $(ELF) $(TARGET)
+	rm -rf $(OBJ_DIR) $(TARGET)
 
 .PHONY: distclean
 distclean: 
-	rm -f $(OBJECTS) $(ELF) $(TARGET)
+	rm -rf $(OBJ_DIR) $(TARGET)
