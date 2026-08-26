@@ -10,28 +10,28 @@ The boot configuration is generated from `.config/defaults.txt` by `config_gener
 
 On startup, Limine displays the boot menu with the following entries:
 
-| Entry | Protocol | Description |
-|-------|----------|-------------|
-| NasuaOS 32-bit | Multiboot2 | Console-only 32-bit kernel |
-| NasuaOS 64-bit | Limine | Full 64-bit kernel with graphics (recommended) |
-| Safe Mode 32-bit | Multiboot2 | 32-bit kernel with `SAFE_MODE` flag |
-| Safe Mode 64-bit | Limine | 64-bit kernel with `SAFE_MODE` flag |
-| Boot Manager | Multiboot2 | `boot_mgr` utility for kernel selection |
-| Recovery Tool | Multiboot2 | `recovery_tool` for troubleshooting |
-| ClawFS Explorer | Multiboot2 | `clawfs_explorer` for browsing ClawFS |
-| Hardware Detection Tool | Multiboot2 | `hdt` for viewing system info |
-| Hardware Test | Multiboot2 | `hdtest` for hardware diagnostics |
-| Kernel Debugger | Multiboot2 | `kdebug` for kernel inspection |
+| Entry                   | Protocol   | Description                             |
+|-------------------------|------------|-----------------------------------------|
+| NasuaOS 32-bit          | Multiboot2 | Console-only 32-bit kernel              |
+| NasuaOS 64-bit          | Limine     | Full 64-bit kernel with graphics        |
+| Safe Mode 32-bit        | Multiboot2 | 32-bit kernel with `SAFE_MODE` flag     |
+| Safe Mode 64-bit        | Limine     | 64-bit kernel with `SAFE_MODE` flag     |
+| Boot Manager            | Multiboot2 | `boot_mgr` utility for kernel selection |
+| Recovery Tool           | Multiboot2 | `recovery_tool` for troubleshooting     |
+| ClawFS Explorer         | Multiboot2 | `clawfs_explorer` for browsing ClawFS   |
+| Hardware Detection Tool | Multiboot2 | `hdt` for viewing system info           |
+| Hardware Test           | Multiboot2 | `hdtest` for hardware diagnostics       |
+| Kernel Debugger         | Multiboot2 | `kdebug` for kernel inspection          |
 
 ## Boot Modules
 
 The 64-bit kernel receives the following modules from the bootloader:
 
-| Module | Path | Description |
-|--------|------|-------------|
-| Rootfs | `/system/rootfs.img` | FAT image containing `/bin/`, `/sbin/`, and directory structure |
-| Boot Config | `/config/boot_config.txt` | Boot-time configuration (may contain `SAFE_MODE`, `DEBUG`) |
-| Defaults | `/config/defaults.txt` | System-wide default configuration |
+| Module      | Path                      | Description                                                     |
+|-------------|---------------------------|-----------------------------------------------------------------|
+| Rootfs      | `/system/rootfs.img`      | FAT image containing `/bin/`, `/sbin/`, and directory structure |
+| Boot Config | `/config/boot_config.txt` | Boot-time configuration (may contain `SAFE_MODE`, `DEBUG`)      |
+| Defaults    | `/config/defaults.txt`    | System-wide default configuration                               |
 
 ## Boot Configuration Flags
 

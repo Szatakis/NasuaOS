@@ -12,10 +12,10 @@ NAPP applications are compiled and linked into flat binaries using a cross-compi
 
 NAPP applications use two key build files:
 
-| File | Purpose |
-|------|---------|
-| `utilities/applications/app.mk` | Makefile include with build rules and flags |
-| `utilities/applications/napp.lds` | Linker script for flat binary output |
+| File                              | Purpose                                     |
+|-----------------------------------|---------------------------------------------|
+| `utilities/applications/app.mk`   | Makefile include with build rules and flags |
+| `utilities/applications/napp.lds` | Linker script for flat binary output        |
 
 ## Compiler Flags
 
@@ -39,16 +39,16 @@ CXXFLAGS = -std=gnu++20 \
            -I$(APPS_ROOT)/include
 ```
 
-| Flag | Purpose |
-|------|---------|
-| `-std=gnu++20` | C++20 with GNU extensions |
-| `-ffreestanding` | No standard library |
-| `-nostdlib` | No standard library linking |
-| `-fPIC` | Position-independent code |
-| `-mno-red-zone` | Disable x86-64 red zone (interrupts may use the stack) |
-| `-mno-mmx/-sse/-sse2` | Disable SIMD instructions (kernel not using them) |
-| `-fno-stack-protector` | No stack canaries (no runtime support) |
-| `-O2` | Optimization level 2 |
+| Flag                   | Purpose                                                |
+|------------------------|--------------------------------------------------------|
+| `-std=gnu++20`         | C++20 with GNU extensions                              |
+| `-ffreestanding`       | No standard library                                    |
+| `-nostdlib`            | No standard library linking                            |
+| `-fPIC`                | Position-independent code                              |
+| `-mno-red-zone`        | Disable x86-64 red zone (interrupts may use the stack) |
+| `-mno-mmx/-sse/-sse2`  | Disable SIMD instructions (kernel not using them)      |
+| `-fno-stack-protector` | No stack canaries (no runtime support)                 |
+| `-O2`                  | Optimization level 2                                   |
 
 ## Linker Script
 

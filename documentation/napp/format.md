@@ -6,15 +6,15 @@ NAPP (Nasua Application) is the executable binary format used by NasuaOS for all
 
 Every NAPP binary begins with a header defined in `utilities/applications/include/napp.h`:
 
-| Offset | Size | Field | Description |
-|--------|------|-------|-------------|
-| 0x00 | 4 | magic | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NPPA") |
-| 0x04 | 4 | abi_version | `3` (current ABI version) |
-| 0x08 | 4 | header_size | Size of the header (96 bytes) |
-| 0x0C | 4 | entry_offset | Offset from start of file to `_start` function |
-| 0x10 | 32 | name | Null-terminated application name |
-| 0x30 | 48 | description | Null-terminated short description (shown in `help`) |
-| 0x60 | 1 | show_in_start_menu | Whether the app appears in the Start Menu |
+| Offset | Size | Field              | Description                                         |
+|--------|------|--------------------|-----------------------------------------------------|
+| 0x00   | 4    | magic              | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NPPA")`        |
+| 0x04   | 4    | abi_version        | `3` (current ABI version)                           |
+| 0x08   | 4    | header_size        | Size of the header (96 bytes)                       |
+| 0x0C   | 4    | entry_offset       | Offset from start of file to `_start` function      |
+| 0x10   | 32   | name               | Null-terminated application name                    |
+| 0x30   | 48   | description        | Null-terminated short description (shown in `help`) |
+| 0x60   | 1    | show_in_start_menu | Whether the app appears in the Start Menu           |
 
 **Total header size**: 97 bytes (was 96; the `show_in_start_menu` field was added)
 
@@ -48,10 +48,10 @@ in the Start Menu.
 
 ## NAPP vs Flat Binary
 
-| File Type | Header | Usage |
-|-----------|--------|-------|
-| `.napp` | Yes (NAPP header) | GUI/interactive applications loaded from `/bin` |
-| Flat binary | Yes (NAPP header) | `/sbin` system commands |
+| File Type   | Header            | Usage                                           |
+|-------------|-------------------|-------------------------------------------------|
+| `.napp`     | Yes (NAPP header) | GUI/interactive applications loaded from `/bin` |
+| Flat binary | Yes (NAPP header) | `/sbin` system commands                         |
 
 Both types are NAPP executables with a valid `NAPP_HEADER`. The `.napp` format is used for `/bin` applications, while `/sbin` commands are flat binaries that also contain an NAPP header (but without the `.napp` extension). The loader checks the magic value to validate the header.
 
@@ -186,9 +186,9 @@ ClawFS:/
 
 ## File Extensions
 
-| Extension | Description |
-|-----------|-------------|
-| `.napp` | NAPP application binary (with header) |
+| Extension      | Description                             |
+|----------------|-----------------------------------------|
+| `.napp`        | NAPP application binary (with header)   |
 | (no extension) | `/sbin` command flat binary (no header) |
 
 The `bootapp` command and shell recognize both formats.

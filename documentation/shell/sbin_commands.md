@@ -13,24 +13,24 @@ When the shell receives a command it does not recognize as a built-in, it attemp
 
 The file resolver determines the source:
 
-| Overlay State | Source | Fallback |
-|---------------|--------|----------|
+| Overlay State            | Source                              | Fallback         |
+|--------------------------|-------------------------------------|------------------|
 | ClawFS mounted (`mount`) | ClawFS (`/sbin/` on disk partition) | ISO rootfs (FAT) |
-| ClawFS unmounted | ISO rootfs (FAT) | None |
+| ClawFS unmounted         | ISO rootfs (FAT)                    | None             |
 
 ## Available /sbin Commands
 
-| Command | Description | Flags |
-|---------|-------------|-------|
-| `cat` | Display file contents | `--file`, `--file_n` |
-| `cd` | Change directory | `[path]` (no flags) |
-| `cp` | Copy file | `--source`, `--destination` |
-| `ls` | List directory | `[path]` (no flags) |
-| `mkdir` | Create directory | `--dir_name` |
-| `mv` | Move/rename file | `--source`, `--destination` |
-| `pwd` | Print working directory | No flags |
-| `rm` | Remove file or directory | `--name`, `--type` |
-| `tree` | Display directory tree | `[path]` (no flags) |
+| Command | Description              | Flags                        |
+|---------|--------------------------|------------------------------|
+| `cat`   | Display file contents    | `--file`, `--file_n`         |
+| `cd`    | Change directory         | `[path]` (no flags)          |
+| `cp`    | Copy file                | `--source`, `--destination`  |
+| `ls`    | List directory           | `[path]` (no flags)          |
+| `mkdir` | Create directory         | `--dir_name`                 |
+| `mv`    | Move/rename file         | `--source`, `--destination`  |
+| `pwd`   | Print working directory  | No flags                     |
+| `rm`    | Remove file or directory | `--name`, `--type`           |
+| `tree`  | Display directory tree   | `[path]` (no flags)          |
 
 ## Help System
 
@@ -71,9 +71,9 @@ Display the contents of one or more files.
 cat --file <filename> [--file_n <filename>] ...
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--file` | Yes (first file) | First file to display |
+| Flag       | Required              | Description                 |
+|------------|-----------------------|-----------------------------|
+| `--file`   | Yes (first file)      | First file to display       |
 | `--file_n` | No (subsequent files) | Additional files to display |
 
 File paths are resolved relative to the current working directory. Both absolute and relative paths are supported.
@@ -155,10 +155,10 @@ Remove a file or directory.
 rm --name <name> --type <file|dir>
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--name` | Yes | Name of the item (relative to current path) |
-| `--type` | Yes | `file` or `dir` |
+| Flag     | Required | Description                                 |
+|----------|----------|---------------------------------------------|
+| `--name` | Yes      | Name of the item (relative to current path) |
+| `--type` | Yes      | `file` or `dir`                             |
 
 Directories must be empty before they can be removed. If `--type` is not specified, the command attempts to auto-detect the entry type.
 

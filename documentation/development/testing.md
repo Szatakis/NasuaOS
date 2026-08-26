@@ -71,13 +71,13 @@ gdb-multiarch
 
 While QEMU is running, access the monitor with `Ctrl+Alt+2` (or `Ctrl+A` then `c`):
 
-| Command | Description |
-|---------|-------------|
-| `info registers` | View CPU registers |
-| `info mem` | View memory mappings |
+| Command             | Description                      |
+|---------------------|----------------------------------|
+| `info registers`    | View CPU registers               |
+| `info mem`          | View memory mappings             |
 | `xp /x 10 0x100000` | Examine 10 hex words at 0x100000 |
-| `info pic` | View interrupt controller state |
-| `q` | Quit QEMU |
+| `info pic`          | View interrupt controller state  |
+| `q`                 | Quit QEMU                        |
 
 ## Testing Checklist
 

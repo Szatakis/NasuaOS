@@ -4,12 +4,12 @@ NasuaOS 64-bit kernel implements a layered memory management system: physical fr
 
 ## Overview
 
-| Layer | Component | File |
-|-------|-----------|------|
-| Physical | Physical Memory Manager (PMM) | `system/pmm/` |
-| Virtual | Virtual Memory Manager (VMM) | `system/vmm/` |
-| Heap | Kernel heap allocator | `system/heap/` |
-| Paging | Page table setup | `system/memory/` |
+| Layer    | Component                     | File             |
+|----------|-------------------------------|------------------|
+| Physical | Physical Memory Manager (PMM) | `system/pmm/`    |
+| Virtual  | Virtual Memory Manager (VMM)  | `system/vmm/`    |
+| Heap     | Kernel heap allocator         | `system/heap/`   |
+| Paging   | Page table setup              | `system/memory/` |
 
 ## Physical Memory Manager (PMM)
 
@@ -21,15 +21,15 @@ Called during `iqu_init()` via `pmm_init()`. It parses the Multiboot2 memory map
 
 ### Functions
 
-| Function | Description |
-|----------|-------------|
+| Function                                                   | Description                           |
+|------------------------------------------------------------|---------------------------------------|
 | `pmm_init(uint64_t mem_map_addr, uint64_t mem_map_length)` | Initialize with Multiboot2 memory map |
-| `pmm_alloc_page()` | Allocate a single 4KB page |
-| `pmm_alloc_pages(int count)` | Allocate multiple contiguous pages |
-| `pmm_free_page(uint64_t addr)` | Free a previously allocated page |
-| `pmm_get_free_memory()` | Return total free memory in bytes |
-| `pmm_get_used_memory()` | Return total used memory in bytes |
-| `pmm_get_total_memory()` | Return total system memory in bytes |
+| `pmm_alloc_page()`                                         | Allocate a single 4KB page            |
+| `pmm_alloc_pages(int count)`                               | Allocate multiple contiguous pages    |
+| `pmm_free_page(uint64_t addr)`                             | Free a previously allocated page      |
+| `pmm_get_free_memory()`                                    | Return total free memory in bytes     |
+| `pmm_get_used_memory()`                                    | Return total used memory in bytes     |
+| `pmm_get_total_memory()`                                   | Return total system memory in bytes   |
 
 ### Bitmap
 
@@ -66,13 +66,13 @@ The VMM manages virtual-to-physical page mapping.
 
 ### Functions
 
-| Function | Description |
-|----------|-------------|
-| `vmm_init()` | Initialize virtual memory manager |
-| `vmm_map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags)` | Map a virtual address to a physical address |
-| `vmm_unmap_page(uint64_t vaddr)` | Remove a page mapping |
-| `vmm_get_physical_address(uint64_t vaddr)` | Translate virtual to physical |
-| `vmm_init_kernel_address_space()` | Set up kernel address space (typically 0xFFFFFFFF80000000) |
+| Function                                                       | Description                                                |
+|----------------------------------------------------------------|------------------------------------------------------------|
+| `vmm_init()`                                                   | Initialize virtual memory manager                          |
+| `vmm_map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags)` | Map a virtual address to a physical address                |
+| `vmm_unmap_page(uint64_t vaddr)`                               | Remove a page mapping                                      |
+| `vmm_get_physical_address(uint64_t vaddr)`                     | Translate virtual to physical                              |
+| `vmm_init_kernel_address_space()`                              | Set up kernel address space (typically 0xFFFFFFFF80000000) |
 
 ### Page Table Flags
 
@@ -85,9 +85,9 @@ The VMM manages virtual-to-physical page mapping.
 
 ### Address Space Layout
 
-| Range | Type | Purpose |
-|-------|------|---------|
-| `0x0000000000000000` – `0x00000000FFFFFFFF` | User space | NAPP applications |
+| Range                                       | Type         | Purpose              |
+|---------------------------------------------|--------------|----------------------|
+| `0x0000000000000000` – `0x00000000FFFFFFFF` | User space   | NAPP applications    |
 | `0xFFFFFFFF80000000` – `0xFFFFFFFFFFFFFFFF` | Kernel space | Kernel code and data |
 
 NAPP applications run in user space (ring 3). The kernel runs in supervisor mode (ring 0).
@@ -98,12 +98,12 @@ The heap provides `kmalloc`/`kfree` dynamically allocation, similar to `malloc`/
 
 ### Functions
 
-| Function | Description |
-|----------|-------------|
-| `kmalloc(size_t size)` | Allocate `size` bytes, returns pointer |
-| `kfree(void* ptr)` | Free a previously allocated block |
-| `krealloc(void* ptr, size_t size)` | Resize an allocation |
-| `heap_init()` | Initialize the heap |
+| Function                           | Description                            |
+|------------------------------------|----------------------------------------|
+| `kmalloc(size_t size)`             | Allocate `size` bytes, returns pointer |
+| `kfree(void* ptr)`                 | Free a previously allocated block      |
+| `krealloc(void* ptr, size_t size)` | Resize an allocation                   |
+| `heap_init()`                      | Initialize the heap                    |
 
 ### Implementation
 
@@ -168,11 +168,11 @@ Hardware information
 
 ## Memory Alignment
 
-| Component | Alignment |
-|-----------|-----------|
-| Pages | 4KB (0x1000) |
-| Heap blocks | 8-byte |
-| Stack | 16-byte |
+| Component     | Alignment                |
+|---------------|--------------------------|
+| Pages         | 4KB (0x1000)             |
+| Heap blocks   | 8-byte                   |
+| Stack         | 16-byte                  |
 | NAPP binaries | No alignment requirement |
 
 ## Memory Protection

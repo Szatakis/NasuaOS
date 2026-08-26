@@ -36,15 +36,15 @@ user@nasua-os:/home> panic
 
 When a panic occurs, the system renders a formatted screen with:
 
-| Field | Description |
-|-------|-------------|
-| `Reason` | The panic message describing the failure |
-| `Error Code` | Error code associated with the fault |
-| `RIP` | Instruction pointer at time of fault |
-| `RSP` | Stack pointer at time of fault |
+| Field        | Description                                 |
+|--------------|---------------------------------------------|
+| `Reason`     | The panic message describing the failure    |
+| `Error Code` | Error code associated with the fault        |
+| `RIP`        | Instruction pointer at time of fault        |
+| `RSP`        | Stack pointer at time of fault              |
 | `Fault Addr` | Virtual address that caused the fault (CR2) |
-| `Process ID` | Current process identifier |
-| `CPU Model` | CPU model string |
+| `Process ID` | Current process identifier                  |
+| `CPU Model`  | CPU model string                            |
 
 The screen also displays a **QR code** linking to the debug instructions at:
 `https://github.com/Szatakis/NasuaOS/blob/main/documentation/debug_instructions/debug_instructions.md#kernel_panic`
@@ -110,14 +110,14 @@ logs --put <text>                     # Add a custom INFO log
 
 ### Common Subsystems
 
-| Subsystem | Source File |
-|-----------|-------------|
-| `NAPP` | `kernel_64bit/src/system/applications/napp/napp.cpp` |
+| Subsystem       | Source File                                                          |
+|-----------------|----------------------------------------------------------------------|
+| `NAPP`          | `kernel_64bit/src/system/applications/napp/napp.cpp`                 |
 | `File Resolver` | `kernel_64bit/src/system/filesystem/file_resolver/file_resolver.cpp` |
-| `Storage` | `kernel_64bit/src/system/drivers/disk/ata/functions/storage.cpp` |
-| `MOUSE` | `kernel_64bit/src/system/drivers/mouse/functions/mouse.cpp` |
-| `CPU` | `kernel_64bit/src/system/drivers/cpu/functions/cpu.cpp` |
-| `VGA` / `GUI` | `kernel_64bit/src/system/drivers/gpu/` |
+| `Storage`       | `kernel_64bit/src/system/drivers/disk/ata/functions/storage.cpp`     |
+| `MOUSE`         | `kernel_64bit/src/system/drivers/mouse/functions/mouse.cpp`          |
+| `CPU`           | `kernel_64bit/src/system/drivers/cpu/functions/cpu.cpp`              |
+| `VGA` / `GUI`   | `kernel_64bit/src/system/drivers/gpu/`                               |
 
 ---
 
@@ -180,15 +180,15 @@ qemu-system-x86_64 \
 
 ### Useful QEMU Flags
 
-| Flag | Purpose |
-|------|---------|
-| `-d int` | Log all interrupts to `qemu.log` |
-| `-d cpu_reset` | Log CPU resets |
-| `-d guest_errors` | Log guest errors |
-| `-D qemu.log` | Redirect QEMU debug output to file |
-| `-no-reboot` | Exit instead of rebooting on triple fault |
-| `-s` | Shorthand for `-gdb tcp::1234` |
-| `-S` | Freeze CPU at startup (use with `-s` for GDB) |
+| Flag              | Purpose                                       |
+|-------------------|-----------------------------------------------|
+| `-d int`          | Log all interrupts to `qemu.log`              |
+| `-d cpu_reset`    | Log CPU resets                                |
+| `-d guest_errors` | Log guest errors                              |
+| `-D qemu.log`     | Redirect QEMU debug output to file            |
+| `-no-reboot`      | Exit instead of rebooting on triple fault     |
+| `-s`              | Shorthand for `-gdb tcp::1234`                |
+| `-S`              | Freeze CPU at startup (use with `-s` for GDB) |
 
 ### QEMU Monitor
 

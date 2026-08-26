@@ -189,33 +189,33 @@ documentation/
 
 ## /sbin Commands Source
 
-| Command | Source File |
-|---------|-------------|
-| `/sbin/cat` | `utilities/system_functions/cat/` |
-| `/sbin/cd` | `utilities/system_functions/cd/` |
-| `/sbin/cp` | `utilities/system_functions/cp/` |
-| `/sbin/ls` | `utilities/system_functions/ls/` |
+| Command       | Source File                         |
+|---------------|-------------------------------------|
+| `/sbin/cat`   | `utilities/system_functions/cat/`   |
+| `/sbin/cd`    | `utilities/system_functions/cd/`    |
+| `/sbin/cp`    | `utilities/system_functions/cp/`    |
+| `/sbin/ls`    | `utilities/system_functions/ls/`    |
 | `/sbin/mkdir` | `utilities/system_functions/mkdir/` |
-| `/sbin/mv` | `utilities/system_functions/mv/` |
-| `/sbin/pwd` | `utilities/system_functions/pwd/` |
-| `/sbin/rm` | `utilities/system_functions/rm/` |
-| `/sbin/tree` | `utilities/system_functions/tree/` |
+| `/sbin/mv`    | `utilities/system_functions/mv/`    |
+| `/sbin/pwd`   | `utilities/system_functions/pwd/`   |
+| `/sbin/rm`    | `utilities/system_functions/rm/`    |
+| `/sbin/tree`  | `utilities/system_functions/tree/`  |
 
 ## Configuration File Sources
 
-| File | Purpose |
-|------|---------|
-| `.config/defaults.txt` | All system configuration (hostname, resolution, debug, storage, etc.) |
-| `GNUmakefile` | Build system configuration (architecture, QEMU flags) |
-| `limine.conf.template` | Boot menu template |
-| `config_generator/generate_conf.py` | Config-to-boot-config generator |
+| File                                | Purpose                                                               |
+|-------------------------------------|-----------------------------------------------------------------------|
+| `.config/defaults.txt`              | All system configuration (hostname, resolution, debug, storage, etc.) |
+| `GNUmakefile`                       | Build system configuration (architecture, QEMU flags)                 |
+| `limine.conf.template`              | Boot menu template                                                    |
+| `config_generator/generate_conf.py` | Config-to-boot-config generator                                       |
 
 ## Built-in Application Sources
 
-| Application | Source |
-|-------------|--------|
-| Shell | `kernel_64bit/src/applications/shell/` |
-| Settings | `kernel_64bit/src/applications/settings/` |
-| Terminal | `kernel_64bit/src/applications/terminal/` |
-| SUA Edit | `kernel_64bit/src/applications/suaedit/` |
+| Application  | Source                                        |
+|--------------|-----------------------------------------------|
+| Shell        | `kernel_64bit/src/applications/shell/`        |
+| Settings     | `kernel_64bit/src/applications/settings/`     |
+| Terminal     | `kernel_64bit/src/applications/terminal/`     |
+| SUA Edit     | `kernel_64bit/src/applications/suaedit/`      |
 | Task Manager | `kernel_64bit/src/applications/task_manager/` |

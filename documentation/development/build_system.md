@@ -4,16 +4,16 @@ NasuaOS uses a hierarchical GNU Make-based build system.
 
 ## Build Toolchain
 
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| GCC | C++20 capable | Cross-compiled (`x86_64-elf-gcc`) recommended |
-| Binutils | Any modern | `objcopy`, `ld` for linking |
-| Make | 4.x+ | GNU Make |
-| Python 3 | 3.8+ | For config generation |
-| QEMU | 7.0+ | For testing (`make run`) |
-| mtools | Any | For rootfs image creation (`mformat`, `mcopy`) |
-| xorriso | Any | For ISO image creation |
-| Limine | Latest | Bootloader (included in repo or submodule) |
+| Requirement | Version       | Notes                                          |
+|-------------|---------------|------------------------------------------------|
+| GCC         | C++20 capable | Cross-compiled (`x86_64-elf-gcc`) recommended  |
+| Binutils    | Any modern    | `objcopy`, `ld` for linking                    |
+| Make        | 4.x+          | GNU Make                                       |
+| Python 3    | 3.8+          | For config generation                          |
+| QEMU        | 7.0+          | For testing (`make run`)                       |
+| mtools      | Any           | For rootfs image creation (`mformat`, `mcopy`) |
+| xorriso     | Any           | For ISO image creation                         |
+| Limine      | Latest        | Bootloader                                     |
 
 ## Top-Level Build System
 
@@ -21,28 +21,28 @@ The top-level `GNUmakefile` orchestrates the entire build:
 
 ### Key Variables
 
-| Variable | Description |
-|----------|-------------|
-| `ARCH` | Target architecture (default: `x86_64`) |
-| `SUB_ARCH` | Sub-architecture |
-| `KERNEL_DIR` | Kernel source directory |
-| `UTIL_DIR` | Utilities directory |
-| `ISO_DIR` | ISO output directory |
-| `QEMU` | QEMU executable path |
-| `QEMUFLAGS` | QEMU flags (memory, drives, etc.) |
+| Variable     | Description                             |
+|--------------|-----------------------------------------|
+| `ARCH`       | Target architecture (default: `x86_64`) |
+| `SUB_ARCH`   | Sub-architecture                        |
+| `KERNEL_DIR` | Kernel source directory                 |
+| `UTIL_DIR`   | Utilities directory                     |
+| `ISO_DIR`    | ISO output directory                    |
+| `QEMU`       | QEMU executable path                    |
+| `QEMUFLAGS`  | QEMU flags (memory, drives, etc.)       |
 
 ### Build Targets
 
-| Command | Description |
-|---------|-------------|
-| `make all` | Build everything (kernel + rootfs + ISO) |
-| `make run` | Build and run in QEMU (ISO mode) |
-| `make run-hdd` | Build and run in QEMU (HDD mode) |
-| `make all-hdd` | Build ISO and HDD images |
-| `make clean` | Remove build artifacts (keeps downloads) |
+| Command          | Description                              |
+|------------------|------------------------------------------|
+| `make all`       | Build everything (kernel + rootfs + ISO) |
+| `make run`       | Build and run in QEMU (ISO mode)         |
+| `make run-hdd`   | Build and run in QEMU (HDD mode)         |
+| `make all-hdd`   | Build ISO and HDD images                 |
+| `make clean`     | Remove build artifacts (keeps downloads) |
 | `make clean-all` | Full clean (removes all generated files) |
-| `make all-bios` | Build for BIOS boot mode |
-| `make run-bios` | Run in QEMU with BIOS mode |
+| `make all-bios`  | Build for BIOS boot mode                 |
+| `make run-bios`  | Run in QEMU with BIOS mode               |
 
 ### Build Order
 
@@ -185,13 +185,13 @@ CI performs:
 
 ## Build Artifacts
 
-| Artifact | Location | Description |
-|----------|----------|-------------|
-| `kernel_64bit/kernel.elf` | `build/` | Kernel ELF binary |
-| `utilities/rootfs/rootfs.img` | `utilities/rootfs/` | FAT16 rootfs image |
-| `iso/limine.conf` | `iso/` | Generated boot config |
-| `NasuaOS-x86_64.iso` | Root | Final bootable ISO |
-| `NasuaOS-x86_64.hdd` | Root | Bootable HDD image (with `make all-hdd`) |
+| Artifact                      | Location            | Description                              |
+|-------------------------------|---------------------|------------------------------------------|
+| `kernel_64bit/kernel.elf`     | `build/`            | Kernel ELF binary                        |
+| `utilities/rootfs/rootfs.img` | `utilities/rootfs/` | FAT16 rootfs image                       |
+| `iso/limine.conf`             | `iso/`              | Generated boot config                    |
+| `NasuaOS-x86_64.iso`          | Root                | Final bootable ISO                       |
+| `NasuaOS-x86_64.hdd`          | Root                | Bootable HDD image (with `make all-hdd`) |
 
 ## Testing
 

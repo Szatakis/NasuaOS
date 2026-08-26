@@ -49,17 +49,17 @@ This executes the named application. The loader:
 
 The NAPP loader (`napp.cpp`) uses these key functions:
 
-| Function | Description |
-|----------|-------------|
-| `napp_init()` | Initialize the NAPP subsystem |
-| `napp_run(const void* napp_data)` | Load and execute a NAPP binary from memory |
-| `napp_run_path(const char* path)` | Load and execute a NAPP binary from a path |
-| `napp_run_sbin(const char* path)` | Load and execute a `/sbin` flat binary |
-| `napp_list()` | List NAPP applications in `/bin` |
-| `napp_list_sbin()` | List `/sbin` command binaries |
-| `napp_exists(const char* name)` | Check if a NAPP application exists |
-| `napp_get_current_path()` | Get current NAPP working directory |
-| `napp_set_current_path(const char* path)` | Set current NAPP working directory |
+| Function                                  | Description                                |
+|-------------------------------------------|--------------------------------------------|
+| `napp_init()`                             | Initialize the NAPP subsystem              |
+| `napp_run(const void* napp_data)`         | Load and execute a NAPP binary from memory |
+| `napp_run_path(const char* path)`         | Load and execute a NAPP binary from a path |
+| `napp_run_sbin(const char* path)`         | Load and execute a `/sbin` flat binary     |
+| `napp_list()`                             | List NAPP applications in `/bin`           |
+| `napp_list_sbin()`                        | List `/sbin` command binaries              |
+| `napp_exists(const char* name)`           | Check if a NAPP application exists         |
+| `napp_get_current_path()`                 | Get current NAPP working directory         |
+| `napp_set_current_path(const char* path)` | Set current NAPP working directory         |
 
 ## Command Loading Flow
 
@@ -83,12 +83,12 @@ When a `/sbin` command is requested via the shell:
 
 These are compiled into the kernel and launched directly:
 
-| Application | Description |
-|-------------|-------------|
-| `settings` | System settings GUI |
-| `terminal` | Terminal emulator window |
-| `suaedit` | Text editor |
-| `task_manager` | Process/task manager |
+| Application    | Description              |
+|----------------|--------------------------|
+| `settings`     | System settings GUI      |
+| `terminal`     | Terminal emulator window |
+| `suaedit`      | Text editor              |
+| `task_manager` | Process/task manager     |
 
 Built-in apps do not go through the NAPP loader — they have direct function calls in `commands.cpp`.
 
@@ -96,10 +96,10 @@ Built-in apps do not go through the NAPP loader — they have direct function ca
 
 These are loaded from `/bin/<app>/<app>.napp`:
 
-| Application | Type | Description |
-|-------------|------|-------------|
-| `bootcheck` | Console | Tests NAPP API functions |
-| `calculator` | GUI | Graphical calculator with callbacks |
+| Application  | Type    | Description                         |
+|--------------|---------|-------------------------------------|
+| `bootcheck`  | Console | Tests NAPP API functions            |
+| `calculator` | GUI     | Graphical calculator with callbacks |
 
 These go through the full NAPP loader (`napp_run_path`).
 
@@ -107,8 +107,8 @@ These go through the full NAPP loader (`napp_run_path`).
 
 These are flat-binary NAPP applications loaded from `/sbin/`:
 
-| Command | Description |
-|---------|-------------|
+| Command                                             | Description     |
+|-----------------------------------------------------|-----------------|
 | `cat`, `cd`, `cp`, `ls`, `mkdir`, `mv`, `pwd`, `rm` | File operations |
 
 These go through the `/sbin`-specific loader path (`napp_run_sbin`).
@@ -117,10 +117,10 @@ These go through the `/sbin`-specific loader path (`napp_run_sbin`).
 
 NAPP applications return an `int` from `_start`:
 
-| Return Value | Meaning |
-|--------------|---------|
-| `0` | Success |
-| Non-zero | Error (code varies by application) |
+| Return Value | Meaning                            |
+|--------------|------------------------------------|
+| `0`          | Success                            |
+| Non-zero     | Error (code varies by application) |
 
 The kernel logs the exit code via the logger.
 
@@ -136,13 +136,13 @@ This is useful for debugging loading issues and runtime behavior. Serial output 
 
 ## Built-in vs Dynamically Loaded
 
-| Property | Built-in | /bin (NAPP) | /sbin (flat binary) |
-|----------|----------|-------------|---------------------|
-| Storage | Kernel image | /bin directory | /sbin directory |
-| Header | None | NAPP header | No header |
-| Loader | Direct call | napp_run_path() | napp_run_sbin() |
-| Overlay Affected? | No | Yes | Yes |
-| Persistence Required? | No | Only on ClawFS | Only on ClawFS |
+| Property              | Built-in     | /bin (NAPP)     | /sbin (flat binary) |
+|-----------------------|--------------|-----------------|---------------------|
+| Storage               | Kernel image | /bin directory  | /sbin directory     |
+| Header                | None         | NAPP header     | No header           |
+| Loader                | Direct call  | napp_run_path() | napp_run_sbin()     |
+| Overlay Affected?     | No           | Yes             | Yes                 |
+| Persistence Required? | No           | Only on ClawFS  | Only on ClawFS      |
 
 ## Error Handling
 

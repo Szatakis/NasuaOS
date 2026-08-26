@@ -19,52 +19,52 @@ The full structure is defined in `utilities/applications/include/napp.h`.
 
 ### Core I/O Functions
 
-| Field | Signature | Description |
-|-------|-----------|-------------|
-| `argc` | `int` | Number of command-line arguments |
-| `argv` | `char**` | Array of argument strings (`argv[0]` = app name) |
-| `print` | `void (*)(const char*)` | Print a string to the terminal/log |
-| `print_info` | `void (*)(const char*)` | Print an INFO-level log message |
-| `print_line` | `void (*)(const char*)` | Print a string followed by a newline |
-| `print_dec` | `void (*)(int)` | Print a decimal integer |
-| `print_hex` | `void (*)(unsigned int)` | Print a hex integer |
-| `serial_log` | `void (*)(const char*)` | Send a string to the UART serial port |
+| Field        | Signature                | Description                                      |
+|--------------|--------------------------|--------------------------------------------------|
+| `argc`       | `int`                    | Number of command-line arguments                 |
+| `argv`       | `char**`                 | Array of argument strings (`argv[0]` = app name) |
+| `print`      | `void (*)(const char*)`  | Print a string to the terminal/log               |
+| `print_info` | `void (*)(const char*)`  | Print an INFO-level log message                  |
+| `print_line` | `void (*)(const char*)`  | Print a string followed by a newline             |
+| `print_dec`  | `void (*)(int)`          | Print a decimal integer                          |
+| `print_hex`  | `void (*)(unsigned int)` | Print a hex integer                              |
+| `serial_log` | `void (*)(const char*)`  | Send a string to the UART serial port            |
 
 ### Filesystem Functions
 
-| Field | Signature | Description |
-|-------|-----------|-------------|
-| `current_path` | `const char*` | Current working directory path |
-| `clawfs_create_file` | `int (*)(const char*)` | Create a file at the given path |
-| `clawfs_write_to_file` | `int (*)(const char*, const char*)` | Write content to a file |
-| `clawfs_mkdir` | `int (*)(const char*)` | Create a directory |
-| `clawfs_rm` | `int (*)(const char*)` | Remove a file |
-| `clawfs_read_file` | `int (*)(const char*, char*)` | Read a file into a buffer |
-| `clawfs_list_dir` | `void (*)(const char*)` | List directory contents |
+| Field                  | Signature                           | Description                     |
+|------------------------|-------------------------------------|---------------------------------|
+| `current_path`         | `const char*`                       | Current working directory path  |
+| `clawfs_create_file`   | `int (*)(const char*)`              | Create a file at the given path |
+| `clawfs_write_to_file` | `int (*)(const char*, const char*)` | Write content to a file         |
+| `clawfs_mkdir`         | `int (*)(const char*)`              | Create a directory              |
+| `clawfs_rm`            | `int (*)(const char*)`              | Remove a file                   |
+| `clawfs_read_file`     | `int (*)(const char*, char*)`       | Read a file into a buffer       |
+| `clawfs_list_dir`      | `void (*)(const char*)`             | List directory contents         |
 
 ### Time / RTC Functions
 
-| Field | Signature | Description |
-|-------|-----------|-------------|
-| `get_rtc_time` | `void (*)()` | Read and print current RTC time |
-| `set_rtc_time` | `void (*)(int, int, int, int, int, int)` | Set RTC (y, m, d, h, m, s) |
-| `get_uptime` | `int (*)()` | Get system uptime in seconds |
+| Field          | Signature                                | Description                     |
+|----------------|------------------------------------------|---------------------------------|
+| `get_rtc_time` | `void (*)()`                             | Read and print current RTC time |
+| `set_rtc_time` | `void (*)(int, int, int, int, int, int)` | Set RTC (y, m, d, h, m, s)      |
+| `get_uptime`   | `int (*)()`                              | Get system uptime in seconds    |
 
 ### Storage Functions
 
-| Field | Signature | Description |
-|-------|-----------|-------------|
-| `storage_uses_ata` | `bool (*)()` | Check if ATA storage is available |
-| `storage_read` | `int (*)(uint64_t, void*, uint32_t)` | Read sectors from storage |
+| Field              | Signature                            | Description                       |
+|--------------------|--------------------------------------|-----------------------------------|
+| `storage_uses_ata` | `bool (*)()`                         | Check if ATA storage is available |
+| `storage_read`     | `int (*)(uint64_t, void*, uint32_t)` | Read sectors from storage         |
 
 ### Execution Functions
 
-| Field | Signature | Description |
-|-------|-----------|-------------|
-| `execute_command` | `void (*)(const char*)` | Execute a shell command via the kernel |
+| Field                | Signature                  | Description                                                                                 |
+|----------------------|----------------------------|---------------------------------------------------------------------------------------------|
+| `execute_command`    | `void (*)(const char*)`    | Execute a shell command via the kernel                                                      |
 | `set_print_redirect` | `void (*)(void (*)(char))` | Redirect `Gpu::print` output to an in-app callback; pass `nullptr` to restore normal output |
-| `napp_run_path` | `int (*)(const char*)` | Load and run a NAPP binary from a path |
-| `system_file_exists` | `bool (*)(const char*)` | Check if a system file exists |
+| `napp_run_path`      | `int (*)(const char*)`     | Load and run a NAPP binary from a path                                                      |
+| `system_file_exists` | `bool (*)(const char*)`    | Check if a system file exists                                                               |
 
 #### Output Redirect for Integrated Terminals
 
@@ -77,24 +77,24 @@ function to stop redirecting output back to the screen.
 
 ### Window Management (`napp_window`)
 
-| Field | Signature | Description |
-|-------|-----------|-------------|
+| Field           | Signature                        | Description                            |
+|-----------------|----------------------------------|----------------------------------------|
 | `create_window` | `int (*)(int, int, const char*)` | Create a window (width, height, title) |
-| `close_window` | `void (*)()` | Close the current window |
-| `draw_window` | `void (*)()` | Render the window |
-| `on_draw` | callback | Drawing callback (called each frame) |
-| `on_key` | callback | Keyboard input callback |
-| `on_mouse` | callback | Mouse input callback |
+| `close_window`  | `void (*)()`                     | Close the current window               |
+| `draw_window`   | `void (*)()`                     | Render the window                      |
+| `on_draw`       | callback                         | Drawing callback (called each frame)   |
+| `on_key`        | callback                         | Keyboard input callback                |
+| `on_mouse`      | callback                         | Mouse input callback                   |
 
 ### GUI Drawing (`napp_gui`)
 
-| Field | Signature | Description |
-|-------|-----------|-------------|
-| `fill_block` | `void (*)(int, int, int, int, unsigned int)` | Fill a rectangular area with color |
-| `draw_text` | `void (*)(int, int, const char*, unsigned int)` | Draw text at coordinates |
-| `draw_rect` | `void (*)(int, int, int, int, unsigned int)` | Draw a rectangle outline |
-| `draw_rect_fill` | `void (*)(...)` | Fill a rectangle |
-| `put_pixel` | `void (*)(int, int, unsigned int)` | Set a single pixel |
+| Field            | Signature                                       | Description                        |
+|------------------|-------------------------------------------------|------------------------------------|
+| `fill_block`     | `void (*)(int, int, int, int, unsigned int)`    | Fill a rectangular area with color |
+| `draw_text`      | `void (*)(int, int, const char*, unsigned int)` | Draw text at coordinates           |
+| `draw_rect`      | `void (*)(int, int, int, int, unsigned int)`    | Draw a rectangle outline           |
+| `draw_rect_fill` | `void (*)(...)`                                 | Fill a rectangle                   |
+| `put_pixel`      | `void (*)(int, int, unsigned int)`              | Set a single pixel                 |
 
 ## GUI Callback Structure
 

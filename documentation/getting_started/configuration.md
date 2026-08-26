@@ -4,11 +4,11 @@ NasuaOS configuration is stored in text-based configuration files loaded as boot
 
 ## Configuration Files
 
-| File | Path (in ISO) | Description |
-|------|---------------|-------------|
-| `defaults.txt` | `/config/defaults.txt` | Default system-wide settings |
-| `boot_config.txt` | `/config/boot_config.txt` | Boot-time behavior modifiers |
-| `boot_config_sf.txt` | `/config/boot_config_sf.txt` | Safe-mode boot config |
+| File                 | Path (in ISO)                | Description                  |
+|----------------------|------------------------------|------------------------------|
+| `defaults.txt`       | `/config/defaults.txt`       | Default system-wide settings |
+| `boot_config.txt`    | `/config/boot_config.txt`    | Boot-time behavior modifiers |
+| `boot_config_sf.txt` | `/config/boot_config_sf.txt` | Safe-mode boot config        |
 
 ### defaults.txt
 
@@ -53,10 +53,10 @@ AutoMount=true
 
 Contains keywords that modify boot behavior. Currently recognized keywords:
 
-| Keyword | Effect |
-|---------|--------|
+| Keyword     | Effect                                                          |
+|-------------|-----------------------------------------------------------------|
 | `SAFE_MODE` | Enables safe mode (same as running `safe_mode` command at boot) |
-| `DEBUG` | Enables debug mode (same as running `debug --on` at boot) |
+| `DEBUG`     | Enables debug mode (same as running `debug --on` at boot)       |
 
 The `boot_config_sf.txt` (safe mode config) typically contains `SAFE_MODE`.
 

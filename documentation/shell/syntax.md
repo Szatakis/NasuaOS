@@ -12,15 +12,15 @@ Commands use a **flag-based** syntax. Unlike POSIX shells, NasuaOS commands requ
 
 ### Example Comparison
 
-| Traditional Unix | NasuaOS |
-|------------------|---------|
-| `mv old.txt new.txt` | `mv --source old.txt --destination new.txt` |
-| `cp src dest` | `cp --source src --destination dest` |
-| `cat file.txt` | `cat --file file.txt` |
-| `time` | `time --get` |
-| `ls /home` | `ls /home` |
-| `pwd` | `pwd` |
-| `mkdir dir` | `mkdir --dir_name dir` |
+| Traditional Unix      | NasuaOS                                     |
+|-----------------------|---------------------------------------------|
+| `mv old.txt new.txt`  | `mv --source old.txt --destination new.txt` |
+| `cp src dest`         | `cp --source src --destination dest`        |
+| `cat file.txt`        | `cat --file file.txt`                       |
+| `time`                | `time --get`                                |
+| `ls /home`            | `ls /home`                                  |
+| `pwd`                 | `pwd`                                       |
+| `mkdir dir`           | `mkdir --dir_name dir`                      |
 
 ## Flag Parsing
 
@@ -30,64 +30,64 @@ Arguments are passed to `/sbin` commands as `argv[]` with `argv[0]` set to the c
 
 ## Built-in vs /sbin Commands
 
-| Property | Built-in Commands | /sbin Commands |
-|----------|-------------------|----------------|
-| Location | Compiled into kernel | Loaded from `/sbin` |
-| Source | `kernel_64bit/src/applications/shell/commands.cpp` | `utilities/system_functions/` |
-| Load Source | Always available | ISO rootfs (FAT) or ClawFS overlay |
-| Mount Dependency | No | Yes (when ClawFS is mounted) |
-| Help Pages | Pages 1–10 | Page 11 and above |
-| Execution | Direct function call | NAPP binary loaded and executed |
-| Memory | Part of kernel image | Dynamically loaded to heap |
+| Property         | Built-in Commands                                  | /sbin Commands                     |
+|------------------|----------------------------------------------------|------------------------------------|
+| Location         | Compiled into kernel                               | Loaded from `/sbin`                |
+| Source           | `kernel_64bit/src/applications/shell/commands.cpp` | `utilities/system_functions/`      |
+| Load Source      | Always available                                   | ISO rootfs (FAT) or ClawFS overlay |
+| Mount Dependency | No                                                 | Yes (when ClawFS is mounted)       |
+| Help Pages       | Pages 1–10                                         | Page 11 and above                  |
+| Execution        | Direct function call                               | NAPP binary loaded and executed    |
+| Memory           | Part of kernel image                               | Dynamically loaded to heap         |
 
 ## Built-in Commands
 
 The following commands are compiled directly into the kernel:
 
-| Command | Description |
-|---------|-------------|
-| `help` | Show help pages |
-| `clear` | Clear the screen |
-| `echo` | Print text or write to a file |
-| `fetch` | Display system summary with ASCII logo |
-| `time` | System clock utility |
-| `reboot` | Restart the computer |
-| `shutdown` | Power off the system |
-| `format` | Format ClawFS or copy commands |
-| `mount` | Mount ClawFS overlay |
-| `unmount` | Unmount ClawFS overlay |
-| `touch` | Create a new empty file |
-| `info` | Display system and hardware information |
-| `source` | Show source code URL |
-| `debug` | Enable/disable debug mode |
-| `uptime` | Show system uptime |
-| `panic` | Trigger a kernel panic (debugging) |
-| `resolution` | Show screen resolution |
-| `logs` | Kernel log management |
-| `bootapp` | Launch applications |
-| `beep` | PC speaker beep |
-| `calc` | Calculator |
-| `rand` | Random number generator |
-| `inb` | Read I/O port byte |
-| `outb` | Write I/O port byte |
-| `asciiart` | Convert text to ASCII banner |
-| `safe_mode` | Enable safe mode |
-| `pwd` | Print working directory (built-in duplicate) |
+| Command      | Description                                  |
+|--------------|----------------------------------------------|
+| `help`       | Show help pages                              |
+| `clear`      | Clear the screen                             |
+| `echo`       | Print text or write to a file                |
+| `fetch`      | Display system summary with ASCII logo       |
+| `time`       | System clock utility                         |
+| `reboot`     | Restart the computer                         |
+| `shutdown`   | Power off the system                         |
+| `format`     | Format ClawFS or copy commands               |
+| `mount`      | Mount ClawFS overlay                         |
+| `unmount`    | Unmount ClawFS overlay                       |
+| `touch`      | Create a new empty file                      |
+| `info`       | Display system and hardware information      |
+| `source`     | Show source code URL                         |
+| `debug`      | Enable/disable debug mode                    |
+| `uptime`     | Show system uptime                           |
+| `panic`      | Trigger a kernel panic (debugging)           |
+| `resolution` | Show screen resolution                       |
+| `logs`       | Kernel log management                        |
+| `bootapp`    | Launch applications                          |
+| `beep`       | PC speaker beep                              |
+| `calc`       | Calculator                                   |
+| `rand`       | Random number generator                      |
+| `inb`        | Read I/O port byte                           |
+| `outb`       | Write I/O port byte                          |
+| `asciiart`   | Convert text to ASCII banner                 |
+| `safe_mode`  | Enable safe mode                             |
+| `pwd`        | Print working directory (built-in duplicate) |
 
 ## /sbin Commands
 
 The following commands are dynamically loaded flat-binary NAPP applications from `/sbin`:
 
-| Command | Description |
-|---------|-------------|
-| `cat` | Display file contents |
-| `cd` | Change directory |
-| `cp` | Copy file |
-| `ls` | List directory contents |
-| `mkdir` | Create directory |
-| `mv` | Move/rename file |
-| `pwd` | Print working directory |
-| `rm` | Remove file or directory |
+| Command | Description              |
+|---------|--------------------------|
+| `cat`   | Display file contents    |
+| `cd`    | Change directory         |
+| `cp`    | Copy file                |
+| `ls`    | List directory contents  |
+| `mkdir` | Create directory         |
+| `mv`    | Move/rename file         |
+| `pwd`   | Print working directory  |
+| `rm`    | Remove file or directory |
 
 These commands are loaded from the root filesystem. See [NAPP Format](napp/format.md) and [Shell /sbin Commands](sbin_commands.md) for details.
 

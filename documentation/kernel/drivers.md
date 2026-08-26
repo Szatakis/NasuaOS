@@ -25,37 +25,37 @@ The backbuffer dimensions depend on the detected resolution. The `init_backbuffe
 
 The text subsystem (`text.cpp`) manages an 80×25 character text buffer overlaid on the graphics output.
 
-| Function | Description |
-|----------|-------------|
-| `print_char8(char, x, y, color)` | Draw a single 8×16 character |
-| `print_at8(const char*, x, y)` | Print string at coordinates (8px font) |
-| `print_at10(const char*, x, y)` | Print string at coordinates (10px font) |
-| `print_at12(const char*, x, y)` | Print string at coordinates (12px font) |
-| `print_at16(const char*, x, y)` | Print string at coordinates (16px font) |
-| `print(const char*)` | Print to the kernel's text position |
-| `print_int(int)` | Print an integer |
-| `print_hex(unsigned int)` | Print hex value |
-| `delete_last_char()` | Remove last character |
-| `print_info(const char*)` | Print INFO-colored message (yellow) |
-| `print_warn(const char*)` | Print WARN-colored message (orange) |
-| `print_error(const char*)` | Print ERROR-colored message (red) |
-| `fetch()` | Print ASCII art logo and system info |
+| Function                         | Description                             |
+|----------------------------------|-----------------------------------------|
+| `print_char8(char, x, y, color)` | Draw a single 8×16 character            |
+| `print_at8(const char*, x, y)`   | Print string at coordinates (8px font)  |
+| `print_at10(const char*, x, y)`  | Print string at coordinates (10px font) |
+| `print_at12(const char*, x, y)`  | Print string at coordinates (12px font) |
+| `print_at16(const char*, x, y)`  | Print string at coordinates (16px font) |
+| `print(const char*)`             | Print to the kernel's text position     |
+| `print_int(int)`                 | Print an integer                        |
+| `print_hex(unsigned int)`        | Print hex value                         |
+| `delete_last_char()`             | Remove last character                   |
+| `print_info(const char*)`        | Print INFO-colored message (yellow)     |
+| `print_warn(const char*)`        | Print WARN-colored message (orange)     |
+| `print_error(const char*)`       | Print ERROR-colored message (red)       |
+| `fetch()`                        | Print ASCII art logo and system info    |
 
 ### Text Escape Color Codes
 
 The kernel uses ANSI-like escape codes for colored terminal output:
 
-| Code | Color | Usage |
-|------|-------|-------|
-| `\x1B[w` | White | Normal text |
-| `\x1B[e` | Yellow | Info messages |
-| `\x1B[a` | Orange/Amber | Warning |
-| `\x1B[1` | Light Gray | Headers |
-| `\x1B[2` | Gray | Secondary text |
-| `\x1B[3` | Red | Errors |
-| `\x1B[4` | Green | Success |
-| `\x1B[5` | Blue | Links |
-| `\x1B[6` | Dark Gray | Footers |
+| Code     | Color      | Usage          |
+|----------|------------|----------------|
+| `\x1B[w` | White      | Normal text    |
+| `\x1B[e` | Yellow     | Info messages  |
+| `\x1B[a` | Orange     | Warning        |
+| `\x1B[1` | Light Gray | Headers        |
+| `\x1B[2` | Gray       | Secondary text |
+| `\x1B[3` | Red        | Errors         |
+| `\x1B[4` | Green      | Success        |
+| `\x1B[5` | Blue       | Links          |
+| `\x1B[6` | Dark Gray  | Footers        |
 
 ### Color Definitions
 
@@ -106,17 +106,17 @@ Source: `kernel_64bit/src/system/drivers/gpu/functions/windows_manager/window.cp
 
 The window manager handles overlapping GUI windows:
 
-| Constant | Value |
-|----------|-------|
-| `MAX_WINDOWS` | 13 |
+| Constant      | Value |
+|---------------|-------|
+| `MAX_WINDOWS` | 13    |
 
-| Function | Description |
-|----------|-------------|
-| `register_window(window_struct*)` | Register a new window |
-| `unregister_window(int)` | Remove a window by ID |
-| `update_windows_positions()` | Update all window positions |
-| `draw_windows()` | Render all windows to backbuffer |
-| `is_mouse_over_any_window()` | Check if cursor is over a window |
+| Function                          | Description                      |
+|-----------------------------------|----------------------------------|
+| `register_window(window_struct*)` | Register a new window            |
+| `unregister_window(int)`          | Remove a window by ID            |
+| `update_windows_positions()`      | Update all window positions      |
+| `draw_windows()`                  | Render all windows to backbuffer |
+| `is_mouse_over_any_window()`      | Check if cursor is over a window |
 
 ```cpp
 struct window_struct
@@ -136,15 +136,15 @@ Source: `kernel_64bit/src/system/gui/gui.cpp`
 
 The GUI subsystem manages the desktop state:
 
-| Function | Description |
-|----------|-------------|
-| `open_start_menu()` | Open the start menu |
-| `close_start_menu()` | Close the start menu |
-| `draw_start_menu()` | Render the start menu to backbuffer |
-| `update_gui_state()` | Process GUI state changes |
-| `update_windows_gui()` | Update all GUI windows |
-| `image_init()` | Initialize the background image |
-| `draw_background()` | Render the desktop background |
+| Function               | Description                         |
+|------------------------|-------------------------------------|
+| `open_start_menu()`    | Open the start menu                 |
+| `close_start_menu()`   | Close the start menu                |
+| `draw_start_menu()`    | Render the start menu to backbuffer |
+| `update_gui_state()`   | Process GUI state changes           |
+| `update_windows_gui()` | Update all GUI windows              |
+| `image_init()`         | Initialize the background image     |
+| `draw_background()`    | Render the desktop background       |
 
 Global state:
 

@@ -35,13 +35,13 @@ Thank you for your interest in contributing to NasuaOS! This guide covers everyt
 
 ### Naming
 
-| Convention | Example |
-|------------|---------|
-| Functions | `snake_case` |
-| Variables | `snake_case` |
-| Constants | `UPPER_CASE` |
-| Classes | `PascalCase` |
-| Files | `snake_case.cpp` / `snake_case.hpp` |
+| Convention | Example                             |
+|------------|-------------------------------------|
+| Functions  | `snake_case`                        |
+| Variables  | `snake_case`                        |
+| Constants  | `UPPER_CASE`                        |
+| Classes    | `PascalCase`                        |
+| Files      | `snake_case.cpp` / `snake_case.hpp` |
 
 ```cpp
 // Good
@@ -145,13 +145,13 @@ See [Debug Instructions](../debug_instructions/debug_instructions.md) for detail
 
 ## Architecture Support
 
-| Architecture | Status | Maintainer |
-|--------------|--------|------------|
-| x86_64 | **Primary** | Active |
-| i686 (32-bit) | Experimental | — |
-| ARM64 | Boot stub only | — |
-| RISC-V 64 | Boot stub only | — |
-| LoongArch64 | Boot stub only | — |
+| Architecture  | Status         | Maintainer |
+|---------------|----------------|------------|
+| x86_64        | **Primary**    | Active     |
+| i686 (32-bit) | Experimental   | —          |
+| ARM64         | Boot stub only | —          |
+| RISC-V 64     | Boot stub only | —          |
+| LoongArch64   | Boot stub only | —          |
 
 When adding features, they should be added to x86_64 first. Ports to other architectures are welcome as follow-up PRs.
 

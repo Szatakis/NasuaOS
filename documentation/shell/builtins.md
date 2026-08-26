@@ -47,11 +47,11 @@ Print text to the screen, optionally with custom color, or save to a file.
 echo --text <text> [--color 0xRRGGBB] [--file <filename>]
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--text` | Yes | Text to print |
-| `--color` | No | Hex color (e.g., `0xFF5500`) |
-| `--file` | No | Save output to a file on ClawFS |
+| Flag      | Required | Description                     |
+|-----------|----------|---------------------------------|
+| `--text`  | Yes      | Text to print                   |
+| `--color` | No       | Hex color (e.g., `0xFF5500`)    |
+| `--file`  | No       | Save output to a file on ClawFS |
 
 ```
 user@nasua-os:/home> echo --text "Hello, world!" --color 0xFF5500
@@ -76,11 +76,11 @@ time --set <DD.MM.YYYY-HH:MM:SS>
 time --info
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--get` | Display current date and time from RTC |
-| `--set` | Set system date and time (format: `DD.MM.YYYY-HH:MM:SS`) |
-| `--info` | Display CMOS storage and RTC battery status |
+| Flag     | Description                                              |
+|----------|----------------------------------------------------------|
+| `--get`  | Display current date and time from RTC                   |
+| `--set`  | Set system date and time (format: `DD.MM.YYYY-HH:MM:SS`) |
+| `--info` | Display CMOS storage and RTC battery status              |
 
 ```
 user@nasua-os:/home> time --get
@@ -110,11 +110,11 @@ format --commands
 format --clear
 ```
 
-| Option | Description |
-|--------|-------------|
-| (no args) | Format (initialize) ClawFS — creates the base directory structure |
-| `--commands` | Copy all `/bin` and `/sbin` flat binaries from ISO to ClawFS |
-| `--clear` | Completely wipe ClawFS without recreating the structure |
+| Option       | Description                                                        |
+|--------------|--------------------------------------------------------------------|
+| (no args)    | Format (initialize) ClawFS — creates the base directory structure  |
+| `--commands` | Copy all `/bin` and `/sbin` flat binaries from ISO to ClawFS       |
+| `--clear`    | Completely wipe ClawFS without recreating the structure            |
 
 ```
 user@nasua-os:/home> format --commands
@@ -132,10 +132,10 @@ mount
 unmount
 ```
 
-| Command | Effect |
-|---------|--------|
-| `mount` | Mount ClawFS overlay. Commands load from ClawFS (taking priority over ISO). |
-| `unmount` | Unmount ClawFS overlay. Commands load from the ISO rootfs (FAT) only. |
+| Command   | Effect                                                                      |
+|-----------|-----------------------------------------------------------------------------|
+| `mount`   | Mount ClawFS overlay. Commands load from ClawFS (taking priority over ISO). |
+| `unmount` | Unmount ClawFS overlay. Commands load from the ISO rootfs (FAT) only.       |
 
 After mounting, `/sbin` commands and `/bin` applications load from ClawFS instead of the read-only ISO.
 
@@ -228,13 +228,13 @@ logs --subsystem <subsystem_name>
 logs --put <text>
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--show` | Display all stored kernel logs |
-| `--clear` | Clear the kernel log buffer |
-| `--level` | Filter by log level |
-| `--subsystem` | Filter by subsystem name |
-| `--put` | Add a custom log message with INFO level |
+| Flag          | Description                              |
+|---------------|------------------------------------------|
+| `--show`      | Display all stored kernel logs           |
+| `--clear`     | Clear the kernel log buffer              |
+| `--level`     | Filter by log level                      |
+| `--subsystem` | Filter by subsystem name                 |
+| `--put`       | Add a custom log message with INFO level |
 
 ```
 user@nasua-os:/home> logs --put "Manual test message"
@@ -250,10 +250,10 @@ bootapp --list
 bootapp --app <application_name>
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--list` | List all available applications |
-| `--app` | Launch a specific application (checks built-in apps first, then `/bin`) |
+| Flag     | Description                                                             |
+|----------|-------------------------------------------------------------------------|
+| `--list` | List all available applications                                         |
+| `--app`  | Launch a specific application (checks built-in apps first, then `/bin`) |
 
 Built-in applications: `settings`, `terminal`, `suaedit`, `task_manager`.
 
@@ -279,10 +279,10 @@ beep
 beep --freq <frequency> --dur <duration>
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Flag     | Default | Description    |
+|----------|---------|----------------|
 | `--freq` | 1000 Hz | Tone frequency |
-| `--dur` | 200 ms | Duration |
+| `--dur`  | 200 ms  | Duration       |
 
 ## calc
 

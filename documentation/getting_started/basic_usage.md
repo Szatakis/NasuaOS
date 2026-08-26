@@ -12,12 +12,12 @@ user@nasua-pc:/home>
 
 The prompt format is:
 
-| Component | Color | Description |
-|-----------|-------|-------------|
-| `user` | Blue | Username (currently hardcoded as `user`) |
-| `nasua-pc` | White | Machine/hostname (currently hardcoded as `nasua-pc`) |
-| `/home` | Yellow | Current working directory |
-| `>` | Gray | Command prompt |
+| Component  | Color  | Description                                          |
+|------------|--------|------------------------------------------------------|
+| `user`     | Blue   | Username (currently hardcoded as `user`)             |
+| `nasua-pc` | White  | Machine/hostname (currently hardcoded as `nasua-pc`) |
+| `/home`    | Yellow | Current working directory                            |
+| `>`        | Gray   | Command prompt                                       |
 
 ## Desktop Environment
 
@@ -35,12 +35,12 @@ The 64-bit kernel provides a graphical desktop with:
 
 Access these from the shell via `bootapp`:
 
-| Application | Command | Description |
-|-------------|---------|-------------|
-| Terminal | `bootapp --app terminal` | Graphical terminal window |
-| Settings | `bootapp --app settings` | System settings UI |
-| SuaEdit | `bootapp --app suaedit` | Text editor |
-| Task Manager | `bootapp --app task_manager` | Process/task manager |
+| Application  | Command                      | Description               |
+|--------------|------------------------------|---------------------------|
+| Terminal     | `bootapp --app terminal`     | Graphical terminal window |
+| Settings     | `bootapp --app settings`     | System settings UI        |
+| SuaEdit      | `bootapp --app suaedit`      | Text editor               |
+| Task Manager | `bootapp --app task_manager` | Process/task manager      |
 
 List all available applications:
 ```
@@ -58,16 +58,16 @@ bootapp --list
 
 ## Keyboard Shortcuts
 
-| Keys | Action |
-|------|--------|
-| `Enter` | Execute shell command / submit terminal input |
-| `Backspace` | Delete previous character |
-| `Shift` + `↑` | Previous command in shell history |
-| `Shift` + `↓` | Next command in shell history |
-| `Left Windows` / `Right Windows` | Toggle start menu |
-| `←` / `↑` / `↓` / `→` (no Shift) | Move mouse cursor |
-| `Caps Lock` | Toggle capitalization |
-| `Esc` (in terminal) | Sends to active window |
+| Keys                             | Action                                        |
+|----------------------------------|-----------------------------------------------|
+| `Enter`                          | Execute shell command / submit terminal input |
+| `Backspace`                      | Delete previous character                     |
+| `Shift` + `↑`                    | Previous command in shell history             |
+| `Shift` + `↓`                    | Next command in shell history                 |
+| `Left Windows` / `Right Windows` | Toggle start menu                             |
+| `←` / `↑` / `↓` / `→` (no Shift) | Move mouse cursor                             |
+| `Caps Lock`                      | Toggle capitalization                         |
+| `Esc` (in terminal)              | Sends to active window                        |
 
 ## File Operations
 

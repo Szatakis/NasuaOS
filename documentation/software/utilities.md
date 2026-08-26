@@ -52,16 +52,16 @@ Built-in applications:
 
 These commands are loaded dynamically as flat-binary NAPP applications from `/sbin/`.
 
-| Command | Description | Flags |
-|---------|-------------|-------|
-| `cat` | Display file contents | `--file`, `--file_n` |
-| `cd` | Change directory | `[path]` |
-| `cp` | Copy a file | `--source`, `--destination` |
-| `ls` | List directory contents | `[path]` |
-| `mkdir` | Create a directory | `--dir_name` |
-| `mv` | Move/rename a file | `--source`, `--destination` |
-| `pwd` | Print current directory | None |
-| `rm` | Remove a file or directory | `--name`, `--type` |
+| Command | Description                | Flags                       |
+|---------|----------------------------|-----------------------------|
+| `cat`   | Display file contents      | `--file`, `--file_n`        |
+| `cd`    | Change directory           | `[path]`                    |
+| `cp`    | Copy a file                | `--source`, `--destination` |
+| `ls`    | List directory contents    | `[path]`                    |
+| `mkdir` | Create a directory         | `--dir_name`                |
+| `mv`    | Move/rename a file         | `--source`, `--destination` |
+| `pwd`   | Print current directory    | None                        |
+| `rm`    | Remove a file or directory | `--name`, `--type`          |
 
 ### Example Usage
 
@@ -96,26 +96,26 @@ Use `format --commands` to copy `/sbin` commands to ClawFS for persistent storag
 
 ## File Operations Summary
 
-| Operation | Command | Source |
-|-----------|---------|--------|
-| Create directory | `mkdir --dir_name` | `/sbin` |
-| Delete file | `rm --name --type file` | `/sbin` |
-| Delete directory | `rm --name --type dir` | `/sbin` |
-| Copy file | `cp --source --destination` | `/sbin` |
-| Move/rename | `mv --source --destination` | `/sbin` |
-| Read file | `cat --file` | `/sbin` |
-| List directory | `ls` | `/sbin` |
-| Create empty file | `touch --file` | Built-in |
-| Write to file (echo) | `echo --text --file` | Built-in |
+| Operation            | Command                      | Source   |
+|----------------------|------------------------------|----------|
+| Create directory     | `mkdir --dir_name`           | `/sbin`  |
+| Delete file          | `rm --name --type file`      | `/sbin`  |
+| Delete directory     | `rm --name --type dir`       | `/sbin`  |
+| Copy file            | `cp --source --destination`  | `/sbin`  |
+| Move/rename          | `mv --source --destination`  | `/sbin`  |
+| Read file            | `cat --file`                 | `/sbin`  |
+| List directory       | `ls`                         | `/sbin`  |
+| Create empty file    | `touch --file`               | Built-in |
+| Write to file (echo) | `echo --text --file`         | Built-in |
 
 ## System Information
 
-| Command | Shows |
-|---------|-------|
-| `info` | OS version, CPU, RAM, storage, ClawFS overlay status |
-| `time --get` | Current RTC date and time |
-| `time --info` | RTC battery status |
-| `uptime` | System uptime since boot |
-| `resolution` | Screen resolution and framebuffer mode |
-| `logs` | Kernel log entries (filterable by level/subsystem) |
-| `fetch` | ASCII art logo with system summary |
+| Command       | Shows                                                |
+|---------------|------------------------------------------------------|
+| `info`        | OS version, CPU, RAM, storage, ClawFS overlay status |
+| `time --get`  | Current RTC date and time                            |
+| `time --info` | RTC battery status                                   |
+| `uptime`      | System uptime since boot                             |
+| `resolution`  | Screen resolution and framebuffer mode               |
+| `logs`        | Kernel log entries (filterable by level/subsystem)   |
+| `fetch`       | ASCII art logo with system summary                   |

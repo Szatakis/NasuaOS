@@ -58,29 +58,29 @@ Each `.napp` file is a flat ELF binary with an NAPP header. The `.clawfs` marker
 
 When ClawFS is formatted (via `format`), it creates this default structure:
 
-| Path | Type | Purpose |
-|------|------|---------|
-| `/` | Root | ClawFS root |
-| `/bin` | Directory | NAPP applications (when copied) |
-| `/sbin` | Directory | System command binaries (when copied) |
-| `/home` | Directory | User home directories |
-| `/home/user` | Directory | Default user home |
-| `/mnt` | Directory | Temporary mount points |
-| `/tmp` | Directory | Temporary files |
-| `/dev` | Directory | Device representations |
+| Path         | Type      | Purpose                               |
+|--------------|-----------|---------------------------------------|
+| `/`          | Root      | ClawFS root                           |
+| `/bin`       | Directory | NAPP applications (when copied)       |
+| `/sbin`      | Directory | System command binaries (when copied) |
+| `/home`      | Directory | User home directories                 |
+| `/home/user` | Directory | Default user home                     |
+| `/mnt`       | Directory | Temporary mount points                |
+| `/tmp`       | Directory | Temporary files                       |
+| `/dev`       | Directory | Device representations                |
 
 ## Path Resolution
 
 The shell uses a current working directory stored as a global string (`current_path`). Path resolution follows these rules:
 
-| Input | Resolved Path |
-|-------|---------------|
-| `/` | Root directory |
-| `~` | `/home` |
-| `..` | Parent directory (removes last path component) |
-| `.` | Current directory (no change) |
-| `foo` | `<current_path>/foo` (relative) |
-| `/foo/bar` | `/foo/bar` (absolute) |
+| Input      | Resolved Path                                  |
+|------------|------------------------------------------------|
+| `/`        | Root directory                                 |
+| `~`        | `/home`                                        |
+| `..`       | Parent directory (removes last path component) |
+| `.`        | Current directory (no change)                  |
+| `foo`      | `<current_path>/foo` (relative)                |
+| `/foo/bar` | `/foo/bar` (absolute)                          |
 
 ### Examples
 
@@ -113,15 +113,15 @@ The `cd` command modifies this variable. All file operations (except `cat` which
 
 ## Special Paths
 
-| Path | Description |
-|------|-------------|
-| `/` | Root — used as base for absolute paths |
-| `~` | Shortcut to `/home` user directory |
-| `/home/user` | Default user home after shell startup |
-| `/sbin` | System command binaries (flat NAPP binaries) |
-| `/bin` | NAPP applications (each in subdirectory) |
-| `/tmp` | Temporary files directory |
-| `/mnt` | Mount point directory |
+| Path         | Description                                  |
+|--------------|----------------------------------------------|
+| `/`          | Root — used as base for absolute paths       |
+| `~`          | Shortcut to `/home` user directory           |
+| `/home/user` | Default user home after shell startup        |
+| `/sbin`      | System command binaries (flat NAPP binaries) |
+| `/bin`       | NAPP applications (each in subdirectory)     |
+| `/tmp`       | Temporary files directory                    |
+| `/mnt`       | Mount point directory                        |
 
 ## Directory Navigation Commands
 

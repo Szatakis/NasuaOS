@@ -6,11 +6,11 @@ NasuaOS provides multiple debugging mechanisms: runtime debug mode, serial port 
 
 Debug mode can be enabled in three ways:
 
-| Method | How |
-|--------|-----|
-| **Boot config** | Add `DEBUG` to `boot_config.txt` |
-| **Shell command** | Run `debug --on` |
-| **Command-line** | Pass `DEBUG_BUILD=true` to make |
+| Method            | How                              |
+|-------------------|----------------------------------|
+| **Boot config**   | Add `DEBUG` to `boot_config.txt` |
+| **Shell command** | Run `debug --on`                 |
+| **Command-line**  | Pass `DEBUG_BUILD=true` to make  |
 
 ```
 user@nasua-os:/home> debug --on
@@ -42,14 +42,14 @@ if (debug_mode)
 
 NasuaOS uses **UART (COM1)** at port `0x3F8` for serial debug output. This is the primary debugging channel for low-level kernel messages.
 
-| Component | UART Output |
-|-----------|-------------|
-| NAPP loader | `[NAPP] Initializing...` |
-| NAPP loader | `[NAPP] Starting application: calculator` |
+| Component     | UART Output                               |
+|---------------|-------------------------------------------|
+| NAPP loader   | `[NAPP] Initializing...`                  |
+| NAPP loader   | `[NAPP] Starting application: calculator` |
 | File resolver | `[File Resolver] ClawFS overlay mounted.` |
-| Storage | `[Storage] Disk detected.` |
-| Mouse | `[MOUSE] PS/2 mouse connected` |
-| CPU | `[CPU] MP available` |
+| Storage       | `[Storage] Disk detected.`                |
+| Mouse         | `[MOUSE] PS/2 mouse connected`            |
+| CPU           | `[CPU] MP available`                      |
 
 To capture serial output when running in QEMU:
 

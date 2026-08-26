@@ -42,55 +42,55 @@ iqu_init()                // Kernel initialization queue
 
 ### Initialization Functions
 
-| Function | File | Purpose |
-|----------|------|---------|
-| `uart_init()` | `serial.cpp` | Set up COM1 for serial debug output |
-| `cpu_init()` | `cpu.cpp` | Detect CPU cores, model, features |
-| `memory_init()` | `memory.cpp` | Parse Multiboot2 memory map |
-| `paging_init()` | `memory.cpp` | Set up kernel page tables |
-| `pmm_init()` | `pmm.cpp` | Initialize physical page frame allocator |
-| `vmm_init()` | `vmm.cpp` | Initialize virtual memory manager |
-| `heap_init()` | `heap.cpp` | Initialize kernel heap (`kmalloc`/`kfree`) |
-| `idt_init()` | `interrupts/` | Set up interrupt descriptor table |
-| `pit_init()` | `timer.cpp` | Initialize PIT for timekeeping |
+| Function        | File          | Purpose                                    |
+|-----------------|---------------|--------------------------------------------|
+| `uart_init()`   | `serial.cpp`  | Set up COM1 for serial debug output        |
+| `cpu_init()`    | `cpu.cpp`     | Detect CPU cores, model, features          |
+| `memory_init()` | `memory.cpp`  | Parse Multiboot2 memory map                |
+| `paging_init()` | `memory.cpp`  | Set up kernel page tables                  |
+| `pmm_init()`    | `pmm.cpp`     | Initialize physical page frame allocator   |
+| `vmm_init()`    | `vmm.cpp`     | Initialize virtual memory manager          |
+| `heap_init()`   | `heap.cpp`    | Initialize kernel heap (`kmalloc`/`kfree`) |
+| `idt_init()`    | `interrupts/` | Set up interrupt descriptor table          |
+| `pit_init()`    | `timer.cpp`   | Initialize PIT for timekeeping             |
 
 ## Subsystems
 
 ### Interrupts
 
-| File | Component |
-|------|-----------|
-| `kernel_64bit/src/system/interrupts/idt.cpp` | Interrupt Descriptor Table |
-| `kernel_64bit/src/system/interrupts/isr.cpp` | Interrupt Service Routines |
-| `kernel_64bit/src/system/interrupts/page_fault.cpp` | Page fault handler |
-| `kernel_64bit/src/system/interrupts/pic.cpp` | Programmable Interrupt Controller |
-| `kernel_64bit/src/system/interrupts/madt.cpp` | Multiple APIC Description Table |
+| File                                                | Component                         |
+|-----------------------------------------------------|-----------------------------------|
+| `kernel_64bit/src/system/interrupts/idt.cpp`        | Interrupt Descriptor Table        |
+| `kernel_64bit/src/system/interrupts/isr.cpp`        | Interrupt Service Routines        |
+| `kernel_64bit/src/system/interrupts/page_fault.cpp` | Page fault handler                |
+| `kernel_64bit/src/system/interrupts/pic.cpp`        | Programmable Interrupt Controller |
+| `kernel_64bit/src/system/interrupts/madt.cpp`       | Multiple APIC Description Table   |
 
 ### Memory Management
 
-| File | Component |
-|------|-----------|
+| File                              | Component                     |
+|-----------------------------------|-------------------------------|
 | `kernel_64bit/src/system/memory/` | Memory map parsing and paging |
-| `kernel_64bit/src/system/pmm/` | Physical page frame manager |
-| `kernel_64bit/src/system/vmm/` | Virtual memory manager |
+| `kernel_64bit/src/system/pmm/`    | Physical page frame manager   |
+| `kernel_64bit/src/system/vmm/`    | Virtual memory manager        |
 
 ### Process Management
 
-| File | Component |
-|------|-----------|
-| `kernel_64bit/src/system/process/` | ELF loading and execution |
-| `kernel_64bit/src/system/scheduler/` | Process scheduler |
-| `kernel_64bit/src/system/syscalls/` | System call handlers |
+| File                                 | Component                 |
+|--------------------------------------|---------------------------|
+| `kernel_64bit/src/system/process/`   | ELF loading and execution |
+| `kernel_64bit/src/system/scheduler/` | Process scheduler         |
+| `kernel_64bit/src/system/syscalls/`  | System call handlers      |
 
 ### System Functions
 
-| Component | File | Description |
-|-----------|------|-------------|
-| Logger | `sysfunc/logger/` | 128-entry circular log buffer |
-| Command History | `sysfunc/command_history/` | Ring buffer (10 entries) |
-| File Resolver | `filesystem/file_resolver/` | ClawFS/CD overlay |
-| Kernel Panic | `kernel/kernel_panic/` | Panic screen with QR code |
-| Info Variables | `sysfunc/info_vars/` | Shell path, username, hostname |
+| Component       | File                        | Description                    |
+|-----------------|-----------------------------|--------------------------------|
+| Logger          | `sysfunc/logger/`           | 128-entry circular log buffer  |
+| Command History | `sysfunc/command_history/`  | Ring buffer (10 entries)       |
+| File Resolver   | `filesystem/file_resolver/` | ClawFS/CD overlay              |
+| Kernel Panic    | `kernel/kernel_panic/`      | Panic screen with QR code      |
+| Info Variables  | `sysfunc/info_vars/`        | Shell path, username, hostname |
 
 ## Kernel Panic
 
@@ -110,38 +110,38 @@ void kernel_panic(const char* message, const char* error_code,
 
 The kernel provides a minimal C library (`kernel_64bit/src/system/libs/libc/libc.hpp`):
 
-| Function | Purpose |
-|----------|---------|
-| `strcpy`, `strncpy` | String copy |
-| `strcmp`, `strncmp` | String compare |
-| `strlen`, `strchr`, `strstr` | String search |
-| `strcat` | String concatenation |
-| `strrchr` | Find last occurrence |
-| `atoi` | ASCII to integer |
-| `itoa` | Integer to ASCII |
-| `memclear` / `memset` | Memory fill |
-| `is_empty_or_whitespace` | Check empty strings |
-| `uint64_to_string` | Format uint64 as string |
+| Function                     | Purpose                 |
+|------------------------------|-------------------------|
+| `strcpy`, `strncpy`          | String copy             |
+| `strcmp`, `strncmp`          | String compare          |
+| `strlen`, `strchr`, `strstr` | String search           |
+| `strcat`                     | String concatenation    |
+| `strrchr`                    | Find last occurrence    |
+| `atoi`                       | ASCII to integer        |
+| `itoa`                       | Integer to ASCII        |
+| `memclear` / `memset`        | Memory fill             |
+| `is_empty_or_whitespace`     | Check empty strings     |
+| `uint64_to_string`           | Format uint64 as string |
 
 ## Assembly Helpers
 
 Low-level operations use inline assembly (`kernel_64bit/src/libs/asm/asm.hpp`):
 
-| Function | Port | Purpose |
-|----------|------|---------|
-| `outb/inb` | 0x60–0x64, etc. | I/O port byte |
-| `outw/inw` | Various | I/O port word |
-| `outl/inl` | Various | I/O port long |
-| `hcf()` | — | Halt CPU (`hlt; jmp hcf`) |
-| `io_wait()` | 0x3F8? | Brief I/O delay |
+| Function    | Port            | Purpose                   |
+|-------------|-----------------|---------------------------|
+| `outb/inb`  | 0x60–0x64, etc. | I/O port byte             |
+| `outw/inw`  | Various         | I/O port word             |
+| `outl/inl`  | Various         | I/O port long             |
+| `hcf()`     | —               | Halt CPU (`hlt; jmp hcf`) |
+| `io_wait()` | 0x3F8?          | Brief I/O delay           |
 
 ## Kernel Globals
 
-| Variable | File | Default | Description |
-|----------|------|---------|-------------|
-| `debug_mode` | `kernel.cpp` | `false` | UART debug output |
-| `safe_mode` | `kernel.cpp` | `false` | Restricted init |
-| `current_path` | `info_vars.cpp` | `"/home"` | Shell CWD |
-| `user_name` | `info_vars.cpp` | `"user"` | Username for prompt |
-| `pc_name` | `info_vars.cpp` | `"nasua-pc"` | Hostname |
-| `kernel_panicked` | `kernel.cpp` | `false` | Panic flag |
+| Variable          | File            | Default      | Description         |
+|-------------------|-----------------|--------------|---------------------|
+| `debug_mode`      | `kernel.cpp`    | `false`      | UART debug output   |
+| `safe_mode`       | `kernel.cpp`    | `false`      | Restricted init     |
+| `current_path`    | `info_vars.cpp` | `"/home"`    | Shell CWD           |
+| `user_name`       | `info_vars.cpp` | `"user"`     | Username for prompt |
+| `pc_name`         | `info_vars.cpp` | `"nasua-pc"` | Hostname            |
+| `kernel_panicked` | `kernel.cpp`    | `false`      | Panic flag          |

@@ -23,7 +23,7 @@ NasuaOS includes its own kernel, memory manager, drivers, graphical user interfa
 
 ## Quick Links
 
-- [Build Instructions](../build_instructions.md)
+- [Build Instructions](build_instructions/build_instructions.md)
 - [Debug Instructions](debugging/debug_guide.md)
 - [Shell Built-in Commands](shell/builtins.md)
 - [Shell `/sbin` Commands](shell/sbin_commands.md)

@@ -14,20 +14,20 @@ Download the latest images from the [iso branch](https://github.com/Szatakis/Nas
 ## System Requirements
 
 ### Minimum
-| Component | Requirement |
-|-----------|-------------|
+| Component    | Requirement                                          |
+|--------------|------------------------------------------------------|
 | Architecture | x86_64 (recommended), or 32-bit x86 for console mode |
-| RAM | 512 MB |
-| Storage | 2 GB disk/HDD image |
-| Graphics | Framebuffer-compatible GPU (1280×720) |
-| Input | PS/2 keyboard, PS/2 or USB mouse |
+| RAM          | 512 MB                                               |
+| Storage      | 2 GB disk/HDD image                                  |
+| Graphics     | Framebuffer-compatible GPU (1280×720)                |
+| Input        | PS/2 keyboard, PS/2 or USB mouse                     |
 
 ### Recommended
-| Component | Requirement |
-|-----------|-------------|
-| Architecture | x86_64 |
-| RAM | 2 GB |
-| Storage | 8 GB+ ClawFS-formatted disk |
+| Component    | Requirement                 |
+|--------------|-----------------------------|
+| Architecture | x86_64                      |
+| RAM          | 2 GB                        |
+| Storage      | 8 GB+ ClawFS-formatted disk |
 
 ## Build Prerequisites (Linux)
 

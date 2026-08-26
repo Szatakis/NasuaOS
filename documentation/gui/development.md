@@ -15,10 +15,10 @@ The NasuaOS GUI is a simple 2D graphical environment managed by the kernel. GUI 
 │  (window.cpp)                               │
 ├─────────────────────────────────────────────┤
 │  Window 1    Window 2    Window 3           │
-│  (App callbacks)                           │
+│  (App callbacks)                            │
 ├─────────────────────────────────────────────┤
 │  Desktop Background                         │
-│  (image_init, draw_background)             │
+│  (image_init, draw_background)              │
 ├─────────────────────────────────────────────┤
 │  Backbuffer                                 │
 │  → render_frame() → VRAM                    │
@@ -35,20 +35,20 @@ static uint32_t backbuffer[4096 * 2160];
 
 ### Primary Drawing Functions
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `put_pixel` | `(int x, int y, uint32_t color)` | Draw a single pixel |
-| `fill_block` | `(int x, int y, int w, int h, uint32_t color)` | Fill a rectangle |
-| `draw_rect` | `(int x, int y, int w, int h, uint32_t color)` | Draw rectangle outline |
-| `draw_line` | `(int x1, int y1, int x2, int y2, uint32_t color)` | Draw a line |
-| `draw_text` | `(int x, int y, const char* text, uint32_t color)` | Render text |
+| Function     | Signature                                          | Description            |
+|--------------|----------------------------------------------------|------------------------|
+| `put_pixel`  | `(int x, int y, uint32_t color)`                   | Draw a single pixel    |
+| `fill_block` | `(int x, int y, int w, int h, uint32_t color)`     | Fill a rectangle       |
+| `draw_rect`  | `(int x, int y, int w, int h, uint32_t color)`     | Draw rectangle outline |
+| `draw_line`  | `(int x1, int y1, int x2, int y2, uint32_t color)` | Draw a line            |
+| `draw_text`  | `(int x, int y, const char* text, uint32_t color)` | Render text            |
 
 ### Color Format
 
 Colors are 32-bit ARGB values:
 
-| Format | Example | Description |
-|--------|---------|-------------|
+| Format       | Example    | Description                         |
+|--------------|------------|-------------------------------------|
 | `0xAARRGGBB` | `0xFF5500` | Alpha=FF, Red=55, Green=00, Blue=00 |
 
 Common colors:
@@ -78,19 +78,19 @@ struct window_struct
 
 ### Window Limits
 
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `MAX_WINDOWS` | 13 | Maximum simultaneous windows |
+| Constant      | Value | Description                  |
+|---------------|-------|------------------------------|
+| `MAX_WINDOWS` | 13    | Maximum simultaneous windows |
 
 ### Window Functions
 
-| Function | Description |
-|----------|-------------|
-| `register_window(window_struct*)` | Register a new window |
-| `unregister_window(int id)` | Unregister a window by ID |
-| `update_windows_positions()` | Update window Z-order and positions |
-| `draw_windows()` | Render all windows to backbuffer |
-| `is_mouse_over_any_window()` | Check cursor over windows |
+| Function                          | Description                         |
+|-----------------------------------|-------------------------------------|
+| `register_window(window_struct*)` | Register a new window               |
+| `unregister_window(int id)`       | Unregister a window by ID           |
+| `update_windows_positions()`      | Update window Z-order and positions |
+| `draw_windows()`                  | Render all windows to backbuffer    |
+| `is_mouse_over_any_window()`      | Check cursor over windows           |
 
 ### Window Registration
 
@@ -118,11 +118,11 @@ bool start_menu_open = false;
 
 ### Start Menu Functions
 
-| Function | Description |
-|----------|-------------|
-| `open_start_menu()` | Show the start menu |
-| `close_start_menu()` | Hide the start menu |
-| `draw_start_menu()` | Render start menu to backbuffer |
+| Function             | Description                     |
+|----------------------|---------------------------------|
+| `open_start_menu()`  | Show the start menu             |
+| `close_start_menu()` | Hide the start menu             |
+| `draw_start_menu()`  | Render start menu to backbuffer |
 
 The start menu is toggled via the GUI state manager and responds to mouse clicks.
 
@@ -219,13 +219,13 @@ Windows are stacked using a simple front-to-back Z-order:
 
 ## Limitations
 
-| Limitation | Details |
-|------------|---------|
-| No compositing | Windows are drawn directly to backbuffer, no alpha blending |
-| Fixed font | Only 8×16 bitmap font supported |
-| No drag/resize | Windows cannot be moved or resized after creation |
-| ASCII only | No Unicode support |
-| Single-threaded | No window threading — draw callbacks block the frame |
+| Limitation      | Details                                                     |
+|-----------------|-------------------------------------------------------------|
+| No compositing  | Windows are drawn directly to backbuffer, no alpha blending |
+| Fixed font      | Only 8×16 bitmap font supported                             |
+| No drag/resize  | Windows cannot be moved or resized after creation           |
+| ASCII only      | No Unicode support                                          |
+| Single-threaded | No window threading — draw callbacks block the frame        |
 
 ## Double Buffering
 
