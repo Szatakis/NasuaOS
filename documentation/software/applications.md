@@ -38,14 +38,19 @@ user@nasua-os:/home> bootapp --app terminal
 
 ### suaedit
 
-A simple text editor.
+A text editor with an integrated terminal panel.
 
 | Property | Value |
 |----------|-------|
 | Type | GUI window |
-| Entry | `suaedit_main()` |
-| API | Uses `napp_gui` for drawing, `napp_window` for callbacks |
-| Description | A lightweight text editor with save/open capabilities |
+| Entry | `_start()` in `utilities/applications/suaedit/suaedit.cpp` |
+| API | Uses `napp_gui` for drawing, `napp_window` for callbacks, `api->set_print_redirect` + `api->execute_command` for integrated commands |
+| Description | A lightweight text editor with a built-in terminal panel at the bottom of the window. The terminal captures command output via `set_print_redirect`, renders text with wrapping, supports mouse-wheel scroll, and draws input inline on the same line as the kernel prompt. |
+
+The terminal panel is toggled via the **Terminal** menu item. When visible, command output from
+`execute_command` is redirected into the panel instead of the main shell buffer.
+The input prompt (`$ `) is rendered on the same visual row as the last line of
+output, matching the behaviour of the kernel built-in terminal.
 
 ```
 user@nasua-os:/home> bootapp --app suaedit
@@ -94,7 +99,7 @@ int _start(const napp_api* api)
 user@nasua-os:/home> bootapp --app bootcheck
 [bootcheck] Running successfully
 NAPP API check passed
-Version: 2
+Version: 3
 ```
 
 ### calculator
