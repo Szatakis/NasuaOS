@@ -39,8 +39,18 @@ Access these from the shell via `bootapp`:
 |--------------|------------------------------|---------------------------|
 | Terminal     | `bootapp --app terminal`     | Graphical terminal window |
 | Settings     | `bootapp --app settings`     | System settings UI        |
-| SuaEdit      | `bootapp --app suaedit`      | Text editor               |
 | Task Manager | `bootapp --app task_manager` | Process/task manager      |
+
+### /bin Applications (NAPP)
+
+These are loaded dynamically from `/bin`:
+
+| Application  | Command                      | Description                      |
+|--------------|------------------------------|----------------------------------|
+| SuaEdit      | `bootapp --app suaedit`      | Text editor with terminal panel  |
+| Calculator   | `bootapp --app calculator`   | Graphical calculator             |
+| Snake        | `bootapp --app snake`        | Classic Snake game               |
+| Minesweeper  | `bootapp --app minesweeper`  | Classic Minesweeper game         |
 
 List all available applications:
 ```

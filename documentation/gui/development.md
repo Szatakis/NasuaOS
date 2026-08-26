@@ -35,13 +35,15 @@ static uint32_t backbuffer[4096 * 2160];
 
 ### Primary Drawing Functions
 
-| Function     | Signature                                          | Description            |
-|--------------|----------------------------------------------------|------------------------|
-| `put_pixel`  | `(int x, int y, uint32_t color)`                   | Draw a single pixel    |
-| `fill_block` | `(int x, int y, int w, int h, uint32_t color)`     | Fill a rectangle       |
-| `draw_rect`  | `(int x, int y, int w, int h, uint32_t color)`     | Draw rectangle outline |
-| `draw_line`  | `(int x1, int y1, int x2, int y2, uint32_t color)` | Draw a line            |
-| `draw_text`  | `(int x, int y, const char* text, uint32_t color)` | Render text            |
+| Function     | Signature                                                  | Description            |
+|--------------|------------------------------------------------------------|------------------------|
+| `put_pixel`  | `(size_t x, size_t y, uint32_t color)`                     | Set a single pixel     |
+| `fill_block` | `(size_t x, size_t y, uint32_t color, size_t w, size_t h)` | Fill a rectangle       |
+| `draw_rect`  | `(int x1, int y1, int x2, int y2, uint32_t color)`         | Draw rectangle outline |
+| `print_at8`  | `(const char* text, size_t x, size_t y, uint32_t color)`   | Render 8px-width text  |
+| `print_at10` | `(const char* text, size_t x, size_t y, uint32_t color)`   | Render 10px-width text |
+| `print_at12` | `(const char* text, size_t x, size_t y, uint32_t color)`   | Render 12px-width text |
+| `print_at16` | `(const char* text, size_t x, size_t y, uint32_t color)`   | Render 16px-width text |
 
 ### Color Format
 
@@ -54,9 +56,10 @@ Colors are 32-bit ARGB values:
 Common colors:
 - `0xFFFFFFFF` — White
 - `0xFF000000` — Black
-- `0xFFFF0000` — Red
-- `0xFF00FF00` — Green
-- `0xFF0000FF` — Blue
+- `0xFF59E81B` — Green (theme accent)
+- `0xFFAAAAAA` — Gray
+- `0xFF1A1F2C` — Window background
+- `0xFF2B3140` — Title bar
 
 ## Window Management
 
@@ -64,17 +67,55 @@ Source: `kernel_64bit/src/system/drivers/gpu/functions/windows_manager/window.cp
 
 ### Window Structure
 
+The kernel's `Gpu::Window_Manager::window_struct` (defined in `drivers/gpu/driver.hpp`):
+
 ```cpp
-struct window_struct
+typedef struct window_struct
 {
-    int x, y;
-    int width, height;
-    uint32_t color;
+    const char* name;
+    uint32_t id;
+
+    int pos_x;
+    int pos_y;
+    int width;
+    int height;
+
     bool visible;
-    char title[64];
-    void (*draw_func)(int, int, int, int, uint32_t);
-};
-```
+    bool minimized;
+    bool focused;
+
+    bool resizable;
+    bool can_maximize;
+    bool maximized;
+
+    int restore_pos_x;
+    int restore_pos_y;
+    int restore_width;
+    int restore_height;
+
+    bool is_dragging;
+    int drag_offset_x;
+    int drag_offset_y;
+
+    bool is_resizing;
+    bool resize_right;
+    bool resize_bottom;
+
+    int resize_start_mouse_x;
+    int resize_start_mouse_y;
+    int resize_start_width;
+    int resize_start_height;
+
+    int max_width;
+    int max_height;
+
+    void* userdata;
+
+    window_draw_callback draw_content;
+    window_key_callback key_press;
+    window_mouse_callback mouse_click;
+    window_mouse_button_callback mouse_button;
+} window_struct;
 
 ### Window Limits
 
@@ -87,22 +128,32 @@ struct window_struct
 | Function                          | Description                         |
 |-----------------------------------|-------------------------------------|
 | `register_window(window_struct*)` | Register a new window               |
-| `unregister_window(int id)`       | Unregister a window by ID           |
-| `update_windows_positions()`      | Update window Z-order and positions |
+| `unregister_window(window_struct*)` | Remove a window                   |
+| `update_windows_positions(int, int)` | Update all window positions      |
 | `draw_windows()`                  | Render all windows to backbuffer    |
-| `is_mouse_over_any_window()`      | Check cursor over windows           |
+| `is_mouse_over_any_window(int, int)` | Check if cursor is over a window |
 
 ### Window Registration
 
 When a NAPP application creates a GUI window:
 
 ```cpp
-api->window.create_window(800, 600, "My App");
+napp_window_config config = {};
+config.title = "My App";
+config.width = 800;
+config.height = 600;
+config.draw = my_draw_callback;
+config.key = my_key_callback;
+
+if (!api->gui->open_window(&config))
+{
+    return 1;
+}
 ```
 
 The window manager:
 1. Allocates a `window_struct` from the window pool (max 13)
-2. Sets visibility, position, and dimensions
+2. Sets visibility, position, and dimensions from the config
 3. Registers the window's draw callback
 4. The window is rendered in each frame via `draw_windows()`
 
@@ -147,44 +198,56 @@ Each frame:
 
 ## NAPP GUI Applications
 
-NAPP GUI applications interact with the GUI via the `napp_api` interface:
+NAPP GUI applications interact with the GUI via the `napp_api` interface. The `gui`
+field is a pointer to a `napp_gui` virtual function table:
 
 ```cpp
 // Create a window
-api->window.create_window(800, 600, "My App");
+napp_window_config config = {};
+config.title = "My App";
+config.width = 800;
+config.height = 600;
+config.resizable = true;
+config.can_maximize = true;
+config.userdata = nullptr;
+config.draw = my_draw_callback;
+config.key = my_key_callback;
+config.mouse = my_mouse_callback;
 
-// Register callbacks
-api->window.on_draw = my_draw_callback;
-api->window.on_key = my_key_callback;
-api->window.on_mouse = my_mouse_callback;
-
-// Render immediately
-api->window.draw_window();
+if (!api->gui->open_window(&config))
+{
+    return 1;
+}
 ```
 
 ### Callback Signatures
 
 ```cpp
-typedef void (*napp_window_draw)(const napp_api*);
-typedef void (*napp_window_key)(const napp_api*, unsigned char);
-typedef void (*napp_window_mouse)(const napp_api*, int x, int y, int button);
+typedef void (*napp_window_draw)(struct napp_window* window);
+typedef void (*napp_window_key)(struct napp_window* window, char key);
+typedef void (*napp_window_mouse)(struct napp_window* window, int mouse_x, int mouse_y);
+typedef void (*napp_window_mouse_button)(struct napp_window* window, int mouse_x, int mouse_y, int button);
+typedef void (*napp_window_tick)(struct napp_window* window);
 ```
 
 ### Draw Callback Example
 
 ```cpp
-void my_draw_callback(const napp_api* api)
+static const napp_gui* gui = nullptr;
+
+void my_draw_callback(napp_window* win)
 {
     // Fill window background
-    api->gui.fill_block(0, 0, 800, 600, 0xFF202020);
-    
-    // Draw a button
-    api->gui.draw_rect(100, 100, 200, 50, 0xFFFFFFFF);
+    gui->fill_block(win->pos_x, win->pos_y, NAPP_COLOR_WINDOW, win->width, win->height);
     
     // Draw text
-    api->gui.draw_text(150, 120, "Click Me", 0xFF000000);
+    gui->draw_text("Hello, World!", win->pos_x + 10, win->pos_y + 10, NAPP_COLOR_WHITE);
 }
 ```
+
+Note: The `napp_window` struct passed to callbacks is a read-only view of the
+window's geometry, updated by the kernel before each callback. It contains `pos_x`,
+`pos_y`, `width`, `height`, `title_height`, and `userdata` fields.
 
 ## Text Rendering (GUI Mode)
 
@@ -204,10 +267,10 @@ This function:
 
 The GUI uses a **polling** model:
 
-1. Each frame, the kernel checks for window updates
-2. If a window's `needs_redraw` flag is set, its draw callback is invoked
+1. Each frame, the kernel iterates all registered windows
+2. Each window's `draw_content` callback is invoked (which dispatches to the NAPP app's draw callback)
 3. Mouse and keyboard events are dispatched to the active window
-4. Applications should set `needs_redraw = true` when they want to redraw
+4. The draw callback is called every frame, so applications should only redraw when needed
 
 ## Z-Order
 

@@ -70,9 +70,9 @@ The following commands are compiled directly into the kernel:
 | `rand`       | Random number generator                      |
 | `inb`        | Read I/O port byte                           |
 | `outb`       | Write I/O port byte                          |
-| `asciiart`   | Convert text to ASCII banner                 |
-| `safe_mode`  | Enable safe mode                             |
-| `pwd`        | Print working directory (built-in duplicate) |
+| `asciiart`  | Convert text to ASCII banner                  |
+| `safe_mode` | Enable safe mode                              |
+| `uart`      | Send text to UART serial port                 |
 
 ## /sbin Commands
 

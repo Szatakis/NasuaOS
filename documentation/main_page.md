@@ -49,7 +49,7 @@ NasuaOS uses a **dual-kernel** design:
 ### kernel_64bit (Full OS)
 The primary 64-bit kernel providing:
 - Full graphical desktop with window manager
-- Built-in shell with 26 built-in commands
+- Built-in shell with 27 built-in commands
 - ClawFS filesystem support
 - NAPP application and `/sbin` command loading
 - USB, PCI, SATA/AHCI, and PS/2 support
@@ -102,7 +102,7 @@ See [Filesystem - Mounting](filesystem/mounting.md) for details.
 
 - **System Version**: NasuaOS 0.8.0
 - **Kernel Version**: 0.3.0 (64-bit)
-- **NAPP ABI Version**: 2
+- **NAPP ABI Version**: 3
 
 ---
 

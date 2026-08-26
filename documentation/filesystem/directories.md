@@ -11,34 +11,34 @@ The ISO rootfs is a FAT16 filesystem image (`rootfs.img`) built from `utilities/
 ├── .clawfs                  # Marker file (empty)
 ├── bin/
 │   ├── .clawfs              # Marker file
-│   ├── calculator/
-│   │   ├── .clawfs
-│   │   └── calculator.napp
-│   ├── bootcheck/
-│   │   ├── .clawfs
-│   │   └── bootcheck.napp
-│   └── <other_apps>/
+│   ├── bootcheck             # NAPP binary
+│   ├── calculator            # NAPP binary
+│   ├── minesweeper           # NAPP binary
+│   ├── snake                 # NAPP binary
+│   └── suaedit               # NAPP binary
 ├── sbin/
 │   ├── .clawfs              # Marker file
-│   ├── cat                  # Flat binary (NAPP)
-│   ├── cd                   # Flat binary (NAPP)
-│   ├── cp                   # Flat binary (NAPP)
-│   ├── ls                   # Flat binary (NAPP)
-│   ├── mkdir                # Flat binary (NAPP)
-│   ├── mv                   # Flat binary (NAPP)
-│   ├── pwd                  # Flat binary (NAPP)
-│   └── rm                   # Flat binary (NAPP)
+│   ├── cat                  # NAPP binary
+│   ├── cd                   # NAPP binary
+│   ├── cp                   # NAPP binary
+│   ├── ls                   # NAPP binary
+│   ├── mkdir                # NAPP binary
+│   ├── mv                   # NAPP binary
+│   ├── pwd                  # NAPP binary
+│   ├── rm                   # NAPP binary
+│   └── tree                 # NAPP binary
 └── home/
     └── user/
 ```
 
 ### Directory Structure Details
 
-**`/bin/`** — Contains NAPP applications, each in a subdirectory named after the app:
+**`/bin/`** — Contains NAPP applications as flat binary files (one per application):
 ```
-/bin/<app_name>/<app_name>.napp
+/bin/<app_name>
 ```
-Each `.napp` file is a flat ELF binary with an NAPP header. The `.clawfs` marker file in each directory helps the build system track the structure.
+Each file is a flat binary with an NAPP header. The `.clawfs` marker file in the
+directory helps the build system track the structure.
 
 **`/sbin/`** — Contains system commands as flat NAPP binaries:
 ```
@@ -119,7 +119,7 @@ The `cd` command modifies this variable. All file operations (except `cat` which
 | `~`          | Shortcut to `/home` user directory           |
 | `/home/user` | Default user home after shell startup        |
 | `/sbin`      | System command binaries (flat NAPP binaries) |
-| `/bin`       | NAPP applications (each in subdirectory)     |
+| `/bin`       | NAPP applications (flat binary files)        |
 | `/tmp`       | Temporary files directory                    |
 | `/mnt`       | Mount point directory                        |
 
@@ -138,7 +138,7 @@ cd             # No argument — implicit cd ~ (go to /home)
 
 ### pwd
 
-Both built-in and `/sbin` versions of `pwd` exist:
+The `pwd` command (a `/sbin` command) prints `current_path`:
 
 ```
 pwd

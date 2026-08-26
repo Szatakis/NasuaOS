@@ -36,14 +36,33 @@ A terminal emulator window.
 user@nasua-os:/home> bootapp --app terminal
 ```
 
+### task_manager
+
+A process/task manager.
+
+|   Property  | Value                                                   |
+|-------------|---------------------------------------------------------|
+| Type        | GUI window                                              |
+| Entry       | `task_manager_main()`                                   |
+| API         | Uses `napp_gui` for drawing                             |
+| Description | Displays running NAPP processes and their status         |
+
+```
+user@nasua-os:/home> bootapp --app task_manager
+```
+
+## /bin NAPP Applications
+
+These are dynamically loaded flat binaries from `/bin/<app>` (the rootfs `/bin` directory):
+
 ### suaedit
 
 A text editor with an integrated terminal panel.
 
-|  Property   | Value                                                      |
+|   Property  | Value                                                      |
 |-------------|------------------------------------------------------------|
 | Type        | GUI window                                                 |
-| Entry       | `_start()` in `utilities/applications/suaedit/suaedit.cpp` |
+| Entry       | `_start()` in `utilities/applications/suaedit/src/suaedit.cpp` |
 | API         | Uses `napp_gui` for drawing, `napp_window` for callbacks, `api->set_print_redirect` + `api->execute_command` for integrated commands |
 | Description | A lightweight text editor with a built-in terminal panel at the bottom of the window. The terminal captures command output via `set_print_redirect`, renders text with wrapping, supports mouse-wheel scroll, and draws input inline on the same line as the kernel prompt. |
 
@@ -56,33 +75,40 @@ output, matching the behaviour of the kernel built-in terminal.
 user@nasua-os:/home> bootapp --app suaedit
 ```
 
-### task_manager
+### calculator
 
-A process/task manager.
+A graphical calculator with button callbacks.
 
 |  Property   | Value                                                      |
 |-------------|------------------------------------------------------------|
-| Type        | GUI window                                                 |
-| Entry       | `task_manager_main()`                                      |
-| API         | Uses `napp_gui` for drawing                                |
-| Description | Displays running NAPP processes and their status           |
+| Type        | GUI (interactive window)                                   |
+| Source      | `utilities/applications/calculator/src/calculator.cpp`         |
+| API         | `napp_gui` (fill_block, draw_text, open_window)            |
+| Description | A graphical calculator with button callbacks               |
+
+```cpp
+int _start(const napp_api* api)
+{
+    api->gui->open_window(&config);
+    config.draw = calculator_draw;
+    config.key = calculator_key;
+    config.mouse = calculator_mouse;
+    return 0;
+}
+```
 
 ```
-user@nasua-os:/home> bootapp --app task_manager
+user@nasua-os:/home> bootapp --app calculator
 ```
-
-## /bin NAPP Applications
-
-These are dynamically loaded from `/bin/<app>/<app>.napp`:
 
 ### bootcheck
 
-|  Property   | Value                                                       |
-|-------------|-------------------------------------------------------------|
-| Type        | Console (terminal output)                                   |
-| Source      | `utilities/applications/bootcheck/bootcheck.cpp`            |
+|  Property   | Value                                                                     |
+|-------------|---------------------------------------------------------------------------|
+| Type        | Console (terminal output)                                                 |
+| Source      | `utilities/applications/bootcheck/src/bootcheck.cpp`                      |
 | API         | `api->print_info`, `api->print_line`, `api->print_dec`, `api->serial_log` |
-| Description | Tests the NAPP API and confirms successful loading          |
+| Description | Tests the NAPP API and confirms successful loading                        |
 
 ```cpp
 int _start(const napp_api* api)
@@ -102,29 +128,38 @@ NAPP API check passed
 Version: 3
 ```
 
-### calculator
+### minesweeper
 
-|  Property   | Value                                                      |
-|-------------|------------------------------------------------------------|
-| Type        | GUI (interactive window)                                   |
-| Source      | `utilities/applications/calculator/calculator.cpp`         |
-| API         | `napp_gui` (fill_block, draw_text, draw_rect, put_pixel)   |
-| Description | A graphical calculator with button callbacks               |
+A classic Minesweeper game.
 
-```cpp
-int _start(const napp_api* api)
-{
-    api->window.create_window(400, 600, "Calculator");
-    api->window.on_draw = calculator_draw;
-    api->window.on_key = calculator_key;
-    api->window.on_mouse = calculator_mouse;
-    api->window.draw_window();
-    return 0;
-}
-```
+|  Property  | Value                                                                              |
+|------------|------------------------------------------------------------------------------------|
+| Type       | GUI window                                                                         |
+| Source     | `utilities/applications/minesweeper/src/minesweeper.cpp`                           |
+| API        | `napp_gui` (fill_block, draw_text, open_window, resize_window)                     |
+| Description| Classic Minesweeper game with beginner, intermediate, and expert difficulty levels |
+
+Games do not appear in the Start Menu by default; launch via `bootapp`.
 
 ```
-user@nasua-os:/home> bootapp --app calculator
+user@nasua-os:/home> bootapp --app minesweeper
+```
+
+### snake
+
+A classic Snake game.
+
+|  Property  | Value                                                                                 |
+|------------|---------------------------------------------------------------------------------------|
+| Type       | GUI window (with tick callback)                                                       |
+| Source     | `utilities/applications/snake/src/snake.cpp`                                          |
+| API        | `napp_gui` (fill_block, draw_text, open_window), `api->get_ticks`                     |
+| Description| Classic Snake game with WASD controls and periodic tick callback for game loop timing |
+
+Games do not appear in the Start Menu by default; launch via `bootapp`.
+
+```
+user@nasua-os:/home> bootapp --app snake
 ```
 
 ## Running Applications
@@ -135,6 +170,8 @@ All applications are launched through the `bootapp` command:
 bootapp --list        # List all available apps
 bootapp --app settings     # Launch settings
 bootapp --app calculator   # Launch calculator
+bootapp --app suaedit      # Launch text editor with integrated terminal
+bootapp --app snake        # Launch Snake game
 ```
 
 See [NAPP Running](napp/running.md) for the full application loading lifecycle.

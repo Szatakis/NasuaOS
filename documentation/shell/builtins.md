@@ -255,19 +255,21 @@ bootapp --app <application_name>
 | `--list` | List all available applications                                         |
 | `--app`  | Launch a specific application (checks built-in apps first, then `/bin`) |
 
-Built-in applications: `settings`, `terminal`, `suaedit`, `task_manager`.
+Built-in applications: `settings`, `terminal`, `task_manager`.
 
 ```
 user@nasua-os:/home> bootapp --list
 Built-in applications:
  - settings
  - terminal
- - suaedit
  - task_manager
 
 /bin applications:
  - bootcheck
  - calculator
+ - minesweeper
+ - snake
+ - suaedit
 ```
 
 ## beep
@@ -340,4 +342,20 @@ Enable safe mode for system debugging. When active, certain subsystems are restr
 
 ```
 safe_mode
+```
+
+## uart
+
+Send text output to the UART serial port for debugging.
+
+```
+uart --text <message>
+```
+
+| Flag    | Required | Description                       |
+|---------|----------|-----------------------------------|
+| `--text` | Yes     | Text to send to the serial port   |
+
+```
+user@nasua-os:/home> uart --text "Serial debug message"
 ```

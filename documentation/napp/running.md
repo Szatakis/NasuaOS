@@ -18,18 +18,20 @@ user@nasua-os:/home> bootapp --list
 Built-in applications:
  - settings
  - terminal
- - suaedit
  - task_manager
 
 /bin applications:
  - bootcheck
  - calculator
+ - minesweeper
+ - snake
+ - suaedit
 ```
 
 The `--list` option queries two sources:
 
 1. **Built-in applications**: compiled into the kernel image
-2. **`/bin` applications**: NAPP binaries found in `/bin/*/app.napp`
+2. **`/bin` applications**: NAPP binaries found in `/bin/` (flat files)
 
 ### Launching Applications
 
@@ -39,8 +41,8 @@ bootapp --app <app_name>
 
 This executes the named application. The loader:
 
-1. Checks if the app is a built-in (settings, terminal, suaedit, task_manager)
-2. If not built-in, checks `/bin/<app_name>/<app_name>.napp`
+1. Checks if the app is a built-in (settings, terminal, task_manager)
+2. If not built-in, checks `/bin/<app_name>`
 3. Validates the NAPP header (magic, ABI version)
 4. Loads sections into memory
 5. Calls `_start` with the `napp_api` pointer
@@ -87,31 +89,34 @@ These are compiled into the kernel and launched directly:
 |----------------|--------------------------|
 | `settings`     | System settings GUI      |
 | `terminal`     | Terminal emulator window |
-| `suaedit`      | Text editor              |
 | `task_manager` | Process/task manager     |
 
 Built-in apps do not go through the NAPP loader — they have direct function calls in `commands.cpp`.
 
 ### NAPP Applications (/bin)
 
-These are loaded from `/bin/<app>/<app>.napp`:
+These are loaded from `/bin/` (flat binary files, one per application):
 
-| Application  | Type    | Description                         |
-|--------------|---------|-------------------------------------|
-| `bootcheck`  | Console | Tests NAPP API functions            |
-| `calculator` | GUI     | Graphical calculator with callbacks |
+| Application  | Type    | Description                           |
+|--------------|---------|---------------------------------------|
+| `bootcheck`  | Console | Tests NAPP API functions              |
+| `calculator` | GUI     | Graphical calculator with callbacks   |
+| `minesweeper`| GUI     | Classic Minesweeper game              |
+| `snake`      | GUI     | Classic Snake game with tick callback |
+| `suaedit`    | GUI     | Text editor with integrated terminal  |
 
-These go through the full NAPP loader (`napp_run_path`).
+These go through the NAPP loader (`napp_run`).
 
 ### /sbin Commands (/sbin)
 
 These are flat-binary NAPP applications loaded from `/sbin/`:
 
-| Command                                             | Description     |
-|-----------------------------------------------------|-----------------|
-| `cat`, `cd`, `cp`, `ls`, `mkdir`, `mv`, `pwd`, `rm` | File operations |
+| Command                                             | Description         |
+|-----------------------------------------------------|---------------------|
+| `cat`, `cd`, `cp`, `ls`, `mkdir`, `mv`, `pwd`, `rm` | File operations     |
+| `tree`                                              | Directory tree view |
 
-These go through the `/sbin`-specific loader path (`napp_run_sbin`).
+These go through the `/sbin`-specific loader path (`napp_run_path`).
 
 ## Exit Codes
 
@@ -136,13 +141,13 @@ This is useful for debugging loading issues and runtime behavior. Serial output 
 
 ## Built-in vs Dynamically Loaded
 
-| Property              | Built-in     | /bin (NAPP)     | /sbin (flat binary) |
-|-----------------------|--------------|-----------------|---------------------|
-| Storage               | Kernel image | /bin directory  | /sbin directory     |
-| Header                | None         | NAPP header     | No header           |
-| Loader                | Direct call  | napp_run_path() | napp_run_sbin()     |
-| Overlay Affected?     | No           | Yes             | Yes                 |
-| Persistence Required? | No           | Only on ClawFS  | Only on ClawFS      |
+| Property              | Built-in       | /bin (NAPP)     | /sbin (flat binary) |
+|-----------------------|---------------|-----------------|----------------------|
+| Storage               | Kernel image  | /bin directory  | /sbin directory      |
+| Header                | None          | NAPP header     | NAPP header optional |
+| Loader                | Direct call   | napp_run()      | napp_run_path()      |
+| Overlay Affected?     | No            | Yes             | Yes                  |
+| Persistence Required? | No            | Only on ClawFS  | Only on ClawFS       |
 
 ## Error Handling
 

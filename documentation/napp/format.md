@@ -6,15 +6,15 @@ NAPP (Nasua Application) is the executable binary format used by NasuaOS for all
 
 Every NAPP binary begins with a header defined in `utilities/applications/include/napp.h`:
 
-| Offset | Size | Field              | Description                                         |
-|--------|------|--------------------|-----------------------------------------------------|
-| 0x00   | 4    | magic              | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NPPA")`        |
-| 0x04   | 4    | abi_version        | `3` (current ABI version)                           |
-| 0x08   | 4    | header_size        | Size of the header (96 bytes)                       |
-| 0x0C   | 4    | entry_offset       | Offset from start of file to `_start` function      |
-| 0x10   | 32   | name               | Null-terminated application name                    |
-| 0x30   | 48   | description        | Null-terminated short description (shown in `help`) |
-| 0x60   | 1    | show_in_start_menu | Whether the app appears in the Start Menu           |
+| Offset | Size | Field              | Description                                             |
+|--------|------|--------------------|---------------------------------------------------------|
+| 0x00   | 4    | magic              | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NAPP")             |
+| 0x04   | 4    | abi_version        | `3` (current ABI version)                               |
+| 0x08   | 4    | header_size        | Size of the header (97 bytes with `show_in_start_menu`) |
+| 0x0C   | 4    | entry_offset       | Offset from start of file to `_start` function          |
+| 0x10   | 32   | name               | Null-terminated application name                        |
+| 0x30   | 48   | description        | Null-terminated short description (shown in `help`)     |
+| 0x60   | 1    | show_in_start_menu | Whether the app appears in the Start Menu               |
 
 **Total header size**: 97 bytes (was 96; the `show_in_start_menu` field was added)
 
@@ -48,12 +48,17 @@ in the Start Menu.
 
 ## NAPP vs Flat Binary
 
-| File Type   | Header            | Usage                                           |
-|-------------|-------------------|-------------------------------------------------|
-| `.napp`     | Yes (NAPP header) | GUI/interactive applications loaded from `/bin` |
-| Flat binary | Yes (NAPP header) | `/sbin` system commands                         |
+| File Type      | Header            | Usage                        |
+|----------------|-------------------|------------------------------|
+| `/bin/<app>`   | Yes (NAPP header) | GUI/interactive applications |
+| `/sbin/<cmd>`  | Yes (NAPP header) | System commands              |
 
-Both types are NAPP executables with a valid `NAPP_HEADER`. The `.napp` format is used for `/bin` applications, while `/sbin` commands are flat binaries that also contain an NAPP header (but without the `.napp` extension). The loader checks the magic value to validate the header.
+Both `/bin` and `/sbin` binaries are built using the same toolchain
+(`NAPP_APPLICATION` macro, `napp.lds` linker script, and `app.mk` rules) and
+contain a valid NAPP header. The only difference is their location on the
+filesystem and their purpose. The loader checks the magic value to validate
+the header. If the magic does not match, the binary is treated as a flat
+binary (entry point at offset 0) for backward compatibility.
 
 ## Magic Value
 
@@ -151,44 +156,37 @@ NAPP applications use these color constants for GUI rendering:
 ```cpp
 #define NAPP_COLOR_BLACK      0xFF000000
 #define NAPP_COLOR_WHITE      0xFFFFFFFF
-#define NAPP_COLOR_RED        0xFFFF0000
-#define NAPP_COLOR_GREEN      0xFF00FF00
-#define NAPP_COLOR_BLUE       0xFF0000FF
-#define NAPP_COLOR_GRAY       0xFF808080
-#define NAPP_COLOR_DARK_GRAY  0xFF404040
-#define NAPP_COLOR_LIGHT_GRAY 0xFFC0C0C0
+#define NAPP_COLOR_GREEN      0xFF59E81B
+#define NAPP_COLOR_GRAY       0xFFAAAAAA
+#define NAPP_COLOR_WINDOW     0xFF1A1F2C
+#define NAPP_COLOR_TITLEBAR   0xFF2B3140
 ```
 
 Colors are in `0xAARRGGBB` format (alpha, red, green, blue, each 8 bits).
 
 ## Application Directory Structure
 
-NAPP applications on the filesystem follow this structure:
+NAPP applications on the filesystem are stored as flat binary files (with a NAPP
+header) in the rootfs:
 
 ```
-/bin/<app_name>/
-├── .clawfs              # Marker file
-└── <app_name>.napp      # The NAPP binary
+/bin/suaedit         # NAPP binary
+/bin/calculator      # NAPP binary
+/bin/minesweeper     # NAPP binary
+/bin/snake           # NAPP binary
+/bin/bootcheck       # NAPP binary
 ```
 
-When stored on ClawFS:
-
-```
-ClawFS:/
-├── bin/
-│   ├── calculator/
-│   │   └── calculator.napp
-│   ├── bootcheck/
-│   │   └── bootcheck.napp
-│   └── <app>/
-│       └── <app>.napp
-```
+When ClawFS is mounted, the same flat binary files are stored on the ClawFS
+partition and shadow the read-only ISO rootfs copies.
 
 ## File Extensions
 
-| Extension      | Description                             |
-|----------------|-----------------------------------------|
-| `.napp`        | NAPP application binary (with header)   |
-| (no extension) | `/sbin` command flat binary (no header) |
+| Path            | Description                             |
+|-----------------|-----------------------------------------|
+| `/bin/<app>`    | NAPP binary (with NAPP header)          |
+| `/sbin/<cmd>`   | NAPP binary (with NAPP header)          |
 
-The `bootapp` command and shell recognize both formats.
+The `bootapp` command and shell recognize both `/bin` and `/sbin` paths.
+The loader checks the NAPP magic value to validate the header; if the magic
+does not match, the binary is treated as a flat binary (entry at offset 0).

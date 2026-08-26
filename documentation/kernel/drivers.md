@@ -82,13 +82,12 @@ enum colors {
 
 ### Drawing Primitives
 
-| Function | Description |
-|----------|-------------|
-| `put_pixel(x, y, color)` | Set a single pixel |
-| `clear_screen(color)` | Fill entire screen with a color |
-| `fill_block(x, y, w, h, color)` | Fill a rectangle |
-| `draw_rect(x, y, w, h, color)` | Draw a rectangle outline |
-| `draw_line(x1, y1, x2, y2, color)` | Draw a line |
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `put_pixel(x, y, color)` | `(size_t, size_t, uint32_t)` | Set a single pixel |
+| `clear_screen(color)` | `(uint32_t)` | Fill entire screen with a color |
+| `fill_block(x, y, color, w, h)` | `(size_t, size_t, uint32_t, size_t, size_t)` | Fill a rectangle |
+| `draw_rect(x1, y1, x2, y2, color)` | `(int, int, int, int, uint32_t)` | Draw a rectangle outline (coordinates, not width/height) |
 
 ### Shell Command Printing
 
@@ -110,24 +109,45 @@ The window manager handles overlapping GUI windows:
 |---------------|-------|
 | `MAX_WINDOWS` | 13    |
 
-| Function                          | Description                      |
-|-----------------------------------|----------------------------------|
-| `register_window(window_struct*)` | Register a new window            |
-| `unregister_window(int)`          | Remove a window by ID            |
-| `update_windows_positions()`      | Update all window positions      |
-| `draw_windows()`                  | Render all windows to backbuffer |
-| `is_mouse_over_any_window()`      | Check if cursor is over a window |
+| Function                          | Description                         |
+|-----------------------------------|-------------------------------------|
+| `register_window(window_struct*)` | Register a new window               |
+| `unregister_window(window_struct*)` | Remove a window                 |
+| `update_windows_positions(int, int)` | Update all window positions      |
+| `draw_windows()`                  | Render all windows to backbuffer    |
+| `is_mouse_over_any_window(int, int)` | Check if cursor is over a window |
 
 ```cpp
-struct window_struct
+typedef struct window_struct
 {
-    int x, y;
+    const char* name;
+    uint32_t id;
+
+    int pos_x, pos_y;
     int width, height;
-    uint32_t color;
-    bool visible;
-    char title[64];
-    void (*draw_func)(int, int, int, int, uint32_t);
-};
+
+    bool visible, minimized, focused;
+    bool resizable, can_maximize, maximized;
+
+    int restore_pos_x, restore_pos_y, restore_width, restore_height;
+
+    bool is_dragging;
+    int drag_offset_x, drag_offset_y;
+
+    bool is_resizing;
+    bool resize_right, resize_bottom;
+    int resize_start_mouse_x, resize_start_mouse_y;
+    int resize_start_width, resize_start_height;
+
+    int max_width, max_height;
+
+    void* userdata;
+
+    void (*draw_content)(window_struct*);
+    void (*key_press)(window_struct*, char);
+    void (*mouse_click)(window_struct*, int, int);
+    void (*mouse_button)(window_struct*, int, int, int);
+} window_struct;
 ```
 
 ## GUI State Management

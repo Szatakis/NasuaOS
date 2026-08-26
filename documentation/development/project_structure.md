@@ -35,7 +35,6 @@ kernel_64bit/
 │   │   ├── shell/              # Shell: commands.cpp, terminal.cpp, etc.
 │   │   ├── settings/
 │   │   ├── terminal/
-│   │   ├── suaedit/
 │   │   └── task_manager/
 │   ├── system/
 │   │   ├── drivers/
@@ -107,19 +106,32 @@ utilities/
 │   ├── napp.lds              # NAPP linker script
 │   ├── include/
 │   │   └── napp.h            # NAPP public API header
-│   ├── calculator/
-│   │   ├── calculator.cpp
-│   │   └── Makefile
 │   ├── bootcheck/
-│   │   ├── bootcheck.cpp
-│   │   └── Makefile
+│   │   ├── src/
+│   │   │   └── bootcheck.cpp
+│   │   └── GNUmakefile
+│   ├── calculator/
+│   │   ├── src/
+│   │   │   └── calculator.cpp
+│   │   └── GNUmakefile
+│   ├── minesweeper/
+│   │   ├── src/
+│   │   │   └── minesweeper.cpp
+│   │   └── GNUmakefile
+│   ├── snake/
+│   │   ├── src/
+│   │   │   └── snake.cpp
+│   │   └── GNUmakefile
+│   ├── suaedit/
+│   │   ├── src/
+│   │   │   └── suaedit.cpp
+│   │   └── GNUmakefile
 │   └── <other_apps>/
 ├── rootfs/
 │   ├── dir/                  # Root filesystem image sources
-│   │   ├── bin/              # NAPP apps (.napp files)
+│   │   ├── bin/              # NAPP apps (flat binaries)
 │   │   ├── sbin/             # System command flat binaries
 │   │   ├── home/
-│   │   ├── sbin/
 │   │   └── ...
 │   ├── GNUmakefile           # Builds rootfs.img (FAT16, 8MB)
 │   └── rootfs.img            # Output: FAT filesystem image
@@ -201,6 +213,16 @@ documentation/
 | `/sbin/rm`    | `utilities/system_functions/rm/`    |
 | `/sbin/tree`  | `utilities/system_functions/tree/`  |
 
+## NAPP Application Sources (/bin)
+
+| Application     | Source                                              |
+|-----------------|-----------------------------------------------------|
+| Calculator      | `utilities/applications/calculator/src/`            |
+| Bootcheck       | `utilities/applications/bootcheck/src/`             |
+| Minesweeper     | `utilities/applications/minesweeper/src/`           |
+| Snake           | `utilities/applications/snake/src/`                 |
+| SuaEdit         | `utilities/applications/suaedit/src/`               |
+
 ## Configuration File Sources
 
 | File                                | Purpose                                                               |
@@ -217,5 +239,4 @@ documentation/
 | Shell        | `kernel_64bit/src/applications/shell/`        |
 | Settings     | `kernel_64bit/src/applications/settings/`     |
 | Terminal     | `kernel_64bit/src/applications/terminal/`     |
-| SUA Edit     | `kernel_64bit/src/applications/suaedit/`      |
 | Task Manager | `kernel_64bit/src/applications/task_manager/` |

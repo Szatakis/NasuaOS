@@ -6,24 +6,25 @@ NasuaOS provides a set of system utilities accessible through the shell. These u
 
 These commands are compiled directly into the kernel and are always available.
 
-| Command | Description |
-|---------|-------------|
-| `logs` | Manage kernel log buffer |
-| `info` | Show system and hardware information |
-| `time` | Read/set RTC clock |
-| `bootapp` | Launch built-in or NAPP applications |
-| `format` | Format ClawFS filesystem |
-| `mount` / `unmount` | Toggle ClawFS overlay |
-| `fetch` | Display system summary with ASCII art |
-| `echo` | Print text to screen or save to file |
-| `clear` | Clear the terminal |
-| `calc` | Command-line calculator |
-| `rand` | Random number generator |
-| `beep` | PC speaker beep |
-| `asciiart` | Convert text to ASCII banner |
-| `debug` | Enable/disable debug mode |
-| `resolution` | Show screen resolution |
-| `source` | Show source code URL |
+| Command             | Description                           |
+|---------------------|---------------------------------------|
+| `logs`              | Manage kernel log buffer              |
+| `info`              | Show system and hardware information  |
+| `time`              | Read/set RTC clock                    |
+| `bootapp`           | Launch built-in or NAPP applications  |
+| `format`            | Format ClawFS filesystem              |
+| `mount` / `unmount` | Toggle ClawFS overlay                 |
+| `fetch`             | Display system summary with ASCII art |
+| `echo`              | Print text to screen or save to file  |
+| `clear`             | Clear the terminal                    |
+| `calc`              | Command-line calculator               |
+| `rand`              | Random number generator               |
+| `beep`              | PC speaker beep                       |
+| `asciiart`          | Convert text to ASCII banner          |
+| `debug`             | Enable/disable debug mode             |
+| `resolution`        | Show screen resolution                |
+| `source`            | Show source code URL                  |
+| `uart`              | Send text to serial port              |
 
 ### Example Usage
 
@@ -44,8 +45,14 @@ bootapp --list
 Built-in applications:
  - settings
  - terminal
- - suaedit
  - task_manager
+
+/bin applications:
+ - bootcheck
+ - calculator
+ - minesweeper
+ - snake
+ - suaedit
 ```
 
 ## /sbin System Commands
@@ -62,6 +69,7 @@ These commands are loaded dynamically as flat-binary NAPP applications from `/sb
 | `mv`    | Move/rename a file         | `--source`, `--destination` |
 | `pwd`   | Print current directory    | None                        |
 | `rm`    | Remove a file or directory | `--name`, `--type`          |
+| `tree`  | Display directory tree     | `[path]`                    |
 
 ### Example Usage
 
@@ -105,6 +113,7 @@ Use `format --commands` to copy `/sbin` commands to ClawFS for persistent storag
 | Move/rename          | `mv --source --destination`  | `/sbin`  |
 | Read file            | `cat --file`                 | `/sbin`  |
 | List directory       | `ls`                         | `/sbin`  |
+| Directory tree       | `tree`                       | `/sbin`  |
 | Create empty file    | `touch --file`               | Built-in |
 | Write to file (echo) | `echo --text --file`         | Built-in |
 
