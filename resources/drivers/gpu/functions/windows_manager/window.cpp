@@ -263,15 +263,33 @@ namespace Gpu::Window_Manager
 
     void send_key_to_window(char key)
     {
-        if(active_window == nullptr)
+        send_key_to_window(active_window, key);
+    }
+
+    void send_key_to_window(window_struct* window, char key)
+    {
+        if(window == nullptr)
         {
             return;
         }
 
-        if(active_window->key_press)
+        if(window->key_press)
         {
-            active_window->key_press(active_window, key);
+            window->key_press(window, key);
         }
+    }
+
+    window_struct* get_window_at(int mouse_x, int mouse_y)
+    {
+        for (int i = window_count - 1; i >= 0; i--)
+        {
+            window_struct* win = window_list[i];
+            if (win && win->visible && is_mouse_over_window(win, mouse_x, mouse_y))
+            {
+                return win;
+            }
+        }
+        return nullptr;
     }
 
     // Updates windows positions

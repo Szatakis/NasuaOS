@@ -61,8 +61,19 @@ The full structure is defined in `utilities/applications/include/napp.h`.
 
 | Field | Signature | Description |
 |-------|-----------|-------------|
+| `execute_command` | `void (*)(const char*)` | Execute a shell command via the kernel |
+| `set_print_redirect` | `void (*)(void (*)(char))` | Redirect `Gpu::print` output to an in-app callback; pass `nullptr` to restore normal output |
 | `napp_run_path` | `int (*)(const char*)` | Load and run a NAPP binary from a path |
 | `system_file_exists` | `bool (*)(const char*)` | Check if a system file exists |
+
+#### Output Redirect for Integrated Terminals
+
+The `set_print_redirect` function allows a NAPP application (such as an editor
+with an integrated terminal) to capture all output produced by `execute_command`
+directly into its own terminal buffer.  The callback receives one character at
+a time (ANSI colour escape sequences are already consumed by the kernel's
+`print` layer before the callback is invoked).  Pass `nullptr` to the same
+function to stop redirecting output back to the screen.
 
 ### Window Management (`napp_window`)
 

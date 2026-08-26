@@ -157,6 +157,9 @@ namespace Gpu {
         extern window_struct* active_window;
 
         void send_key_to_window(char key);
+        void send_key_to_window(window_struct* window, char key);
+
+        window_struct* get_window_at(int mouse_x, int mouse_y);
 
         enum window_button
         {

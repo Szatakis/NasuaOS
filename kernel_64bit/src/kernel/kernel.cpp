@@ -218,6 +218,9 @@ extern "C" void kmain()
 
             Gpu::update_gui();
             update_windows_gui();
+
+            draw_start_menu();
+
             napp_update_ticks();
 
             Gpu::handle_mouse();

@@ -109,6 +109,12 @@ namespace Gpu
 
     void print_char8(char c)
     {
+        if (napp_print_redirect_cb != nullptr)
+        {
+            napp_print_redirect_cb(c);
+            return;
+        }
+
         if (active_terminal_redirect)
         {
             terminal_write_char(c);

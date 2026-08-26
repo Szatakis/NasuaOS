@@ -9,7 +9,7 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 | Offset | Size | Field | Description |
 |--------|------|-------|-------------|
 | 0x00 | 4 | magic | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NPPA") |
-| 0x04 | 4 | abi_version | `2` (current ABI version) |
+| 0x04 | 4 | abi_version | `3` (current ABI version) |
 | 0x08 | 4 | header_size | Size of the header (96 bytes) |
 | 0x0C | 4 | entry_offset | Offset from start of file to `_start` function |
 | 0x10 | 32 | name | Null-terminated application name |
@@ -26,7 +26,7 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 struct napp_header
 {
     uint32_t magic;                    // 0x5050414E
-    uint32_t abi_version;              // 2
+    uint32_t abi_version;              // 3
     uint32_t header_size;              // sizeof(napp_header) = 97
     uint32_t entry_offset;
     char     name[NAPP_NAME_LENGTH];   // 32
@@ -66,10 +66,10 @@ The loader checks this magic value to verify the file is a valid NAPP binary. If
 ## ABI Version
 
 ```cpp
-#define NAPP_ABI_VERSION 2
+#define NAPP_ABI_VERSION 3
 ```
 
-The current NAPP ABI version is 2. The loader validates this field and rejects binaries with an incompatible version.
+The current NAPP ABI version is 3. The loader validates this field and rejects binaries with an incompatible version. ABI version 3 introduced the `set_print_redirect` function in the `napp_api` struct, enabling NAPP applications to capture command output in an integrated terminal.
 
 ## Entry Point
 

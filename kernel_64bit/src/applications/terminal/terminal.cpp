@@ -8,6 +8,8 @@
 
 bool active_terminal_redirect = false;
 
+void (*napp_print_redirect_cb)(char) = nullptr;
+
 struct terminal_state 
 {
     char input[256];

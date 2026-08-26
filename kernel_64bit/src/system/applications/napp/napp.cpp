@@ -14,6 +14,7 @@
 #include "system/vars/info_vars/info_vars.hpp"
 
 #include "applications/shell/commands.hpp"
+#include "applications/terminal/terminal.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -463,6 +464,11 @@ static void napp_api_execute_command(const char* cmd)
     execute_command(cmd);
 }
 
+static void napp_api_set_print_redirect(void (*callback)(char))
+{
+    napp_print_redirect_cb = callback;
+}
+
 static napp_api kernel_napp_api =
 {
     NAPP_ABI_VERSION,
@@ -489,8 +495,9 @@ static napp_api kernel_napp_api =
     napp_api_clawfs_dir,
     napp_api_clawfs_get_entry_type,
     napp_api_clawfs_resolve_path,
-    napp_api_get_ticks,
-    napp_api_execute_command
+     napp_api_get_ticks,
+     napp_api_execute_command,
+     napp_api_set_print_redirect
 };
 
 static bool remember_image(const char* name, void* image)

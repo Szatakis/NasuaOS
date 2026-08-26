@@ -234,7 +234,6 @@ namespace Gpu
 
         update_bottom_bar();
         draw_text_buffer();
-        draw_start_menu();
     }
 } // namespace Gpu
 

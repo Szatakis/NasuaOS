@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 2
+#define NAPP_ABI_VERSION 3
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
 #define NAPP_HEADER_SIZE 96
@@ -139,6 +139,11 @@ struct napp_api
 
     // Execute a shell command (for terminal applications)
     void (*execute_command)(const char* cmd);
+
+    // Redirect Gpu::print output to an in-app callback. Pass nullptr to
+    // restore normal output to the screen. Only one redirect can be active
+    // at a time; the last call wins.
+    void (*set_print_redirect)(void (*callback)(char));
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);

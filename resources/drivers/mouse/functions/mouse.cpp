@@ -603,14 +603,23 @@ namespace Mouse
     // Mouse scroll up
     void scroll_up()
     {
-
+        Gpu::Window_Manager::window_struct* win = Gpu::Window_Manager::get_window_at(x, y);
+        if (win == nullptr)
+        {
+            return;
+        }
+        Gpu::Window_Manager::send_key_to_window(win, 0x0B);
     }
-
 
     // Mouse scroll down
     void scroll_down()
     {
-
+        Gpu::Window_Manager::window_struct* win = Gpu::Window_Manager::get_window_at(x, y);
+        if (win == nullptr)
+        {
+            return;
+        }
+        Gpu::Window_Manager::send_key_to_window(win, 0x0C);
     }
 
 
