@@ -53,7 +53,10 @@ static int build_argv(const char* args, const char** argv, int max_args)
         while (buf[i] == ' ') 
         {
             i++;
-            if (buf[i] == '\0') break;
+            if (buf[i] == '\0') 
+            {
+                break;
+            }
         }
         
         if (buf[i] == '\0')

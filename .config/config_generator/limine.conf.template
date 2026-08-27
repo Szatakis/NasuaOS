@@ -5,7 +5,6 @@ interface_branding: NasuaOS
 interface_help_hidden: {HELP_HIDDEN}
 
 # Debug
-
 verbose: {VERBOSE}
 
 interface_resolution: {RESOLUTION}
@@ -32,58 +31,70 @@ wallpaper_style: stretched
     comment: Full operating system with graphical interface (recommended)
 
 /Advanced Options
-    //Boot Options
-        ///Safe Mode 32-bit
-            protocol: multiboot2
-            path: boot():/boot/kernel_32bit
-            module_path: boot():/system/rootfs.img
-            module_path: boot():/config/boot_config.txt
-            module_path: boot():/config/boot_config_sf.txt
-            module_path: boot():/config/defaults.txt
-            comment: Boot into a 32-bit safe mode environment for troubleshooting
 
-        ///Safe Mode 64-bit
-            protocol: limine
-            path: boot():/boot/kernel_64bit
-            module_path: boot():/system/rootfs.img
-            module_path: boot():/config/boot_config.txt
-            module_path: boot():/config/boot_config_sf.txt
-            module_path: boot():/config/defaults.txt
-            comment: Boot into a 64-bit safe mode environment for troubleshooting
+    // Safe Mode
 
-        ///Boot Manager
-            protocol: multiboot2
-            path: boot():/boot/utils/boot_mgr
-            module_path: boot():/boot/kernel_32bit
-            module_path: boot():/boot/kernel_64bit
-            module_path: boot():/system/rootfs.img
-            module_path: boot():/config/boot_config.txt
-            module_path: boot():/config/defaults.txt
-            resolution: 1280x720x32
-            comment: Boot into system boot manager
+    ///Safe Mode 64-bit
+        protocol: limine
+        path: boot():/boot/kernel_64bit
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/boot_config_sf.txt
+        module_path: boot():/config/defaults.txt
+        resolution: {RESOLUTION}
+        comment: Start NasuaOS 64-bit with safe mode configuration
 
-    //Utilities
-        ///Recovery Tool
-            protocol: multiboot2
-            path: boot():/boot/utils/recovery_tool
-            comment: Boot into a recovery environment for troubleshooting
+    ///Safe Mode 32-bit
+        protocol: multiboot2
+        path: boot():/boot/kernel_32bit
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/boot_config_sf.txt
+        module_path: boot():/config/defaults.txt
+        resolution: {RESOLUTION}
+        comment: Start NasuaOS 32-bit with safe mode configuration
 
-        ///ClawFS Explorer
-            protocol: multiboot2
-            path: boot():/boot/utils/clawfs_explorer
-            comment: Browse and manage files, directories, and partitions on ClawFS
 
-        ///Hardware Detection Tool
-            protocol: multiboot2
-            path: boot():/boot/utils/hdt
-            comment: Launch Hardware Detection Tool (HDT) to view system information
+    // Boot Tools
 
-        ///Hardware Test
-            protocol: multiboot2
-            path: boot():/boot/utils/hdtest
-            comment: Run hardware diagnostic tests
+    ///Boot Manager
+        protocol: multiboot2
+        path: boot():/boot/utils/boot_mgr
+        module_path: boot():/boot/kernel_32bit
+        module_path: boot():/boot/kernel_64bit
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/defaults.txt
+        resolution: 1280x720x32
+        comment: Configure and select available NasuaOS boot environments
 
-        ///Kernel Debugger
-            protocol: multiboot2
-            path: boot():/boot/utils/kdebug
-            comment: Inspect kernel state and CPU registers
+
+    // Recovery & Diagnostics
+
+    ///Recovery Environment
+        protocol: multiboot2
+        path: boot():/boot/utils/recovery_tool
+        comment: Start a minimal recovery environment for system repair
+
+    ///Hardware Detection
+        protocol: multiboot2
+        path: boot():/boot/utils/hdt
+        comment: Detect and display installed hardware and system information
+
+    ///Hardware Diagnostics
+        protocol: multiboot2
+        path: boot():/boot/utils/hdtest
+        comment: Run hardware diagnostics and system tests
+
+    ///Kernel Debugger
+        protocol: multiboot2
+        path: boot():/boot/utils/kdebug
+        comment: Inspect kernel state, CPU registers, and debugging information
+
+
+    // File System Tools
+
+    ///ClawFS Explorer
+        protocol: multiboot2
+        path: boot():/boot/utils/clawfs_explorer
+        comment: Browse, inspect, and manage ClawFS files and directories
