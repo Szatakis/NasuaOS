@@ -417,6 +417,7 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	cp -v utilities/boot_options/hdt/bin-$(SUB_ARCH)/hdt iso_root/boot/utils
 	cp -v utilities/boot_options/kernel_debugger/bin-$(SUB_ARCH)/kdebug iso_root/boot/utils
 	cp -v utilities/boot_options/recovery_tool/bin-$(SUB_ARCH)/recovery_tool iso_root/boot/utils
+	cp -v utilities/boot_options/installer/bin-$(SUB_ARCH)/installer iso_root/boot/utils
 
 	cp -v utilities/rootfs/rootfs.img iso_root/system
 	cp -v .config/limine.conf iso_root/boot/limine/
@@ -493,6 +494,7 @@ endif
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/hdt/bin-$(SUB_ARCH)/hdt ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/kernel_debugger/bin-$(SUB_ARCH)/kdebug ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/recovery_tool/bin-$(SUB_ARCH)/recovery_tool ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/installer/bin-$(SUB_ARCH)/installer ::/boot/utils
 
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/rootfs/rootfs.img ::/system
 	mcopy -i $(IMAGE_NAME).hdd@@1M documentation/images/background.png ::/system/assets/images
