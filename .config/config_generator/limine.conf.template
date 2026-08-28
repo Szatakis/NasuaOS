@@ -1,17 +1,21 @@
 timeout: {TIMEOUT}
 default_entry: {DEFAULT_ENTRY}
+
 interface_branding: NasuaOS
-
+interface_branding_color: 00aaaa
 interface_help_hidden: {HELP_HIDDEN}
-
-# Debug
-verbose: {VERBOSE}
-
+interface_help_color: 00aa00
+interface_help_color_bright: aaaaaa
 interface_resolution: {RESOLUTION}
+interface_rotation: 0
 
 wallpaper: boot():{WALLPAPER}
 wallpaper_style: stretched
 
+# Debug
+verbose: {VERBOSE}
+
+# Entries
 /NasuaOS 32-bit
     protocol: multiboot2
     path: boot():/boot/kernel_32bit
