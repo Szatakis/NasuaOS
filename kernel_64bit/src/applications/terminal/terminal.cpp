@@ -144,11 +144,17 @@ void terminal_key(Gpu::Window_Manager::window_struct* win, char key)
     if (key == 0x0B)
     {
         int title = win->height / 10;
-        if (title < 18) title = 18;
+        if (title < 18) 
+        {
+            title = 18;
+        }
         int win_inner_h = win->height - title - 4;
         int available_height = win_inner_h - 22;
         int max_visible_lines = available_height / 12;
-        if (max_visible_lines < 1) max_visible_lines = 1;
+        if (max_visible_lines < 1)
+        {
+            max_visible_lines = 1;
+        }
         term->scroll_offset += max_visible_lines;
         return;
     }
@@ -156,13 +162,22 @@ void terminal_key(Gpu::Window_Manager::window_struct* win, char key)
     if (key == 0x0C)
     {
         int title = win->height / 10;
-        if (title < 18) title = 18;
+        if (title < 18)
+        {
+            title = 18;
+        }
         int win_inner_h = win->height - title - 4;
         int available_height = win_inner_h - 22;
         int max_visible_lines = available_height / 12;
-        if (max_visible_lines < 1) max_visible_lines = 1;
+        if (max_visible_lines < 1)
+        {
+            max_visible_lines = 1;
+        }
         term->scroll_offset -= max_visible_lines;
-        if (term->scroll_offset < 0) term->scroll_offset = 0;
+        if (term->scroll_offset < 0) 
+        {
+            term->scroll_offset = 0;
+        }
         return;
     }
 
