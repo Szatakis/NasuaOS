@@ -201,9 +201,9 @@ void execute_command(const char *cmd)
             itoa(total_pages, total_buf);
             Gpu::print(total_buf);
             Gpu::print("):\n");
-            Gpu::print(" -rand                               - Generate a random number within a range");
-            Gpu::print("   --min [value]                     - (Required) Minimum value of the range");
-            Gpu::print("   --max [value]                     - (Required) Maximum value of the range");
+            Gpu::print(" -rand                               - Generate a random number within a range\n");
+            Gpu::print("   --min [value]                     - (Required) Minimum value of the range\n");
+            Gpu::print("   --max [value]                     - (Required) Maximum value of the range\n");
             Gpu::print(" -ls                                 - List files and directories in current path\n");
             Gpu::print("    --file <path>                    - (Optional) List contents of specified path\n");
             Gpu::print(" -touch                              - Create a new empty file\n");
