@@ -10,9 +10,9 @@ NasuaOS is an experimental operating system focused on learning, low-level progr
 
 ## Community & Links
 
-[![Discord](https://img.shields.io/discord/1525067180410929222.svg?logo=discord&logoColor=white&logoWidth=20&labelColor=7289DA&label=Discord&color=17cf48)](https://discord.gg/esxDrzsCTt)
+[![Discord](https://img.shields.io/discord/1525067180410929222.svg?logo=discord&logoColor=white&logoWidth=20&labelColor=7289DA&label=Discord&color=17cf48)](https://discord.com/users/1285981257498624062)
 &nbsp;&nbsp;
-[![YouTube](https://img.shields.io/badge/YouTube-@sz.atakis-FF0000?logo=youtube&logoColor=white&logoWidth=20)](https://www.youtube.com/@sz.atakis)
+[![YouTube](https://img.shields.io/badge/YouTube-@sz.atakis-FF0000?logo=youtube&logoColor=white&logoWidth=20)](https://www.youtube.com/@szatakis)
 &nbsp;&nbsp;
 [![TikTok](https://img.shields.io/badge/TikTok-@szatakis-000000?logo=tiktok&logoColor=white&logoWidth=20)](https://www.tiktok.com/@szatakis)
 

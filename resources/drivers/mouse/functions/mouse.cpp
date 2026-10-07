@@ -15,6 +15,8 @@
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
 
+extern bool debug_mode;
+
 namespace Mouse
 {
     int32_t x = 200;
@@ -366,8 +368,39 @@ namespace Mouse
 
 
         // Movement
-        int8_t dx = (int8_t)mouse_packet[1];
-        int8_t dy = (int8_t)mouse_packet[2];
+        int16_t dx = (flags & 0x10) ? (int16_t)mouse_packet[1] - 0x100 : mouse_packet[1];
+        int16_t dy = (flags & 0x20) ? (int16_t)mouse_packet[2] - 0x100 : mouse_packet[2];
+
+        if (debug_mode && (dx != 0 || dy != 0))
+        {
+            Uart::puts("[MOUSE] Packet rawX=");
+            Uart::puthex(mouse_packet[1]);
+            Uart::puts(" rawY=");
+            Uart::puthex(mouse_packet[2]);
+            Uart::puts(" flags=");
+            Uart::puthex(flags);
+            Uart::puts(" deltaX=");
+            if (dx < 0)
+            {
+                Uart::putc('-');
+                Uart::putdec((uint64_t)-dx);
+            }
+            else
+            {
+                Uart::putdec((uint64_t)dx);
+            }
+            Uart::puts(" deltaY=");
+            if (dy < 0)
+            {
+                Uart::putc('-');
+                Uart::putdec((uint64_t)-dy);
+            }
+            else
+            {
+                Uart::putdec((uint64_t)dy);
+            }
+            Uart::putc('\n');
+        }
 
         update_position(dx, dy);
 

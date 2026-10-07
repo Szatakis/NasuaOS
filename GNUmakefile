@@ -19,52 +19,16 @@ QEMUFLAGS := -m 2G
 
 override IMAGE_NAME := NasuaOS-$(ARCH)
 override FS_NAME := clawfs_disk
+FS_DISK_SIZE := 4G
 
 BOOT_OPTIONS := $(wildcard utilities/boot_options/*/)
 BOOT_OPTIONS := $(patsubst %/,%,$(BOOT_OPTIONS))
 
-# Detect WSL / Force Linux
-DEBUG_WSL ?= false
-DEBUG_LINUX ?= false
-DEBUG_BUILD ?= false
-
-ifeq ($(DEBUG_LINUX),true)
-	IS_WSL := 0
-else ifeq ($(DEBUG_WSL),true)
-	IS_WSL := 1
-else
-	IS_WSL := $(shell grep -qi microsoft /proc/version 2>/dev/null && echo 1 || echo 0)
-endif
-
-ifeq ($(IS_WSL),1)
-QEMU_X86_64 = /mnt/c/Program\ Files/qemu/qemu-system-x86_64.exe
-QEMU_AARCH64 = /mnt/c/Program\ Files/qemu/qemu-system-aarch64.exe
-QEMU_RISCV64 = /mnt/c/Program\ Files/qemu/qemu-system-riscv64.exe
-QEMU_LOONGARCH64 = /mnt/c/Program\ Files/qemu/qemu-system-loongarch64.exe
-
-define PREPARE_WSL
-	@powershell.exe -Command "New-Item -ItemType Directory -Force -Path C:\wsl_target" > /dev/null
-
-	@if [ ! -f /mnt/c/wsl_target/$(FS_NAME).img ]; then \
-		dd if=/dev/zero of=/mnt/c/wsl_target/$(FS_NAME).img bs=1M count=2048 2>/dev/null; \
-	fi
-
-	@cp $(IMAGE_NAME).iso /mnt/c/wsl_target/$(IMAGE_NAME).iso
-	@rm -rf /mnt/c/wsl_target/edk2-bins
-	@cp -r edk2-bins /mnt/c/wsl_target/
-endef
-
-else
-
-QEMU_X86_64 = qemu-system-x86_64
-QEMU_AARCH64 = qemu-system-aarch64
-QEMU_RISCV64 = qemu-system-riscv64
-QEMU_LOONGARCH64 = qemu-system-loongarch64
-
-define PREPARE_WSL
-endef
-
-endif
+# Always run the Linux QEMU binaries, including from WSL.
+QEMU_X86_64 ?= qemu-system-x86_64
+QEMU_AARCH64 ?= qemu-system-aarch64
+QEMU_RISCV64 ?= qemu-system-riscv64
+QEMU_LOONGARCH64 ?= qemu-system-loongarch64
 
 # Toolchain for building the 'limine' executable for the host.
 HOST_CC := cc
@@ -93,74 +57,31 @@ run: run-$(ARCH)
 run-hdd: run-hdd-$(ARCH)
 
 .PHONY: run-x86_64
-run-x86_64: edk2-bins $(IMAGE_NAME).iso
-ifeq ($(IS_WSL),1)
-	$(PREPARE_WSL)
+run-x86_64: edk2-bins $(IMAGE_NAME).iso $(FS_NAME).img
 	$(QEMU_X86_64) \
-		-M pc \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-x86_64.fd,readonly=on \
-		-drive if=pflash,unit=1,format=raw,file=C:\\wsl_target\\edk2-bins\\vars-x86_64.fd \
-		-cdrom C:\\wsl_target\\$(IMAGE_NAME).iso \
-		-drive id=$(FS_NAME),file=C:\\wsl_target\\$(FS_NAME).img,format=raw,if=none \
-		-device ide-hd,drive=$(FS_NAME),bus=ide.0,unit=0 \
-		-display sdl,gl=on \
-		-device virtio-vga \
-		-serial stdio \
-		-audiodev sdl,id=snd0 \
-		-machine pcspk-audiodev=snd0 \
-		-device piix3-usb-uhci \
-		-device ich9-usb-ehci1 \
-		-device qemu-xhci \
-		$(QEMUFLAGS)
-else
-	$(QEMU_X86_64) \
-		-M q35 \
+		-M pc,i8042=on,pcspk-audiodev=snd0 \
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-x86_64.fd,readonly=on \
 		-cdrom $(IMAGE_NAME).iso \
+		-drive id=$(FS_NAME),file=$(FS_NAME).img,format=raw,if=none \
+		-device ide-hd,drive=$(FS_NAME),bus=ide.0,unit=0 \
+		-display sdl,gl=on \
 		-audiodev sdl,id=snd0 \
-		-machine pcspk-audiodev=snd0 \
+		-serial stdio \
 		$(QEMUFLAGS)
-endif
 
 .PHONY: run-hdd-x86_64
-run-hdd-x86_64: edk2-bins $(IMAGE_NAME).hdd
-ifeq ($(IS_WSL),1)
-	@powershell.exe -Command "New-Item -ItemType Directory -Force -Path C:\wsl_target" > /dev/null
-
-	@cp $(IMAGE_NAME).hdd /mnt/c/wsl_target/$(IMAGE_NAME).hdd
-	@rm -rf /mnt/c/wsl_target/edk2-bins
-	@cp -r edk2-bins /mnt/c/wsl_target/
-
+run-hdd-x86_64: edk2-bins $(IMAGE_NAME).hdd $(FS_NAME).img
 	$(QEMU_X86_64) \
-		-M q35 \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-x86_64.fd,readonly=on \
-		-hda C:\\wsl_target\\$(IMAGE_NAME).hdd \
-		$(QEMUFLAGS) \
-		-display sdl,gl=on \
-		-serial stdio
-else
-	$(QEMU_X86_64) \
-		-M q35 \
+		-M pc,i8042=on \
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-x86_64.fd,readonly=on \
 		-hda $(IMAGE_NAME).hdd \
+		-drive id=$(FS_NAME),file=$(FS_NAME).img,format=raw,if=none \
+		-device ide-hd,drive=$(FS_NAME),bus=ide.0,unit=1 \
+		-display sdl,gl=on \
 		$(QEMUFLAGS)
-endif
 
 .PHONY: run-aarch64
 run-aarch64: edk2-bins $(IMAGE_NAME).iso
-ifeq ($(IS_WSL),1)
-	$(PREPARE_WSL)
-	$(QEMU_AARCH64) \
-		-M virt \
-		-cpu cortex-a72 \
-		-device ramfb \
-		-device qemu-xhci \
-		-device usb-kbd \
-		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-aarch64.fd,readonly=on \
-		-cdrom C:\\wsl_target\\$(IMAGE_NAME).iso \
-		$(QEMUFLAGS)
-else
 	$(QEMU_AARCH64) \
 		-M virt \
 		-cpu cortex-a72 \
@@ -171,26 +92,9 @@ else
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-aarch64.fd,readonly=on \
 		-cdrom $(IMAGE_NAME).iso \
 		$(QEMUFLAGS)
-endif
 
 .PHONY: run-hdd-aarch64
 run-hdd-aarch64: edk2-bins $(IMAGE_NAME).hdd
-ifeq ($(IS_WSL),1)
-	@cp $(IMAGE_NAME).hdd /mnt/c/wsl_target/$(IMAGE_NAME).hdd
-	@rm -rf /mnt/c/wsl_target/edk2-bins
-	@cp -r edk2-bins /mnt/c/wsl_target/
-
-	$(QEMU_AARCH64) \
-		-M virt \
-		-cpu cortex-a72 \
-		-device ramfb \
-		-device qemu-xhci \
-		-device usb-kbd \
-		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-aarch64.fd,readonly=on \
-		-hda C:\\wsl_target\\$(IMAGE_NAME).hdd \
-		$(QEMUFLAGS)
-else
 	$(QEMU_AARCH64) \
 		-M virt \
 		-cpu cortex-a72 \
@@ -201,23 +105,9 @@ else
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-aarch64.fd,readonly=on \
 		-hda $(IMAGE_NAME).hdd \
 		$(QEMUFLAGS)
-endif
 
 .PHONY: run-riscv64
 run-riscv64: edk2-bins $(IMAGE_NAME).iso
-ifeq ($(IS_WSL),1)
-	$(PREPARE_WSL)
-	$(QEMU_RISCV64) \
-		-M virt \
-		-cpu rv64 \
-		-device ramfb \
-		-device qemu-xhci \
-		-device usb-kbd \
-		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-riscv64.fd,readonly=on \
-		-cdrom C:\\wsl_target\\$(IMAGE_NAME).iso \
-		$(QEMUFLAGS)
-else
 	$(QEMU_RISCV64) \
 		-M virt \
 		-cpu rv64 \
@@ -228,26 +118,9 @@ else
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-riscv64.fd,readonly=on \
 		-cdrom $(IMAGE_NAME).iso \
 		$(QEMUFLAGS)
-endif
 
 .PHONY: run-hdd-riscv64
 run-hdd-riscv64: edk2-bins $(IMAGE_NAME).hdd
-ifeq ($(IS_WSL),1)
-	@cp $(IMAGE_NAME).hdd /mnt/c/wsl_target/$(IMAGE_NAME).hdd
-	@rm -rf /mnt/c/wsl_target/edk2-bins
-	@cp -r edk2-bins /mnt/c/wsl_target/
-
-	$(QEMU_RISCV64) \
-		-M virt \
-		-cpu rv64 \
-		-device ramfb \
-		-device qemu-xhci \
-		-device usb-kbd \
-		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-riscv64.fd,readonly=on \
-		-hda C:\\wsl_target\\$(IMAGE_NAME).hdd \
-		$(QEMUFLAGS)
-else
 	$(QEMU_RISCV64) \
 		-M virt \
 		-cpu rv64 \
@@ -258,12 +131,9 @@ else
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-riscv64.fd,readonly=on \
 		-hda $(IMAGE_NAME).hdd \
 		$(QEMUFLAGS)
-endif
 
 .PHONY: run-loongarch64
 run-loongarch64: edk2-bins $(IMAGE_NAME).iso
-ifeq ($(IS_WSL),1)
-	$(PREPARE_WSL)
 	$(QEMU_LOONGARCH64) \
 		-M virt \
 		-cpu la464 \
@@ -271,29 +141,12 @@ ifeq ($(IS_WSL),1)
 		-device qemu-xhci \
 		-device usb-kbd \
 		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-loongarch64.fd,readonly=on \
-		-cdrom C:\\wsl_target\\$(IMAGE_NAME).iso \
-		$(QEMUFLAGS)
-else
-	$(QEMU_LOONGARCH64) \
-		-M virt \
-		-cpu la464 \
-		-device ramfb \
-		-device qemu-xhci \
-		-device usb-kbd \
-		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-loongarch64.fd,readonly=on \
+		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-loongarch64.fd,readonly=on \
 		-cdrom $(IMAGE_NAME).iso \
 		$(QEMUFLAGS)
-endif
 
 .PHONY: run-hdd-loongarch64
 run-hdd-loongarch64: edk2-bins $(IMAGE_NAME).hdd
-ifeq ($(IS_WSL),1)
-	@cp $(IMAGE_NAME).hdd /mnt/c/wsl_target/$(IMAGE_NAME).hdd
-	@rm -rf /mnt/c/wsl_target/edk2-bins
-	@cp -r edk2-bins /mnt/c/wsl_target/
-
 	$(QEMU_LOONGARCH64) \
 		-M virt \
 		-cpu la464 \
@@ -301,60 +154,36 @@ ifeq ($(IS_WSL),1)
 		-device qemu-xhci \
 		-device usb-kbd \
 		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-loongarch64.fd,readonly=on \
-		-hda C:\\wsl_target\\$(IMAGE_NAME).hdd \
-		$(QEMUFLAGS)
-else
-	$(QEMU_LOONGARCH64) \
-		-M virt \
-		-cpu la464 \
-		-device ramfb \
-		-device qemu-xhci \
-		-device usb-kbd \
-		-device usb-tablet \
-		-drive if=pflash,unit=0,format=raw,file=C:\\wsl_target\\edk2-bins\\code-loongarch64.fd,readonly=on \
+		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-loongarch64.fd,readonly=on \
 		-hda $(IMAGE_NAME).hdd \
 		$(QEMUFLAGS)
-endif
 
 
 .PHONY: run-bios
-run-bios: $(IMAGE_NAME).iso
-ifeq ($(IS_WSL),1)
-	@cp $(IMAGE_NAME).iso /mnt/c/wsl_target/$(IMAGE_NAME).iso
-
+run-bios: $(IMAGE_NAME).iso $(FS_NAME).img
 	$(QEMU_X86_64) \
-		-M q35 \
-		-cdrom C:\\wsl_target\\$(IMAGE_NAME).iso \
-		-boot d \
-		$(QEMUFLAGS) \
-		-display sdl,gl=on \
-		-serial stdio
-else
-	$(QEMU_X86_64) \
-		-M q35 \
+		-M pc,i8042=on \
 		-cdrom $(IMAGE_NAME).iso \
 		-boot d \
+		-drive id=$(FS_NAME),file=$(FS_NAME).img,format=raw,if=none \
+		-device ide-hd,drive=$(FS_NAME),bus=ide.0,unit=0 \
+		-display sdl,gl=on \
 		$(QEMUFLAGS)
-endif
 
 .PHONY: run-hdd-bios
-run-hdd-bios: $(IMAGE_NAME).hdd
-ifeq ($(IS_WSL),1)
-	@cp $(IMAGE_NAME).hdd /mnt/c/wsl_target/$(IMAGE_NAME).hdd
-
+run-hdd-bios: $(IMAGE_NAME).hdd $(FS_NAME).img
 	$(QEMU_X86_64) \
-		-M q35 \
-		-hda C:\\wsl_target\\$(IMAGE_NAME).hdd \
-		$(QEMUFLAGS) \
-		-display sdl,gl=on \
-		-serial stdio
-else
-	$(QEMU_X86_64) \
-		-M q35 \
+		-M pc,i8042=on \
 		-hda $(IMAGE_NAME).hdd \
+		-drive id=$(FS_NAME),file=$(FS_NAME).img,format=raw,if=none \
+		-device ide-hd,drive=$(FS_NAME),bus=ide.0,unit=1 \
+		-display sdl,gl=on \
 		$(QEMUFLAGS)
-endif
+
+$(FS_NAME).img:
+	@if [ ! -e "$@" ] || [ "$$(stat -c%s "$@")" -lt 4294967296 ]; then \
+		truncate -s $(FS_DISK_SIZE) "$@"; \
+	fi
 
 edk2-bins:
 	curl -L $(BOOTLOADER_REPO)/edk2-bins.tar.gz | tar -xz
