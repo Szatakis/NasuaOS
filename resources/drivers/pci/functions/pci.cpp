@@ -127,6 +127,31 @@ namespace Pci
         return (uint8_t)((value >> shift) & 0xFF);
     }
 
+    void config_write32(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset, uint32_t value)
+    {
+        uint32_t address = (1u << 31) | ((uint32_t)bus << 16) | ((uint32_t)slot << 11) | ((uint32_t)function << 8) | (offset & 0xFC);
+        outl(0xCF8, address);
+        outl(0xCFC, value);
+    }
+
+    void config_write16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset, uint16_t value)
+    {
+        uint32_t current = config_read32(bus, slot, function, offset);
+        uint32_t shift = (offset & 2) * 8;
+        uint32_t mask = ~(0xFFFFu << shift);
+        uint32_t new_val = (current & mask) | ((uint32_t)value << shift);
+        config_write32(bus, slot, function, offset, new_val);
+    }
+
+    void config_write8(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset, uint8_t value)
+    {
+        uint32_t current = config_read32(bus, slot, function, offset);
+        uint32_t shift = (offset & 3) * 8;
+        uint32_t mask = ~(0xFFu << shift);
+        uint32_t new_val = (current & mask) | ((uint32_t)value << shift);
+        config_write32(bus, slot, function, offset, new_val);
+    }
+
     static void print_pci_device(uint8_t bus, uint8_t slot, uint8_t function, uint16_t vendor, uint16_t device, uint8_t class_code, uint8_t subclass, uint8_t prog_if)
     {
         Uart::puts("[PCI] ");

@@ -99,6 +99,7 @@ void iqu_init()
     Disk::init();
 
     Pci::init();
+    Network::init();
     Usb::init();
 
     Mouse::init();
@@ -203,6 +204,8 @@ extern "C" void kmain()
     // Main loop
     for (;;) 
     {
+        Network::poll();
+
         while (inb(0x64) & 1) 
         {
             Keyboard::handle_keyboard();

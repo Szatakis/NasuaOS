@@ -314,6 +314,9 @@ void execute_command(const char *cmd)
             Gpu::print(" -tree                                 - Display directory tree\n");
             Gpu::print("    --file <path>                      - (Optional) Directory to start from\n");
             Gpu::print(" -pwd                                - Display the current working directory\n");
+            Gpu::print(" -ip                                 - Display the current IP address\n");
+            Gpu::print(" -ping                               - Send a ping request to a target IP address\n");
+            Gpu::print("   --target <ip_address>             - (Required) Specify target IP address\n");
         }
 
         else if (page == 8)
@@ -1427,6 +1430,184 @@ void execute_command(const char *cmd)
         }
     }
 
+    // 28. Command: ip
+    else if (cmd_name_len == 2 && Memory::memcmp(cmd, "ip", 2) == 0)
+    {
+        while (*args == ' ') 
+        {
+            args++;
+        }
+
+        if (*args == '\0')
+        {
+            Network::print_info();
+        }
+        else
+        {
+            Network::IPAddress new_ip;
+            // Parse IP string
+            int a=0, b=0, c=0, d=0;
+            const char* ptr = args;
+
+            while (*ptr >= '0' && *ptr <= '9') 
+            { 
+                a = a * 10 + (*ptr - '0'); ptr++; 
+            }
+            if (*ptr == '.') 
+            {
+                ptr++;
+            }
+            while (*ptr >= '0' && *ptr <= '9') 
+            { 
+                b = b * 10 + (*ptr - '0'); ptr++; 
+            }
+            if (*ptr == '.') 
+            {
+                ptr++;
+            }
+            while (*ptr >= '0' && *ptr <= '9') 
+            { 
+                c = c * 10 + (*ptr - '0'); ptr++; 
+            }
+            if (*ptr == '.') 
+            {
+                ptr++;
+            }
+            while (*ptr >= '0' && *ptr <= '9') 
+            { 
+                d = d * 10 + (*ptr - '0'); ptr++; 
+            }
+            if (a >= 0 && a <= 255 && b >= 0 && b <= 255 && c >= 0 && c <= 255 && d >= 0 && d <= 255)
+            {
+                new_ip.bytes[0] = (uint8_t)a;
+                new_ip.bytes[1] = (uint8_t)b;
+                new_ip.bytes[2] = (uint8_t)c;
+                new_ip.bytes[3] = (uint8_t)d;
+                Network::set_ip(new_ip);
+                Gpu::print_info("Updated IP address to: ");
+                Gpu::print(args);
+                Gpu::print("\n");
+            }
+            else
+            {
+                Gpu::print_error("Invalid IP address format!\n");
+                Gpu::print_info("Usage: ip [x.x.x.x]\n");
+            }
+        }
+    }
+
+    // 29. Command: ping
+    else if (cmd_name_len == 4 && Memory::memcmp(cmd, "ping", 4) == 0)
+    {
+        const char* target_flag = strstr(args, "--target ");
+
+        if (!target_flag)
+        {
+            Gpu::print_error("Syntax error!\n");
+            Gpu::print_info("Usage: ping --target <ip_address>\n");
+        }
+        else if (!Network::is_available())
+        {
+            Gpu::print_error("Network interface is not available!\n");
+        }
+        else
+        {
+            const char* target_ip_str = target_flag + 9;
+            while (*target_ip_str == ' ') target_ip_str++;
+
+            Network::IPAddress target_ip;
+            int a=0, b=0, c=0, d=0;
+            const char* ptr = target_ip_str;
+
+            while (*ptr >= '0' && *ptr <= '9') 
+            { 
+                a = a * 10 + (*ptr - '0'); ptr++; 
+            }
+            if (*ptr == '.') 
+            {
+                ptr++;
+            }
+            while (*ptr >= '0' && *ptr <= '9') 
+            { 
+                b = b * 10 + (*ptr - '0'); ptr++; 
+            }
+            if (*ptr == '.') 
+            {
+                ptr++;
+            }
+            while (*ptr >= '0' && *ptr <= '9') 
+            { 
+                c = c * 10 + (*ptr - '0'); ptr++; 
+            }
+            if (*ptr == '.') 
+            {
+                ptr++;
+            }
+            while (*ptr >= '0' && *ptr <= '9') 
+            { 
+                d = d * 10 + (*ptr - '0'); ptr++; 
+            }
+
+            if (a < 0 || a > 255 || b < 0 || b > 255 || c < 0 || c > 255 || d < 0 || d > 255)
+            {
+                Gpu::print_error("Invalid IP address format!\n");
+                Gpu::print_info("Usage: ping --target <ip_address>\n");
+            }
+            else
+            {
+                target_ip.bytes[0] = (uint8_t)a;
+                target_ip.bytes[1] = (uint8_t)b;
+                target_ip.bytes[2] = (uint8_t)c;
+                target_ip.bytes[3] = (uint8_t)d;
+
+                // Build IP string for printing
+                char ip_display[32];
+                int i = 0;
+                while (target_ip_str[i] != '\0' && target_ip_str[i] != ' ' && i < 31)
+                {
+                    ip_display[i] = target_ip_str[i];
+                    i++;
+                }
+                ip_display[i] = '\0';
+
+                Gpu::print_info("PING ");
+                Gpu::print(ip_display);
+                Gpu::print(" (32 bytes of data):\n");
+
+                uint32_t received = 0;
+                for (int seq = 1; seq <= 4; seq++)
+                {
+                    if (Network::ping(target_ip, 1000))
+                    {
+                        received++;
+                        Gpu::print_info("32 bytes from ");
+                        Gpu::print(ip_display);
+                        Gpu::print(": icmp_seq=");
+                        char seq_buf[16];
+                        itoa(seq, seq_buf);
+                        Gpu::print(seq_buf);
+                        Gpu::print(" ttl=64\n");
+                    }
+                    else
+                    {
+                        Gpu::print_error("Request timeout for icmp_seq=");
+                        char seq_buf[16];
+                        itoa(seq, seq_buf);
+                        Gpu::print(seq_buf);
+                        Gpu::print("\n");
+                    }
+                }
+
+                Gpu::print_info("--- ");
+                Gpu::print(ip_display);
+                Gpu::print(" ping statistics ---\n");
+                char rec_buf[16];
+                itoa(received, rec_buf);
+                Gpu::print(rec_buf);
+                Gpu::print("/4 packets received.\n");
+            }
+        }
+    }
 
 
     // Dynamic /sbin commands

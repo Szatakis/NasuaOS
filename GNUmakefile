@@ -16,6 +16,7 @@ SUB_ARCH ?= x86_32
 
 # Default user QEMU flags. These are appended to the QEMU command calls.
 QEMUFLAGS := -m 2G
+QEMU_NETDEV ?= -netdev user,id=net0 -device virtio-net-pci,netdev=net0
 
 override IMAGE_NAME := NasuaOS-$(ARCH)
 override FS_NAME := clawfs_disk
@@ -72,6 +73,7 @@ run-x86_64: edk2-bins $(IMAGE_NAME).iso $(FS_NAME).img
 		-device piix3-usb-uhci \
 		-device ich9-usb-ehci1 \
 		-device qemu-xhci \
+		$(QEMU_NETDEV) \
 		$(QEMUFLAGS)
 
 .PHONY: run-hdd-x86_64
@@ -90,6 +92,7 @@ run-hdd-x86_64: edk2-bins $(IMAGE_NAME).hdd $(FS_NAME).img
 		-device piix3-usb-uhci \
 		-device ich9-usb-ehci1 \
 		-device qemu-xhci \
+		$(QEMU_NETDEV) \
 		$(QEMUFLAGS)
 
 .PHONY: run-aarch64
