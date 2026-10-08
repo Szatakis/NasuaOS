@@ -61,12 +61,17 @@ run-x86_64: edk2-bins $(IMAGE_NAME).iso $(FS_NAME).img
 	$(QEMU_X86_64) \
 		-M pc,i8042=on,pcspk-audiodev=snd0 \
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-x86_64.fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=edk2-bins/vars-x86_64.fd \
 		-cdrom $(IMAGE_NAME).iso \
 		-drive id=$(FS_NAME),file=$(FS_NAME).img,format=raw,if=none \
 		-device ide-hd,drive=$(FS_NAME),bus=ide.0,unit=0 \
 		-display sdl,gl=on \
 		-audiodev sdl,id=snd0 \
+		-machine pcspk-audiodev=snd0 \
 		-serial stdio \
+		-device piix3-usb-uhci \
+		-device ich9-usb-ehci1 \
+		-device qemu-xhci \
 		$(QEMUFLAGS)
 
 .PHONY: run-hdd-x86_64
@@ -74,10 +79,17 @@ run-hdd-x86_64: edk2-bins $(IMAGE_NAME).hdd $(FS_NAME).img
 	$(QEMU_X86_64) \
 		-M pc,i8042=on \
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-x86_64.fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=edk2-bins/vars-x86_64.fd \
 		-hda $(IMAGE_NAME).hdd \
 		-drive id=$(FS_NAME),file=$(FS_NAME).img,format=raw,if=none \
 		-device ide-hd,drive=$(FS_NAME),bus=ide.0,unit=1 \
 		-display sdl,gl=on \
+		-audiodev sdl,id=snd0 \
+		-machine pcspk-audiodev=snd0 \
+		-serial stdio \
+		-device piix3-usb-uhci \
+		-device ich9-usb-ehci1 \
+		-device qemu-xhci \
 		$(QEMUFLAGS)
 
 .PHONY: run-aarch64
