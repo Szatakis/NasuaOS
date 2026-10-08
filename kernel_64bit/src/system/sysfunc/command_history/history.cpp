@@ -70,7 +70,10 @@ const char* history_navigate_up()
 
 const char* history_navigate_down() 
 {
-    if (history_count == 0 || history_index == -1) return nullptr;
+    if (history_count == 0 || history_index == -1) 
+    {
+        return nullptr;
+    }
 
     if (history_index < (int)history_count - 1) 
     {

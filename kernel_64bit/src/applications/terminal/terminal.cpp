@@ -226,7 +226,7 @@ void draw_terminal(Gpu::Window_Manager::window_struct* win)
         max_cols = 10;
     }
 
-    // Step 1: Count total visual wrapped rows
+    // Count total visual wrapped rows
     int total_visual_rows = 0;
     for (int i = 0; i < term->output_count; i++) 
     {
@@ -252,7 +252,7 @@ void draw_terminal(Gpu::Window_Manager::window_struct* win)
         }
     }
 
-    // Step 2: Determine starting visual row index to render
+    // Determine starting visual row index to render
     int start_visual_row = 0;
     if (total_visual_rows > max_visible_lines) 
     {
@@ -263,7 +263,7 @@ void draw_terminal(Gpu::Window_Manager::window_struct* win)
         }
     }
 
-    // Step 3: Render visual rows
+    // Render visual rows
     int current_visual_row = 0;
     int curr_y = content_start_y;
 

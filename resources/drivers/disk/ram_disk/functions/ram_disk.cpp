@@ -58,11 +58,8 @@ bool RAM_Disk::init()
     ram_disk_enabled = true;
 
     Uart::puts("[RAM Disk] 64 MB allocated.\n");
-
     Uart::puts("[RAM Disk] Pages: ");
-
     Uart::putdec(RAM_DISK_PAGE_COUNT);
-
     Uart::puts("\n");
 
     return true;
@@ -113,9 +110,7 @@ bool RAM_Disk::read_sector(uint32_t lba, uint8_t* buffer)
     }
 
     uint64_t page_index = lba / 8;
-
     uint64_t sector_index = lba % 8;
-
     uint64_t phys = ram_pages[page_index];
 
     if (phys == 0)

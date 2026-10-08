@@ -84,8 +84,7 @@ namespace Disk
             return;
         }
 
-        uint32_t entries_sectors =
-            (header->entryCount + 15) / 16;
+        uint32_t entries_sectors = (header->entryCount + 15) / 16;
 
         if (entries_sectors == 0)
         {
@@ -94,8 +93,7 @@ namespace Disk
 
         uint32_t data_sectors = header->entryCount;
 
-        used_storage_bytes =
-            (uint64_t)(1 + entries_sectors + data_sectors) * 512;
+        used_storage_bytes = (uint64_t)(1 + entries_sectors + data_sectors) * 512;
     }
 
     bool storage_is_ram()

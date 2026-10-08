@@ -107,7 +107,6 @@ static void ioapic_write(uint8_t reg, uint32_t value)
 
 
 // CPUID
-
 bool Apic::available()
 {
     uint32_t eax, ebx, ecx, edx;
@@ -120,7 +119,6 @@ bool Apic::available()
 
 
 // Local APIC: base MSR
-
 uint64_t Apic::read_base()
 {
     uint32_t eax;
@@ -192,7 +190,6 @@ void Apic::disable()
 
 
 // Local APIC: init / EOI
-
 void Apic::init()
 {
     Uart::puts("[LAPIC] Initializing...\n");
@@ -219,7 +216,6 @@ uint32_t Apic::get_id()
 
 
 // I/O APIC
-
 void IOApic::mask_irq(uint8_t irq)
 {
     uint8_t low_reg = IOAPIC_REG_REDTBL + irq * 2;
@@ -233,7 +229,6 @@ void IOApic::set_irq(uint8_t irq, uint8_t vector, uint32_t dest_apic_id)
     uint8_t low_reg = IOAPIC_REG_REDTBL + irq * 2;
     uint8_t high_reg = low_reg + 1;
 
-    // fixed delivery, physical dest mode, active-high, edge-triggered, unmasked
     uint32_t low = vector;
     uint32_t high = dest_apic_id << 24;
 
@@ -266,7 +261,6 @@ void IOApic::init()
 
 
 // Choose interrupts controller
-
 bool Apic::is_active()
 {
     return g_apic_active;

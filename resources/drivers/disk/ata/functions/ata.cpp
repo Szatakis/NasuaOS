@@ -121,9 +121,7 @@ namespace ATA_disk
             identify_data[i] = inw(ATA_PORT_DATA);
         }
 
-        *sectors =
-            ((uint32_t)identify_data[61] << 16) |
-            identify_data[60];
+        *sectors = ((uint32_t)identify_data[61] << 16) | identify_data[60];
 
         return *sectors != 0;
     }

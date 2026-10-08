@@ -3,6 +3,7 @@
 *.iso
 *.hdd
 *.img
+compile_commands.json
 
 /limine-binary
 /edk2-bins
