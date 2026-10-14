@@ -90,6 +90,51 @@ namespace Gpu
         }
     }
 
+    void backspace_console_char()
+    {
+        if (!fb || backbuffer_width == 0 || backbuffer_height == 0)
+        {
+            return;
+        }
+
+        const size_t previous_cursor_x = cursor_x;
+        const size_t previous_cursor_y = cursor_y;
+
+        for (size_t x = 0; x < CHAR_WIDTH; ++x)
+        {
+            put_pixel(previous_cursor_x + x, previous_cursor_y + CHAR_HEIGHT - 1,
+                      background_color);
+        }
+
+        if (cursor_x >= CHAR_WIDTH)
+        {
+            cursor_x -= CHAR_WIDTH;
+        }
+        else if (cursor_y >= CHAR_HEIGHT)
+        {
+            cursor_x = (backbuffer_width / CHAR_WIDTH - 1) * CHAR_WIDTH;
+            cursor_y -= CHAR_HEIGHT;
+        }
+
+        for (size_t y = 0; y < CHAR_HEIGHT; ++y)
+        {
+            for (size_t x = 0; x < CHAR_WIDTH; ++x)
+            {
+                put_pixel(cursor_x + x, cursor_y + y, background_color);
+            }
+        }
+
+        for (size_t x = 0; x < CHAR_WIDTH; ++x)
+        {
+            put_pixel(cursor_x + x, cursor_y + CHAR_HEIGHT - 1, current_text_color);
+        }
+
+        render_frame_region(previous_cursor_x,
+                            previous_cursor_y + CHAR_HEIGHT - 1,
+                            CHAR_WIDTH, 1);
+        render_frame_region(cursor_x, cursor_y, CHAR_WIDTH, CHAR_HEIGHT);
+    }
+
     void render_frame_region(size_t x, size_t y, size_t width, size_t height)
     {
         if (!fb || !fb->address || fb->bpp != 32 || backbuffer_width == 0 || backbuffer_height == 0)

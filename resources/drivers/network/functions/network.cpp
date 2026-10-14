@@ -538,12 +538,12 @@ namespace Network
     void print_info()
     {
         char buf[64];
-        Gpu::print_info("--- Network Interface Info ---\n");
+        Gpu::print_info("Network Interface Info\n");
 
-        Gpu::print_info("Status: ");
-        Gpu::print(available ? "UP (VirtIO Net)\n" : "DOWN (No Device)\n");
+        Gpu::print("Status: ");
+        Gpu::print(available ? "UP\n" : "DOWN (No Device)\n");
 
-        Gpu::print_info("MAC Address: ");
+        Gpu::print("MAC Address: ");
         for (int i = 0; i < 6; i++)
         {
             itoa(mac_addr.bytes[i], buf);
@@ -555,7 +555,7 @@ namespace Network
         }
         Gpu::print("\n");
 
-        Gpu::print_info("IP Address: ");
+        Gpu::print("IP Address: ");
         for (int i = 0; i < 4; i++)
         {
             itoa(ip_addr.bytes[i], buf);
@@ -567,7 +567,7 @@ namespace Network
         }
         Gpu::print("\n");
 
-        Gpu::print_info("Subnet Mask: ");
+        Gpu::print("Subnet Mask: ");
         for (int i = 0; i < 4; i++)
         {
             itoa(netmask.bytes[i], buf);
@@ -579,7 +579,7 @@ namespace Network
         }
         Gpu::print("\n");
 
-        Gpu::print_info("Gateway: ");
+        Gpu::print("Gateway: ");
         for (int i = 0; i < 4; i++)
         {
             itoa(gateway.bytes[i], buf);
@@ -591,7 +591,7 @@ namespace Network
         }
         Gpu::print("\n");
 
-        Gpu::print_info("Packets Sent: ");
+        Gpu::print("Packets Sent: ");
         itoa(tx_packets, buf);
         Gpu::print(buf);
         Gpu::print(" | Packets Received: ");

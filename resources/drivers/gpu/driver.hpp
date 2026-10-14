@@ -33,6 +33,7 @@ namespace Gpu {
     void put_pixel(size_t x, size_t y, uint32_t color);
 
     void clear_screen(uint32_t color = 0);
+    void backspace_console_char();
     void clear_line();
     void init_backbuffer(size_t width, size_t height, size_t pitch);
     uint32_t* get_backbuffer();

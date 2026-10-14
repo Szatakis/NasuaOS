@@ -195,22 +195,7 @@ namespace Keyboard
         }
 
         input_pos--;
-
-        if(Gpu::cursor_x >= Gpu::CHAR_WIDTH)
-        {
-            Gpu::cursor_x -= Gpu::CHAR_WIDTH;
-        }
-
-        for (size_t row = 0; row < Gpu::CHAR_HEIGHT; ++row)
-        {
-            for (size_t column = 0; column < Gpu::CHAR_WIDTH; ++column)
-            {
-                Gpu::put_pixel(Gpu::cursor_x + column, Gpu::cursor_y + row,
-                               Gpu::background_color);
-            }
-        }
-        Gpu::render_frame_region(Gpu::cursor_x, Gpu::cursor_y,
-                                 Gpu::CHAR_WIDTH, Gpu::CHAR_HEIGHT);
+        Gpu::backspace_console_char();
     }
 
     void read_line()

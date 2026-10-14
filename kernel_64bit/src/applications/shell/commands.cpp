@@ -311,8 +311,8 @@ void execute_command(const char *cmd)
             itoa(total_pages, total_buf);
             Gpu::print(total_buf);
             Gpu::print("):\n");\
-            Gpu::print(" -tree                                 - Display directory tree\n");
-            Gpu::print("    --file <path>                      - (Optional) Directory to start from\n");
+            Gpu::print(" -tree                               - Display directory tree\n");
+            Gpu::print("    --file <path>                    - (Optional) Directory to start from\n");
             Gpu::print(" -pwd                                - Display the current working directory\n");
             Gpu::print(" -ip                                 - Display the current IP address\n");
             Gpu::print(" -ping                               - Send a ping request to a target IP address\n");
