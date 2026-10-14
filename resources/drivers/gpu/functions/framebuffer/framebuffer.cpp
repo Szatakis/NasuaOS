@@ -31,7 +31,7 @@ namespace Gpu
     void init_backbuffer(size_t width, size_t height, size_t pitch)
     {
         size_t pitch_pixels = pitch / sizeof(uint32_t);
-        if (width == 0 || height == 0 || width > BACKBUFFER_WIDTH || height > BACKBUFFER_HEIGHT || pitch_pixels < width)
+        if (width == 0 || height == 0 || pitch_pixels < width)
         {
             backbuffer_width = 0;
             backbuffer_height = 0;
@@ -39,8 +39,8 @@ namespace Gpu
             return;
         }
 
-        backbuffer_width = width;
-        backbuffer_height = height;
+        backbuffer_width = width < BACKBUFFER_WIDTH ? width : BACKBUFFER_WIDTH;
+        backbuffer_height = height < BACKBUFFER_HEIGHT ? height : BACKBUFFER_HEIGHT;
         backbuffer_pitch = BACKBUFFER_WIDTH;
     }
 
@@ -52,6 +52,16 @@ namespace Gpu
     size_t get_backbuffer_pitch()
     {
         return backbuffer_pitch;
+    }
+
+    size_t get_backbuffer_width()
+    {
+        return backbuffer_width;
+    }
+
+    size_t get_backbuffer_height()
+    {
+        return backbuffer_height;
     }
 
     void put_pixel(size_t x, size_t y, uint32_t color)

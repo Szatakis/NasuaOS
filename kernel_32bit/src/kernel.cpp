@@ -15,9 +15,6 @@
 bool safe_mode = false;
 bool debug_mode = false;
 
-char Keyboard::input_buffer[128];
-uint32_t Keyboard::input_pos = 0;
-
 extern "C"
 void kmain(uint32_t mbi)
 {

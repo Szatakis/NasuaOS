@@ -21,11 +21,11 @@ The kernel uses **double buffering** to prevent screen tearing:
 1. All rendering goes to a **backbuffer** (an in-memory framebuffer)
 2. After rendering is complete, `render_frame()` copies the backbuffer to the actual VGA/VRAM
 
-The shared implementation defaults to a 4096×2160 backbuffer. The x86_32 build sets its capacity to 1280×720, matching its Multiboot framebuffer request and avoiding an unnecessarily large fixed-address kernel image. `init_backbuffer()` validates the detected framebuffer against the compiled capacity; it does not allocate memory dynamically. The 32-bit console presents only the updated character cells (or the full frame when clearing the screen), rather than copying the entire framebuffer for every character.
+The shared implementation defaults to a 4096×2160 backbuffer. The x86_32 build sets its capacity to 1280×720, matching its Multiboot framebuffer request and avoiding an unnecessarily large fixed-address kernel image. If firmware supplies a larger 32-bpp framebuffer, the 32-bit adapter uses the top-left region that fits the backbuffer instead of failing graphics initialization. `init_backbuffer()` validates the pitch and does not allocate memory dynamically. The 32-bit console presents only the updated character cells (or the full frame when clearing the screen), rather than copying the entire framebuffer for every character.
 
 ## Keyboard Driver
 
-The Set 1 scancode tables, modifier state, and scancode-to-ASCII conversion are shared in `resources/drivers/keyboard/functions/keyboard.cpp`. The x86_64 interrupt handler and x86_32 polling `read_line()` adapter both use `translate_scancode()`, including shared Shift and Caps Lock behavior. Polling remains architecture/kernel-specific because the 32-bit kernel does not provide the x86_64 interrupt-driven input path.
+The PS/2 controller access, Set 1 scancode translation, modifier state, and polling line input are implemented once in `resources/drivers/keyboard/functions/keyboard.cpp`, which contains no architecture checks and is compiled by both kernels. The 64-bit GUI/interrupt integration lives in `kernel_64bit/src/system/interrupts/keyboard.cpp` and uses the shared `translate_scancode()` implementation. The 32-bit kernel uses the shared polling `read_line()` path.
 
 ### Text Rendering
 

@@ -37,6 +37,8 @@ namespace Gpu {
     void init_backbuffer(size_t width, size_t height, size_t pitch);
     uint32_t* get_backbuffer();
     size_t get_backbuffer_pitch();
+    size_t get_backbuffer_width();
+    size_t get_backbuffer_height();
     void render_frame();
     void render_frame_region(size_t x, size_t y, size_t width, size_t height);
 

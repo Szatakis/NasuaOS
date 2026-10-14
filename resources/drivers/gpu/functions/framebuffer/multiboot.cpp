@@ -28,6 +28,8 @@ namespace Gpu
 
                 fb = &framebuffer;
                 init_backbuffer(framebuffer.width, framebuffer.height, framebuffer.pitch);
+                framebuffer.width = static_cast<uint32_t>(get_backbuffer_width());
+                framebuffer.height = static_cast<uint32_t>(get_backbuffer_height());
                 return get_backbuffer_pitch() != 0;
             }
 
