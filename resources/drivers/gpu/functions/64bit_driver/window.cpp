@@ -470,14 +470,12 @@ namespace Gpu::Window_Manager
                 continue;
             }
 
-
             if (win->is_dragging) 
             {
                 win->is_dragging = false;
 
                 return;
             }
-
 
             if (win->is_resizing) 
             {

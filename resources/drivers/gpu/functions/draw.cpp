@@ -18,8 +18,7 @@ namespace Gpu
         }
     }
 
-    void draw_char8_clipped(unsigned char character, size_t x, size_t y,
-                            uint32_t color, size_t clip_x1, size_t clip_x2)
+    void draw_char8_clipped(unsigned char character, size_t x, size_t y, uint32_t color, size_t clip_x1, size_t clip_x2)
     {
         for (size_t row = 0; row < 8; ++row)
         {
@@ -27,8 +26,7 @@ namespace Gpu
             for (size_t column = 0; column < 8; ++column)
             {
                 const size_t pixel_x = x + column;
-                if ((bits & (1U << (7 - column))) &&
-                    pixel_x >= clip_x1 && pixel_x < clip_x2)
+                if ((bits & (1U << (7 - column))) && pixel_x >= clip_x1 && pixel_x < clip_x2)
                 {
                     put_pixel(pixel_x, y + row, color);
                 }

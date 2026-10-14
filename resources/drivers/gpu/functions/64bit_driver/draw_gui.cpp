@@ -66,18 +66,15 @@ namespace Gpu
 
         const size_t start_y = fb->height - bar_h_scaled + 2;
         const size_t start_x = fb->width;
-        draw_icon<32, 32>(speaker_icon, start_x - 175,
-                          start_y + ((bar_h_scaled - 32) / 2));
+        draw_icon<32, 32>(speaker_icon, start_x - 175, start_y + ((bar_h_scaled - 32) / 2));
 
         if (notification_count <= 0)
         {
-            draw_icon<32, 32>(notification_icon, start_x - 145,
-                              start_y + ((bar_h_scaled - 32) / 2));
+            draw_icon<32, 32>(notification_icon, start_x - 145, start_y + ((bar_h_scaled - 32) / 2));
         }
         else
         {
-            draw_icon<32, 32>(notification_icon_h, start_x - 145,
-                              start_y + ((bar_h_scaled - 32) / 2));
+            draw_icon<32, 32>(notification_icon_h, start_x - 145, start_y + ((bar_h_scaled - 32) / 2));
         }
 
         Window_Manager::draw_taskbar_entries();

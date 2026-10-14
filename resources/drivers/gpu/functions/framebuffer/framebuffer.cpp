@@ -87,8 +87,7 @@ namespace Gpu
             return;
         }
 
-        auto* framebuffer = reinterpret_cast<volatile uint32_t*>(
-            static_cast<uintptr_t>(fb->address));
+        auto* framebuffer = reinterpret_cast<volatile uint32_t*>(static_cast<uintptr_t>(fb->address));
         const size_t framebuffer_pitch = fb->pitch / sizeof(uint32_t);
 
         if (framebuffer_pitch < backbuffer_width)
@@ -98,7 +97,7 @@ namespace Gpu
 
         const size_t copy_width = fb->width < backbuffer_width ? fb->width : backbuffer_width;
         const size_t copy_height = fb->height < backbuffer_height ? fb->height : backbuffer_height;
-        
+
         if (x >= copy_width || y >= copy_height)
         {
             return;
