@@ -17,6 +17,7 @@ all:
 		cp -v $$cmd/$$cmd.napp $(APPS_DIR)/../rootfs/dir/sbin/$$cmd; \
 	done
 
+# Remove object files and the final executable.
 .PHONY: clean
 clean:
 	@for cmd in $(CMDS); do \
@@ -25,6 +26,7 @@ clean:
 		rm -f $(APPS_DIR)/../rootfs/dir/sbin/$$cmd; \
 	done
 
+# Remove everything built and generated including downloaded dependencies.
 .PHONY: distclean
 distclean:
 	@for cmd in $(CMDS); do \

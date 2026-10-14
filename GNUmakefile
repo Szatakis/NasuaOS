@@ -10,17 +10,17 @@ DEFAULTS_CONFIG := .config/defaults.txt
 LIMINE_GENERATOR := .config/config_generator/generate_conf.py
 GENERATED_LIMINE := .config/limine.conf
 
-# Target architecture to build for. Default to x86_64.
+# Target architecture to build for.
 ARCH ?= x86_64
 SUB_ARCH ?= x86_32
 
-# Default user QEMU flags. These are appended to the QEMU command calls.
-QEMUFLAGS := -m 2G
-QEMU_NETDEV ?= -netdev user,id=net0 -device virtio-net-pci,netdev=net0
+# Default user QEMU flags.
+QEMUFLAGS ?=
+QEMU_NETDEV ?=
 
 override IMAGE_NAME := NasuaOS-$(ARCH)
 override FS_NAME := clawfs_disk
-FS_DISK_SIZE := 4G
+FS_DISK_SIZE ?= 4G
 
 BOOT_OPTIONS := $(wildcard utilities/boot_options/*/)
 BOOT_OPTIONS := $(patsubst %/,%,$(BOOT_OPTIONS))

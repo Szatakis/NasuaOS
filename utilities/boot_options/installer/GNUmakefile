@@ -72,11 +72,13 @@ $(OBJ_DIR)/%.o: %.asm
 	$(AS) -f elf32 $< -o $@
 
 
-
+# Remove object files and the final executable.
 .PHONY: clean
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
+# Remove everything built and generated including downloaded dependencies.
 .PHONY: distclean
 distclean:
 	rm -rf obj-* bin-*
+	

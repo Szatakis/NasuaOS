@@ -1,8 +1,9 @@
 .SUFFIXES:
 
+# Target architecture to build for.
 ARCH ?= x86_32
 
-
+# User controllable commands.
 AS := nasm
 CC := g++
 LD := g++
@@ -42,7 +43,6 @@ RESOURCES_CPP_SRC := $(shell find $(RESOURCES_DIR)/libs $(RESOURCES_DIR)/drivers
 RESOURCES_OBJ := $(patsubst $(RESOURCES_DIR)/%.cpp,$(OBJ_DIR)/resources/%.o,$(RESOURCES_CPP_SRC))
 
 
-# wszystkie pliki źródłowe
 CPP_SRC := $(shell find src -type f -name "*.cpp")
 C_SRC   := $(shell find src -type f -name "*.c")
 ASM_SRC := $(shell find src -type f -name "*.asm")
@@ -51,7 +51,6 @@ ASM_SRC := $(shell find src -type f -name "*.asm")
 SRC := $(CPP_SRC) $(C_SRC) $(ASM_SRC)
 
 
-# zamiana src/x.cpp -> obj-x86_32/x.o
 OBJ := $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(CPP_SRC)) \
        $(patsubst %.c,$(OBJ_DIR)/%.o,$(C_SRC)) \
        $(patsubst %.asm,$(OBJ_DIR)/%.o,$(ASM_SRC)) \
@@ -96,10 +95,13 @@ $(OBJ_DIR)/resources/%.o: $(RESOURCES_DIR)/%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
+# Remove object files and the final executable.
 .PHONY: clean
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
+# Remove everything built and generated including downloaded dependencies.
 .PHONY: distclean
 distclean:
 	rm -rf obj-* bin-* .deps-obtained
+	

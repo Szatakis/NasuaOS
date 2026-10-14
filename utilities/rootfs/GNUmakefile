@@ -13,6 +13,7 @@ all:
 	
 	mcopy -i $(IMAGE) -s $(DIR_FOLDER)/* ::/
 
+# Remove object files and the final executable.
 .PHONY: clean
 clean:
 	rm -f $(IMAGE)
@@ -20,6 +21,7 @@ clean:
 	$(MAKE) -C ../applications clean
 	$(MAKE) -C ../system_functions clean
 
+# Remove everything built and generated including downloaded dependencies.
 .PHONY: distclean
 distclean:
 	rm -f *.img

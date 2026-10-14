@@ -18,6 +18,7 @@ all:
 		cp -v $$app/$$app.napp ../rootfs/dir/bin/$$app; \
 	done
 
+# Remove object files and the final executable.
 .PHONY: clean
 clean:
 	@for app in $(APPS); do \
@@ -29,6 +30,7 @@ clean:
 		rm -f ../rootfs/dir/bin/$$app; \
 	done
 
+# Remove everything built and generated including downloaded dependencies.
 .PHONY: distclean
 distclean:
 	@for app in $(APPS); do \

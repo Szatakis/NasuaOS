@@ -54,12 +54,12 @@ $(OBJ_DIR)/hdtest.o: src/hdtest.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 
-
+# Remove object files and the final executable.
 .PHONY: clean
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
-
+# Remove everything built and generated including downloaded dependencies.
 .PHONY: distclean
 distclean:
 	rm -rf obj-* bin-*

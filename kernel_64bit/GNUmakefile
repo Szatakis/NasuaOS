@@ -2,10 +2,9 @@
 .SUFFIXES:
 
 # This is the name that our final executable will have.
-# Change as needed.
 override OUTPUT := kernel_64bit
 
-# Target architecture to build for. Default to x86_64.
+# Target architecture to build for.
 ARCH ?= x86_64
 
 # Install prefix; /usr/local is a good, standard default pick.

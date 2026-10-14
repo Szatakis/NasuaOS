@@ -76,10 +76,13 @@ $(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
 $(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+# Remove object files and the final executable.
 .PHONY: clean
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
 
+
+# Remove everything built and generated including downloaded dependencies.
 .PHONY: distclean
 distclean: 
 	rm -rf $(OBJ_DIR) $(TARGET)
