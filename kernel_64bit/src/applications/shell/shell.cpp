@@ -1598,9 +1598,8 @@ void execute_command(const char *cmd)
                     }
                 }
 
-                Gpu::print_info("--- ");
-                Gpu::print(ip_display);
-                Gpu::print(" ping statistics ---\n");
+                Gpu::print_info(ip_display);
+                Gpu::print(" ping statistics\n");
                 char rec_buf[16];
                 itoa(received, rec_buf);
                 Gpu::print(rec_buf);
