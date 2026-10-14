@@ -29,6 +29,7 @@ void shell()
         Gpu::clear_screen(Gpu::background_color);
         Gpu::cursor_x = 0;
         Gpu::cursor_y = 0;
+        Gpu::render_frame();
     }
     else if(strcmp(cmd,"info") == 0)
     {

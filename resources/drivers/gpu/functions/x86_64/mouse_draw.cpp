@@ -1,6 +1,4 @@
-#include "../driver.hpp"
-
-#ifdef __x86_64__
+#include "../../driver.hpp"
 
 #include "drivers/mouse/driver.hpp"
 
@@ -56,5 +54,3 @@ namespace Gpu
         }
     }
 } // namespace Gpu
-
-#endif // __x86_64__

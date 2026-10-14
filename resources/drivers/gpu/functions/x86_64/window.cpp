@@ -1,6 +1,4 @@
-#ifdef __x86_64__
-
-#include "window.hpp"
+#include "../windows_manager/window.hpp"
 
 #include "drivers/gpu/driver.hpp"
 #include "drivers/mouse/driver.hpp"
@@ -976,5 +974,3 @@ namespace Gpu::Window_Manager
         return false;
     }
 } // namespace Gpu::Window_Manager
-
-#endif // __x86_64__

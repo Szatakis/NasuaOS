@@ -26,6 +26,8 @@ CFLAGS := \
 	-Wextra \
 	-mno-sse \
 	-mno-sse2 \
+	-DGPU_BACKBUFFER_WIDTH=1280 \
+	-DGPU_BACKBUFFER_HEIGHT=720 \
 	-I src \
 	-I ../resources \
 	-I ../utilities/applications/include
@@ -39,7 +41,9 @@ LDFLAGS := \
 TARGET := $(BIN_DIR)/kernel_32bit
 
 RESOURCES_DIR := ../resources
-RESOURCES_CPP_SRC := $(shell find $(RESOURCES_DIR)/libs $(RESOURCES_DIR)/drivers/keyboard $(RESOURCES_DIR)/drivers/gpu -type f -name "*.cpp" 2>/dev/null)
+SHARED_DRIVER_DIRS := keyboard gpu
+SHARED_DRIVER_PATHS := $(addprefix $(RESOURCES_DIR)/drivers/,$(SHARED_DRIVER_DIRS))
+RESOURCES_CPP_SRC := $(shell find $(RESOURCES_DIR)/libs $(SHARED_DRIVER_PATHS) -type f -name "*.cpp" ! -path "$(RESOURCES_DIR)/drivers/gpu/functions/x86_64/*" 2>/dev/null)
 RESOURCES_OBJ := $(patsubst $(RESOURCES_DIR)/%.cpp,$(OBJ_DIR)/resources/%.o,$(RESOURCES_CPP_SRC))
 
 

@@ -30,6 +30,7 @@ void kmain(uint32_t mbi)
     }
 
     Gpu::clear_screen(0x000000);
+    Gpu::render_frame();
     Keyboard::keyboard_init();
 
     Gpu::fetch();

@@ -1,6 +1,4 @@
-#include "../driver.hpp"
-
-#ifdef __x86_64__
+#include "../../driver.hpp"
 
 #include "drivers/keyboard/driver.hpp"
 #include "drivers/uart/driver.hpp"
@@ -144,120 +142,6 @@ namespace Gpu
         text_buffer[text_row][text_col].color = current_text_color;
 
         text_col++;
-    }
-
-    void print_num8(uint32_t num)
-    {
-        char buffer[12];
-        int i = 0;
-
-        if (num == 0)
-        {
-            print("0");
-            return;
-        }
-
-        while (num > 0)
-        {
-            buffer[i++] = '0' + (num % 10);
-            num /= 10;
-        }
-
-        while (i > 0)
-        {
-            print_char8(buffer[--i]);
-        }
-    }
-
-    void print(const char* str)
-    {
-        while (*str)
-        {
-            if (*str == '\x1B' && *(str + 1) == '[')
-            {
-                char code = *(str + 2);
-
-                switch (code)
-                {
-                    case 'w': current_text_color = COLOR_WHITE; break;
-                    case 'r': current_text_color = COLOR_RED; break;
-                    case 'g': current_text_color = COLOR_GREEN; break;
-                    case 'b': current_text_color = COLOR_BLUE; break;
-                    case 'y': current_text_color = COLOR_YELLOW; break;
-                    case 'a': current_text_color = COLOR_GRAY; break;
-                    case 'e': current_text_color = COLOR_TERM_INFO; break;
-                    case 't': current_text_color = COLOR_TERM_WARN; break;
-                    case 'u': current_text_color = COLOR_TERM_ERROR; break;
-                }
-
-                str += 3;
-                continue;
-            }
-
-            print_char8(*str++);
-        }
-    }
-
-    void print_int(int value)
-    {
-        char buffer[32];
-        int i = 0;
-
-        if (value == 0)
-        {
-            print("0");
-            return;
-        }
-
-        if (value < 0)
-        {
-            print("-");
-            value = -value;
-        }
-
-        while (value > 0)
-        {
-            buffer[i++] = '0' + (value % 10);
-            value /= 10;
-        }
-
-        for (int j = i - 1; j >= 0; j--)
-        {
-            char c[2];
-            c[0] = buffer[j];
-            c[1] = '\0';
-            print(c);
-        }
-    }
-
-    void print_hex(uint32_t value)
-    {
-        print("0x");
-
-        bool started = false;
-
-        for (int i = 7; i >= 0; i--)
-        {
-            uint8_t digit = (value >> (i * 4)) & 0xF;
-
-            if (digit != 0 || started || i == 0)
-            {
-                started = true;
-
-                char c;
-
-                if (digit < 10)
-                {
-                    c = '0' + digit;
-                }
-                else
-                {
-                    c = 'A' + (digit - 10);
-                }
-
-                print_char8(c);
-            }
-        }
     }
 
     void print_at8(const char* str, size_t x, size_t y, uint32_t color)
@@ -413,20 +297,6 @@ namespace Gpu
         print(msg);
     }
 
-    void fetch()
-    {
-        print(CMD_TEXT_WHITE);
-        print("\n $$\\   $$\\                                          $$$$$$\\   $$$$$$\\  \n");
-        print(" $$$\\  $$ |                                        $$  __$$\\ $$  __$$\\ \n");
-        print(" $$$$\\ $$ | $$$$$$\\   $$$$$$$\\ $$\\   $$\\  $$$$$$\\  $$ /  $$ |$$ /  \\__|\n");
-        print(" $$$$\\ $$ | $$$$$$\\   $$$$$$$\\ $$\\   $$\\  $$$$$$\\  $$ /  $$ |$$ /  \\__|\n");
-        print(" $$ $$\\$$ | \\____$$\\ $$  _____|$$ |  $$ | \\____$$\\ $$ |  $$ |\\$$$$$$\\  \n");
-        print(" $$ \\$$$$ | $$$$$$$ |\\$$$$$$\\  $$ |  $$ | $$$$$$$ |$$ |  $$ | \\____$$\\ \n");
-        print(" $$ |\\$$$ |$$  __$$ | \\____$$\\ $$ |  $$ |$$  __$$ |$$ |  $$ |$$\\   $$ |\n");
-        print(" $$ | \\$$ |\\$$$$$$$ |$$$$$$$  |\\$$$$$$  |\\$$$$$$$ | $$$$$$  |\\$$$$$$  |\n");
-        print(" \\__|  \\__| \\_______|\\_______/  \\______/  \\_______| \\______/  \\______/ \n\n");
-    }
-
     void print_cmd()
     {
         print(CMD_TEXT_BLUE);
@@ -477,5 +347,3 @@ namespace Gpu
         print("\n");
     }
 } // namespace Gpu
-
-#endif // __x86_64__

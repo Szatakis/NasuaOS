@@ -1,10 +1,16 @@
 # Kernel - Drivers
 
-The 64-bit kernel uses a driver architecture with GPU, input, timer, and storage drivers. This document covers the GPU driver and drawing primitives.
+Driver implementations are kept in the single shared tree at `resources/drivers/`. Both kernels include driver declarations through `resources/drivers/drivers.hpp`; the per-kernel `system/drivers/drivers.hpp` headers add only kernel-specific boot interfaces.
+
+The x86_64 build compiles driver sources under `resources/drivers/`. The legacy x86_32 build compiles the same GPU and keyboard source files, plus shared libraries. GPU framebuffer storage, pixel writes, presentation, glyph drawing, rectangle drawing, and text formatting are single shared implementations. x86_32 retains only a Multiboot framebuffer adapter and a polling console output sink. The x86_64-only GUI text buffer, taskbar, mouse, and window-manager integration is kept under `resources/drivers/gpu/functions/x86_64/` and is excluded from the x86_32 source list.
+
+The remaining x86_64 driver sources are not compatible with the x86_32 kernel merely by compiling them with `-m32`. They use kernel services that the x86_32 kernel does not provide, including Limine/HHDM memory management (`resources/drivers/memory/`), the x86_64 interrupt subsystem, UART/logger interfaces, and shell/GUI APIs. For example, APIC maps MMIO through the Limine HHDM and `Memory::vmm`, while ACPI calls the shell and logging APIs. Until matching x86_32 services are implemented and tested, these drivers are intentionally not linked into the 32-bit kernel; they have not been replaced with stubs or removed.
+
+There are no separate tracked x86_32 copies of driver source files to delete. Keeping one physical implementation tree avoids duplicate driver sources; the x86_32 source list is limited to drivers whose existing shared sources provide a 32-bit code path.
 
 ## GPU Driver
 
-Source: `kernel_64bit/src/system/drivers/gpu/driver.hpp`
+Interface and implementation: `resources/drivers/gpu/driver.hpp` and `resources/drivers/gpu/functions/`. `framebuffer/framebuffer.cpp`, `draw.cpp`, and `text_core.cpp` contain the shared GPU implementation; `framebuffer/multiboot.cpp` adapts the x86_32 Multiboot handoff to the common framebuffer.
 
 The GPU driver is the primary output mechanism for the kernel. It provides text rendering, graphics primitives, and backbuffer management.
 
@@ -15,11 +21,7 @@ The kernel uses **double buffering** to prevent screen tearing:
 1. All rendering goes to a **backbuffer** (an in-memory framebuffer)
 2. After rendering is complete, `render_frame()` copies the backbuffer to the actual VGA/VRAM
 
-```cpp
-static uint32_t backbuffer[4096 * 2160];  // VRAM-sized backbuffer
-```
-
-The backbuffer dimensions depend on the detected resolution. The `init_backbuffer()` function allocates and clears it, and `render_frame()` performs the copy.
+The shared implementation defaults to a 4096×2160 backbuffer. The x86_32 build sets its capacity to 1280×720, matching its Multiboot framebuffer request and avoiding an unnecessarily large fixed-address kernel image. `init_backbuffer()` validates the detected framebuffer against the compiled capacity; it does not allocate memory dynamically.
 
 ### Text Rendering
 
@@ -101,7 +103,7 @@ Used for shell output messages and UI elements.
 
 ### Window Manager
 
-Source: `kernel_64bit/src/system/drivers/gpu/functions/windows_manager/window.cpp`
+Implementation: `resources/drivers/gpu/functions/x86_64/window.cpp`
 
 The window manager handles overlapping GUI windows:
 
@@ -176,7 +178,7 @@ bool start_menu_open = false;
 
 ### Keyboard
 
-Source: `kernel_64bit/src/system/drivers/keyboard/`
+Implementation: `resources/drivers/keyboard/`
 
 PS/2 keyboard driver with scancode-to-ASCII conversion:
 
@@ -193,7 +195,7 @@ Key behavior:
 
 ### Mouse
 
-Source: `kernel_64bit/src/system/drivers/mouse/`
+Implementation: `resources/drivers/mouse/`
 
 PS/2 mouse driver:
 
@@ -213,7 +215,7 @@ Arrow keys (without Shift) also move the cursor:
 
 ## Timer (PIT)
 
-Source: `kernel_64bit/src/system/drivers/timer/driver.hpp`
+Interface: `resources/drivers/timer/driver.hpp`
 
 Programmable Interval Timer running at 100 Hz:
 

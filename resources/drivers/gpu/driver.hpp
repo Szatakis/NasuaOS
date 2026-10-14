@@ -34,6 +34,10 @@ namespace Gpu {
 
     void clear_screen(uint32_t color = 0);
     void clear_line();
+    void init_backbuffer(size_t width, size_t height, size_t pitch);
+    uint32_t* get_backbuffer();
+    size_t get_backbuffer_pitch();
+    void render_frame();
 
     void print(const char* str);
     void print_int(int value);
@@ -58,9 +62,9 @@ namespace Gpu {
 
     void fetch();
 
-    #ifdef __i386__
-
     extern uint32_t background_color;
+
+    #ifdef __i386__
 
     bool graphics_init(uint32_t mbi_addr);
     void putchar(char c);
@@ -71,11 +75,6 @@ namespace Gpu {
     #endif
 
     #ifdef __x86_64__
-
-    void init_backbuffer(size_t width, size_t height, size_t pitch);
-    uint32_t* get_backbuffer();
-    size_t get_backbuffer_pitch();
-    void render_frame();
 
     void init_text_buffer();
     void draw_text_buffer();

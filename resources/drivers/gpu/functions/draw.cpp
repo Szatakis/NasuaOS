@@ -1,103 +1,81 @@
 #include "../driver.hpp"
-
-#ifdef __x86_64__
-
-#include "drivers/rtc/driver.hpp"
-#include "drivers/mouse/driver.hpp"
-
 #include "fonts/fonts.hpp"
-
-#include "system/sysfunc/notification_manager/notification_manager.hpp"
-
-#include "system/gui/icons/icons.hpp"
-#include "system/gui/vars/colors.hpp"
-#include "system/gui/gui.hpp"
 
 namespace Gpu
 {
-    // FONT 8x8
-    void draw_char8(unsigned char c, size_t x, size_t y, uint32_t color)
+    void draw_char8(unsigned char character, size_t x, size_t y, uint32_t color)
     {
-        for (int row = 0; row < 8; row++)
+        for (size_t row = 0; row < 8; ++row)
         {
-            uint8_t bits = font8x8[c][row];
-
-            for (int col = 0; col < 8; col++)
+            const uint8_t bits = font8x8[character][row];
+            for (size_t column = 0; column < 8; ++column)
             {
-                if (bits & (1 << (7 - col)))
+                if (bits & (1U << (7 - column)))
                 {
-                    put_pixel(x + col, y + row, color);
+                    put_pixel(x + column, y + row, color);
                 }
             }
         }
     }
 
-    void draw_char8_clipped(unsigned char c, size_t x, size_t y, uint32_t color, size_t clip_x1, size_t clip_x2)
+    void draw_char8_clipped(unsigned char character, size_t x, size_t y,
+                            uint32_t color, size_t clip_x1, size_t clip_x2)
     {
-        for (int row = 0; row < 8; row++)
+        for (size_t row = 0; row < 8; ++row)
         {
-            uint8_t bits = font8x8[c][row];
-
-            for (int col = 0; col < 8; col++)
+            const uint8_t bits = font8x8[character][row];
+            for (size_t column = 0; column < 8; ++column)
             {
-                if (bits & (1 << (7 - col)))
+                const size_t pixel_x = x + column;
+                if ((bits & (1U << (7 - column))) &&
+                    pixel_x >= clip_x1 && pixel_x < clip_x2)
                 {
-                    size_t px = x + col;
-                    if (px >= clip_x1 && px < clip_x2)
-                    {
-                        put_pixel(px, y + row, color);
-                    }
+                    put_pixel(pixel_x, y + row, color);
                 }
             }
         }
     }
 
-    // FONT 10x10
-    void draw_char10(unsigned char c, size_t x, size_t y, uint32_t color)
+    void draw_char10(unsigned char character, size_t x, size_t y, uint32_t color)
     {
-        for (int row = 0; row < 10; row++)
+        for (size_t row = 0; row < 10; ++row)
         {
-            uint16_t bits = font10x10[c][row];
-
-            for (int col = 0; col < 10; col++)
+            const uint16_t bits = font10x10[character][row];
+            for (size_t column = 0; column < 10; ++column)
             {
-                if (bits & (1 << (9 - col)))
+                if (bits & (1U << (9 - column)))
                 {
-                    put_pixel(x + col, y + row, color);
+                    put_pixel(x + column, y + row, color);
                 }
             }
         }
     }
 
-    // FONT 12x12
-    void draw_char12(unsigned char c, size_t x, size_t y, uint32_t color)
+    void draw_char12(unsigned char character, size_t x, size_t y, uint32_t color)
     {
-        for (int row = 0; row < 12; row++)
+        for (size_t row = 0; row < 12; ++row)
         {
-            uint16_t bits = font12x12[c][row];
-
-            for (int col = 0; col < 12; col++)
+            const uint16_t bits = font12x12[character][row];
+            for (size_t column = 0; column < 12; ++column)
             {
-                if (bits & (1 << (11 - col)))
+                if (bits & (1U << (11 - column)))
                 {
-                    put_pixel(x + col, y + row, color);
+                    put_pixel(x + column, y + row, color);
                 }
             }
         }
     }
 
-    // FONT 16x16
-    void draw_char16(unsigned char c, size_t x, size_t y, uint32_t color)
+    void draw_char16(unsigned char character, size_t x, size_t y, uint32_t color)
     {
-        for (int row = 0; row < 16; row++)
+        for (size_t row = 0; row < 16; ++row)
         {
-            uint16_t bits = font16x16[c][row];
-
-            for (int col = 0; col < 16; col++)
+            const uint16_t bits = font16x16[character][row];
+            for (size_t column = 0; column < 16; ++column)
             {
-                if (bits & (1 << (15 - col)))
+                if (bits & (1U << (15 - column)))
                 {
-                    put_pixel(x + col, y + row, color);
+                    put_pixel(x + column, y + row, color);
                 }
             }
         }
@@ -105,19 +83,25 @@ namespace Gpu
 
     void fill_block(size_t x, size_t y, uint32_t color, size_t size_x, size_t size_y)
     {
-        if (!fb)
+        if (!fb || x >= fb->width || y >= fb->height)
         {
             return;
         }
 
-        uint32_t* bb_ptr = get_backbuffer();
-        size_t pitch = get_backbuffer_pitch();
-
-        for (size_t dy = 0; dy < size_y; dy++)
+        if (size_x > fb->width - x)
         {
-            for (size_t dx = 0; dx < size_x; dx++)
+            size_x = fb->width - x;
+        }
+        if (size_y > fb->height - y)
+        {
+            size_y = fb->height - y;
+        }
+
+        for (size_t row = 0; row < size_y; ++row)
+        {
+            for (size_t column = 0; column < size_x; ++column)
             {
-                bb_ptr[(y + dy) * pitch + (x + dx)] = color;
+                put_pixel(x + column, y + row, color);
             }
         }
     }
@@ -131,111 +115,34 @@ namespace Gpu
 
         if (x1 > x2)
         {
-            x1 = x1 + x2;
-            x2 = x1 - x2;
-            x1 = x1 - x2;
+            const int temp = x1;
+            x1 = x2;
+            x2 = temp;
         }
-
         if (y1 > y2)
         {
-            y1 = y1 + y2;
-            y2 = y1 - y2;
-            y1 = y1 - y2;
+            const int temp = y1;
+            y1 = y2;
+            y2 = temp;
         }
 
-        uint32_t* bb_ptr = get_backbuffer();
-        int pixels_per_pitch = get_backbuffer_pitch();
+        if (x2 <= 0 || y2 <= 0 || x1 >= static_cast<int>(fb->width) ||
+            y1 >= static_cast<int>(fb->height))
+        {
+            return;
+        }
+
+        if (x1 < 0) x1 = 0;
+        if (y1 < 0) y1 = 0;
+        if (x2 > static_cast<int>(fb->width)) x2 = static_cast<int>(fb->width);
+        if (y2 > static_cast<int>(fb->height)) y2 = static_cast<int>(fb->height);
 
         for (int y = y1; y < y2; ++y)
         {
             for (int x = x1; x < x2; ++x)
             {
-                bb_ptr[y * pixels_per_pitch + x] = color;
+                put_pixel(static_cast<size_t>(x), static_cast<size_t>(y), color);
             }
         }
     }
-
-    void update_start()
-    {
-        if (!fb) return;
-        draw_start_button(6, fb->height - bar_h_scaled);
-    }
-
-    void update_time()
-    {
-        if (!fb)
-        {
-            return;
-        }
-
-        Rtc::RtcTime time = Rtc::get_time();
-
-        char time_buf[9];
-        char date_buf[11];
-
-        time_buf[0] = '0' + (time.hour / 10);
-        time_buf[1] = '0' + (time.hour % 10);
-        time_buf[2] = ':';
-        time_buf[3] = '0' + (time.minute / 10);
-        time_buf[4] = '0' + (time.minute % 10);
-        time_buf[5] = ':';
-        time_buf[6] = '0' + (time.second / 10);
-        time_buf[7] = '0' + (time.second % 10);
-        time_buf[8] = '\0';
-
-        date_buf[0] = '0' + (time.day / 10);
-        date_buf[1] = '0' + (time.day % 10);
-        date_buf[2] = '-';
-        date_buf[3] = '0' + (time.month / 10);
-        date_buf[4] = '0' + (time.month % 10);
-        date_buf[5] = '-';
-
-        date_buf[6] = '0' + (time.year / 1000);
-        date_buf[7] = '0' + ((time.year / 100) % 10);
-        date_buf[8] = '0' + ((time.year / 10) % 10);
-        date_buf[9] = '0' + (time.year % 10);
-        date_buf[10] = '\0';
-
-        size_t text_x = fb->width - 105;
-        size_t start_y = fb->height - bar_h_scaled + 2;
-
-        print_at8(time_buf, text_x, start_y + 8, COLOR_WHITE);
-        print_at8(date_buf, text_x, start_y + 20, COLOR_WHITE);
-    }
-
-    void update_bottom_bar()
-    {
-        if (!fb)
-        {
-            return;
-        }
-
-        size_t start_y = fb->height - bar_h_scaled + 2;
-        size_t start_x = fb->width;
-
-        draw_icon<32, 32>(speaker_icon, start_x - 175, start_y + ((bar_h_scaled - 32) / 2));
-        
-        if(notification_count <= 0)
-        {
-            draw_icon<32, 32>(notification_icon, start_x - 145, start_y + ((bar_h_scaled - 32) / 2));
-        }
-        else
-        {
-            draw_icon<32, 32>(notification_icon_h, start_x - 145, start_y + ((bar_h_scaled - 32) / 2));
-        }
-
-        Window_Manager::draw_taskbar_entries();
-        update_start();
-        update_time();
-    }
-
-    void update_gui()
-    {
-        update_gui_state(Mouse::x, Mouse::y);
-
-        update_bottom_bar();
-        draw_text_buffer();
-    }
-} // namespace Gpu
-
-#endif // __x86_64__
+}
