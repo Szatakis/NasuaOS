@@ -4,7 +4,7 @@
 #include "drivers/disk/driver.hpp"
 #include "drivers/memory/driver.hpp"
 
-#include "applications/shell/commands.hpp"
+#include "applications/shell/shell.hpp"
 
 #include "libs/libc/libc.hpp"
 

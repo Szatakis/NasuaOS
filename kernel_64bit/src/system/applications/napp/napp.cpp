@@ -13,7 +13,7 @@
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
 
-#include "applications/shell/commands.hpp"
+#include "applications/shell/shell.hpp"
 #include "applications/terminal/terminal.hpp"
 
 #include "libs/libc/libc.hpp"

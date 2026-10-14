@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <limine.h>
 
-#include "commands.hpp"
+#include "shell.hpp"
 
 #include "system/drivers/drivers.hpp"
 

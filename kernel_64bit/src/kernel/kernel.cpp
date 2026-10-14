@@ -6,7 +6,7 @@
 #include "system/interrupts/interrupts.hpp"
 #include "system/filesystem/filesystem.hpp"
 
-#include "applications/shell/commands.hpp"
+#include "applications/shell/shell.hpp"
 
 #include "system/applications/napp/napp.hpp"
 

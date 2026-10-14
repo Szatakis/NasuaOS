@@ -6,7 +6,7 @@
 #include "fonts/fonts.hpp"
 #include "system/gui/vars/colors.hpp"
 
-#include "applications/shell/commands.hpp"
+#include "applications/shell/shell.hpp"
 #include "applications/terminal/terminal.hpp"
 
 #include "libs/libc/libc.hpp"

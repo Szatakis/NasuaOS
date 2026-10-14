@@ -4,7 +4,7 @@
 #include <limine.h>
 
 #include "drivers/gpu/driver.hpp"
-#include "applications/shell/commands.hpp"
+#include "applications/shell/shell.hpp"
 #include "libs/asm/asm.hpp"
 
 extern "C" volatile struct limine_rsdp_request rsdp_request;

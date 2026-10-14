@@ -2,7 +2,7 @@
 
 #include "system/drivers/drivers.hpp"
 
-#include "applications/shell/commands.hpp"
+#include "applications/shell/shell.hpp"
 #include "system/sysfunc/command_history/history.hpp"
 #include "drivers/gpu/functions/windows_manager/window.hpp"
 
