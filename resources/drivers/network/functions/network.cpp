@@ -14,10 +14,10 @@
 namespace Network
 {
     bool available = false;
-    MACAddress mac_addr = {{0x52, 0x54, 0x00, 0x12, 0x34, 0x56}};
-    IPAddress ip_addr = {{192, 168, 100, 2}};
+    MACAddress mac_addr = {{0x02, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    IPAddress ip_addr = {{169, 254, 1, 2}};
     IPAddress netmask = {{255, 255, 255, 0}};
-    IPAddress gateway = {{192, 168, 100, 1}};
+    IPAddress gateway = {{0, 0, 0, 0}};
     uint64_t rx_packets = 0;
     uint64_t tx_packets = 0;
 
