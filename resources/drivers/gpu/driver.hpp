@@ -38,6 +38,7 @@ namespace Gpu {
     uint32_t* get_backbuffer();
     size_t get_backbuffer_pitch();
     void render_frame();
+    void render_frame_region(size_t x, size_t y, size_t width, size_t height);
 
     void print(const char* str);
     void print_int(int value);

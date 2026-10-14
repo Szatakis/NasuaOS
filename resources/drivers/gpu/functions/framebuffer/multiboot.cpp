@@ -74,6 +74,8 @@ namespace Gpu
             return;
         }
 
+        const size_t previous_x = cursor_x;
+        const size_t previous_y = cursor_y;
         clear_cursor();
 
         if (character == '\n')
@@ -94,7 +96,8 @@ namespace Gpu
             cursor_y += CHAR_HEIGHT;
         }
 
-        if (cursor_y + CHAR_HEIGHT > fb->height)
+        const bool screen_cleared = cursor_y + CHAR_HEIGHT > fb->height;
+        if (screen_cleared)
         {
             cursor_x = 0;
             cursor_y = 0;
@@ -102,7 +105,15 @@ namespace Gpu
         }
 
         draw_cursor();
-        render_frame();
+        if (screen_cleared)
+        {
+            render_frame();
+        }
+        else
+        {
+            render_frame_region(previous_x, previous_y, CHAR_WIDTH, CHAR_HEIGHT);
+            render_frame_region(cursor_x, cursor_y + CHAR_HEIGHT - 1, CHAR_WIDTH, 1);
+        }
     }
 
     void print_char8(char character)

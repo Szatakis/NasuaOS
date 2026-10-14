@@ -83,7 +83,7 @@ namespace Gpu
         }
     }
 
-    void render_frame()
+    void render_frame_region(size_t x, size_t y, size_t width, size_t height)
     {
         if (!fb || !fb->address || fb->bpp != 32 ||
             backbuffer_width == 0 || backbuffer_height == 0)
@@ -100,14 +100,37 @@ namespace Gpu
             return;
         }
 
-        for (size_t y = 0; y < backbuffer_height; ++y)
+        const size_t copy_width = fb->width < backbuffer_width
+            ? fb->width : backbuffer_width;
+        const size_t copy_height = fb->height < backbuffer_height
+            ? fb->height : backbuffer_height;
+        if (x >= copy_width || y >= copy_height)
         {
-            const size_t row_offset = y * framebuffer_pitch;
-            const size_t backbuffer_offset = y * backbuffer_pitch;
-            for (size_t x = 0; x < backbuffer_width; ++x)
+            return;
+        }
+
+        if (width > copy_width - x)
+        {
+            width = copy_width - x;
+        }
+        if (height > copy_height - y)
+        {
+            height = copy_height - y;
+        }
+
+        for (size_t row = y; row < y + height; ++row)
+        {
+            const size_t row_offset = row * framebuffer_pitch;
+            const size_t backbuffer_offset = row * backbuffer_pitch;
+            for (size_t column = x; column < x + width; ++column)
             {
-                framebuffer[row_offset + x] = backbuffer[backbuffer_offset + x];
+                framebuffer[row_offset + column] = backbuffer[backbuffer_offset + column];
             }
         }
+    }
+
+    void render_frame()
+    {
+        render_frame_region(0, 0, backbuffer_width, backbuffer_height);
     }
 }

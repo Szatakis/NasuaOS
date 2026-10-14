@@ -21,7 +21,7 @@ The kernel uses **double buffering** to prevent screen tearing:
 1. All rendering goes to a **backbuffer** (an in-memory framebuffer)
 2. After rendering is complete, `render_frame()` copies the backbuffer to the actual VGA/VRAM
 
-The shared implementation defaults to a 4096×2160 backbuffer. The x86_32 build sets its capacity to 1280×720, matching its Multiboot framebuffer request and avoiding an unnecessarily large fixed-address kernel image. `init_backbuffer()` validates the detected framebuffer against the compiled capacity; it does not allocate memory dynamically.
+The shared implementation defaults to a 4096×2160 backbuffer. The x86_32 build sets its capacity to 1280×720, matching its Multiboot framebuffer request and avoiding an unnecessarily large fixed-address kernel image. `init_backbuffer()` validates the detected framebuffer against the compiled capacity; it does not allocate memory dynamically. The 32-bit console presents only the updated character cells (or the full frame when clearing the screen), rather than copying the entire framebuffer for every character.
 
 ### Text Rendering
 
