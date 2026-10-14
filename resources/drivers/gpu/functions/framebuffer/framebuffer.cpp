@@ -31,9 +31,7 @@ namespace Gpu
     void init_backbuffer(size_t width, size_t height, size_t pitch)
     {
         size_t pitch_pixels = pitch / sizeof(uint32_t);
-        if (width == 0 || height == 0 ||
-            width > BACKBUFFER_WIDTH || height > BACKBUFFER_HEIGHT ||
-            pitch_pixels < width)
+        if (width == 0 || height == 0 || width > BACKBUFFER_WIDTH || height > BACKBUFFER_HEIGHT || pitch_pixels < width)
         {
             backbuffer_width = 0;
             backbuffer_height = 0;
@@ -58,8 +56,7 @@ namespace Gpu
 
     void put_pixel(size_t x, size_t y, uint32_t color)
     {
-        if (!fb || x >= fb->width || y >= fb->height ||
-            x >= backbuffer_width || y >= backbuffer_height)
+        if (!fb || x >= fb->width || y >= fb->height || x >= backbuffer_width || y >= backbuffer_height)
         {
             return;
         }
@@ -85,8 +82,7 @@ namespace Gpu
 
     void render_frame_region(size_t x, size_t y, size_t width, size_t height)
     {
-        if (!fb || !fb->address || fb->bpp != 32 ||
-            backbuffer_width == 0 || backbuffer_height == 0)
+        if (!fb || !fb->address || fb->bpp != 32 || backbuffer_width == 0 || backbuffer_height == 0)
         {
             return;
         }
@@ -100,10 +96,9 @@ namespace Gpu
             return;
         }
 
-        const size_t copy_width = fb->width < backbuffer_width
-            ? fb->width : backbuffer_width;
-        const size_t copy_height = fb->height < backbuffer_height
-            ? fb->height : backbuffer_height;
+        const size_t copy_width = fb->width < backbuffer_width ? fb->width : backbuffer_width;
+        const size_t copy_height = fb->height < backbuffer_height ? fb->height : backbuffer_height;
+        
         if (x >= copy_width || y >= copy_height)
         {
             return;

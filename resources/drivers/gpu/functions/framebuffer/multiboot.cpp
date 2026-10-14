@@ -11,12 +11,10 @@ namespace Gpu
         auto* tag = reinterpret_cast<multiboot_tag*>(mbi_addr + 8);
         while (tag->type != 0)
         {
-            if (tag->type == 8 &&
-                tag->size >= sizeof(multiboot_tag_framebuffer))
+            if (tag->type == 8 && tag->size >= sizeof(multiboot_tag_framebuffer))
             {
                 auto* frame = reinterpret_cast<multiboot_tag_framebuffer*>(tag);
-                if (frame->framebuffer_addr > UINTPTR_MAX ||
-                    frame->framebuffer_bpp != 32)
+                if (frame->framebuffer_addr > UINTPTR_MAX || frame->framebuffer_bpp != 32)
                 {
                     return false;
                 }
@@ -33,8 +31,7 @@ namespace Gpu
                 return get_backbuffer_pitch() != 0;
             }
 
-            tag = reinterpret_cast<multiboot_tag*>(
-                reinterpret_cast<uint8_t*>(tag) + ((tag->size + 7) & ~7U));
+            tag = reinterpret_cast<multiboot_tag*>(reinterpret_cast<uint8_t*>(tag) + ((tag->size + 7) & ~7U));
         }
 
         return false;
@@ -85,8 +82,7 @@ namespace Gpu
         }
         else
         {
-            draw_char8(static_cast<unsigned char>(character), cursor_x, cursor_y,
-                       current_text_color);
+            draw_char8(static_cast<unsigned char>(character), cursor_x, cursor_y, current_text_color);
             cursor_x += CHAR_WIDTH;
         }
 

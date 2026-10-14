@@ -126,16 +126,27 @@ namespace Gpu
             y2 = temp;
         }
 
-        if (x2 <= 0 || y2 <= 0 || x1 >= static_cast<int>(fb->width) ||
-            y1 >= static_cast<int>(fb->height))
+        if (x2 <= 0 || y2 <= 0 || x1 >= static_cast<int>(fb->width) || y1 >= static_cast<int>(fb->height))
         {
             return;
         }
 
-        if (x1 < 0) x1 = 0;
-        if (y1 < 0) y1 = 0;
-        if (x2 > static_cast<int>(fb->width)) x2 = static_cast<int>(fb->width);
-        if (y2 > static_cast<int>(fb->height)) y2 = static_cast<int>(fb->height);
+        if (x1 < 0) 
+        {
+            x1 = 0;
+        }
+        if (y1 < 0) 
+        {
+            y1 = 0;
+        }
+        if (x2 > static_cast<int>(fb->width)) 
+        {
+            x2 = static_cast<int>(fb->width);
+        }
+        if (y2 > static_cast<int>(fb->height)) 
+        {
+            y2 = static_cast<int>(fb->height);
+        }
 
         for (int y = y1; y < y2; ++y)
         {
