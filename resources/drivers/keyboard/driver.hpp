@@ -6,6 +6,7 @@ namespace Keyboard
 {
     char scancode_to_ascii_normal(uint8_t scancode);
     char scancode_to_ascii_shift(uint8_t scancode);
+    char translate_scancode(uint8_t scancode);
 
     void keyboard_set_leds(uint8_t leds);
 
@@ -14,8 +15,6 @@ namespace Keyboard
     extern bool extended_scancode;
     extern bool shell_input_enabled;
     extern bool alt_pressed;
-
-    extern const char keymap[128];
 
 #ifdef __x86_64__
     void print_sc(uint8_t scancode);

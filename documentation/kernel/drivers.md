@@ -2,7 +2,7 @@
 
 Driver implementations are kept in the single shared tree at `resources/drivers/`. Both kernels include driver declarations through `resources/drivers/drivers.hpp`; the per-kernel `system/drivers/drivers.hpp` headers add only kernel-specific boot interfaces.
 
-The x86_64 build compiles driver sources under `resources/drivers/`. The legacy x86_32 build compiles the same GPU and keyboard source files, plus shared libraries. GPU framebuffer storage, pixel writes, presentation, glyph drawing, rectangle drawing, and text formatting are single shared implementations. x86_32 retains only a Multiboot framebuffer adapter and a polling console output sink. The x86_64-only GUI text buffer, taskbar, mouse, and window-manager integration is kept under `resources/drivers/gpu/functions/x86_64/` and is excluded from the x86_32 source list.
+The x86_64 build compiles driver sources under `resources/drivers/`. The legacy x86_32 build compiles the same GPU and keyboard source files, plus shared libraries. GPU framebuffer storage, pixel writes, presentation, glyph drawing, rectangle drawing, and text formatting are single shared implementations. x86_32 retains only a Multiboot framebuffer adapter and a polling console output sink. The x86_64-only GUI text buffer, taskbar, mouse, and window-manager integration is kept under `resources/drivers/gpu/functions/64bit_driver/` and is excluded from the x86_32 source list.
 
 The remaining x86_64 driver sources are not compatible with the x86_32 kernel merely by compiling them with `-m32`. They use kernel services that the x86_32 kernel does not provide, including Limine/HHDM memory management (`resources/drivers/memory/`), the x86_64 interrupt subsystem, UART/logger interfaces, and shell/GUI APIs. For example, APIC maps MMIO through the Limine HHDM and `Memory::vmm`, while ACPI calls the shell and logging APIs. Until matching x86_32 services are implemented and tested, these drivers are intentionally not linked into the 32-bit kernel; they have not been replaced with stubs or removed.
 
@@ -22,6 +22,10 @@ The kernel uses **double buffering** to prevent screen tearing:
 2. After rendering is complete, `render_frame()` copies the backbuffer to the actual VGA/VRAM
 
 The shared implementation defaults to a 4096×2160 backbuffer. The x86_32 build sets its capacity to 1280×720, matching its Multiboot framebuffer request and avoiding an unnecessarily large fixed-address kernel image. `init_backbuffer()` validates the detected framebuffer against the compiled capacity; it does not allocate memory dynamically. The 32-bit console presents only the updated character cells (or the full frame when clearing the screen), rather than copying the entire framebuffer for every character.
+
+## Keyboard Driver
+
+The Set 1 scancode tables, modifier state, and scancode-to-ASCII conversion are shared in `resources/drivers/keyboard/functions/keyboard.cpp`. The x86_64 interrupt handler and x86_32 polling `read_line()` adapter both use `translate_scancode()`, including shared Shift and Caps Lock behavior. Polling remains architecture/kernel-specific because the 32-bit kernel does not provide the x86_64 interrupt-driven input path.
 
 ### Text Rendering
 
@@ -103,7 +107,7 @@ Used for shell output messages and UI elements.
 
 ### Window Manager
 
-Implementation: `resources/drivers/gpu/functions/x86_64/window.cpp`
+Implementation: `resources/drivers/gpu/functions/64bit_driver/window.cpp`
 
 The window manager handles overlapping GUI windows:
 

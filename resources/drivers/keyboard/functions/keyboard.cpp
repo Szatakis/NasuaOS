@@ -11,22 +11,6 @@ namespace Keyboard
     bool shell_input_enabled = true;
     bool alt_pressed = false;
 
-    const char keymap[128] =
-    {
-        0,27,
-        '1','2','3','4','5','6','7','8','9','0','-','=',
-        8,9,
-
-        'q','w','e','r','t','y','u','i','o','p','[',']',
-        '\n',0,
-
-        'a','s','d','f','g','h','j','k','l',';','\'',
-        '`',0,'\\',
-
-        'z','x','c','v','b','n','m',',','.','/',
-        0,'*',0,' '
-    };
-
     char scancode_to_ascii_normal(uint8_t scancode)
     {
         switch (scancode)
@@ -90,6 +74,23 @@ namespace Keyboard
             case 0x2B: return '|';
             default: return 0;
         }
+    }
+
+    char translate_scancode(uint8_t scancode)
+    {
+        char normal = scancode_to_ascii_normal(scancode);
+
+        if (normal >= 'a' && normal <= 'z')
+        {
+            if (caps_lock ^ shift_pressed)
+            {
+                return normal - 'a' + 'A';
+            }
+
+            return normal;
+        }
+
+        return shift_pressed ? scancode_to_ascii_shift(scancode) : normal;
     }
 
     void keyboard_set_leds(uint8_t leds)
@@ -176,23 +177,6 @@ namespace Keyboard
 
     char command_buffer[64];
     size_t cmd_idx = 0;
-
-    static char get_ascii(uint8_t scancode)
-    {
-        char normal = scancode_to_ascii_normal(scancode);
-
-        if (normal >= 'a' && normal <= 'z')
-        {
-            if (caps_lock ^ shift_pressed)
-            {
-                return normal - 'a' + 'A';
-            }
-
-            return normal;
-        }
-
-        return shift_pressed ? scancode_to_ascii_shift(scancode) : normal;
-    }
 
     void print_sc(uint8_t scancode)
     {
@@ -445,7 +429,7 @@ namespace Keyboard
         }
         else
         {
-            c = get_ascii(scancode);
+            c = translate_scancode(scancode);
         }
 
         if(c)
@@ -484,16 +468,14 @@ namespace Keyboard
 
         do
         {
-            asm volatile("inb $0x64, %0" : "=a"(status));
-        } while(status & 2);
+            status = inb(0x64);
+        } while (status & 2);
 
         uint8_t cmd = 0xAE;
-
-        asm volatile("outb %0, $0x64" : : "a"(cmd));
+        outb(0x64, static_cast<uint8_t>(cmd));
 
         uint8_t enable = 0xF4;
-
-        asm volatile("outb %0, $0x60" : : "a"(enable));
+        outb(0x60, static_cast<uint8_t>(enable));
     }
 
     uint8_t read_scancode()
@@ -502,15 +484,11 @@ namespace Keyboard
 
         while(true)
         {
-            asm volatile("inb $0x64, %0" : "=a"(status));
+            status = inb(0x64);
 
             if(status & 1)
             {
-                uint8_t code;
-
-                asm volatile("inb $0x60, %0" : "=a"(code));
-
-                return code;
+                return inb(0x60);
             }
 
         }
@@ -542,8 +520,48 @@ namespace Keyboard
 
             uint8_t sc = read_scancode();
 
-            if(sc & 0x80)
+            if (sc == 0xE0)
             {
+                extended_scancode = true;
+                continue;
+            }
+
+            if (extended_scancode)
+            {
+                extended_scancode = false;
+                continue;
+            }
+
+            if (sc & 0x80)
+            {
+                const uint8_t released = sc & 0x7F;
+                if (released == 0x2A || released == 0x36)
+                {
+                    shift_pressed = false;
+                }
+                if (released == 0x38)
+                {
+                    alt_pressed = false;
+                }
+                continue;
+            }
+
+            if (sc == 0x2A || sc == 0x36)
+            {
+                shift_pressed = true;
+                continue;
+            }
+
+            if (sc == 0x3A)
+            {
+                caps_lock = !caps_lock;
+                keyboard_set_leds(caps_lock ? 0x04 : 0x00);
+                continue;
+            }
+
+            if (sc == 0x38)
+            {
+                alt_pressed = true;
                 continue;
             }
 
@@ -562,7 +580,7 @@ namespace Keyboard
                 continue;
             }
 
-            char c = keymap[sc];
+            char c = translate_scancode(sc);
 
             if(c)
             {

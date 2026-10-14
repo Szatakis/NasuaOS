@@ -217,7 +217,7 @@ override SRCFILES += $(shell find -L src/arch/$(ARCH) -type f 2>/dev/null | LC_A
 RESOURCES_DIR := ../resources
 override RESOURCES_SRCFILES := $(shell find -L $(RESOURCES_DIR)/libs $(RESOURCES_DIR)/drivers -type f -name '*.cpp' 2>/dev/null | LC_ALL=C sort)
 ifneq ($(ARCH),x86_64)
-override RESOURCES_SRCFILES := $(filter-out $(RESOURCES_DIR)/drivers/gpu/functions/x86_64/%,$(RESOURCES_SRCFILES))
+override RESOURCES_SRCFILES := $(filter-out $(RESOURCES_DIR)/drivers/gpu/functions/64bit_driver/%,$(RESOURCES_SRCFILES))
 endif
 override RESOURCES_OBJ := $(patsubst $(RESOURCES_DIR)/%.cpp,obj-$(ARCH)/resources/%.cpp.o,$(RESOURCES_SRCFILES))
 # Obtain the object and header dependencies file names.
