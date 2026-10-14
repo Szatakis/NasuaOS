@@ -157,6 +157,9 @@ namespace Memory
             uint64_t pdpt_i = (virt >> 30) & 0x1FF;
             uint64_t pd_i   = (virt >> 21) & 0x1FF;
             uint64_t pt_i   = (virt >> 12) & 0x1FF;
+            constexpr uint64_t PAGE_ADDRESS_MASK = 0x000FFFFFFFFFF000ULL;
+            constexpr uint64_t LARGE_PAGE_1G_MASK = 0x000FFFFFC0000000ULL;
+            constexpr uint64_t LARGE_PAGE_2M_MASK = 0x000FFFFFFFE00000ULL;
 
             if(!(pml4[pml4_i] & PAGE_PRESENT))
             {
@@ -169,10 +172,20 @@ namespace Memory
                 return 0;
             }
 
+            if(pdpt[pdpt_i] & (1ULL << 7))
+            {
+                return ((pdpt[pdpt_i] & LARGE_PAGE_1G_MASK) | (virt & 0x3FFFFFFFULL)) & PAGE_ADDRESS_MASK;
+            }
+
             uint64_t* pd = phys_to_virt(pdpt[pdpt_i] & ~0xFFF);
             if(!(pd[pd_i] & PAGE_PRESENT))
             {
                 return 0;
+            }
+
+            if(pd[pd_i] & (1ULL << 7))
+            {
+                return ((pd[pd_i] & LARGE_PAGE_2M_MASK) | (virt & 0x1FFFFFULL)) & PAGE_ADDRESS_MASK;
             }
 
             uint64_t* pt = phys_to_virt(pd[pd_i] & ~0xFFF);
@@ -181,7 +194,7 @@ namespace Memory
                 return 0;
             }
 
-            return pt[pt_i] & ~0xFFF;
+            return pt[pt_i] & PAGE_ADDRESS_MASK;
         }
     }
 }

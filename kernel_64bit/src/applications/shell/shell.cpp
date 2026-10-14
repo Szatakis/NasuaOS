@@ -1513,53 +1513,61 @@ void execute_command(const char *cmd)
         else
         {
             const char* target_ip_str = target_flag + 9;
-            while (*target_ip_str == ' ') target_ip_str++;
+            while (*target_ip_str == ' ') 
+            {
+                target_ip_str++;
+            }
 
-            Network::IPAddress target_ip;
-            int a=0, b=0, c=0, d=0;
+            Network::IPAddress target_ip = {};
+            bool valid_ip = true;
             const char* ptr = target_ip_str;
+            for (uint8_t octet = 0; octet < 4; ++octet)
+            {
+                uint16_t value = 0;
+                uint8_t digits = 0;
+                while (*ptr >= '0' && *ptr <= '9')
+                {
+                    value = static_cast<uint16_t>(value * 10 + (*ptr - '0'));
+                    ++digits;
+                    ++ptr;
+                    if (digits > 3 || value > 255)
+                    {
+                        valid_ip = false;
+                        break;
+                    }
+                }
+                if (digits == 0 || !valid_ip)
+                {
+                    valid_ip = false;
+                    break;
+                }
+                target_ip.bytes[octet] = static_cast<uint8_t>(value);
+                if (octet < 3)
+                {
+                    if (*ptr != '.')
+                    {
+                        valid_ip = false;
+                        break;
+                    }
+                    ++ptr;
+                }
+            }
+            while (*ptr == ' ')
+            {
+                ++ptr;
+            }
+            if (*ptr != '\0')
+            {
+                valid_ip = false;
+            }
 
-            while (*ptr >= '0' && *ptr <= '9') 
-            { 
-                a = a * 10 + (*ptr - '0'); ptr++; 
-            }
-            if (*ptr == '.') 
-            {
-                ptr++;
-            }
-            while (*ptr >= '0' && *ptr <= '9') 
-            { 
-                b = b * 10 + (*ptr - '0'); ptr++; 
-            }
-            if (*ptr == '.') 
-            {
-                ptr++;
-            }
-            while (*ptr >= '0' && *ptr <= '9') 
-            { 
-                c = c * 10 + (*ptr - '0'); ptr++; 
-            }
-            if (*ptr == '.') 
-            {
-                ptr++;
-            }
-            while (*ptr >= '0' && *ptr <= '9') 
-            { 
-                d = d * 10 + (*ptr - '0'); ptr++; 
-            }
-
-            if (a < 0 || a > 255 || b < 0 || b > 255 || c < 0 || c > 255 || d < 0 || d > 255)
+            if (!valid_ip)
             {
                 Gpu::print_error("Invalid IP address format!\n");
                 Gpu::print_info("Usage: ping --target <ip_address>\n");
             }
             else
             {
-                target_ip.bytes[0] = (uint8_t)a;
-                target_ip.bytes[1] = (uint8_t)b;
-                target_ip.bytes[2] = (uint8_t)c;
-                target_ip.bytes[3] = (uint8_t)d;
-
                 // Build IP string for printing
                 char ip_display[32];
                 int i = 0;

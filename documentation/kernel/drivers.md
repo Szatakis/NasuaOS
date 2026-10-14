@@ -4,7 +4,7 @@ Driver implementations are kept in the single shared tree at `resources/drivers/
 
 The x86_64 build compiles driver sources under `resources/drivers/`. The legacy x86_32 build compiles the same GPU and keyboard source files, plus shared libraries. GPU framebuffer storage, pixel writes, presentation, glyph drawing, rectangle drawing, and text formatting are single shared implementations. x86_32 retains only a Multiboot framebuffer adapter and a polling console output sink. The x86_64-only GUI text buffer, taskbar, mouse, and window-manager integration is kept under `resources/drivers/gpu/functions/64bit_driver/` and is excluded from the x86_32 source list.
 
-The remaining x86_64 driver sources are not compatible with the x86_32 kernel merely by compiling them with `-m32`. They use kernel services that the x86_32 kernel does not provide, including Limine/HHDM memory management (`resources/drivers/memory/`), the x86_64 interrupt subsystem, UART/logger interfaces, and shell/GUI APIs. For example, APIC maps MMIO through the Limine HHDM and `Memory::vmm`, while ACPI calls the shell and logging APIs. Until matching x86_32 services are implemented and tested, these drivers are intentionally not linked into the 32-bit kernel; they have not been replaced with stubs or removed.
+The remaining x86_64 driver sources are not compatible with the x86_32 kernel merely by compiling them with `-m32`. They use kernel services that the x86_32 kernel does not provide, including Limine/HHDM memory management (`resources/drivers/memory/`), the x86_64 interrupt subsystem, UART/logger interfaces, and shell/GUI APIs. For example, APIC maps MMIO through the Limine HHDM and `Memory::vmm`, while ACPI calls the shell and logging APIs. Ethernet and network drivers are intentionally 64-bit-only: their PCI access, DMA memory translation, and kernel networking initialization path are not linked into the 32-bit target.
 
 There are no separate tracked x86_32 copies of driver source files to delete. Keeping one physical implementation tree avoids duplicate driver sources; the x86_32 source list is limited to drivers whose existing shared sources provide a 32-bit code path.
 
@@ -26,6 +26,21 @@ The shared implementation defaults to a 4096×2160 backbuffer. The x86_32 build 
 ## Keyboard Driver
 
 The PS/2 controller access, Set 1 scancode translation, modifier state, and polling line input are implemented once in `resources/drivers/keyboard/functions/keyboard.cpp`, which contains no architecture checks and is compiled by both kernels. The 64-bit GUI/interrupt integration lives in `kernel_64bit/src/system/interrupts/keyboard.cpp` and uses the shared `translate_scancode()` implementation. The 32-bit kernel uses the shared polling `read_line()` path.
+
+## Ethernet and Network Drivers (x86_64)
+
+The generic Ethernet interface is declared in `resources/drivers/ethernet/driver.hpp`; the VirtIO-specific PCI transport and virtqueue implementation are isolated in `resources/drivers/ethernet/controllers/virtio-net/`. The network layer in `resources/drivers/network/` owns Ethernet frame dispatch, ARP neighbor resolution, IPv4 and ICMP handling, UDP checksums and ports, and DHCP. DHCP starts after the VirtIO interface initializes and is advanced from the kernel's regular network polling loop. The 32-bit kernel does not compile or initialize these drivers.
+
+The current transport supports the transitional/legacy PCI VirtIO network device (PCI ID `1af4:1000`), which is what QEMU's default `virtio-net-pci` device exposes on the usual `pc` machine. It requires a valid device-supplied MAC and a DMA-contiguous queue/buffer mapping, and reports initialization failure rather than substituting a MAC, network configuration, or simulated DHCP response. The modern-only VirtIO PCI transport (`1af4:1041`) is not implemented.
+
+Build the 64-bit kernel and run it with QEMU user-mode DHCP networking:
+
+```sh
+make -C kernel_64bit ARCH=x86_64
+make run-x86_64 QEMU_NETDEV="-netdev user,id=net0 -device virtio-net-pci,netdev=net0"
+```
+
+The serial log reports device discovery, MAC, queue/link status, DHCP state changes, and the configuration applied from DHCPACK. A successful build alone does not verify that QEMU delivered a DHCP lease; verify the serial `DHCP state BOUND` message and assigned addresses during a VM run.
 
 ### Text Rendering
 
