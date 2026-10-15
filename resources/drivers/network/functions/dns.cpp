@@ -55,8 +55,7 @@ namespace Network
 
 		void receive_dns_response(const IPAddress& source, uint16_t source_port, const uint8_t* packet, uint16_t length)
 		{
-			if (!packet || source_port != 53 || !same_address(source, dns_server) || length < 12 ||
-				Internal::read_be16(packet) != active_dns_id)
+			if (!packet || source_port != 53 || !same_address(source, dns_server) || length < 12 || Internal::read_be16(packet) != active_dns_id)
 			{
 				return;
 			}
@@ -133,9 +132,7 @@ namespace Network
 				while (*cursor && *cursor != '.')
 				{
 					const char character = *cursor++;
-					const bool valid_character = (character >= 'a' && character <= 'z') ||
-												 (character >= 'A' && character <= 'Z') ||
-												 (character >= '0' && character <= '9') || character == '-';
+					const bool valid_character = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9') || character == '-';
 					if (!valid_character || label_length == 63)
 					{
 						return false;
