@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 5
+#define NAPP_ABI_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
 #define NAPP_HEADER_SIZE 96
@@ -45,6 +45,10 @@ struct napp_header
 #define NAPP_HTTP_ERROR_TIMEOUT -4
 #define NAPP_HTTP_ERROR_TOO_LARGE -5
 #define NAPP_HTTP_ERROR_INVALID -6
+#define NAPP_HTTPS_ERROR_TLS -7
+#define NAPP_HTTPS_ERROR_CERTIFICATE -8
+#define NAPP_HTTPS_ERROR_CLOCK -9
+#define NAPP_HTTPS_ERROR_ENTROPY -10
 
 // A window owned by an application. The kernel keeps the geometry up to date
 // before every callback; the application only reads it.
@@ -157,6 +161,8 @@ struct napp_api
     // or one of the NAPP_HTTP_ERROR_* values.
     int32_t (*http_get)(const char* hostname, uint16_t port, const char* path,
                         char* response, uint32_t response_capacity, uint32_t timeout_ms);
+    int32_t (*https_get)(const char* hostname, uint16_t port, const char* path,
+                         char* response, uint32_t response_capacity, uint32_t timeout_ms);
 
     // Read or replace a complete ClawFS file. The length is stored in
     // ClawFS metadata, so files can span multiple sectors.

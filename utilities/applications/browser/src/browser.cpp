@@ -88,10 +88,16 @@ static bool browser_has_prefix_ignore_case(const char* text, const char* prefix)
     return true;
 }
 
-static bool browser_parse_http_url(const char* url, char* hostname, int hostname_capacity, uint16_t& port, char* path, int path_capacity)
+static bool browser_parse_url(const char* url, bool secure, char* hostname,
+                              int hostname_capacity, uint16_t& port,
+                              char* path, int path_capacity)
 {
     const char* cursor = url;
-    if (browser_has_prefix_ignore_case(cursor, "http://"))
+    if (secure && browser_has_prefix_ignore_case(cursor, "https://"))
+    {
+        cursor += 8;
+    }
+    else if (!secure && browser_has_prefix_ignore_case(cursor, "http://"))
     {
         cursor += 7;
     }
@@ -123,7 +129,7 @@ static bool browser_parse_http_url(const char* url, char* hostname, int hostname
         return false;
     }
 
-    port = 80;
+    port = secure ? 443 : 80;
     if (*cursor == ':')
     {
         ++cursor;
@@ -717,35 +723,35 @@ static bool browser_load_page()
         return false;
     }
 
-    if (browser_has_prefix_ignore_case(browser_address, "https://"))
-    {
-        browser_status = "HTTPS/TLS is not supported yet; use plain HTTP";
-        browser_status_color = 0xFFFF7777;
-        return false;
-    }
-
     char hostname[128] = {};
     char path[256] = {};
     uint16_t port = 80;
+    const bool is_https_url = browser_has_prefix_ignore_case(browser_address, "https://");
     const bool is_http_url = browser_has_prefix_ignore_case(browser_address, "http://");
-    if (is_http_url)
+    if (is_https_url || is_http_url)
     {
-        if (browser_api == nullptr || browser_api->http_get == nullptr)
+        if (browser_api == nullptr ||
+            (is_https_url && browser_api->https_get == nullptr) ||
+            (is_http_url && browser_api->http_get == nullptr))
         {
-            browser_status = "HTTP network service is unavailable";
+            browser_status = is_https_url ? "HTTPS network service is unavailable" :
+                                            "HTTP network service is unavailable";
             browser_status_color = 0xFFFF7777;
             return false;
         }
-        if (!browser_parse_http_url(browser_address, hostname, sizeof(hostname),
-                                    port, path, sizeof(path)))
+        if (!browser_parse_url(browser_address, is_https_url, hostname, sizeof(hostname),
+                               port, path, sizeof(path)))
         {
-            browser_status = "Invalid HTTP URL";
+            browser_status = "Invalid web URL";
             browser_status_color = 0xFFFF7777;
             return false;
         }
 
-        const int32_t response_length = browser_api->http_get(
-            hostname, port, path, browser_response, sizeof(browser_response), 15000);
+        const int32_t response_length = is_https_url
+            ? browser_api->https_get(hostname, port, path, browser_response,
+                                     sizeof(browser_response), 20000)
+            : browser_api->http_get(hostname, port, path, browser_response,
+                                    sizeof(browser_response), 15000);
         if (response_length < 0)
         {
             switch (response_length)
@@ -765,8 +771,20 @@ static bool browser_load_page()
                 case NAPP_HTTP_ERROR_TOO_LARGE:
                     browser_status = "HTTP response exceeds the 8 KB limit";
                     break;
+                case NAPP_HTTPS_ERROR_TLS:
+                    browser_status = "HTTPS/TLS handshake failed";
+                    break;
+                case NAPP_HTTPS_ERROR_CERTIFICATE:
+                    browser_status = "HTTPS certificate rejected";
+                    break;
+                case NAPP_HTTPS_ERROR_CLOCK:
+                    browser_status = "Set a valid system date for HTTPS";
+                    break;
+                case NAPP_HTTPS_ERROR_ENTROPY:
+                    browser_status = "Secure random source unavailable";
+                    break;
                 default:
-                    browser_status = "Invalid HTTP request";
+                    browser_status = "Web request failed";
                     break;
             }
             browser_status_color = 0xFFFF7777;
@@ -1001,13 +1019,13 @@ int _start(const napp_api* api)
     browser_set_document(
         "Welcome to Nasua Browser\n"
         "\n"
-        "Renders basic HTML from local ClawFS files or plain HTTP pages.\n"
-        "Enter an http:// URL or a local path above, then press Enter.\n"
+        "Renders basic HTML from local ClawFS files, HTTP, and HTTPS pages.\n"
+        "Enter a URL or a local path above, then press Enter.\n"
         "\n"
         "Supported: headings, paragraphs, lists, line breaks and common text entities.\n"
         "Use j/k to scroll, Page Up/Down to move a page, or e to edit the path.\n"
         "\n"
-        "HTTPS/TLS is not supported yet.");
+        "HTTPS requires a valid system clock and CPU hardware random support.");
 
     napp_window_config config = {};
     config.title = "Nasua Browser";

@@ -9,7 +9,7 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 | Offset | Size | Field              | Description                                             |
 |--------|------|--------------------|---------------------------------------------------------|
 | 0x00   | 4    | magic              | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NAPP")             |
-| 0x04   | 4    | abi_version        | `4` (current ABI version)                               |
+| 0x04   | 4    | abi_version        | `6` (current ABI version)                               |
 | 0x08   | 4    | header_size        | Size of the header (97 bytes with `show_in_start_menu`) |
 | 0x0C   | 4    | entry_offset       | Offset from start of file to `_start` function          |
 | 0x10   | 32   | name               | Null-terminated application name                        |
@@ -71,10 +71,16 @@ The loader checks this magic value to verify the file is a valid NAPP binary. If
 ## ABI Version
 
 ```cpp
-#define NAPP_ABI_VERSION 4
+#define NAPP_ABI_VERSION 6
 ```
 
-The current NAPP ABI version is 4. The loader validates this field and rejects binaries with an incompatible version. ABI version 4 adds the `http_get` service for plain HTTP requests over the kernel's DNS and TCP network stack. ABI version 3 introduced the `set_print_redirect` function in the `napp_api` struct.
+The current NAPP ABI version is 6. The loader validates this field and rejects
+binaries with an incompatible version. ABI version 4 added the `http_get`
+service for plain HTTP requests over the kernel's DNS and TCP network stack.
+ABI version 5 added complete-file ClawFS read and write services. ABI version 6
+added the `https_get` service with TLS 1.2 and certificate verification.
+ABI version 3 introduced the `set_print_redirect` function in the `napp_api`
+struct.
 
 ## Entry Point
 

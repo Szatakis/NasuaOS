@@ -102,7 +102,7 @@ See [Filesystem - Mounting](filesystem/mounting.md) for details.
 
 - **System Version**: NasuaOS 0.8.0
 - **Kernel Version**: 0.3.0 (64-bit)
-- **NAPP ABI Version**: 3
+- **NAPP ABI Version**: 6
 
 ---
 

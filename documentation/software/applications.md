@@ -57,20 +57,21 @@ These are dynamically loaded flat binaries from `/bin/<app>` (the rootfs `/bin` 
 
 ### browser
 
-A simple graphical browser that renders HTML from a local ClawFS file or a plain HTTP URL.
+A simple graphical browser that renders HTML from a local ClawFS file or an HTTP/HTTPS URL.
 
 | Property   | Value |
 |------------|-------|
 | Type       | GUI window |
 | Source     | `utilities/applications/browser/src/browser.cpp` |
-| API        | `napp_gui`, ClawFS read/resolve, and the NAPP `http_get` service |
-| Description| Fetches plain HTTP pages over DNS/TCP and renders basic HTML structure, including headings, paragraphs, lists, line breaks, and common text entities |
+| API        | `napp_gui`, ClawFS read/resolve, and the NAPP `http_get`/`https_get` services |
+| Description| Fetches HTTP and HTTPS pages over DNS/TCP and renders basic HTML structure, including headings, paragraphs, lists, line breaks, and common text entities |
 
-Enter an `http://` URL or a local path such as `/home/user/page.html` in the
-address field and press Enter. Use `j`/`k` or Page Up/Page Down to scroll, and
-`e` to edit the path. HTTPS/TLS, automatic redirects, JavaScript, and CSS are
-not supported. Local files are limited to 8 KB by the browser; network
-responses are also limited to 8 KB.
+Enter an `http://` or `https://` URL or a local path such as
+`/home/user/page.html` in the address field and press Enter. HTTPS uses TLS 1.2
+and verifies the server certificate; it requires a valid RTC date and a CPU
+with RDRAND. Use `j`/`k` or Page Up/Page Down to scroll, and `e` to edit the
+path. Automatic redirects, JavaScript, and CSS are not supported. Local files
+and network responses are limited to 8 KB.
 
 ```
 user@nasua-os:/home> bootapp --app browser

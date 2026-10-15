@@ -20,6 +20,9 @@ namespace Network
     // negative error code when DNS, TCP, or the response fails.
     int32_t http_get(const char* hostname, uint16_t port, const char* path,
                      char* response, uint32_t response_capacity, uint32_t timeout_ms = 15000);
+    // Fetches an HTTPS response with TLS 1.2, hostname and CA validation.
+    int32_t https_get(const char* hostname, uint16_t port, const char* path,
+                      char* response, uint32_t response_capacity, uint32_t timeout_ms = 15000);
 
     extern bool available;
     extern MACAddress mac_addr;

@@ -36,6 +36,8 @@ struct napp_api
     void (*set_print_redirect)(void (*callback)(char));
     int32_t (*http_get)(const char* hostname, uint16_t port, const char* path,
                         char* response, uint32_t response_capacity, uint32_t timeout_ms);
+    int32_t (*https_get)(const char* hostname, uint16_t port, const char* path,
+                         char* response, uint32_t response_capacity, uint32_t timeout_ms);
     bool (*clawfs_read_file)(const char* path, void* buffer, uint32_t capacity, uint32_t* length);
     bool (*clawfs_write_file)(const char* path, const void* buffer, uint32_t length);
 };
@@ -49,7 +51,7 @@ The full structure is defined in `utilities/applications/include/napp.h`.
 
 | Field        | Signature                | Description                                      |
 |--------------|--------------------------|--------------------------------------------------|
-| `abi_version`| `uint32_t`               | NAPP ABI version (currently 5)                   |
+| `abi_version`| `uint32_t`               | NAPP ABI version (currently 6)                   |
 | `argc`       | `int`                    | Number of command-line arguments                 |
 | `argv`       | `char**`                 | Array of argument strings (`argv[0]` = app name) |
 | `print`      | `void (*)(const char*)`  | Print a string to the terminal/log               |
@@ -115,6 +117,7 @@ struct napp_gui
 | `execute_command`    | `void (*)(const char*)`    | Execute a shell command via the kernel                                                      |
 | `set_print_redirect` | `void (*)(void (*)(char))` | Redirect kernel print output to an in-app callback; pass `nullptr` to restore normal output |
 | `http_get` | `int32_t (*)(const char*, uint16_t, const char*, char*, uint32_t, uint32_t)` | Fetch a plain HTTP response over DNS/TCP |
+| `https_get` | `int32_t (*)(const char*, uint16_t, const char*, char*, uint32_t, uint32_t)` | Fetch an HTTPS response over DNS/TCP with TLS 1.2 and certificate verification |
 
 ### HTTP networking
 
@@ -127,9 +130,26 @@ function returns the number of response bytes received, or a negative
 failure, timeout, an oversized response, or invalid input. The timeout is in
 milliseconds (zero selects the default).
 
-The current implementation supports plain HTTP only. HTTPS/TLS is not yet
-implemented. The TCP client handles one active request at a time and has a
-bounded response buffer supplied by the caller.
+The TCP client handles one active request at a time and has a bounded response
+buffer supplied by the caller.
+
+### HTTPS networking
+
+`https_get` has the same arguments and response format as `http_get`, but uses
+TLS 1.2. It validates the certificate chain against the bundled Mozilla CA
+trust anchors, checks the requested hostname, and validates certificate dates
+against the system RTC. Certificate validation is never disabled. HTTPS
+therefore fails if the RTC date is invalid or the CPU does not provide RDRAND
+for cryptographically secure handshake entropy. The TCP/TLS client and response
+are bounded, allow one request at a time, and support IPv4 only. A zero timeout
+uses the 15-second default; larger timeouts are capped at 30 seconds.
+
+HTTPS errors use the same values as HTTP for network, DNS, connect, timeout,
+response-size, and input failures. `NAPP_HTTPS_ERROR_TLS` indicates a TLS
+handshake or I/O failure, `NAPP_HTTPS_ERROR_CERTIFICATE` indicates certificate
+validation failure, `NAPP_HTTPS_ERROR_CLOCK` indicates an unusable RTC date,
+and `NAPP_HTTPS_ERROR_ENTROPY` indicates that secure handshake entropy is
+unavailable.
 
 #### Output Redirect for Integrated Terminals
 

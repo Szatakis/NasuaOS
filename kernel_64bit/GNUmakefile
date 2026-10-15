@@ -90,6 +90,9 @@ override SHARED_FLAGS := \
 # Internal C/C++ preprocessor flags that should not be changed by the user.
 override CPPFLAGS_C := \
     -I src \
+    -I src/third_party/bearssl/compat \
+    -I src/third_party/bearssl/inc \
+    -I src/third_party/bearssl/src \
     -I ../utilities/applications/include \
     -I ../resources \
     -I limine-protocol/include \
@@ -221,7 +224,16 @@ override RESOURCES_SRCFILES := $(filter-out $(RESOURCES_DIR)/drivers/gpu/functio
 endif
 override RESOURCES_OBJ := $(patsubst $(RESOURCES_DIR)/%.cpp,obj-$(ARCH)/resources/%.cpp.o,$(RESOURCES_SRCFILES))
 # Obtain the object and header dependencies file names.
-override CFILES := $(filter %.c,$(SRCFILES))
+override CFILES := $(filter-out \
+    src/third_party/bearssl/src/hash/ghash_pclmul.c \
+    src/third_party/bearssl/src/rand/sysrng.c \
+    src/third_party/bearssl/src/symcipher/aes_x86ni.c \
+    src/third_party/bearssl/src/symcipher/aes_x86ni_cbcdec.c \
+    src/third_party/bearssl/src/symcipher/aes_x86ni_cbcenc.c \
+    src/third_party/bearssl/src/symcipher/aes_x86ni_ctr.c \
+    src/third_party/bearssl/src/symcipher/aes_x86ni_ctrcbc.c \
+    src/third_party/bearssl/src/symcipher/chacha20_sse2.c, \
+    $(filter %.c,$(SRCFILES)))
 override CXXFILES := $(filter %.cpp,$(SRCFILES))
 override ASFILES := $(filter %.S,$(SRCFILES))
 ifeq ($(ARCH),x86_64)
