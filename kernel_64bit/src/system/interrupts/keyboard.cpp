@@ -13,6 +13,7 @@
 
 #include "libs/qr_code/qr_code.hpp"
 #include "libs/libc/libc.hpp"
+#include <napp.h>
 
 #include "drivers/gpu/functions/windows_manager/window.hpp"
 
@@ -251,6 +252,15 @@ namespace Keyboard
                 {
                     Gpu::Window_Manager::send_key_to_window('\n');
                 }
+            }
+            return;
+        }
+
+        if (scancode == 0x3F)
+        {
+            if (Gpu::Window_Manager::active_window)
+            {
+                Gpu::Window_Manager::send_key_to_window(NAPP_KEY_F5);
             }
             return;
         }

@@ -1,9 +1,11 @@
 # SuaScript
 
 SuaScript is a small, typed scripting language built into SuaEdit. Save scripts
-with the `.sua` extension, open them in SuaEdit, and choose **Run**. SuaEdit
-compiles the current editor buffer to bytecode and runs it in the integrated
-Terminal. The current buffer can be run without saving first.
+with the `.sua` extension, open them in SuaEdit, and choose **Run** or press
+**F5**. SuaEdit compiles the current editor buffer to bytecode and runs it in
+the integrated Terminal. Run and F5 only compile files whose active filename
+ends in `.sua`; text files are not sent to the compiler. Changes in an open
+`.sua` buffer can be run without saving first.
 
 ## Types and Variables
 
@@ -29,7 +31,9 @@ print("The answer is:");
 print(answer);
 ```
 
-Integer expressions support `+`, `-`, `*`, `/`, unary `-`, and parentheses.
+Integer expressions support `+`, `-`, `*`, `/`, `%` (remainder), unary `-`,
+and parentheses. Integer variables also support `+=`, `-=`, `*=`, `/=`, and
+`%=` compound assignments.
 Comparisons support `==`, `!=`, `<`, `<=`, `>`, and `>=`. Boolean expressions
 support `and`, `or`, and `not`. Strings use double quotes; `\n` and `\t` are
 supported in strings printed with `print`.
@@ -61,7 +65,8 @@ for (int index = 0; index < 3; index = index + 1) {
 ```
 
 The `for` initializer declares a typed variable; the condition and increment
-are separated by semicolons. `while` and `for` stop with a runtime error if a
+are separated by semicolons. `break` exits the nearest loop and `continue`
+starts its next iteration. `while` and `for` stop with a runtime error if a
 script exceeds the instruction limit.
 
 ## Comments and Errors

@@ -8,6 +8,8 @@ namespace SuaScript
         constexpr uint16_t max_instructions = 512;
         constexpr uint8_t max_variables = 32;
         constexpr uint8_t max_stack = 64;
+        constexpr uint8_t max_loop_depth = 16;
+        constexpr uint16_t max_break_jumps = max_instructions;
         constexpr uint32_t max_steps = 100000;
 
         enum class TokenKind : uint8_t
@@ -26,6 +28,8 @@ namespace SuaScript
             Else,
             While,
             For,
+            Break,
+            Continue,
             And,
             Or,
             Not,
@@ -36,9 +40,15 @@ namespace SuaScript
             Semicolon,
             Assign,
             Plus,
+            PlusAssign,
             Minus,
+            MinusAssign,
             Star,
+            StarAssign,
             Slash,
+            SlashAssign,
+            Percent,
+            PercentAssign,
             Equal,
             NotEqual,
             Less,
@@ -85,6 +95,7 @@ namespace SuaScript
             And,
             Or,
             Not,
+            Modulo,
             Jump,
             JumpIfFalse,
             Print
@@ -109,6 +120,12 @@ namespace SuaScript
             uint16_t token;
         };
 
+        struct LoopContext
+        {
+            int continue_target;
+            uint16_t break_start;
+        };
+
         struct Engine
         {
             const char* source;
@@ -121,6 +138,10 @@ namespace SuaScript
             uint16_t code_count;
             Variable variables[max_variables];
             uint8_t variable_count;
+            LoopContext loops[max_loop_depth];
+            uint8_t loop_depth;
+            uint16_t break_jumps[max_break_jumps];
+            uint16_t break_jump_count;
             uint16_t error_line;
             const char* error;
         };
@@ -214,6 +235,8 @@ namespace SuaScript
             if (text_equals(start, length, "else")) return TokenKind::Else;
             if (text_equals(start, length, "while")) return TokenKind::While;
             if (text_equals(start, length, "for")) return TokenKind::For;
+            if (text_equals(start, length, "break")) return TokenKind::Break;
+            if (text_equals(start, length, "continue")) return TokenKind::Continue;
             if (text_equals(start, length, "and")) return TokenKind::And;
             if (text_equals(start, length, "or")) return TokenKind::Or;
             if (text_equals(start, length, "not")) return TokenKind::Not;
@@ -316,10 +339,26 @@ namespace SuaScript
                     case '{': kind = TokenKind::LeftBrace; break;
                     case '}': kind = TokenKind::RightBrace; break;
                     case ';': kind = TokenKind::Semicolon; break;
-                    case '+': kind = TokenKind::Plus; break;
-                    case '-': kind = TokenKind::Minus; break;
-                    case '*': kind = TokenKind::Star; break;
-                    case '/': kind = TokenKind::Slash; break;
+                    case '+':
+                        kind = position + 1 < engine.source_length && engine.source[position + 1] == '=' ? TokenKind::PlusAssign : TokenKind::Plus;
+                        if (kind == TokenKind::PlusAssign) length = 2;
+                        break;
+                    case '-':
+                        kind = position + 1 < engine.source_length && engine.source[position + 1] == '=' ? TokenKind::MinusAssign : TokenKind::Minus;
+                        if (kind == TokenKind::MinusAssign) length = 2;
+                        break;
+                    case '*':
+                        kind = position + 1 < engine.source_length && engine.source[position + 1] == '=' ? TokenKind::StarAssign : TokenKind::Star;
+                        if (kind == TokenKind::StarAssign) length = 2;
+                        break;
+                    case '/':
+                        kind = position + 1 < engine.source_length && engine.source[position + 1] == '=' ? TokenKind::SlashAssign : TokenKind::Slash;
+                        if (kind == TokenKind::SlashAssign) length = 2;
+                        break;
+                    case '%':
+                        kind = position + 1 < engine.source_length && engine.source[position + 1] == '=' ? TokenKind::PercentAssign : TokenKind::Percent;
+                        if (kind == TokenKind::PercentAssign) length = 2;
+                        break;
                     case '=':
                         kind = position + 1 < engine.source_length && engine.source[position + 1] == '=' ? TokenKind::Equal : TokenKind::Assign;
                         if (kind == TokenKind::Equal) length = 2;
@@ -492,12 +531,12 @@ namespace SuaScript
         ValueType parse_factor()
         {
             ValueType type = parse_unary();
-            while (current().kind == TokenKind::Star || current().kind == TokenKind::Slash)
+            while (current().kind == TokenKind::Star || current().kind == TokenKind::Slash || current().kind == TokenKind::Percent)
             {
                 const TokenKind operation = engine.tokens[engine.position++].kind;
                 const ValueType right = parse_unary();
                 if (type != ValueType::Integer || right != ValueType::Integer) set_error("arithmetic requires int", current().line);
-                emit(operation == TokenKind::Star ? Op::Multiply : Op::Divide);
+                emit(operation == TokenKind::Star ? Op::Multiply : operation == TokenKind::Slash ? Op::Divide : Op::Modulo);
                 type = ValueType::Integer;
             }
             return type;
@@ -610,9 +649,38 @@ namespace SuaScript
                 set_error("unknown variable", name.line);
                 return false;
             }
-            if (!expect(TokenKind::Assign, "expected '=' in assignment")) return false;
+            const TokenKind assignment = current().kind;
+            if (assignment != TokenKind::Assign && assignment != TokenKind::PlusAssign && assignment != TokenKind::MinusAssign &&
+                assignment != TokenKind::StarAssign && assignment != TokenKind::SlashAssign && assignment != TokenKind::PercentAssign)
+            {
+                set_error("expected an assignment operator", current().line);
+                return false;
+            }
+            ++engine.position;
+            if (assignment != TokenKind::Assign)
+            {
+                if (engine.variables[variable].type != ValueType::Integer)
+                {
+                    set_error("compound assignment requires int", name.line);
+                    return false;
+                }
+                emit(Op::Load, variable);
+            }
             const ValueType value_type = parse_expression();
-            if (value_type != engine.variables[variable].type) set_error("assigned value does not match variable type", name.line);
+            if (assignment == TokenKind::Assign)
+            {
+                if (value_type != engine.variables[variable].type) set_error("assigned value does not match variable type", name.line);
+            }
+            else
+            {
+                if (value_type != ValueType::Integer) set_error("compound assignment requires int", name.line);
+                Op operation = Op::Add;
+                if (assignment == TokenKind::MinusAssign) operation = Op::Subtract;
+                else if (assignment == TokenKind::StarAssign) operation = Op::Multiply;
+                else if (assignment == TokenKind::SlashAssign) operation = Op::Divide;
+                else if (assignment == TokenKind::PercentAssign) operation = Op::Modulo;
+                emit(operation);
+            }
             emit(Op::Store, variable);
             if (require_semicolon)
             {
@@ -672,6 +740,29 @@ namespace SuaScript
             return engine.error == nullptr;
         }
 
+        bool begin_loop(int continue_target)
+        {
+            if (engine.loop_depth >= max_loop_depth)
+            {
+                set_error("too many nested loops", current().line);
+                return false;
+            }
+            engine.loops[engine.loop_depth++] = {continue_target, engine.break_jump_count};
+            return true;
+        }
+
+        bool end_loop(int break_target)
+        {
+            const LoopContext loop = engine.loops[engine.loop_depth - 1];
+            for (uint16_t index = loop.break_start; index < engine.break_jump_count; ++index)
+            {
+                patch(engine.break_jumps[index], break_target);
+            }
+            engine.break_jump_count = loop.break_start;
+            --engine.loop_depth;
+            return engine.error == nullptr;
+        }
+
         bool parse_while()
         {
             ++engine.position;
@@ -681,10 +772,11 @@ namespace SuaScript
             if (condition != ValueType::Boolean) set_error("while condition must be bool", current().line);
             if (!expect(TokenKind::RightParen, "expected ')' after condition")) return false;
             const int exit_jump = emit(Op::JumpIfFalse);
+            if (!begin_loop(condition_start)) return false;
             if (!parse_block()) return false;
             emit(Op::Jump, condition_start);
             patch(exit_jump, engine.code_count);
-            return engine.error == nullptr;
+            return end_loop(engine.code_count);
         }
 
         bool parse_for()
@@ -708,10 +800,11 @@ namespace SuaScript
             if (!parse_assignment(false) || !expect(TokenKind::RightParen, "expected ')' after for header")) return false;
             emit(Op::Jump, condition_start);
             patch(body_jump, engine.code_count);
+            if (!begin_loop(increment_start)) return false;
             if (!parse_block()) return false;
             emit(Op::Jump, increment_start);
             patch(exit_jump, engine.code_count);
-            return engine.error == nullptr;
+            return end_loop(engine.code_count);
         }
 
         bool parse_statement()
@@ -733,6 +826,34 @@ namespace SuaScript
             {
                 ++engine.position;
                 return parse_if_tail();
+            }
+            if (match(TokenKind::Break))
+            {
+                if (engine.loop_depth == 0)
+                {
+                    set_error("break can only be used inside a loop", engine.tokens[engine.position - 1].line);
+                    return false;
+                }
+                if (engine.break_jump_count >= max_break_jumps)
+                {
+                    set_error("too many break statements", current().line);
+                    return false;
+                }
+                const int jump = emit(Op::Jump);
+                engine.break_jumps[engine.break_jump_count++] = static_cast<uint16_t>(jump);
+                match(TokenKind::Semicolon);
+                return engine.error == nullptr;
+            }
+            if (match(TokenKind::Continue))
+            {
+                if (engine.loop_depth == 0)
+                {
+                    set_error("continue can only be used inside a loop", engine.tokens[engine.position - 1].line);
+                    return false;
+                }
+                emit(Op::Jump, engine.loops[engine.loop_depth - 1].continue_target);
+                match(TokenKind::Semicolon);
+                return engine.error == nullptr;
             }
             if (current().kind == TokenKind::While) return parse_while();
             if (current().kind == TokenKind::For) return parse_for();
@@ -896,7 +1017,15 @@ namespace SuaScript
                                     write_text("Runtime error: division by zero\n");
                                     return false;
                                 }
-                                result.integer = left.integer / right.integer;
+                                result.integer = left.integer == (-2147483647 - 1) && right.integer == -1 ? left.integer : left.integer / right.integer;
+                                break;
+                            case Op::Modulo:
+                                if (right.integer == 0)
+                                {
+                                    write_text("Runtime error: modulo by zero\n");
+                                    return false;
+                                }
+                                result.integer = left.integer == (-2147483647 - 1) && right.integer == -1 ? 0 : left.integer % right.integer;
                                 break;
                             case Op::Equal: result.type = ValueType::Boolean; result.integer = values_equal(left, right); break;
                             case Op::NotEqual: result.type = ValueType::Boolean; result.integer = !values_equal(left, right); break;
@@ -926,6 +1055,8 @@ namespace SuaScript
         engine.position = 0;
         engine.code_count = 0;
         engine.variable_count = 0;
+        engine.loop_depth = 0;
+        engine.break_jump_count = 0;
         engine.error_line = 0;
         engine.error = nullptr;
         engine.source = source;

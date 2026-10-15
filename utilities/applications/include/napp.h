@@ -38,6 +38,7 @@ struct napp_header
 #define NAPP_COLOR_GRAY       0xFFAAAAAA
 #define NAPP_COLOR_WINDOW     0xFF1A1F2C
 #define NAPP_COLOR_TITLEBAR   0xFF2B3140
+#define NAPP_KEY_F5           ((char)0xF5)
 
 // A window owned by an application. The kernel keeps the geometry up to date
 // before every callback; the application only reads it.

@@ -31,7 +31,7 @@ static const char DEFAULT_INFO[] =
     "Enter: insert a new line\n"
     "Backspace: delete the character before the cursor\n"
     "Click in the editor: move the cursor\n"
-    "Run: compile and execute the current buffer in Terminal\n"
+    "Run or F5: compile and execute the current buffer in Terminal\n"
     "SuaScript files use .sua; types: int, bool, string\n"
     "SuaScript: print, if/else, while, for\n"
     "Enter on an empty name: cancel a filename prompt\n"
@@ -47,6 +47,34 @@ static void clear_editor_buffer()
     editor_length = 0;
     editor_cursor = 0;
     editor_dirty = false;
+}
+
+static bool is_suascript_file()
+{
+    uint8_t length = 0;
+    while (editor_filename[length] != '\0' && length < sizeof(editor_filename) - 1)
+    {
+        ++length;
+    }
+    if (length < 4)
+    {
+        return false;
+    }
+
+    const char suffix[] = ".sua";
+    for (uint8_t index = 0; index < 4; ++index)
+    {
+        char character = editor_filename[length - 4 + index];
+        if (character >= 'A' && character <= 'Z')
+        {
+            character = static_cast<char>(character - 'A' + 'a');
+        }
+        if (character != suffix[index])
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 static bool load_file(const char* filename)
@@ -334,6 +362,7 @@ static void refresh_explorer()
 // Forward declarations for terminal functions
 static void terminal_write_char(char c);
 static void terminal_write_string(const char* str);
+static void run_current_script();
 
 // Application state
 static int active_activity_tab = 0; // 0: Explorer, 1: Search, 2: Source Control, 3: Run/Debug, 4: Extensions
@@ -1033,9 +1062,33 @@ static void terminal_write_string(const char* str)
     }
 }
 
+static void run_current_script()
+{
+    terminal_panel_visible = true;
+    terminal_output_count = 0;
+    terminal_scroll_offset = 0;
+    terminal_output[0][0] = '\0';
+    if (!is_suascript_file())
+    {
+        terminal_write_string("Run is only available for .sua files.\n");
+        return;
+    }
+    terminal_write_string("SuaScript: compiling and running...\n");
+    if (SuaScript::compile_and_run(editor_buffer, editor_length, terminal_write_char))
+    {
+        terminal_write_string("Program finished.\n");
+    }
+}
+
 static void suaedit_key(napp_window* win, char key)
 {
     (void)win; // Unused parameter
+
+    if (key == NAPP_KEY_F5)
+    {
+        run_current_script();
+        return;
+    }
 
     if (!terminal_panel_visible)
     {
@@ -1271,15 +1324,7 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
                 else if (i == 5)
                 {
                     file_menu_open = false;
-                    terminal_panel_visible = true;
-                    terminal_output_count = 0;
-                    terminal_scroll_offset = 0;
-                    terminal_output[0][0] = '\0';
-                    terminal_write_string("SuaScript: compiling and running...\n");
-                    if (SuaScript::compile_and_run(editor_buffer, editor_length, terminal_write_char))
-                    {
-                        terminal_write_string("Program finished.\n");
-                    }
+                    run_current_script();
                 }
                 else if (i == 7)
                 {
