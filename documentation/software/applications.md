@@ -55,6 +55,26 @@ user@nasua-os:/home> bootapp --app task_manager
 
 These are dynamically loaded flat binaries from `/bin/<app>` (the rootfs `/bin` directory):
 
+### browser
+
+A simple graphical browser preview that renders HTML text from a local ClawFS file.
+
+| Property   | Value |
+|------------|-------|
+| Type       | GUI window |
+| Source     | `utilities/applications/browser/src/browser.cpp` |
+| API        | `napp_gui` and the ClawFS read/resolve functions |
+| Description| Renders basic HTML structure, including headings, paragraphs, lists, line breaks, and common text entities |
+
+Enter a path such as `/home/user/page.html` in the address field and press Enter.
+Use `j`/`k` or Page Up/Page Down to scroll, and `e` to edit the path. The current
+NAPP API has no HTTP/TCP access, so this version opens local files only. The
+browser currently reads one 512-byte sector per page.
+
+```
+user@nasua-os:/home> bootapp --app browser
+```
+
 ### suaedit
 
 A text editor with an integrated terminal panel.
@@ -173,6 +193,7 @@ All applications are launched through the `bootapp` command:
 bootapp --list        # List all available apps
 bootapp --app settings     # Launch settings
 bootapp --app calculator   # Launch calculator
+bootapp --app browser      # Open the local HTML browser
 bootapp --app suaedit      # Launch text editor with integrated terminal
 bootapp --app snake        # Launch Snake game
 ```
