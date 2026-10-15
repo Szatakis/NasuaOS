@@ -7,6 +7,7 @@
 
 #define CLAWFS_FILE 0
 #define CLAWFS_DIRECTORY 1
+#define CLAWFS_MAX_FILE_SIZE (1024 * 1024)
 
 struct CLAWFSHeader 
 {
@@ -36,3 +37,5 @@ uint32_t get_sector_by_path(const char* path);
 void clawfs_rm(const char* parent_path, const char* name, uint32_t type);
 uint32_t find_entry_in_dir(uint32_t dir_sector, const char* name, CLAWFSEntry* out_entry);
 uint32_t get_next_free_sector();
+bool clawfs_read_file(const char* path, void* buffer, uint32_t capacity, uint32_t* length);
+bool clawfs_write_file(const char* path, const void* buffer, uint32_t length);

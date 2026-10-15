@@ -69,8 +69,8 @@ A simple graphical browser that renders HTML from a local ClawFS file or a plain
 Enter an `http://` URL or a local path such as `/home/user/page.html` in the
 address field and press Enter. Use `j`/`k` or Page Up/Page Down to scroll, and
 `e` to edit the path. HTTPS/TLS, automatic redirects, JavaScript, and CSS are
-not supported. Local files are limited to one 512-byte sector; network
-responses are limited to 8 KB.
+not supported. Local files are limited to 8 KB by the browser; network
+responses are also limited to 8 KB.
 
 ```
 user@nasua-os:/home> bootapp --app browser
@@ -85,7 +85,7 @@ A text editor with an integrated terminal panel.
 | Type        | GUI window                                                 |
 | Entry       | `_start()` in `utilities/applications/suaedit/src/suaedit.cpp` |
 | API         | Uses `napp_gui` for drawing, `napp_window` for callbacks, `api->set_print_redirect` + `api->execute_command` for integrated commands |
-| Description | A lightweight text editor with a VS Code-style menu bar; File contains New, Open, and Save, with Run, Help, and Terminal on the top bar. Run or F5 compiles and executes the current buffer as SuaScript in the integrated terminal. It supports typed `int`, `bool`, and `string` variables, arithmetic and loop control, and uses `.sua` as the script extension. It opens and creates files in the current folder; files are limited to one 512-byte CLAWFS sector. On a formatted ClawFS disk, it creates and opens `info.txt`. Run `format` in the integrated terminal if the disk has not been initialized. |
+| Description | A lightweight text editor with a VS Code-style menu bar; File contains New, Open, and Save, with Run, Help, and Terminal on the top bar. Run or F5 compiles and executes the current buffer as SuaScript in the integrated terminal. It supports typed `int`, `bool`, and `string` variables, arithmetic and loop control, and uses `.sua` as the script extension. It opens and creates files in the current folder; the editor supports files up to 65,535 bytes, while ClawFS supports files up to 1 MiB. On a formatted ClawFS disk, it creates and opens `info.txt`. Run `format` in the integrated terminal if the disk has not been initialized. |
 
 The terminal panel is toggled via the **Terminal** menu item. When visible, command output from
 `execute_command` is redirected into the panel instead of the main shell buffer.

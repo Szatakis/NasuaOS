@@ -19,7 +19,8 @@ string message = "Hello from SuaScript";
 
 The supported types are `int`, `bool`, and `string`. Variables have one scope
 for the whole script and cannot be declared twice. There are at most 32
-variables and a script can contain up to 511 characters in a CLAWFS file.
+variables. SuaEdit can store up to 65,535 bytes in its editor buffer; the
+compiler's token and instruction limits still apply to scripts.
 
 ## Output and Expressions
 

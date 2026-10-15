@@ -836,32 +836,24 @@ static bool browser_load_page()
         return true;
     }
 
-    if (browser_api == nullptr || browser_api->clawfs_resolve_path == nullptr || browser_api->clawfs_read_sector == nullptr)
+    if (browser_api == nullptr || browser_api->clawfs_read_file == nullptr)
     {
         browser_status = "Local filesystem access is unavailable";
         browser_status_color = 0xFFFF7777;
         return false;
     }
 
-    const char* current_path = browser_api->current_path != nullptr ? browser_api->current_path : "/";
-    const uint32_t sector = browser_api->clawfs_resolve_path(current_path, browser_address);
-    if (sector == 0)
-    {
-        browser_status = "Local file not found";
-        browser_status_color = 0xFFFF7777;
-        return false;
-    }
-
-    char source[512] = {};
-    if (!browser_api->clawfs_read_sector(sector, source))
+    uint32_t source_length = 0;
+    if (!browser_api->clawfs_read_file(browser_address, browser_page_source,
+                                      sizeof(browser_page_source) - 1, &source_length))
     {
         browser_status = "Could not read local file";
         browser_status_color = 0xFFFF7777;
         return false;
     }
-    source[sizeof(source) - 1] = '\0';
+    browser_page_source[source_length] = '\0';
     browser_source_truncated = false;
-    browser_parse_html(source);
+    browser_parse_html(browser_page_source);
     browser_status = browser_truncated ? "Page opened (content truncated)" : "Page opened";
     browser_status_color = browser_truncated ? 0xFFFFCC66 : BROWSER_ACCENT;
     browser_address_focused = false;

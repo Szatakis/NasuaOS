@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 4
+#define NAPP_ABI_VERSION 5
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
 #define NAPP_HEADER_SIZE 96
@@ -157,6 +157,11 @@ struct napp_api
     // or one of the NAPP_HTTP_ERROR_* values.
     int32_t (*http_get)(const char* hostname, uint16_t port, const char* path,
                         char* response, uint32_t response_capacity, uint32_t timeout_ms);
+
+    // Read or replace a complete ClawFS file. The length is stored in
+    // ClawFS metadata, so files can span multiple sectors.
+    bool (*clawfs_read_file)(const char* path, void* buffer, uint32_t capacity, uint32_t* length);
+    bool (*clawfs_write_file)(const char* path, const void* buffer, uint32_t length);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);

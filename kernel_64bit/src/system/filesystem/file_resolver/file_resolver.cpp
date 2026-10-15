@@ -382,19 +382,6 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
         return false;
     }
     
-    // Extract parent path and filename for destination
-    char dst_path_copy[256];
-    strcpy(dst_path_copy, dst_path);
-    
-    char* last_slash = strrchr(dst_path_copy, '/');
-    if (last_slash == nullptr || last_slash == dst_path_copy) 
-    {
-        return false;
-    }
-    
-    *last_slash = '\0';
-    const char* filename = last_slash + 1;
-    
     // Check if file already exists in ClawFS
     if (clawfs_file_exists(dst_path)) 
     {
@@ -406,24 +393,13 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
         return true;
     }
     
-    // Create file in ClawFS
-    clawfs_create_file_in(dst_path_copy, filename);
-    
-    // Get the newly created file's sector
-    uint32_t parent_sector = get_sector_by_path(dst_path_copy);
-    if (parent_sector == 0) 
-    {
-        return false;
-    }
-    
-    CLAWFSEntry entry;
-    if (find_entry_in_dir(parent_sector, filename, &entry) == 0) 
-    {
-        return false;
-    }
-    
     // Read file from rootfs - support multi-sector files
     uint32_t bytes_to_copy = src_info.size;
+    if (bytes_to_copy > CLAWFS_MAX_FILE_SIZE)
+    {
+        Gpu::print_error("File exceeds ClawFS size limit\n");
+        return false;
+    }
     uint32_t sectors_needed = (bytes_to_copy + 511) / 512;
     
     void* buffer = Memory::heap::kmalloc(sectors_needed * 512);
@@ -442,47 +418,13 @@ bool copy_file_to_clawfs(const char* src_path, const char* dst_path)
         return false;
     }
     
-    // Write to ClawFS sectors
-    for (uint32_t i = 0; i < sectors_needed; i++) 
-    {
-        Disk::write_sector(entry.data_sector + i, (uint8_t*)buffer + (i * 512));
-    }
-    
+    const bool write_succeeded = clawfs_write_file(dst_path, buffer, bytes_to_copy);
     Memory::heap::kfree(buffer);
-    
-    // Update the entry to store the actual file size
-    entry.entry_count = bytes_to_copy;
-    
-    // Write back the directory entry with updated size
-    uint8_t dir_buffer[512];
-    if (Disk::read_sector(parent_sector, dir_buffer)) 
+    if (!write_succeeded)
     {
-        CLAWFSEntry* entries = (CLAWFSEntry*)dir_buffer;
-        for (int i = 0; i < 12; i++) 
-        {
-            // Compare entry name with filename
-            bool match = true;
-            for (int j = 0; j < 28; j++) 
-            {
-                if (entries[i].name[j] != filename[j]) 
-                {
-                    match = false;
-                    break;
-                }
-                if (entries[i].name[j] == '\0' && filename[j] == '\0') 
-                {
-                    break;
-                }
-            }
-            if (match)
-            {
-                entries[i].entry_count = bytes_to_copy;
-                Disk::write_sector(parent_sector, dir_buffer);
-                break;
-            }
-        }
+        return false;
     }
-    
+
     // Remove from deletion tombstone if it was there
     file_resolver_undelete(dst_path);
     

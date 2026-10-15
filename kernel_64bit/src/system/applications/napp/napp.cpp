@@ -164,6 +164,74 @@ static bool napp_api_clawfs_write_sector(uint32_t sector, const void* buffer)
     return Disk::write_sector(sector, (uint8_t*)buffer);
 }
 
+static bool napp_api_clawfs_build_file_path(const char* path, char* absolute_path)
+{
+    if (path == nullptr || path[0] == '\0')
+    {
+        return false;
+    }
+
+    uint32_t path_length = 0;
+    while (path[path_length] != '\0' && path_length < 256)
+    {
+        ++path_length;
+    }
+    if (path[path_length] != '\0' || path_length >= 256)
+    {
+        return false;
+    }
+
+    uint32_t index = 0;
+    if (path[0] == '/')
+    {
+        while (index < path_length)
+        {
+            absolute_path[index] = path[index];
+            ++index;
+        }
+    }
+    else
+    {
+        const char* current = napp_current_path;
+        while (*current != '\0' && index < 254)
+        {
+            absolute_path[index++] = *current++;
+        }
+        if (index > 0 && absolute_path[index - 1] != '/')
+        {
+            absolute_path[index++] = '/';
+        }
+        if (index + path_length >= 256)
+        {
+            return false;
+        }
+        for (uint32_t path_index = 0; path_index < path_length; ++path_index)
+        {
+            absolute_path[index++] = path[path_index];
+        }
+    }
+    if (index == 0 || index >= 256)
+    {
+        return false;
+    }
+    absolute_path[index] = '\0';
+    return true;
+}
+
+static bool napp_api_clawfs_read_file(const char* path, void* buffer, uint32_t capacity, uint32_t* length)
+{
+    char absolute_path[256];
+    return napp_api_clawfs_build_file_path(path, absolute_path) &&
+           clawfs_read_file(absolute_path, buffer, capacity, length);
+}
+
+static bool napp_api_clawfs_write_file(const char* path, const void* buffer, uint32_t length)
+{
+    char absolute_path[256];
+    return napp_api_clawfs_build_file_path(path, absolute_path) &&
+           clawfs_write_file(absolute_path, buffer, length);
+}
+
 static void napp_api_clawfs_mkdir(const char* parent_path, const char* dir_name)
 {
     clawfs_mkdir(parent_path, dir_name);
@@ -505,7 +573,9 @@ static napp_api kernel_napp_api =
      napp_api_get_ticks,
      napp_api_execute_command,
      napp_api_set_print_redirect,
-     napp_api_http_get
+     napp_api_http_get,
+     napp_api_clawfs_read_file,
+     napp_api_clawfs_write_file
 };
 
 static bool remember_image(const char* name, void* image)
@@ -879,7 +949,14 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     {
         // Load from ClawFS
         image_size = resolve.size;
-        image = Memory::heap::kmalloc(image_size);
+        if (image_size == 0 || image_size > NAPP_MAX_IMAGE_SIZE)
+        {
+            log(ERROR, "NAPP", "Invalid ClawFS application size");
+            return false;
+        }
+        const uint32_t sectors_to_read = (image_size + 511) / 512;
+        const uint32_t allocation_size = sectors_to_read * 512;
+        image = Memory::heap::kmalloc(allocation_size);
         
         if (image == nullptr) 
         {
@@ -896,7 +973,6 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         Uart::puts("\n");
 
         // Read the file - may span multiple sectors
-        uint32_t sectors_to_read = (image_size + 511) / 512;
         uint8_t* image_ptr = (uint8_t*)image;
         
         for (uint32_t i = 0; i < sectors_to_read; i++) 

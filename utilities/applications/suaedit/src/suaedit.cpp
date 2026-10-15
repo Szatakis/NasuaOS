@@ -7,7 +7,7 @@ NAPP_APPLICATION("suaedit", "Text editor", true);
 static const napp_gui* gui = nullptr;
 static const napp_api* api = nullptr;
 
-static char editor_buffer[512];
+static char editor_buffer[65536];
 static char editor_filename[28];
 static char filename_prompt[28];
 static char explorer_files[12][28];
@@ -36,11 +36,11 @@ static const char DEFAULT_INFO[] =
     "SuaScript: print, if/else, while, for\n"
     "Enter on an empty name: cancel a filename prompt\n"
     "Terminal: show or hide the integrated shell\n"
-    "File limit: 511 characters (one CLAWFS sector)\n";
+    "File limit: 65535 characters (64 KiB)\n";
 
 static void clear_editor_buffer()
 {
-    for (uint16_t index = 0; index < sizeof(editor_buffer); ++index)
+    for (uint32_t index = 0; index < sizeof(editor_buffer); ++index)
     {
         editor_buffer[index] = '\0';
     }
@@ -79,23 +79,20 @@ static bool is_suascript_file()
 
 static bool load_file(const char* filename)
 {
-    if (!api || !api->clawfs_resolve_path || !api->clawfs_read_sector || !filename || !*filename)
+    if (!api || !api->clawfs_read_file || !filename || !*filename)
     {
         return false;
     }
 
-    const uint32_t sector = api->clawfs_resolve_path(api->current_path, filename);
-    if (sector == 0 || !api->clawfs_read_sector(sector, editor_buffer))
+    uint32_t loaded_length = 0;
+    if (!api->clawfs_read_file(filename, editor_buffer, sizeof(editor_buffer) - 1, &loaded_length))
     {
+        editor_status = loaded_length > sizeof(editor_buffer) - 1 ? "File exceeds editor limit" : "Could not read file";
         return false;
     }
 
-    editor_buffer[sizeof(editor_buffer) - 1] = '\0';
-    editor_length = 0;
-    while (editor_length < sizeof(editor_buffer) - 1 && editor_buffer[editor_length] != '\0')
-    {
-        ++editor_length;
-    }
+    editor_length = static_cast<uint16_t>(loaded_length);
+    editor_buffer[editor_length] = '\0';
     editor_cursor = editor_length;
     for (uint8_t index = 0; index < sizeof(editor_filename) - 1 && filename[index] != '\0'; ++index)
     {
@@ -109,24 +106,12 @@ static bool load_file(const char* filename)
 
 static bool save_file()
 {
-    if (!api || !api->clawfs_resolve_path || !api->clawfs_write_sector || editor_filename[0] == '\0')
+    if (!api || !api->clawfs_write_file || editor_filename[0] == '\0')
     {
         return false;
     }
 
-    const uint32_t sector = api->clawfs_resolve_path(api->current_path, editor_filename);
-    if (sector == 0)
-    {
-        editor_status = "File not found";
-        return false;
-    }
-
-    char sector_buffer[512] = {};
-    for (uint16_t index = 0; index < editor_length; ++index)
-    {
-        sector_buffer[index] = editor_buffer[index];
-    }
-    if (!api->clawfs_write_sector(sector, sector_buffer))
+    if (!api->clawfs_write_file(editor_filename, editor_buffer, editor_length))
     {
         editor_status = "Save failed";
         return false;

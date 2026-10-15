@@ -498,8 +498,47 @@ void execute_command(const char *cmd)
                 }
                 file_name[j] = '\0';
 
-                // Write to file using ClawFS
-                clawfs_create_file_in(current_path, file_name);
+                char file_path[256];
+                uint32_t path_length = 0;
+                while (current_path[path_length] != '\0' && path_length < sizeof(file_path) - 1)
+                {
+                    ++path_length;
+                }
+                const bool needs_separator = path_length > 0 && current_path[path_length - 1] != '/';
+                const uint32_t name_length = static_cast<uint32_t>(strlen(file_name));
+                if (path_length >= sizeof(file_path) || path_length + (needs_separator ? 1 : 0) + name_length >= sizeof(file_path))
+                {
+                    Gpu::print_error("File path is too long!\n");
+                }
+                else
+                {
+                    uint32_t path_index = 0;
+                    while (current_path[path_index] != '\0')
+                    {
+                        file_path[path_index] = current_path[path_index];
+                        ++path_index;
+                    }
+                    if (needs_separator)
+                    {
+                        file_path[path_index++] = '/';
+                    }
+                    for (uint32_t name_index = 0; name_index < name_length; ++name_index)
+                    {
+                        file_path[path_index++] = file_name[name_index];
+                    }
+                    file_path[path_index] = '\0';
+
+                    char file_contents[256];
+                    for (int content_index = 0; content_index < i; ++content_index)
+                    {
+                        file_contents[content_index] = text_buf[content_index];
+                    }
+                    file_contents[i] = '\n';
+                    if (!clawfs_write_file(file_path, file_contents, static_cast<uint32_t>(i + 1)))
+                    {
+                        Gpu::print_error("Could not write file!\n");
+                    }
+                }
             }
 
             Gpu::print("\n");

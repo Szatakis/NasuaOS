@@ -36,6 +36,8 @@ struct napp_api
     void (*set_print_redirect)(void (*callback)(char));
     int32_t (*http_get)(const char* hostname, uint16_t port, const char* path,
                         char* response, uint32_t response_capacity, uint32_t timeout_ms);
+    bool (*clawfs_read_file)(const char* path, void* buffer, uint32_t capacity, uint32_t* length);
+    bool (*clawfs_write_file)(const char* path, const void* buffer, uint32_t length);
 };
 ```
 
@@ -47,7 +49,7 @@ The full structure is defined in `utilities/applications/include/napp.h`.
 
 | Field        | Signature                | Description                                      |
 |--------------|--------------------------|--------------------------------------------------|
-| `abi_version`| `uint32_t`               | NAPP ABI version (currently 4)                   |
+| `abi_version`| `uint32_t`               | NAPP ABI version (currently 5)                   |
 | `argc`       | `int`                    | Number of command-line arguments                 |
 | `argv`       | `char**`                 | Array of argument strings (`argv[0]` = app name) |
 | `print`      | `void (*)(const char*)`  | Print a string to the terminal/log               |
@@ -96,6 +98,8 @@ struct napp_gui
 | `clawfs_dir`             | `void (*)(const char*)`             | List directory contents                            |
 | `clawfs_get_entry_type`  | `int (*)(const char*, const char*)` | Get entry type (0=file, 1=dir, -1=not found)       |
 | `clawfs_resolve_path`    | `uint32_t (*)(const char*, const char*)` | Resolve a path to a sector                    |
+| `clawfs_read_file`       | `bool (*)(const char*, void*, uint32_t, uint32_t*)` | Read a complete file; reports its byte length and fails if the buffer is too small |
+| `clawfs_write_file`      | `bool (*)(const char*, const void*, uint32_t)` | Create or replace a file, up to 1 MiB; relative paths use `current_path` |
 
 ### Timer Functions
 

@@ -51,7 +51,7 @@ echo --text <text> [--color 0xRRGGBB] [--file <filename>]
 |-----------|----------|---------------------------------|
 | `--text`  | Yes      | Text to print                   |
 | `--color` | No       | Hex color (e.g., `0xFF5500`)    |
-| `--file`  | No       | Save output to a file on ClawFS |
+| `--file`  | No       | Create or replace a ClawFS file in the current directory; a newline is appended |
 
 ```
 user@nasua-os:/home> echo --text "Hello, world!" --color 0xFF5500

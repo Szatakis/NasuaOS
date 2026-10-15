@@ -70,9 +70,70 @@ char* next_path_token(char* str, const char* delim)
 //
 
 static uint32_t next_free_sector = 112;
+static bool allocator_initialized = false;
+
+static void update_allocator_from_directory(uint32_t dir_sector, uint32_t depth)
+{
+    if (depth >= 32 || dir_sector == 0)
+    {
+        return;
+    }
+
+    uint8_t buffer[512];
+    if (!Disk::read_sector(dir_sector, buffer))
+    {
+        return;
+    }
+
+    CLAWFSEntry* entries = (CLAWFSEntry*)buffer;
+    for (uint32_t i = 0; i < 12; ++i)
+    {
+        if (entries[i].name[0] == '\0' || entries[i].data_sector == 0)
+        {
+            continue;
+        }
+
+        uint32_t sector_count = 1;
+        if (entries[i].type == CLAWFS_FILE &&
+            entries[i].entry_count > 512 &&
+            entries[i].entry_count <= CLAWFS_MAX_FILE_SIZE)
+        {
+            sector_count = (entries[i].entry_count + 511) / 512;
+        }
+
+        const uint32_t sector_end = entries[i].data_sector + sector_count;
+        if (sector_end > next_free_sector)
+        {
+            next_free_sector = sector_end;
+        }
+
+        if (entries[i].type == CLAWFS_DIRECTORY)
+        {
+            update_allocator_from_directory(entries[i].data_sector, depth + 1);
+        }
+    }
+}
+
+static bool initialize_allocator()
+{
+    if (allocator_initialized)
+    {
+        return true;
+    }
+    if (!clawfs_exists())
+    {
+        return false;
+    }
+
+    next_free_sector = 112;
+    update_allocator_from_directory(CLAWFS_ROOT_SECTOR, 0);
+    allocator_initialized = true;
+    return true;
+}
 
 uint32_t get_next_free_sector()
 {
+    initialize_allocator();
     return next_free_sector++;
 }
 
@@ -191,6 +252,7 @@ void clawfs_format()
 
     // Reset allocation pointer.
     next_free_sector = 112;
+    allocator_initialized = false;
 
 
     // Header
@@ -381,6 +443,12 @@ void clawfs_create_file_in(const char* path, const char* name)
         return;
     }
 
+    if (name[0] == '\0' || strlen(name) >= 28)
+    {
+        Gpu::print_error("Invalid file name!\n");
+        return;
+    }
+
     uint32_t target_sector = get_sector_by_path(path);
 
     if (target_sector == 0)
@@ -512,7 +580,244 @@ bool clawfs_exists()
         return false;
     }
 
+    if (!allocator_initialized)
+    {
+        next_free_sector = 112;
+        update_allocator_from_directory(CLAWFS_ROOT_SECTOR, 0);
+        allocator_initialized = true;
+    }
     return true;
+}
+
+static bool split_file_path(const char* path, char* parent_path, char* file_name)
+{
+    if (path == nullptr || parent_path == nullptr || file_name == nullptr || path[0] == '\0')
+    {
+        return false;
+    }
+
+    uint32_t length = 0;
+    while (path[length] != '\0' && length < 255)
+    {
+        ++length;
+    }
+    if (path[length] != '\0' || path[length - 1] == '/')
+    {
+        return false;
+    }
+
+    uint32_t separator = length;
+    while (separator > 0 && path[separator - 1] != '/')
+    {
+        --separator;
+    }
+
+    const uint32_t name_length = length - separator;
+    if (name_length == 0 || name_length >= 28)
+    {
+        return false;
+    }
+    for (uint32_t i = 0; i < name_length; ++i)
+    {
+        file_name[i] = path[separator + i];
+    }
+    file_name[name_length] = '\0';
+
+    if (separator == 0)
+    {
+        strcpy(parent_path, "/");
+        return true;
+    }
+
+    uint32_t parent_length = separator == 1 ? 1 : separator - 1;
+    if (parent_length >= 128)
+    {
+        return false;
+    }
+    for (uint32_t i = 0; i < parent_length; ++i)
+    {
+        parent_path[i] = path[i];
+    }
+    parent_path[parent_length] = '\0';
+    return true;
+}
+
+static bool get_file_entry(const char* path, char* parent_path, uint32_t* parent_sector,
+                           CLAWFSEntry* entry, uint8_t* directory_buffer)
+{
+    char file_name[28];
+    if (!split_file_path(path, parent_path, file_name))
+    {
+        return false;
+    }
+
+    *parent_sector = get_sector_by_path(parent_path);
+    if (*parent_sector == 0 || !Disk::read_sector(*parent_sector, directory_buffer))
+    {
+        return false;
+    }
+
+    if (find_entry_in_dir(*parent_sector, file_name, entry) == 0 || entry->type != CLAWFS_FILE)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool clawfs_read_file(const char* path, void* buffer, uint32_t capacity, uint32_t* length)
+{
+    if (length == nullptr)
+    {
+        return false;
+    }
+
+    char parent_path[128];
+    uint32_t parent_sector = 0;
+    uint8_t directory_buffer[512];
+    CLAWFSEntry entry;
+    if (!get_file_entry(path, parent_path, &parent_sector, &entry, directory_buffer))
+    {
+        return false;
+    }
+
+    uint32_t file_length = entry.entry_count;
+    if (file_length > CLAWFS_MAX_FILE_SIZE)
+    {
+        return false;
+    }
+
+    if (entry.entry_count == 0)
+    {
+        uint8_t legacy_buffer[512];
+        if (!Disk::read_sector(entry.data_sector, legacy_buffer))
+        {
+            return false;
+        }
+        while (file_length < sizeof(legacy_buffer) && legacy_buffer[file_length] != '\0')
+        {
+            ++file_length;
+        }
+    }
+
+    *length = file_length;
+    if (capacity < file_length || (file_length != 0 && buffer == nullptr))
+    {
+        return false;
+    }
+
+    uint8_t sector_buffer[512];
+    uint32_t copied = 0;
+    while (copied < file_length)
+    {
+        if (!Disk::read_sector(entry.data_sector + copied / 512, sector_buffer))
+        {
+            return false;
+        }
+
+        uint32_t chunk_size = file_length - copied;
+        if (chunk_size > sizeof(sector_buffer))
+        {
+            chunk_size = sizeof(sector_buffer);
+        }
+        Memory::memcpy((uint8_t*)buffer + copied, sector_buffer, chunk_size);
+        copied += chunk_size;
+    }
+    return true;
+}
+
+bool clawfs_write_file(const char* path, const void* buffer, uint32_t length)
+{
+    if ((buffer == nullptr && length != 0) || length > CLAWFS_MAX_FILE_SIZE)
+    {
+        return false;
+    }
+
+    char parent_path[128];
+    char file_name[28];
+    if (!split_file_path(path, parent_path, file_name))
+    {
+        return false;
+    }
+
+    uint32_t parent_sector = get_sector_by_path(parent_path);
+    if (parent_sector == 0)
+    {
+        return false;
+    }
+
+    uint8_t directory_buffer[512];
+    if (!Disk::read_sector(parent_sector, directory_buffer))
+    {
+        return false;
+    }
+
+    CLAWFSEntry entry;
+    uint32_t file_sector = find_entry_in_dir(parent_sector, file_name, &entry);
+    if (file_sector == 0)
+    {
+        clawfs_create_file_in(parent_path, file_name);
+        if (!Disk::read_sector(parent_sector, directory_buffer))
+        {
+            return false;
+        }
+        file_sector = find_entry_in_dir(parent_sector, file_name, &entry);
+    }
+    if (file_sector == 0 || entry.type != CLAWFS_FILE)
+    {
+        return false;
+    }
+    if (entry.entry_count > CLAWFS_MAX_FILE_SIZE)
+    {
+        return false;
+    }
+
+    const uint32_t existing_sector_count = entry.entry_count == 0
+        ? 1
+        : (entry.entry_count + 511) / 512;
+    const uint32_t required_sector_count = length == 0 ? 1 : (length + 511) / 512;
+    uint32_t target_sector = entry.data_sector;
+    if (required_sector_count > existing_sector_count)
+    {
+        if (!initialize_allocator() || next_free_sector > UINT32_MAX - required_sector_count)
+        {
+            return false;
+        }
+        target_sector = next_free_sector;
+        next_free_sector += required_sector_count;
+    }
+
+    uint8_t sector_buffer[512];
+    uint32_t written = 0;
+    for (uint32_t sector_index = 0; sector_index < required_sector_count; ++sector_index)
+    {
+        memclear(sector_buffer, sizeof(sector_buffer));
+        uint32_t chunk_size = length - written;
+        if (chunk_size > sizeof(sector_buffer))
+        {
+            chunk_size = sizeof(sector_buffer);
+        }
+        if (chunk_size != 0)
+        {
+            Memory::memcpy(sector_buffer, (const uint8_t*)buffer + written, chunk_size);
+        }
+        if (!Disk::write_sector(target_sector + sector_index, sector_buffer))
+        {
+            return false;
+        }
+        written += chunk_size;
+    }
+
+    CLAWFSEntry* entries = (CLAWFSEntry*)directory_buffer;
+    for (uint32_t i = 0; i < 12; ++i)
+    {
+        if (strcmp(entries[i].name, file_name) == 0 && entries[i].type == CLAWFS_FILE)
+        {
+            entries[i].data_sector = target_sector;
+            entries[i].entry_count = length;
+            return Disk::write_sector(parent_sector, directory_buffer);
+        }
+    }
+    return false;
 }
 
 
