@@ -5,6 +5,327 @@ NAPP_APPLICATION("suaedit", "Text editor", true);
 static const napp_gui* gui = nullptr;
 static const napp_api* api = nullptr;
 
+static char editor_buffer[512];
+static char editor_filename[28];
+static char filename_prompt[28];
+static char explorer_files[12][28];
+static int explorer_file_count = 0;
+static char explorer_capture[512];
+static uint16_t explorer_capture_length = 0;
+static uint16_t editor_length = 0;
+static uint16_t editor_cursor = 0;
+static int file_prompt_mode = 0;
+static bool editor_dirty = false;
+static const char* editor_status = "Ready";
+
+static void refresh_explorer();
+
+static const char DEFAULT_INFO[] =
+    "SuaEdit - Text Editor\n"
+    "\n"
+    "Open, edit and save text files in the current folder.\n"
+    "\n"
+    "New / Open / Save: File menu\n"
+    "Enter: insert a new line\n"
+    "Backspace: delete the character before the cursor\n"
+    "Click in the editor: move the cursor\n"
+    "Enter on an empty name: cancel a filename prompt\n"
+    "Terminal: show or hide the integrated shell\n"
+    "File limit: 511 characters (one CLAWFS sector)\n";
+
+static void clear_editor_buffer()
+{
+    for (uint16_t index = 0; index < sizeof(editor_buffer); ++index)
+    {
+        editor_buffer[index] = '\0';
+    }
+    editor_length = 0;
+    editor_cursor = 0;
+    editor_dirty = false;
+}
+
+static bool load_file(const char* filename)
+{
+    if (!api || !api->clawfs_resolve_path || !api->clawfs_read_sector || !filename || !*filename)
+    {
+        return false;
+    }
+
+    const uint32_t sector = api->clawfs_resolve_path(api->current_path, filename);
+    if (sector == 0 || !api->clawfs_read_sector(sector, editor_buffer))
+    {
+        return false;
+    }
+
+    editor_buffer[sizeof(editor_buffer) - 1] = '\0';
+    editor_length = 0;
+    while (editor_length < sizeof(editor_buffer) - 1 && editor_buffer[editor_length] != '\0')
+    {
+        ++editor_length;
+    }
+    editor_cursor = editor_length;
+    for (uint8_t index = 0; index < sizeof(editor_filename) - 1 && filename[index] != '\0'; ++index)
+    {
+        editor_filename[index] = filename[index];
+        editor_filename[index + 1] = '\0';
+    }
+    editor_dirty = false;
+    editor_status = "File opened";
+    return true;
+}
+
+static bool save_file()
+{
+    if (!api || !api->clawfs_resolve_path || !api->clawfs_write_sector || editor_filename[0] == '\0')
+    {
+        return false;
+    }
+
+    const uint32_t sector = api->clawfs_resolve_path(api->current_path, editor_filename);
+    if (sector == 0)
+    {
+        editor_status = "File not found";
+        return false;
+    }
+
+    char sector_buffer[512] = {};
+    for (uint16_t index = 0; index < editor_length; ++index)
+    {
+        sector_buffer[index] = editor_buffer[index];
+    }
+    if (!api->clawfs_write_sector(sector, sector_buffer))
+    {
+        editor_status = "Save failed";
+        return false;
+    }
+    editor_dirty = false;
+    editor_status = "Saved";
+    return true;
+}
+
+static void begin_filename_prompt(int mode)
+{
+    file_prompt_mode = mode;
+    filename_prompt[0] = '\0';
+    editor_status = mode == 1 ? "New file name" : "Open file name";
+}
+
+static void create_new_file(const char* filename)
+{
+    if (!api || !api->clawfs_get_entry_type || !api->clawfs_create_file_in || !api->clawfs_resolve_path || !filename || !*filename)
+    {
+        editor_status = "Invalid file name";
+        return;
+    }
+    if (!api->clawfs_get_sector || api->clawfs_get_sector("/") == 0)
+    {
+        editor_status = "Run format in Terminal first";
+        return;
+    }
+    if (api->clawfs_get_sector(api->current_path) == 0)
+    {
+        editor_status = "Current folder not found";
+        return;
+    }
+    for (uint8_t index = 0; filename[index] != '\0'; ++index)
+    {
+        if (filename[index] == '/' || filename[index] == '\\')
+        {
+            editor_status = "Use a file name in the current folder";
+            return;
+        }
+    }
+    if (api->clawfs_get_entry_type(api->current_path, filename) != -1)
+    {
+        editor_status = "File already exists";
+        return;
+    }
+
+    api->clawfs_create_file_in(api->current_path, filename);
+    if (api->clawfs_resolve_path(api->current_path, filename) == 0)
+    {
+        editor_status = "Could not create file";
+        return;
+    }
+    clear_editor_buffer();
+    uint8_t index = 0;
+    while (filename[index] != '\0' && index < sizeof(editor_filename) - 1)
+    {
+        editor_filename[index] = filename[index];
+        ++index;
+    }
+    editor_filename[index] = '\0';
+    editor_status = "New file created";
+    save_file();
+    refresh_explorer();
+}
+
+static void finish_filename_prompt()
+{
+    const int prompt_mode = file_prompt_mode;
+    file_prompt_mode = 0;
+    if (filename_prompt[0] == '\0')
+    {
+        editor_status = "Ready";
+        return;
+    }
+    if (filename_prompt[0] == '.' && filename_prompt[1] == '\0')
+    {
+        editor_status = "Invalid file name";
+        return;
+    }
+    if (filename_prompt[0] == '.' && filename_prompt[1] == '.' && filename_prompt[2] == '\0')
+    {
+        editor_status = "Invalid file name";
+        return;
+    }
+    if (prompt_mode == 1)
+    {
+        create_new_file(filename_prompt);
+    }
+    else if (!load_file(filename_prompt))
+    {
+        editor_status = "File not found";
+    }
+}
+
+static void ensure_info_file()
+{
+    if (!api || !api->clawfs_get_sector || !api->clawfs_resolve_path || !api->clawfs_create_file_in || !api->clawfs_write_sector)
+    {
+        return;
+    }
+    if (api->clawfs_get_sector("/") == 0)
+    {
+        editor_status = "Run format in Terminal first";
+        return;
+    }
+    if (api->clawfs_get_sector(api->current_path) == 0)
+    {
+        editor_status = "Current folder not found";
+        return;
+    }
+    if (api->clawfs_resolve_path(api->current_path, "info.txt") == 0)
+    {
+        api->clawfs_create_file_in(api->current_path, "info.txt");
+        const uint32_t sector = api->clawfs_resolve_path(api->current_path, "info.txt");
+        if (sector == 0)
+        {
+            editor_status = "Could not create info.txt";
+            return;
+        }
+        else
+        {
+            char sector_buffer[512] = {};
+            uint16_t index = 0;
+            while (DEFAULT_INFO[index] != '\0' && index < sizeof(sector_buffer) - 1)
+            {
+                sector_buffer[index] = DEFAULT_INFO[index];
+                ++index;
+            }
+            if (!api->clawfs_write_sector(sector, sector_buffer))
+            {
+                editor_status = "Could not write info.txt";
+                return;
+            }
+        }
+    }
+    refresh_explorer();
+}
+
+static void move_editor_cursor(int target_row, int target_column, int columns)
+{
+    uint16_t index = 0;
+    int row = 0;
+    int column = 0;
+    while (index < editor_length)
+    {
+        if (row > target_row || (row == target_row && column >= target_column))
+        {
+            break;
+        }
+        if (editor_buffer[index] == '\n')
+        {
+            if (row == target_row)
+            {
+                break;
+            }
+            ++index;
+            ++row;
+            column = 0;
+            continue;
+        }
+        if (column >= columns)
+        {
+            ++row;
+            column = 0;
+            continue;
+        }
+        ++index;
+        if (++column >= columns)
+        {
+            ++row;
+            column = 0;
+        }
+    }
+    editor_cursor = index;
+}
+
+static void capture_explorer_char(char character)
+{
+    if (explorer_capture_length < sizeof(explorer_capture) - 1)
+    {
+        explorer_capture[explorer_capture_length++] = character;
+        explorer_capture[explorer_capture_length] = '\0';
+    }
+}
+
+static void refresh_explorer()
+{
+    explorer_file_count = 0;
+    if (!api || !api->clawfs_get_sector || !api->clawfs_dir || !api->set_print_redirect ||
+        api->clawfs_get_sector("/") == 0 || api->clawfs_get_sector(api->current_path) == 0)
+    {
+        return;
+    }
+
+    explorer_capture_length = 0;
+    explorer_capture[0] = '\0';
+    api->set_print_redirect(capture_explorer_char);
+    api->clawfs_dir(api->current_path);
+    api->set_print_redirect(nullptr);
+
+    uint16_t line_start = 0;
+    while (line_start < explorer_capture_length && explorer_file_count < 12)
+    {
+        uint16_t line_end = line_start;
+        while (line_end < explorer_capture_length && explorer_capture[line_end] != '\n')
+        {
+            ++line_end;
+        }
+        const bool is_file = line_end - line_start >= 7 &&
+                             explorer_capture[line_start] == '<' &&
+                             explorer_capture[line_start + 1] == 'F' &&
+                             explorer_capture[line_start + 2] == 'I';
+        if (is_file)
+        {
+            uint16_t name_start = line_start + 7;
+            uint16_t name_length = line_end - name_start;
+            if (name_length > sizeof(explorer_files[0]) - 1)
+            {
+                name_length = sizeof(explorer_files[0]) - 1;
+            }
+            for (uint16_t index = 0; index < name_length; ++index)
+            {
+                explorer_files[explorer_file_count][index] = explorer_capture[name_start + index];
+            }
+            explorer_files[explorer_file_count][name_length] = '\0';
+            ++explorer_file_count;
+        }
+        line_start = line_end + 1;
+    }
+}
+
 // Forward declarations for terminal functions
 static void terminal_write_char(char c);
 static void terminal_write_string(const char* str);
@@ -15,6 +336,7 @@ static const int ACTIVITY_COUNT = 5;
 
 // Terminal panel state
 static bool terminal_panel_visible = false;
+static bool file_menu_open = false;
 static int terminal_panel_h = 200; // Height when visible
 static char terminal_input[256];
 static int terminal_cursor = 0;
@@ -23,7 +345,7 @@ static int terminal_output_count = 0;
 static int terminal_scroll_offset = 0;
 
 // Color scheme
-static const uint32_t COLOR_MENU_BAR    = 0xFF323233;
+static const uint32_t COLOR_MENU_BAR        = 0xFF323233;
 static const uint32_t COLOR_ACTIVITY_BAR    = 0xFF333333;
 static const uint32_t COLOR_SIDE_BAR        = 0xFF252526;
 static const uint32_t COLOR_EDITOR_BG       = 0xFF1E1E1E;
@@ -122,7 +444,7 @@ static void draw_suaedit(napp_window* win)
     const char* menu_items[] = { "File", "Edit", "Selection", "View", "Go", "Run", "Terminal", "Help" };
     int current_menu_x = content_x + 10;
     
-    for (int i = 0; i < 8; i++) 
+    for (int i = 0; i < 8; i++)
     {
         // Calculate word length to determine its physical width (assuming an average of ~8px per letter)
         int len = 0;
@@ -140,11 +462,15 @@ static void draw_suaedit(napp_window* win)
         }
         
         // Draw text
+        if (i == 0 && file_menu_open)
+        {
+            gui->fill_block(current_menu_x - 4, content_y + 3, COLOR_EDITOR_TAB, text_width + 8, top_menu_h - 6);
+        }
         gui->draw_text(menu_items[i], current_menu_x, content_y + (top_menu_h - 12) / 2, COLOR_TEXT_NORMAL);
         current_menu_x += text_width + 10;
         
         // Draw vertical line (separator), checking if it fits within the window
-        if (i < 7 && current_menu_x + 2 <= content_x + content_w) 
+        if (i < 7 && current_menu_x + 2 <= content_x + content_w)
         {
             gui->fill_block(current_menu_x, content_y + 6, COLOR_SEPARATOR, 1, top_menu_h - 12);
             current_menu_x += 10; 
@@ -200,10 +526,58 @@ static void draw_suaedit(napp_window* win)
             const char* tab_titles[] = { "EXPLORER", "SEARCH", "SOURCE CONTROL", "RUN/DEBUG", "EXTENSIONS" };
             gui->draw_text(tab_titles[active_activity_tab], sidebar_x + 14, middle_y + 12, COLOR_TEXT_DIM);
             
-            // Explorer content (Empty)
             if (active_activity_tab == 0) 
             {
                 gui->draw_text("> PROJECT", sidebar_x + 10, middle_y + 40, COLOR_TEXT_WHITE);
+                gui->draw_text(api && api->current_path ? api->current_path : "/", sidebar_x + 18, middle_y + 62, COLOR_TEXT_DIM);
+                gui->draw_text("FILES", sidebar_x + 10, middle_y + 88, COLOR_TEXT_DIM);
+                if (api && api->clawfs_get_sector && api->clawfs_get_sector("/") == 0)
+                {
+                    gui->draw_text("Run format first", sidebar_x + 18, middle_y + 110, COLOR_TEXT_NORMAL);
+                }
+                else if (explorer_file_count == 0)
+                {
+                    gui->draw_text("No files", sidebar_x + 18, middle_y + 110, COLOR_TEXT_DIM);
+                }
+                else
+                {
+                    for (int index = 0; index < explorer_file_count; ++index)
+                    {
+                        char label[21];
+                        bool active_file = editor_filename[0] != '\0';
+                        for (int character = 0; active_file; ++character)
+                        {
+                            if (editor_filename[character] != explorer_files[index][character])
+                            {
+                                active_file = false;
+                            }
+                            else if (editor_filename[character] == '\0')
+                            {
+                                break;
+                            }
+                        }
+                        label[0] = active_file ? '>' : ' ';
+                        label[1] = ' ';
+                        int name_length = 0;
+                        while (explorer_files[index][name_length] != '\0' && name_length < 14)
+                        {
+                            label[name_length + 2] = explorer_files[index][name_length];
+                            ++name_length;
+                        }
+                        if (explorer_files[index][name_length] != '\0')
+                        {
+                            label[16] = '.';
+                            label[17] = '.';
+                            label[18] = '.';
+                            label[19] = '\0';
+                        }
+                        else
+                        {
+                            label[name_length + 2] = '\0';
+                        }
+                        gui->draw_text(label, sidebar_x + 10, middle_y + 110 + index * 18, COLOR_TEXT_NORMAL);
+                    }
+                }
             }
         }
         
@@ -211,7 +585,7 @@ static void draw_suaedit(napp_window* win)
         gui->fill_block(sidebar_x + side_bar_w - 1, middle_y, COLOR_SEPARATOR, 1, middle_h);
     }
 
-    // EDITOR GROUP (Empty page, center of the window)
+    // EDITOR GROUP
     int editor_x = content_x + activity_bar_w + side_bar_w;
     int editor_w = content_w - activity_bar_w - side_bar_w;
     
@@ -223,14 +597,11 @@ static void draw_suaedit(napp_window* win)
     {
         gui->fill_block(editor_x, middle_y, COLOR_EDITOR_BG, editor_w, editor_h);
         
-        // Empty tab
         const int tab_h = 35;
-        if (editor_h > tab_h) 
+        if (editor_h > tab_h + 18)
         {
             gui->fill_block(editor_x, middle_y, COLOR_EDITOR_TAB, editor_w, tab_h);
-            
-            // Adjust the maximum width of the active tab to the remaining editor space
-            int active_tab_w = 120;
+            int active_tab_w = 180;
             if (active_tab_w > editor_w) 
             {
                 active_tab_w = editor_w;
@@ -241,6 +612,106 @@ static void draw_suaedit(napp_window* win)
                 // Background of the active tab itself
                 gui->fill_block(editor_x, middle_y, COLOR_EDITOR_BG, active_tab_w, tab_h);
                 gui->fill_block(editor_x, middle_y, COLOR_HIGHLIGHT, active_tab_w, 1);
+                char tab_label[40];
+                int label_index = 0;
+                while (editor_filename[label_index] != '\0' && label_index < 27)
+                {
+                    tab_label[label_index] = editor_filename[label_index];
+                    ++label_index;
+                }
+                if (editor_dirty && label_index < 37)
+                {
+                    tab_label[label_index++] = '*';
+                }
+                tab_label[label_index] = '\0';
+                gui->draw_text(tab_label, editor_x + 12, middle_y + 12, COLOR_TEXT_WHITE);
+            }
+
+            const int status_h = 18;
+            const int text_x = editor_x + 14;
+            const int text_y = middle_y + tab_h + 10;
+            const int text_w = editor_w - 28;
+            const int text_h = editor_h - tab_h - status_h - 14;
+            const int char_width = 9;
+            const int line_height = 16;
+            int columns = text_w / char_width;
+            if (columns < 1)
+            {
+                columns = 1;
+            }
+            if (columns > 240)
+            {
+                columns = 240;
+            }
+            int visible_rows = text_h / line_height;
+            if (visible_rows < 1)
+            {
+                visible_rows = 1;
+            }
+
+            int cursor_row = 0;
+            int cursor_column = 0;
+            for (uint16_t index = 0; index < editor_cursor; ++index)
+            {
+                if (editor_buffer[index] == '\n')
+                {
+                    ++cursor_row;
+                    cursor_column = 0;
+                }
+                else if (++cursor_column >= columns)
+                {
+                    ++cursor_row;
+                    cursor_column = 0;
+                }
+            }
+            int first_row = cursor_row - visible_rows + 1;
+            if (first_row < 0)
+            {
+                first_row = 0;
+            }
+
+            int visual_row = 0;
+            uint16_t index = 0;
+            bool draw_final_empty_line = editor_length == 0 || editor_buffer[editor_length - 1] == '\n';
+            while (index < editor_length || draw_final_empty_line)
+            {
+                draw_final_empty_line = false;
+                char line[241];
+                int line_length = 0;
+                while (index < editor_length && editor_buffer[index] != '\n' && line_length < columns)
+                {
+                    line[line_length++] = editor_buffer[index++];
+                }
+                line[line_length] = '\0';
+                if (visual_row >= first_row && visual_row < first_row + visible_rows)
+                {
+                    const int row_y = text_y + (visual_row - first_row) * line_height;
+                    gui->draw_text(line, text_x, row_y, COLOR_TEXT_NORMAL);
+                    if (visual_row == cursor_row)
+                    {
+                        gui->draw_text("_", text_x + cursor_column * char_width, row_y, COLOR_HIGHLIGHT);
+                    }
+                }
+                if (index < editor_length && editor_buffer[index] == '\n')
+                {
+                    ++index;
+                    if (index == editor_length)
+                    {
+                        draw_final_empty_line = true;
+                    }
+                }
+                ++visual_row;
+            }
+
+            gui->fill_block(editor_x, middle_y + editor_h - status_h, COLOR_SIDE_BAR, editor_w, status_h);
+            if (file_prompt_mode != 0)
+            {
+                gui->draw_text(file_prompt_mode == 1 ? "New:" : "Open:", editor_x + 8, middle_y + editor_h - status_h + 3, COLOR_TEXT_WHITE);
+                gui->draw_text(filename_prompt, editor_x + 56, middle_y + editor_h - status_h + 3, COLOR_TEXT_NORMAL);
+            }
+            else
+            {
+                gui->draw_text(editor_status, editor_x + 8, middle_y + editor_h - status_h + 3, editor_dirty ? COLOR_HIGHLIGHT : COLOR_TEXT_DIM);
             }
         }
     }
@@ -475,6 +946,25 @@ static void draw_suaedit(napp_window* win)
             }
         }
     }
+
+    if (file_menu_open)
+    {
+        const int menu_x = content_x + 6;
+        const int menu_y = content_y + top_menu_h;
+        int menu_w = 156;
+        if (menu_w > content_w - 8)
+        {
+            menu_w = content_w - 8;
+        }
+        if (menu_w > 0)
+        {
+            gui->fill_block(menu_x, menu_y, COLOR_SIDE_BAR, menu_w, 76);
+            draw_rect_outline(menu_x, menu_y, menu_w, 76, COLOR_SEPARATOR);
+            gui->draw_text("New File", menu_x + 12, menu_y + 8, COLOR_TEXT_NORMAL);
+            gui->draw_text("Open File", menu_x + 12, menu_y + 32, COLOR_TEXT_NORMAL);
+            gui->draw_text("Save", menu_x + 12, menu_y + 56, COLOR_TEXT_NORMAL);
+        }
+    }
 }
 
 
@@ -541,6 +1031,78 @@ static void terminal_write_string(const char* str)
 static void suaedit_key(napp_window* win, char key)
 {
     (void)win; // Unused parameter
+
+    if (!terminal_panel_visible)
+    {
+        if (file_prompt_mode != 0)
+        {
+            if (key == '\n')
+            {
+                finish_filename_prompt();
+            }
+            else if (key == '\b')
+            {
+                int length = 0;
+                while (filename_prompt[length] != '\0')
+                {
+                    ++length;
+                }
+                if (length > 0)
+                {
+                    filename_prompt[length - 1] = '\0';
+                }
+            }
+            else if (key >= 32 && key <= 126 && key != '/' && key != '\\')
+            {
+                int length = 0;
+                while (filename_prompt[length] != '\0')
+                {
+                    ++length;
+                }
+                if (length < static_cast<int>(sizeof(filename_prompt) - 1))
+                {
+                    filename_prompt[length] = key;
+                    filename_prompt[length + 1] = '\0';
+                }
+            }
+            return;
+        }
+
+        if (key == '\b')
+        {
+            if (editor_cursor > 0)
+            {
+                for (uint16_t index = editor_cursor - 1; index < editor_length; ++index)
+                {
+                    editor_buffer[index] = editor_buffer[index + 1];
+                }
+                --editor_cursor;
+                --editor_length;
+                editor_dirty = true;
+            }
+            return;
+        }
+
+        if (key == '\n' || (key >= 32 && key <= 126))
+        {
+            if (editor_length >= sizeof(editor_buffer) - 1)
+            {
+                editor_status = "File limit reached";
+                return;
+            }
+            for (uint16_t index = editor_length; index > editor_cursor; --index)
+            {
+                editor_buffer[index] = editor_buffer[index - 1];
+            }
+            editor_buffer[editor_cursor++] = key;
+            ++editor_length;
+            editor_buffer[editor_length] = '\0';
+            editor_dirty = true;
+            editor_status = "Unsaved changes";
+            return;
+        }
+        return;
+    }
     
     if (!terminal_panel_visible)
     {
@@ -580,6 +1142,19 @@ static void suaedit_key(napp_window* win, char key)
             else
             {
                 terminal_write_string("Command execution not available.\n");
+            }
+
+            if (api && api->clawfs_get_sector && api->clawfs_resolve_path && api->clawfs_get_sector("/") != 0)
+            {
+                if (api->clawfs_resolve_path(api->current_path, "info.txt") == 0)
+                {
+                    ensure_info_file();
+                }
+                if (editor_filename[0] == '\0')
+                {
+                    load_file("info.txt");
+                }
+                refresh_explorer();
             }
         }
         else 
@@ -667,7 +1242,7 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
         const char* menu_items[] = { "File", "Edit", "Selection", "View", "Go", "Run", "Terminal", "Help" };
         int current_menu_x = content_x + 10;
         
-        for (int i = 0; i < 8; i++) 
+        for (int i = 0; i < 8; i++)
         {
             int len = 0;
             while(menu_items[i][len] != '\0') 
@@ -679,21 +1254,73 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
             
             if (mouse_x >= current_menu_x && mouse_x < current_menu_x + text_width)
             {
-                // Terminal menu item clicked (index 6)
-                if (i == 6)
+                if (i == 0)
                 {
+                    file_menu_open = !file_menu_open;
+                }
+                else if (i == 6)
+                {
+                    file_menu_open = false;
                     terminal_panel_visible = !terminal_panel_visible;
+                }
+                else if (i == 7)
+                {
+                    file_menu_open = false;
+                    if (editor_dirty && !save_file())
+                    {
+                        return;
+                    }
+                    load_file("info.txt");
+                }
+                else
+                {
+                    file_menu_open = false;
                 }
                 return;
             }
             
             current_menu_x += text_width + 10;
-            if (i < 7) 
+            if (i < 7)
             {
                 current_menu_x += 10; 
             }
         }
+        file_menu_open = false;
         return;
+    }
+
+    if (file_menu_open)
+    {
+        const int menu_x = content_x + 6;
+        const int menu_y = content_y + top_menu_h;
+        const int menu_w = content_w - 8 < 156 ? content_w - 8 : 156;
+        if (menu_w > 0 && mouse_x >= menu_x && mouse_x < menu_x + menu_w &&
+            mouse_y >= menu_y && mouse_y < menu_y + 76)
+        {
+            const int item = (mouse_y - menu_y) / 24;
+            file_menu_open = false;
+            if (item == 0 || item == 1)
+            {
+                if (editor_dirty && !save_file())
+                {
+                    return;
+                }
+                begin_filename_prompt(item == 0 ? 1 : 2);
+            }
+            else if (item == 2)
+            {
+                if (editor_filename[0] == '\0')
+                {
+                    begin_filename_prompt(1);
+                }
+                else
+                {
+                    save_file();
+                }
+            }
+            return;
+        }
+        file_menu_open = false;
     }
     
     int activity_bar_w = 48;
@@ -704,6 +1331,81 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
     
     int middle_y = content_y + top_menu_h;
     int middle_h = content_h - top_menu_h;
+
+    int side_bar_w = content_w < 500 ? 140 : 180;
+    if (side_bar_w > content_w - activity_bar_w)
+    {
+        side_bar_w = content_w - activity_bar_w;
+    }
+    if (side_bar_w < 0)
+    {
+        side_bar_w = 0;
+    }
+    const int sidebar_x = content_x + activity_bar_w;
+    if (active_activity_tab == 0 && mouse_x >= sidebar_x && mouse_x < sidebar_x + side_bar_w &&
+        mouse_y >= middle_y + 108 && mouse_y < middle_y + 108 + explorer_file_count * 18)
+    {
+        const int file_index = (mouse_y - (middle_y + 108)) / 18;
+        if (file_index >= 0 && file_index < explorer_file_count)
+        {
+            if (editor_dirty && !save_file())
+            {
+                return;
+            }
+            if (load_file(explorer_files[file_index]))
+            {
+                refresh_explorer();
+            }
+            else
+            {
+                editor_status = "Could not open file";
+            }
+            return;
+        }
+    }
+
+    const int editor_x = content_x + activity_bar_w + side_bar_w;
+    const int editor_w = content_w - activity_bar_w - side_bar_w;
+    const int editor_h = middle_h - (terminal_panel_visible ? terminal_panel_h : 0);
+    const int text_top = middle_y + 45;
+    const int status_top = middle_y + editor_h - 18;
+
+    if (mouse_x >= editor_x && mouse_x < editor_x + editor_w &&
+        mouse_y >= text_top && mouse_y < status_top && file_prompt_mode == 0)
+    {
+        const int columns_raw = (editor_w - 28) / 9;
+        int columns = columns_raw < 1 ? 1 : columns_raw;
+        if (columns > 240)
+        {
+            columns = 240;
+        }
+        const int text_height = editor_h - 35 - 18 - 14;
+        int visible_rows = text_height / 16;
+        if (visible_rows < 1)
+        {
+            visible_rows = 1;
+        }
+        int cursor_row = 0;
+        int cursor_column = 0;
+        for (uint16_t index = 0; index < editor_cursor; ++index)
+        {
+            if (editor_buffer[index] == '\n')
+            {
+                ++cursor_row;
+                cursor_column = 0;
+            }
+            else if (++cursor_column >= columns)
+            {
+                ++cursor_row;
+                cursor_column = 0;
+            }
+        }
+        const int first_row = cursor_row - visible_rows + 1 > 0 ? cursor_row - visible_rows + 1 : 0;
+        const int target_row = first_row + (mouse_y - text_top) / 16;
+        const int target_column = (mouse_x - (editor_x + 14)) / 9;
+        move_editor_cursor(target_row, target_column, columns);
+        return;
+    }
 
     // Check clicks on the Activity Bar
     if (mouse_x >= content_x && mouse_x < content_x + activity_bar_w)
@@ -745,6 +1447,18 @@ int _start(const napp_api* api_param)
     {
         terminal_output[i][0] = '\0';
     }
+
+    editor_filename[0] = '\0';
+    filename_prompt[0] = '\0';
+    file_prompt_mode = 0;
+    editor_status = "Ready";
+    clear_editor_buffer();
+    ensure_info_file();
+    if (api->clawfs_get_sector && api->clawfs_get_sector("/") != 0 && !load_file("info.txt"))
+    {
+        editor_status = "Could not open info.txt";
+    }
+    refresh_explorer();
 
     napp_window_config config = {};
 

@@ -64,7 +64,7 @@ A text editor with an integrated terminal panel.
 | Type        | GUI window                                                 |
 | Entry       | `_start()` in `utilities/applications/suaedit/src/suaedit.cpp` |
 | API         | Uses `napp_gui` for drawing, `napp_window` for callbacks, `api->set_print_redirect` + `api->execute_command` for integrated commands |
-| Description | A lightweight text editor with a built-in terminal panel at the bottom of the window. The terminal captures command output via `set_print_redirect`, renders text with wrapping, supports mouse-wheel scroll, and draws input inline on the same line as the kernel prompt. |
+| Description | A lightweight text editor with a VS Code-style menu bar; File contains New, Open, and Save, with Help and Terminal available on the top bar. It has an integrated terminal and mouse-positioned text cursor. It opens or creates files in the current folder; files are limited to one 512-byte CLAWFS sector. On a formatted ClawFS disk, it creates and opens `info.txt` with editor instructions. Run `format` in the integrated terminal if the disk has not been initialized. |
 
 The terminal panel is toggled via the **Terminal** menu item. When visible, command output from
 `execute_command` is redirected into the panel instead of the main shell buffer.
