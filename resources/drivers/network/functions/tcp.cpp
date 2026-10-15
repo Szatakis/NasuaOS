@@ -50,8 +50,7 @@ namespace Network
             return true;
         }
 
-        uint16_t tcp_checksum(const IPAddress& source, const IPAddress& destination,
-                              const uint8_t* segment, uint16_t length)
+        uint16_t tcp_checksum(const IPAddress& source, const IPAddress& destination, const uint8_t* segment, uint16_t length)
         {
             uint8_t pseudo_packet[12 + tcp_buffered_payload] = {};
             for (uint8_t index = 0; index < 4; ++index)
@@ -68,8 +67,7 @@ namespace Network
             return Internal::checksum(pseudo_packet, 12 + length);
         }
 
-        bool send_segment(uint8_t flags, uint32_t sequence,
-                          const uint8_t* payload = nullptr, uint16_t payload_length = 0)
+        bool send_segment(uint8_t flags, uint32_t sequence, const uint8_t* payload = nullptr, uint16_t payload_length = 0)
         {
             if ((!payload && payload_length != 0) || payload_length > tcp_max_payload)
             {
@@ -88,11 +86,8 @@ namespace Network
             {
                 segment[tcp_header_size + index] = payload[index];
             }
-            Internal::write_be16(segment + 16,
-                tcp_checksum(ip_addr, client.remote_address, segment,
-                             static_cast<uint16_t>(tcp_header_size + payload_length)));
-            return Internal::send_ipv4(ip_addr, client.remote_address, 6, segment,
-                                       static_cast<uint16_t>(tcp_header_size + payload_length));
+            Internal::write_be16(segment + 16, tcp_checksum(ip_addr, client.remote_address, segment, static_cast<uint16_t>(tcp_header_size + payload_length)));
+            return Internal::send_ipv4(ip_addr, client.remote_address, 6, segment, static_cast<uint16_t>(tcp_header_size + payload_length));
         }
 
         uint16_t peer_mss_from_options(const uint8_t* options, uint16_t length)
@@ -110,8 +105,7 @@ namespace Network
                     ++index;
                     continue;
                 }
-                if (index + 1 >= length || options[index + 1] < 2 ||
-                    options[index + 1] > length - index)
+                if (index + 1 >= length || options[index + 1] < 2 || options[index + 1] > length - index)
                 {
                     break;
                 }
@@ -203,21 +197,15 @@ namespace Network
 
     namespace Internal
     {
-        void handle_tcp(const IPAddress& source, const IPAddress& destination,
-                        const uint8_t* packet, uint16_t length)
+        void handle_tcp(const IPAddress& source, const IPAddress& destination, const uint8_t* packet, uint16_t length)
         {
-            if (!client.active || !packet || length < tcp_header_size ||
-                !same_address(source, client.remote_address) ||
-                !same_address(destination, ip_addr) ||
-                Internal::read_be16(packet) != client.remote_port ||
-                Internal::read_be16(packet + 2) != client.local_port)
+            if (!client.active || !packet || length < tcp_header_size || !same_address(source, client.remote_address) || !same_address(destination, ip_addr) || Internal::read_be16(packet) != client.remote_port || Internal::read_be16(packet + 2) != client.local_port)
             {
                 return;
             }
 
             const uint16_t header_length = static_cast<uint16_t>((packet[12] >> 4) * 4);
-            if (header_length < tcp_header_size || header_length > length ||
-                tcp_checksum(source, destination, packet, length) != 0)
+            if (header_length < tcp_header_size || header_length > length || tcp_checksum(source, destination, packet, length) != 0)
             {
                 return;
             }
@@ -231,17 +219,14 @@ namespace Network
                 return;
             }
 
-            if ((flags & 0x12) == 0x12 && !client.syn_acknowledged &&
-                acknowledgement == client.initial_sequence + 1)
+            if ((flags & 0x12) == 0x12 && !client.syn_acknowledged && acknowledgement == client.initial_sequence + 1)
             {
                 client.syn_acknowledged = true;
                 client.next_remote_sequence = sequence + 1;
-                client.peer_mss = peer_mss_from_options(packet + tcp_header_size,
-                    static_cast<uint16_t>(header_length - tcp_header_size));
+                client.peer_mss = peer_mss_from_options(packet + tcp_header_size, static_cast<uint16_t>(header_length - tcp_header_size));
                 send_segment(0x10, client.next_sequence);
             }
-            else if ((flags & 0x12) == 0x12 && client.syn_acknowledged &&
-                     acknowledgement == client.initial_sequence + 1)
+            else if ((flags & 0x12) == 0x12 && client.syn_acknowledged && acknowledgement == client.initial_sequence + 1)
             {
                 send_segment(0x10, client.next_sequence);
                 return;
@@ -251,8 +236,7 @@ namespace Network
                 return;
             }
 
-            if (client.request_sent && (flags & 0x10) &&
-                acknowledgement == client.next_sequence)
+            if (client.request_sent && (flags & 0x10) && acknowledgement == client.next_sequence)
             {
                 client.request_acknowledged = true;
             }
@@ -267,8 +251,7 @@ namespace Network
                     uint32_t copy_length = payload_length < available ? payload_length : available;
                     for (uint32_t index = 0; index < copy_length; ++index)
                     {
-                        client.response[client.response_length + index] =
-                            static_cast<char>(packet[header_length + index]);
+                        client.response[client.response_length + index] = static_cast<char>(packet[header_length + index]);
                     }
                     client.response_length += copy_length;
                     client.response[client.response_length] = '\0';
@@ -306,8 +289,7 @@ namespace Network
         }
     }
 
-    int32_t http_get(const char* hostname, uint16_t port, const char* path,
-                     char* response, uint32_t response_capacity, uint32_t timeout_ms)
+    int32_t http_get(const char* hostname, uint16_t port, const char* path, char* response, uint32_t response_capacity, uint32_t timeout_ms)
     {
 #if !defined(__x86_64__)
         (void)hostname;
@@ -322,9 +304,7 @@ namespace Network
         {
             return -1;
         }
-        if (!hostname || !*hostname || !port || !valid_http_text(hostname, false) ||
-            !valid_http_text(path, true) || !response || response_capacity < 2 ||
-            response_capacity > 0x7FFFFFFFu)
+        if (!hostname || !*hostname || !port || !valid_http_text(hostname, false) || !valid_http_text(path, true) || !response || response_capacity < 2 || response_capacity > 0x7FFFFFFFu)
         {
             return -6;
         }
@@ -340,19 +320,14 @@ namespace Network
         }
 
         IPAddress remote_address = {};
-        if (!parse_ipv4_address(hostname, remote_address) &&
-            !resolve_hostname(hostname, remote_address,
-                              effective_timeout < 3000 ? effective_timeout : 3000))
+        if (!parse_ipv4_address(hostname, remote_address) && !resolve_hostname(hostname, remote_address, effective_timeout < 3000 ? effective_timeout : 3000))
         {
             return -2;
         }
 
         char request[1024] = {};
         uint32_t request_length = 0;
-        if (!append_request(request, sizeof(request), request_length, "GET ") ||
-            !append_request(request, sizeof(request), request_length, path) ||
-            !append_request(request, sizeof(request), request_length, " HTTP/1.0\r\nHost: ") ||
-            !append_request(request, sizeof(request), request_length, hostname))
+        if (!append_request(request, sizeof(request), request_length, "GET ") || !append_request(request, sizeof(request), request_length, path) || !append_request(request, sizeof(request), request_length, " HTTP/1.0\r\nHost: ") || !append_request(request, sizeof(request), request_length, hostname))
         {
             return -6;
         }
@@ -374,15 +349,12 @@ namespace Network
                 port_text[right] = swap;
             }
             port_text[digits] = '\0';
-            if (!append_request(request, sizeof(request), request_length, ":") ||
-                !append_request(request, sizeof(request), request_length, port_text))
+            if (!append_request(request, sizeof(request), request_length, ":") || !append_request(request, sizeof(request), request_length, port_text))
             {
                 return -6;
             }
         }
-        if (!append_request(request, sizeof(request), request_length,
-                            "\r\nUser-Agent: NasuaOS/1.0\r\nAccept: text/html,*/*\r\nConnection: close\r\n\r\n") ||
-            request_length > tcp_max_payload)
+        if (!append_request(request, sizeof(request), request_length, "\r\nUser-Agent: NasuaOS/1.0\r\nAccept: text/html,*/*\r\nConnection: close\r\n\r\n") || request_length > tcp_max_payload)
         {
             return -6;
         }
@@ -399,9 +371,7 @@ namespace Network
         client.peer_mss = tcp_max_payload;
         client.response = reinterpret_cast<uint8_t*>(response);
         client.response_capacity = response_capacity;
-        client.initial_sequence = static_cast<uint32_t>(Internal::ticks() * 1103515245u) ^
-                                  (static_cast<uint32_t>(client.local_port) << 16) ^
-                                  Internal::read_be32(ip_addr.bytes);
+        client.initial_sequence = static_cast<uint32_t>(Internal::ticks() * 1103515245u) ^ (static_cast<uint32_t>(client.local_port) << 16) ^ Internal::read_be32(ip_addr.bytes);
         client.next_sequence = client.initial_sequence;
         client.request_sequence = client.initial_sequence + 1;
         response[0] = '\0';
@@ -444,9 +414,7 @@ namespace Network
                     break;
                 }
                 client.next_sequence = client.request_sequence;
-                if (!send_segment(0x18, client.request_sequence,
-                                  reinterpret_cast<const uint8_t*>(request),
-                                  static_cast<uint16_t>(request_length)))
+                if (!send_segment(0x18, client.request_sequence, reinterpret_cast<const uint8_t*>(request), static_cast<uint16_t>(request_length)))
                 {
                     client.reset = true;
                     break;
@@ -457,12 +425,9 @@ namespace Network
                 ++request_attempts;
                 last_request_tick = now;
             }
-            else if (!client.request_acknowledged && request_attempts < 4 &&
-                     now - last_request_tick >= 100)
+            else if (!client.request_acknowledged && request_attempts < 4 && now - last_request_tick >= 100)
             {
-                if (!send_segment(0x18, client.request_sequence,
-                                  reinterpret_cast<const uint8_t*>(request),
-                                  static_cast<uint16_t>(request_length)))
+                if (!send_segment(0x18, client.request_sequence, reinterpret_cast<const uint8_t*>(request), static_cast<uint16_t>(request_length)))
                 {
                     client.reset = true;
                     break;
