@@ -1,5 +1,7 @@
 #include <napp.h>
 
+#include "suascript.hpp"
+
 NAPP_APPLICATION("suaedit", "Text editor", true);
 
 static const napp_gui* gui = nullptr;
@@ -29,6 +31,9 @@ static const char DEFAULT_INFO[] =
     "Enter: insert a new line\n"
     "Backspace: delete the character before the cursor\n"
     "Click in the editor: move the cursor\n"
+    "Run: compile and execute the current buffer in Terminal\n"
+    "SuaScript files use .sua; types: int, bool, string\n"
+    "SuaScript: print, if/else, while, for\n"
     "Enter on an empty name: cancel a filename prompt\n"
     "Terminal: show or hide the integrated shell\n"
     "File limit: 511 characters (one CLAWFS sector)\n";
@@ -1262,6 +1267,19 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
                 {
                     file_menu_open = false;
                     terminal_panel_visible = !terminal_panel_visible;
+                }
+                else if (i == 5)
+                {
+                    file_menu_open = false;
+                    terminal_panel_visible = true;
+                    terminal_output_count = 0;
+                    terminal_scroll_offset = 0;
+                    terminal_output[0][0] = '\0';
+                    terminal_write_string("SuaScript: compiling and running...\n");
+                    if (SuaScript::compile_and_run(editor_buffer, editor_length, terminal_write_char))
+                    {
+                        terminal_write_string("Program finished.\n");
+                    }
                 }
                 else if (i == 7)
                 {

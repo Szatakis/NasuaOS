@@ -64,12 +64,15 @@ A text editor with an integrated terminal panel.
 | Type        | GUI window                                                 |
 | Entry       | `_start()` in `utilities/applications/suaedit/src/suaedit.cpp` |
 | API         | Uses `napp_gui` for drawing, `napp_window` for callbacks, `api->set_print_redirect` + `api->execute_command` for integrated commands |
-| Description | A lightweight text editor with a VS Code-style menu bar; File contains New, Open, and Save, with Help and Terminal available on the top bar. It has an integrated terminal and mouse-positioned text cursor. It opens or creates files in the current folder; files are limited to one 512-byte CLAWFS sector. On a formatted ClawFS disk, it creates and opens `info.txt` with editor instructions. Run `format` in the integrated terminal if the disk has not been initialized. |
+| Description | A lightweight text editor with a VS Code-style menu bar; File contains New, Open, and Save, with Run, Help, and Terminal on the top bar. Run compiles and executes the current buffer as SuaScript in the integrated terminal. It supports typed `int`, `bool`, and `string` variables and uses `.sua` as the script extension. It opens and creates files in the current folder; files are limited to one 512-byte CLAWFS sector. On a formatted ClawFS disk, it creates and opens `info.txt`. Run `format` in the integrated terminal if the disk has not been initialized. |
 
 The terminal panel is toggled via the **Terminal** menu item. When visible, command output from
 `execute_command` is redirected into the panel instead of the main shell buffer.
 The input prompt (`$ `) is rendered on the same visual row as the last line of
 output, matching the behaviour of the kernel built-in terminal.
+
+SuaEdit can run typed `.sua` scripts; see [SuaScript](suascript.md) for the
+language syntax and examples.
 
 ```
 user@nasua-os:/home> bootapp --app suaedit
