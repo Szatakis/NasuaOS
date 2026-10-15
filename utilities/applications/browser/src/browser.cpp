@@ -2,25 +2,37 @@
 
 NAPP_APPLICATION("browser", "Simple HTML browser", true);
 
-#define BROWSER_ADDRESS_MAX 96
-#define BROWSER_DOCUMENT_MAX 512
-#define BROWSER_MAX_LINES 128
+#define BROWSER_ADDRESS_MAX 256
+#define BROWSER_RESPONSE_MAX 8192
+#define BROWSER_DOCUMENT_MAX 8192
+#define BROWSER_MAX_LINES 512
 #define BROWSER_LINE_MAX 120
+
+static constexpr uint32_t BROWSER_BACKGROUND = 0xFF11151D;
+static constexpr uint32_t BROWSER_SURFACE = 0xFF1B222D;
+static constexpr uint32_t BROWSER_INPUT = 0xFF283240;
+static constexpr uint32_t BROWSER_TEXT = 0xFFE1E7EF;
+static constexpr uint32_t BROWSER_MUTED = 0xFF9BA8B8;
+static constexpr uint32_t BROWSER_ACCENT = 0xFF59E81B;
 
 static const napp_api* browser_api = nullptr;
 static const napp_gui* browser_gui = nullptr;
 
 static char browser_address[BROWSER_ADDRESS_MAX];
+static char browser_response[BROWSER_RESPONSE_MAX];
+static char browser_page_source[BROWSER_RESPONSE_MAX];
 static char browser_document[BROWSER_DOCUMENT_MAX];
 static char browser_lines[BROWSER_MAX_LINES][BROWSER_LINE_MAX];
+static int browser_document_length = 0;
 static int browser_line_count = 0;
 static int browser_scroll = 0;
 static int browser_columns = 0;
 static bool browser_address_focused = true;
 static bool browser_truncated = false;
 static bool browser_source_truncated = false;
-static const char* browser_status = "Enter a local HTML file path and press Enter";
-static uint32_t browser_status_color = NAPP_COLOR_GRAY;
+static char browser_status_text[64];
+static const char* browser_status = "Enter an http:// URL or a local ClawFS file path";
+static uint32_t browser_status_color = BROWSER_MUTED;
 
 static int browser_length(const char* text)
 {
@@ -54,6 +66,123 @@ static bool browser_equal_ignore_case(const char* left, const char* right)
     return *left == '\0' && *right == '\0';
 }
 
+static bool browser_has_prefix_ignore_case(const char* text, const char* prefix)
+{
+    while (*prefix != '\0')
+    {
+        char character = *text++;
+        if (character >= 'A' && character <= 'Z')
+        {
+            character = static_cast<char>(character - 'A' + 'a');
+        }
+        char expected = *prefix++;
+        if (expected >= 'A' && expected <= 'Z')
+        {
+            expected = static_cast<char>(expected - 'A' + 'a');
+        }
+        if (character != expected)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool browser_parse_http_url(const char* url, char* hostname, int hostname_capacity,
+                                  uint16_t& port, char* path, int path_capacity)
+{
+    const char* cursor = url;
+    if (browser_has_prefix_ignore_case(cursor, "http://"))
+    {
+        cursor += 7;
+    }
+    else
+    {
+        return false;
+    }
+
+    int host_length = 0;
+    while (*cursor != '\0' && *cursor != '/' && *cursor != '?' && *cursor != '#')
+    {
+        if (*cursor == '@' || *cursor == '[' || *cursor == ']' || *cursor == '\r' || *cursor == '\n')
+        {
+            return false;
+        }
+        if (*cursor == ':')
+        {
+            break;
+        }
+        if (host_length >= hostname_capacity - 1)
+        {
+            return false;
+        }
+        hostname[host_length++] = *cursor++;
+    }
+    hostname[host_length] = '\0';
+    if (host_length == 0)
+    {
+        return false;
+    }
+
+    port = 80;
+    if (*cursor == ':')
+    {
+        ++cursor;
+        uint32_t parsed_port = 0;
+        int digits = 0;
+        while (*cursor >= '0' && *cursor <= '9')
+        {
+            parsed_port = parsed_port * 10 + static_cast<uint32_t>(*cursor++ - '0');
+            if (parsed_port > 65535 || ++digits > 5)
+            {
+                return false;
+            }
+        }
+        if (digits == 0 || parsed_port == 0)
+        {
+            return false;
+        }
+        port = static_cast<uint16_t>(parsed_port);
+    }
+
+    int path_length = 0;
+    if (*cursor == '?' )
+    {
+        path[path_length++] = '/';
+        while (*cursor != '\0' && *cursor != '#')
+        {
+            if (*cursor == '\r' || *cursor == '\n' || path_length >= path_capacity - 1)
+            {
+                return false;
+            }
+            path[path_length++] = *cursor++;
+        }
+    }
+    else if (*cursor == '\0' || *cursor == '#')
+    {
+        path[path_length++] = '/';
+    }
+    else if (*cursor == '/')
+    {
+        while (cursor[path_length] != '\0' && cursor[path_length] != '#')
+        {
+            if (cursor[path_length] == '\r' || cursor[path_length] == '\n' ||
+                path_length >= path_capacity - 1)
+            {
+                return false;
+            }
+            path[path_length] = cursor[path_length];
+            ++path_length;
+        }
+    }
+    else
+    {
+        return false;
+    }
+    path[path_length] = '\0';
+    return true;
+}
+
 static void browser_set_document(const char* text)
 {
     int index = 0;
@@ -63,13 +192,14 @@ static void browser_set_document(const char* text)
         ++index;
     }
     browser_document[index] = '\0';
+    browser_document_length = index;
     browser_columns = 0;
     browser_scroll = 0;
 }
 
 static bool browser_append_document(char character, bool& pending_space)
 {
-    int length = browser_length(browser_document);
+    int length = browser_document_length;
     if (character == '\n')
     {
         while (length > 0 && browser_document[length - 1] == ' ')
@@ -82,6 +212,7 @@ static bool browser_append_document(char character, bool& pending_space)
             {
                 browser_document[length] = '\n';
                 browser_document[length + 1] = '\0';
+                browser_document_length = length + 1;
             }
         }
         pending_space = false;
@@ -101,6 +232,7 @@ static bool browser_append_document(char character, bool& pending_space)
             return false;
         }
         browser_document[length++] = ' ';
+        browser_document_length = length;
     }
     pending_space = false;
     if (length >= BROWSER_DOCUMENT_MAX - 1)
@@ -109,6 +241,7 @@ static bool browser_append_document(char character, bool& pending_space)
     }
     browser_document[length] = character;
     browser_document[length + 1] = '\0';
+    browser_document_length = length + 1;
     return true;
 }
 
@@ -162,6 +295,7 @@ static bool browser_decode_entity(const char* source, int& index, char& output)
 static void browser_parse_html(const char* source)
 {
     browser_document[0] = '\0';
+    browser_document_length = 0;
     bool pending_space = false;
     bool skip_head = false;
     bool skip_script = false;
@@ -277,11 +411,12 @@ static void browser_parse_html(const char* source)
         ++index;
     }
 
-    int length = browser_length(browser_document);
+    int length = browser_document_length;
     while (length > 0 && (browser_document[length - 1] == ' ' || browser_document[length - 1] == '\n'))
     {
         browser_document[--length] = '\0';
     }
+    browser_document_length = length;
     browser_source_truncated = truncated;
     browser_truncated = truncated;
     browser_columns = 0;
@@ -378,18 +513,328 @@ static void browser_layout_document(int columns)
     browser_columns = columns;
 }
 
+static bool browser_find_http_body(const char* response, uint32_t length,
+                                   uint32_t& body_offset)
+{
+    for (uint32_t index = 0; index + 3 < length; ++index)
+    {
+        if (response[index] == '\r' && response[index + 1] == '\n' &&
+            response[index + 2] == '\r' && response[index + 3] == '\n')
+        {
+            body_offset = index + 4;
+            return true;
+        }
+        if (response[index] == '\n' && response[index + 1] == '\n')
+        {
+            body_offset = index + 2;
+            return true;
+        }
+    }
+    return false;
+}
+
+static int browser_http_status_code(const char* response, uint32_t length)
+{
+    if (length < 12 || !browser_has_prefix_ignore_case(response, "HTTP/"))
+    {
+        return 0;
+    }
+    uint32_t index = 0;
+    while (index < length && response[index] != ' ')
+    {
+        ++index;
+    }
+    while (index < length && response[index] == ' ')
+    {
+        ++index;
+    }
+    if (index + 2 >= length || response[index] < '0' || response[index] > '9' ||
+        response[index + 1] < '0' || response[index + 1] > '9' ||
+        response[index + 2] < '0' || response[index + 2] > '9')
+    {
+        return 0;
+    }
+    return (response[index] - '0') * 100 + (response[index + 1] - '0') * 10 +
+           (response[index + 2] - '0');
+}
+
+static bool browser_http_is_chunked(const char* response, uint32_t body_offset)
+{
+    uint32_t line_start = 0;
+    while (line_start < body_offset && response[line_start] != '\n')
+    {
+        ++line_start;
+    }
+    if (line_start < body_offset)
+    {
+        ++line_start;
+    }
+    while (line_start < body_offset)
+    {
+        uint32_t line_end = line_start;
+        while (line_end < body_offset && response[line_end] != '\n')
+        {
+            ++line_end;
+        }
+        if (browser_has_prefix_ignore_case(response + line_start, "transfer-encoding:"))
+        {
+            for (uint32_t index = line_start; index + 7 <= line_end; ++index)
+            {
+                if (browser_has_prefix_ignore_case(response + index, "chunked"))
+                {
+                    return true;
+                }
+            }
+        }
+        line_start = line_end + 1;
+    }
+    return false;
+}
+
+static bool browser_decode_chunked(const char* input, uint32_t length,
+                                   char* output, uint32_t capacity,
+                                   uint32_t& output_length)
+{
+    uint32_t input_offset = 0;
+    output_length = 0;
+    while (input_offset < length)
+    {
+        uint32_t chunk_size = 0;
+        uint32_t digits = 0;
+        while (input_offset < length && input[input_offset] != '\r' && input[input_offset] != '\n')
+        {
+            const char character = input[input_offset++];
+            if (character == ';')
+            {
+                while (input_offset < length && input[input_offset] != '\r' &&
+                       input[input_offset] != '\n')
+                {
+                    ++input_offset;
+                }
+                break;
+            }
+            uint32_t digit = 0;
+            if (character >= '0' && character <= '9')
+            {
+                digit = static_cast<uint32_t>(character - '0');
+            }
+            else if (character >= 'a' && character <= 'f')
+            {
+                digit = static_cast<uint32_t>(character - 'a' + 10);
+            }
+            else if (character >= 'A' && character <= 'F')
+            {
+                digit = static_cast<uint32_t>(character - 'A' + 10);
+            }
+            else
+            {
+                return false;
+            }
+            if (chunk_size > (capacity - digit) / 16)
+            {
+                return false;
+            }
+            chunk_size = chunk_size * 16 + digit;
+            ++digits;
+        }
+        if (digits == 0 || input_offset >= length)
+        {
+            return false;
+        }
+        if (input[input_offset] == '\r')
+        {
+            ++input_offset;
+            if (input_offset >= length || input[input_offset++] != '\n')
+            {
+                return false;
+            }
+        }
+        else if (input[input_offset++] != '\n')
+        {
+            return false;
+        }
+        if (chunk_size == 0)
+        {
+            output[output_length] = '\0';
+            return true;
+        }
+        if (chunk_size > length - input_offset || chunk_size >= capacity - output_length)
+        {
+            return false;
+        }
+        for (uint32_t index = 0; index < chunk_size; ++index)
+        {
+            output[output_length++] = input[input_offset++];
+        }
+        if (input_offset < length && input[input_offset] == '\r')
+        {
+            ++input_offset;
+            if (input_offset >= length || input[input_offset++] != '\n')
+            {
+                return false;
+            }
+        }
+        else if (input_offset < length && input[input_offset] == '\n')
+        {
+            ++input_offset;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return false;
+}
+
+static void browser_set_status_code(const char* prefix, int status_code)
+{
+    int index = 0;
+    while (prefix[index] != '\0' && index < static_cast<int>(sizeof(browser_status_text) - 8))
+    {
+        browser_status_text[index] = prefix[index];
+        ++index;
+    }
+    browser_status_text[index++] = static_cast<char>('0' + (status_code / 100) % 10);
+    browser_status_text[index++] = static_cast<char>('0' + (status_code / 10) % 10);
+    browser_status_text[index++] = static_cast<char>('0' + status_code % 10);
+    browser_status_text[index] = '\0';
+    browser_status = browser_status_text;
+}
+
 static bool browser_load_page()
 {
     if (browser_address[0] == '\0')
     {
-        browser_status = "Enter a local HTML file path";
+        browser_status = "Enter a URL or local HTML file path";
         browser_status_color = 0xFFFF7777;
         return false;
     }
+
+    if (browser_has_prefix_ignore_case(browser_address, "https://"))
+    {
+        browser_status = "HTTPS/TLS is not supported yet; use plain HTTP";
+        browser_status_color = 0xFFFF7777;
+        return false;
+    }
+
+    char hostname[128] = {};
+    char path[256] = {};
+    uint16_t port = 80;
+    const bool is_http_url = browser_has_prefix_ignore_case(browser_address, "http://");
+    if (is_http_url)
+    {
+        if (browser_api == nullptr || browser_api->http_get == nullptr)
+        {
+            browser_status = "HTTP network service is unavailable";
+            browser_status_color = 0xFFFF7777;
+            return false;
+        }
+        if (!browser_parse_http_url(browser_address, hostname, sizeof(hostname),
+                                    port, path, sizeof(path)))
+        {
+            browser_status = "Invalid HTTP URL";
+            browser_status_color = 0xFFFF7777;
+            return false;
+        }
+
+        const int32_t response_length = browser_api->http_get(
+            hostname, port, path, browser_response, sizeof(browser_response), 15000);
+        if (response_length < 0)
+        {
+            switch (response_length)
+            {
+                case NAPP_HTTP_ERROR_NETWORK:
+                    browser_status = "Network is offline or has no DHCP address";
+                    break;
+                case NAPP_HTTP_ERROR_DNS:
+                    browser_status = "Could not resolve the host name";
+                    break;
+                case NAPP_HTTP_ERROR_CONNECT:
+                    browser_status = "Could not connect to the HTTP server";
+                    break;
+                case NAPP_HTTP_ERROR_TIMEOUT:
+                    browser_status = "HTTP request timed out";
+                    break;
+                case NAPP_HTTP_ERROR_TOO_LARGE:
+                    browser_status = "HTTP response exceeds the 8 KB limit";
+                    break;
+                default:
+                    browser_status = "Invalid HTTP request";
+                    break;
+            }
+            browser_status_color = 0xFFFF7777;
+            return false;
+        }
+
+        uint32_t body_offset = 0;
+        if (!browser_find_http_body(browser_response, static_cast<uint32_t>(response_length),
+                                    body_offset))
+        {
+            browser_status = "Invalid HTTP response headers";
+            browser_status_color = 0xFFFF7777;
+            return false;
+        }
+        const int status_code = browser_http_status_code(
+            browser_response, static_cast<uint32_t>(response_length));
+        if (status_code == 0)
+        {
+            browser_status = "Invalid HTTP status line";
+            browser_status_color = 0xFFFF7777;
+            return false;
+        }
+        if (status_code >= 300 && status_code < 400)
+        {
+            browser_set_status_code("Redirect not followed: ", status_code);
+            browser_status_color = 0xFFFFCC66;
+            return false;
+        }
+
+        const uint32_t body_length = static_cast<uint32_t>(response_length) - body_offset;
+        uint32_t page_source_length = 0;
+        if (browser_http_is_chunked(browser_response, body_offset))
+        {
+            if (!browser_decode_chunked(browser_response + body_offset, body_length,
+                                       browser_page_source, sizeof(browser_page_source),
+                                       page_source_length))
+            {
+                browser_status = "Invalid chunked HTTP response";
+                browser_status_color = 0xFFFF7777;
+                return false;
+            }
+        }
+        else
+        {
+            page_source_length = body_length;
+            if (page_source_length >= sizeof(browser_page_source))
+            {
+                page_source_length = sizeof(browser_page_source) - 1;
+                browser_source_truncated = true;
+            }
+            for (uint32_t index = 0; index < page_source_length; ++index)
+            {
+                browser_page_source[index] = browser_response[body_offset + index];
+            }
+            browser_page_source[page_source_length] = '\0';
+        }
+        browser_parse_html(browser_page_source);
+        if (status_code >= 400)
+        {
+            browser_set_status_code("HTTP error: ", status_code);
+            browser_status_color = 0xFFFFCC66;
+        }
+        else
+        {
+            browser_status = browser_truncated ? "Page loaded (content truncated)" : "Page loaded";
+            browser_status_color = browser_truncated ? 0xFFFFCC66 : BROWSER_ACCENT;
+        }
+        browser_address_focused = false;
+        return true;
+    }
+
     if (browser_api == nullptr || browser_api->clawfs_resolve_path == nullptr ||
         browser_api->clawfs_read_sector == nullptr)
     {
-        browser_status = "Filesystem access is unavailable";
+        browser_status = "Local filesystem access is unavailable";
         browser_status_color = 0xFFFF7777;
         return false;
     }
@@ -398,7 +843,7 @@ static bool browser_load_page()
     const uint32_t sector = browser_api->clawfs_resolve_path(current_path, browser_address);
     if (sector == 0)
     {
-        browser_status = "File not found";
+        browser_status = "Local file not found";
         browser_status_color = 0xFFFF7777;
         return false;
     }
@@ -406,14 +851,15 @@ static bool browser_load_page()
     char source[512] = {};
     if (!browser_api->clawfs_read_sector(sector, source))
     {
-        browser_status = "Could not read file";
+        browser_status = "Could not read local file";
         browser_status_color = 0xFFFF7777;
         return false;
     }
     source[sizeof(source) - 1] = '\0';
+    browser_source_truncated = false;
     browser_parse_html(source);
     browser_status = browser_truncated ? "Page opened (content truncated)" : "Page opened";
-    browser_status_color = browser_truncated ? 0xFFFFCC66 : NAPP_COLOR_GREEN;
+    browser_status_color = browser_truncated ? 0xFFFFCC66 : BROWSER_ACCENT;
     browser_address_focused = false;
     return true;
 }
@@ -427,19 +873,19 @@ static void browser_draw(napp_window* window)
     const int body_height = window->height - window->title_height - 72;
     const int columns = (window->width - 32) / 8;
 
-    browser_gui->fill_block(window->pos_x, content_top, NAPP_COLOR_WHITE,
+    browser_gui->fill_block(window->pos_x, content_top, BROWSER_BACKGROUND,
                             window->width, window->height - window->title_height);
-    browser_gui->fill_block(left, toolbar_y, browser_address_focused ? 0xFFE5F0FF : 0xFFF0F0F0,
+    browser_gui->fill_block(left, toolbar_y, browser_address_focused ? BROWSER_INPUT : BROWSER_SURFACE,
                             window->width - 88, 24);
-    browser_gui->draw_text(browser_address[0] != '\0' ? browser_address : "Local HTML file path",
-                           left + 6, toolbar_y + 7, NAPP_COLOR_BLACK);
-    browser_gui->fill_block(window->pos_x + window->width - 70, toolbar_y, 0xFF59E81B, 60, 24);
-    browser_gui->draw_text("Open", window->pos_x + window->width - 57, toolbar_y + 7, NAPP_COLOR_BLACK);
+    browser_gui->draw_text(browser_address[0] != '\0' ? browser_address : "http:// URL or local file path",
+                           left + 6, toolbar_y + 7, BROWSER_TEXT);
+    browser_gui->fill_block(window->pos_x + window->width - 70, toolbar_y, BROWSER_ACCENT, 60, 24);
+    browser_gui->draw_text("Open", window->pos_x + window->width - 57, toolbar_y + 7, BROWSER_BACKGROUND);
     browser_gui->draw_text(browser_status, left, content_top + 38, browser_status_color);
 
     if (columns < 12)
     {
-        browser_gui->draw_text("Window is too narrow", left, body_y, NAPP_COLOR_BLACK);
+        browser_gui->draw_text("Window is too narrow", left, body_y, BROWSER_TEXT);
         return;
     }
     if (columns > BROWSER_LINE_MAX - 1)
@@ -465,7 +911,7 @@ static void browser_draw(napp_window* window)
     int rows_drawn = 0;
     for (int line = browser_scroll; line < browser_line_count && rows_drawn < visible_rows; ++line)
     {
-        browser_gui->draw_text(browser_lines[line], left, body_y + rows_drawn * 12, NAPP_COLOR_BLACK);
+        browser_gui->draw_text(browser_lines[line], left, body_y + rows_drawn * 12, BROWSER_TEXT);
         ++rows_drawn;
     }
     if (browser_truncated)
@@ -544,7 +990,8 @@ static void browser_mouse(napp_window* window, int mouse_x, int mouse_y)
 
 int _start(const napp_api* api)
 {
-    if (api == nullptr || api->gui == nullptr || api->gui->open_window == nullptr ||
+    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr ||
+        api->gui->open_window == nullptr ||
         api->gui->draw_text == nullptr || api->gui->fill_block == nullptr)
     {
         return 1;
@@ -553,18 +1000,20 @@ int _start(const napp_api* api)
     browser_api = api;
     browser_gui = api->gui;
     browser_address[0] = '\0';
+    browser_response[0] = '\0';
+    browser_page_source[0] = '\0';
     browser_source_truncated = false;
     browser_truncated = false;
     browser_set_document(
         "Welcome to Nasua Browser\n"
         "\n"
-        "This preview renders basic HTML from local ClawFS files.\n"
-        "Enter a file path above, for example /home/user/page.html, then press Enter.\n"
+        "Renders basic HTML from local ClawFS files or plain HTTP pages.\n"
+        "Enter an http:// URL or a local path above, then press Enter.\n"
         "\n"
         "Supported: headings, paragraphs, lists, line breaks and common text entities.\n"
         "Use j/k to scroll, Page Up/Down to move a page, or e to edit the path.\n"
         "\n"
-        "Internet downloads are not available yet.");
+        "HTTPS/TLS is not supported yet.");
 
     napp_window_config config = {};
     config.title = "Nasua Browser";

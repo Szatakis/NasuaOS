@@ -202,6 +202,10 @@ namespace Network
             {
                 handle_udp(source, destination, payload, payload_length);
             }
+            else if (packet[9] == 6)
+            {
+                handle_tcp(source, destination, payload, payload_length);
+            }
             else if (packet[9] == 1 && payload_length >= 8 && checksum(payload, payload_length) == 0)
             {
                 const uint16_t identifier = read_be16(payload + 4);

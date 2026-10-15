@@ -57,19 +57,20 @@ These are dynamically loaded flat binaries from `/bin/<app>` (the rootfs `/bin` 
 
 ### browser
 
-A simple graphical browser preview that renders HTML text from a local ClawFS file.
+A simple graphical browser that renders HTML from a local ClawFS file or a plain HTTP URL.
 
 | Property   | Value |
 |------------|-------|
 | Type       | GUI window |
 | Source     | `utilities/applications/browser/src/browser.cpp` |
-| API        | `napp_gui` and the ClawFS read/resolve functions |
-| Description| Renders basic HTML structure, including headings, paragraphs, lists, line breaks, and common text entities |
+| API        | `napp_gui`, ClawFS read/resolve, and the NAPP `http_get` service |
+| Description| Fetches plain HTTP pages over DNS/TCP and renders basic HTML structure, including headings, paragraphs, lists, line breaks, and common text entities |
 
-Enter a path such as `/home/user/page.html` in the address field and press Enter.
-Use `j`/`k` or Page Up/Page Down to scroll, and `e` to edit the path. The current
-NAPP API has no HTTP/TCP access, so this version opens local files only. The
-browser currently reads one 512-byte sector per page.
+Enter an `http://` URL or a local path such as `/home/user/page.html` in the
+address field and press Enter. Use `j`/`k` or Page Up/Page Down to scroll, and
+`e` to edit the path. HTTPS/TLS, automatic redirects, JavaScript, and CSS are
+not supported. Local files are limited to one 512-byte sector; network
+responses are limited to 8 KB.
 
 ```
 user@nasua-os:/home> bootapp --app browser

@@ -5,6 +5,7 @@
 #include "drivers/memory/driver.hpp"
 #include "drivers/timer/driver.hpp"
 #include "drivers/uart/driver.hpp"
+#include "drivers/network/driver.hpp"
 
 #include "system/filesystem/fat/fat.hpp"
 #include "system/filesystem/clawfs/clawfs.hpp"
@@ -469,6 +470,12 @@ static void napp_api_set_print_redirect(void (*callback)(char))
     napp_print_redirect_cb = callback;
 }
 
+static int32_t napp_api_http_get(const char* hostname, uint16_t port, const char* path,
+                                 char* response, uint32_t response_capacity, uint32_t timeout_ms)
+{
+    return Network::http_get(hostname, port, path, response, response_capacity, timeout_ms);
+}
+
 static napp_api kernel_napp_api =
 {
     NAPP_ABI_VERSION,
@@ -497,7 +504,8 @@ static napp_api kernel_napp_api =
     napp_api_clawfs_resolve_path,
      napp_api_get_ticks,
      napp_api_execute_command,
-     napp_api_set_print_redirect
+     napp_api_set_print_redirect,
+     napp_api_http_get
 };
 
 static bool remember_image(const char* name, void* image)

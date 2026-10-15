@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 3
+#define NAPP_ABI_VERSION 4
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
 #define NAPP_HEADER_SIZE 96
@@ -39,6 +39,12 @@ struct napp_header
 #define NAPP_COLOR_WINDOW     0xFF1A1F2C
 #define NAPP_COLOR_TITLEBAR   0xFF2B3140
 #define NAPP_KEY_F5           ((char)0xF5)
+#define NAPP_HTTP_ERROR_NETWORK  -1
+#define NAPP_HTTP_ERROR_DNS      -2
+#define NAPP_HTTP_ERROR_CONNECT -3
+#define NAPP_HTTP_ERROR_TIMEOUT -4
+#define NAPP_HTTP_ERROR_TOO_LARGE -5
+#define NAPP_HTTP_ERROR_INVALID -6
 
 // A window owned by an application. The kernel keeps the geometry up to date
 // before every callback; the application only reads it.
@@ -145,6 +151,12 @@ struct napp_api
     // restore normal output to the screen. Only one redirect can be active
     // at a time; the last call wins.
     void (*set_print_redirect)(void (*callback)(char));
+
+    // Perform a plain HTTP GET. The response buffer includes headers and must
+    // reserve one byte for the trailing NUL. Returns the response byte count
+    // or one of the NAPP_HTTP_ERROR_* values.
+    int32_t (*http_get)(const char* hostname, uint16_t port, const char* path,
+                        char* response, uint32_t response_capacity, uint32_t timeout_ms);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);

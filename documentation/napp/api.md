@@ -34,6 +34,8 @@ struct napp_api
     uint64_t (*get_ticks)(void);         // PIT timer ticks since boot (100 Hz = 10 ms/tick)
     void (*execute_command)(const char* cmd);
     void (*set_print_redirect)(void (*callback)(char));
+    int32_t (*http_get)(const char* hostname, uint16_t port, const char* path,
+                        char* response, uint32_t response_capacity, uint32_t timeout_ms);
 };
 ```
 
@@ -45,7 +47,7 @@ The full structure is defined in `utilities/applications/include/napp.h`.
 
 | Field        | Signature                | Description                                      |
 |--------------|--------------------------|--------------------------------------------------|
-| `abi_version`| `uint32_t`               | NAPP ABI version (currently 3)                   |
+| `abi_version`| `uint32_t`               | NAPP ABI version (currently 4)                   |
 | `argc`       | `int`                    | Number of command-line arguments                 |
 | `argv`       | `char**`                 | Array of argument strings (`argv[0]` = app name) |
 | `print`      | `void (*)(const char*)`  | Print a string to the terminal/log               |
@@ -108,6 +110,22 @@ struct napp_gui
 | `sleep_ms`           | `void (*)(uint32_t)`       | Sleep for the specified number of milliseconds                                              |
 | `execute_command`    | `void (*)(const char*)`    | Execute a shell command via the kernel                                                      |
 | `set_print_redirect` | `void (*)(void (*)(char))` | Redirect kernel print output to an in-app callback; pass `nullptr` to restore normal output |
+| `http_get` | `int32_t (*)(const char*, uint16_t, const char*, char*, uint32_t, uint32_t)` | Fetch a plain HTTP response over DNS/TCP |
+
+### HTTP networking
+
+`http_get` performs a synchronous HTTP/1.0 GET request. It resolves the host
+through the configured DNS server, opens a TCP connection, and reads the
+response until the server closes the connection. The response buffer must
+reserve one byte for a trailing NUL; its capacity includes that byte. The
+function returns the number of response bytes received, or a negative
+`NAPP_HTTP_ERROR_*` value for network unavailable, DNS failure, connect
+failure, timeout, an oversized response, or invalid input. The timeout is in
+milliseconds (zero selects the default).
+
+The current implementation supports plain HTTP only. HTTPS/TLS is not yet
+implemented. The TCP client handles one active request at a time and has a
+bounded response buffer supplied by the caller.
 
 #### Output Redirect for Integrated Terminals
 

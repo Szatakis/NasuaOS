@@ -16,6 +16,11 @@ namespace Network
 
     using UDPReceiveHandler = void (*)(const IPAddress& source, uint16_t source_port, const uint8_t* payload, uint16_t length);
 
+    // Fetches a plain HTTP response. Returns the number of bytes received or a
+    // negative error code when DNS, TCP, or the response fails.
+    int32_t http_get(const char* hostname, uint16_t port, const char* path,
+                     char* response, uint32_t response_capacity, uint32_t timeout_ms = 15000);
+
     extern bool available;
     extern MACAddress mac_addr;
     extern IPAddress ip_addr;

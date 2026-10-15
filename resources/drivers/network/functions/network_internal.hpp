@@ -17,6 +17,7 @@ namespace Network
         void handle_arp(const uint8_t* packet, uint16_t length);
         void handle_ipv4(const uint8_t* packet, uint16_t length);
         void handle_udp(const IPAddress& source, const IPAddress& destination, const uint8_t* packet, uint16_t length);
+        void handle_tcp(const IPAddress& source, const IPAddress& destination, const uint8_t* packet, uint16_t length);
         bool send_udp(const IPAddress& source, const IPAddress& destination, uint16_t source_port, uint16_t destination_port, const uint8_t* payload, uint16_t length);
         bool send_ipv4(const IPAddress& source, const IPAddress& destination, uint8_t protocol, const uint8_t* payload, uint16_t length);
         bool resolve_arp(const IPAddress& address, MACAddress& mac);
