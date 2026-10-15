@@ -292,9 +292,7 @@ static void draw_snake(napp_window* win)
 }
 
 
-// TICK -- called periodically by the kernel via the NAPP timer.  The snake
-// moves forward automatically once the game has started and stops when the
-// player loses.
+// TICK -- called periodically by the kernel via the NAPP timer.  The snake moves forward automatically once the game has started and stops when the player loses.
 static void snake_tick(napp_window* win)
 {
     (void)win;

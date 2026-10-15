@@ -315,8 +315,8 @@ void execute_command(const char *cmd)
             Gpu::print("    --file <path>                    - (Optional) Directory to start from\n");
             Gpu::print(" -pwd                                - Display the current working directory\n");
             Gpu::print(" -ip                                 - Display the current IP address\n");
-            Gpu::print(" -ping                               - Send a ping request to a target IP address\n");
-            Gpu::print("   --target <ip_address>             - (Required) Specify target IP address\n");
+            Gpu::print(" -ping                               - Send a ping request to an IP address or hostname\n");
+            Gpu::print("   --target <address>                - (Required) Specify target IP address or hostname\n");
         }
 
         else if (page == 8)
@@ -1504,7 +1504,7 @@ void execute_command(const char *cmd)
         if (!target_flag)
         {
             Gpu::print_error("Syntax error!\n");
-            Gpu::print_info("Usage: ping --target <ip_address>\n");
+            Gpu::print_info("Usage: ping --target <ip_address|hostname>\n");
         }
         else if (!Network::is_available())
         {
@@ -1512,15 +1512,24 @@ void execute_command(const char *cmd)
         }
         else
         {
-            const char* target_ip_str = target_flag + 9;
-            while (*target_ip_str == ' ') 
+            const char* target_arg = target_flag + 9;
+            while (*target_arg == ' ')
             {
-                target_ip_str++;
+                target_arg++;
             }
 
+            char target_name[254];
+            uint16_t target_length = 0;
+            while (target_arg[target_length] != '\0' && target_arg[target_length] != ' ' && target_length < sizeof(target_name) - 1)
+            {
+                target_name[target_length] = target_arg[target_length];
+                ++target_length;
+            }
+            target_name[target_length] = '\0';
+
             Network::IPAddress target_ip = {};
-            bool valid_ip = true;
-            const char* ptr = target_ip_str;
+            bool is_ip = true;
+            const char* ptr = target_name;
             for (uint8_t octet = 0; octet < 4; ++octet)
             {
                 uint16_t value = 0;
@@ -1532,13 +1541,13 @@ void execute_command(const char *cmd)
                     ++ptr;
                     if (digits > 3 || value > 255)
                     {
-                        valid_ip = false;
+                        is_ip = false;
                         break;
                     }
                 }
-                if (digits == 0 || !valid_ip)
+                if (digits == 0 || !is_ip)
                 {
-                    valid_ip = false;
+                    is_ip = false;
                     break;
                 }
                 target_ip.bytes[octet] = static_cast<uint8_t>(value);
@@ -1546,72 +1555,85 @@ void execute_command(const char *cmd)
                 {
                     if (*ptr != '.')
                     {
-                        valid_ip = false;
+                        is_ip = false;
                         break;
                     }
                     ++ptr;
                 }
             }
-            while (*ptr == ' ')
-            {
-                ++ptr;
-            }
             if (*ptr != '\0')
             {
-                valid_ip = false;
+                is_ip = false;
             }
 
-            if (!valid_ip)
+            if (target_length == 0 || (target_arg[target_length] != '\0' && target_arg[target_length] != ' '))
             {
-                Gpu::print_error("Invalid IP address format!\n");
-                Gpu::print_info("Usage: ping --target <ip_address>\n");
+                Gpu::print_error("Target is empty or too long!\n");
+                Gpu::print_info("Usage: ping --target <ip_address|hostname>\n");
             }
             else
             {
-                // Build IP string for printing
-                char ip_display[32];
-                int i = 0;
-                while (target_ip_str[i] != '\0' && target_ip_str[i] != ' ' && i < 31)
+                if (!is_ip && !Network::resolve_hostname(target_name, target_ip))
                 {
-                    ip_display[i] = target_ip_str[i];
-                    i++;
+                    Gpu::print_error("Unable to resolve hostname: ");
+                    Gpu::print(target_name);
+                    Gpu::print("\n");
                 }
-                ip_display[i] = '\0';
-
-                Gpu::print_info("PING ");
-                Gpu::print(ip_display);
-                Gpu::print(" (32 bytes of data):\n");
-
-                uint32_t received = 0;
-                for (int seq = 1; seq <= 4; seq++)
+                else
                 {
-                    if (Network::ping(target_ip, 1000))
+                    char ip_display[16];
+                    char* output = ip_display;
+                    for (uint8_t octet = 0; octet < 4; ++octet)
                     {
-                        received++;
-                        Gpu::print_info("32 bytes from ");
-                        Gpu::print(ip_display);
-                        Gpu::print(": icmp_seq=");
-                        char seq_buf[16];
-                        itoa(seq, seq_buf);
-                        Gpu::print(seq_buf);
-                        Gpu::print(" ttl=64\n");
+                        itoa(target_ip.bytes[octet], output);
+                        while (*output != '\0')
+                        {
+                            ++output;
+                        }
+                        if (octet < 3)
+                        {
+                            *output++ = '.';
+                        }
                     }
-                    else
-                    {
-                        Gpu::print_error("Request timeout for icmp_seq=");
-                        char seq_buf[16];
-                        itoa(seq, seq_buf);
-                        Gpu::print(seq_buf);
-                        Gpu::print("\n");
-                    }
-                }
+                    *output = '\0';
 
-                Gpu::print_info(ip_display);
-                Gpu::print(" ping statistics\n");
-                char rec_buf[16];
-                itoa(received, rec_buf);
-                Gpu::print(rec_buf);
-                Gpu::print("/4 packets received.\n");
+                    Gpu::print_info("PING ");
+                    Gpu::print(target_name);
+                    Gpu::print(" (");
+                    Gpu::print(ip_display);
+                    Gpu::print(") (32 bytes of data):\n");
+
+                    uint32_t received = 0;
+                    for (int seq = 1; seq <= 4; seq++)
+                    {
+                        if (Network::ping(target_ip, 1000))
+                        {
+                            received++;
+                            Gpu::print_info("32 bytes from ");
+                            Gpu::print(ip_display);
+                            Gpu::print(": icmp_seq=");
+                            char seq_buf[16];
+                            itoa(seq, seq_buf);
+                            Gpu::print(seq_buf);
+                            Gpu::print(" ttl=64\n");
+                        }
+                        else
+                        {
+                            Gpu::print_error("Request timeout for icmp_seq=");
+                            char seq_buf[16];
+                            itoa(seq, seq_buf);
+                            Gpu::print(seq_buf);
+                            Gpu::print("\n");
+                        }
+                    }
+
+                    Gpu::print_info(target_name);
+                    Gpu::print(" ping statistics\n");
+                    char rec_buf[16];
+                    itoa(received, rec_buf);
+                    Gpu::print(rec_buf);
+                    Gpu::print("/4 packets received.\n");
+                }
             }
         }
     }

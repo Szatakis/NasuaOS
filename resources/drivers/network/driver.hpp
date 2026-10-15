@@ -40,6 +40,7 @@ namespace Network
     bool bind_udp_port(uint16_t port, UDPReceiveHandler handler);
     void unbind_udp_port(uint16_t port);
     bool send_udp_packet(IPAddress destination, uint16_t source_port, uint16_t destination_port, const uint8_t* payload, uint16_t length);
+    bool resolve_hostname(const char* hostname, IPAddress& address, uint32_t timeout_ms = 3000);
 
     void poll();
     bool send_packet(const uint8_t* payload, uint16_t length);

@@ -608,7 +608,10 @@ static void suaedit_key(napp_window* win, char key)
         int line_height = 12;
         int terminal_content_h = terminal_panel_h - 24;
         int max_visible = terminal_content_h / line_height;
-        if (max_visible < 1) max_visible = 1;
+        if (max_visible < 1) 
+        {
+            max_visible = 1;
+        }
         terminal_scroll_offset += max_visible;
         return;
     }
@@ -619,9 +622,15 @@ static void suaedit_key(napp_window* win, char key)
         int line_height = 12;
         int terminal_content_h = terminal_panel_h - 24;
         int max_visible = terminal_content_h / line_height;
-        if (max_visible < 1) max_visible = 1;
+        if (max_visible < 1) 
+        {
+            max_visible = 1;
+        }
         terminal_scroll_offset -= max_visible;
-        if (terminal_scroll_offset < 0) terminal_scroll_offset = 0;
+        if (terminal_scroll_offset < 0) 
+        {
+            terminal_scroll_offset = 0;
+        }
         return;
     }
 
