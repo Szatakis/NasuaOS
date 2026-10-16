@@ -31,6 +31,12 @@ The PS/2 controller access, Set 1 scancode translation, modifier state, and poll
 
 The generic Ethernet interface is declared in `resources/drivers/ethernet/driver.hpp`; the VirtIO-specific PCI transport and virtqueue implementation are isolated in `resources/drivers/ethernet/controllers/virtio-net/`. The network layer in `resources/drivers/network/` owns Ethernet frame dispatch, ARP neighbor resolution, IPv4 and ICMP handling, UDP checksums and ports, TCP client connections, DNS, and DHCP. Its bounded TCP client backs the NAPP `http_get` service for plain HTTP and `https_get` for HTTPS using TLS 1.2 with certificate-chain, hostname, and RTC-date validation. HTTPS currently requires RDRAND for handshake entropy and supports IPv4 only. DHCP starts after the VirtIO interface initializes and is advanced from the kernel's regular network polling loop. The 32-bit kernel does not compile or initialize these drivers.
 
+The x86_64 QEMU launch targets use `-cpu max` so the guest receives modern CPU
+features, including RDRAND when available. Override the model with
+`QEMU_CPU_X86_64=<model>` if needed. Other hypervisors must expose RDRAND to the
+guest; HTTPS fails closed with `NAPP_HTTPS_ERROR_ENTROPY` when the feature is
+unavailable.
+
 The current transport supports the transitional/legacy PCI VirtIO network device (PCI ID `1af4:1000`), which is what QEMU's default `virtio-net-pci` device exposes on the usual `pc` machine. It requires a valid device-supplied MAC and a DMA-contiguous queue/buffer mapping, and reports initialization failure rather than substituting a MAC, network configuration, or simulated DHCP response. The modern-only VirtIO PCI transport (`1af4:1041`) is not implemented.
 
 Build the 64-bit kernel and run it with QEMU user-mode DHCP networking:

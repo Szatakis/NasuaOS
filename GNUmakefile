@@ -27,6 +27,7 @@ BOOT_OPTIONS := $(patsubst %/,%,$(BOOT_OPTIONS))
 
 # Always run the Linux QEMU binaries, including from WSL.
 QEMU_X86_64 ?= qemu-system-x86_64
+QEMU_CPU_X86_64 ?= max
 QEMU_AARCH64 ?= qemu-system-aarch64
 QEMU_RISCV64 ?= qemu-system-riscv64
 QEMU_LOONGARCH64 ?= qemu-system-loongarch64
@@ -60,6 +61,7 @@ run-hdd: run-hdd-$(ARCH)
 .PHONY: run-x86_64
 run-x86_64: edk2-bins $(IMAGE_NAME).iso $(FS_NAME).img
 	$(QEMU_X86_64) \
+		-cpu $(QEMU_CPU_X86_64) \
 		-M pc,i8042=on,pcspk-audiodev=snd0 \
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-x86_64.fd,readonly=on \
 		-drive if=pflash,unit=1,format=raw,file=edk2-bins/vars-x86_64.fd \
@@ -79,6 +81,7 @@ run-x86_64: edk2-bins $(IMAGE_NAME).iso $(FS_NAME).img
 .PHONY: run-hdd-x86_64
 run-hdd-x86_64: edk2-bins $(IMAGE_NAME).hdd $(FS_NAME).img
 	$(QEMU_X86_64) \
+		-cpu $(QEMU_CPU_X86_64) \
 		-M pc,i8042=on \
 		-drive if=pflash,unit=0,format=raw,file=edk2-bins/code-x86_64.fd,readonly=on \
 		-drive if=pflash,unit=1,format=raw,file=edk2-bins/vars-x86_64.fd \
@@ -177,6 +180,7 @@ run-hdd-loongarch64: edk2-bins $(IMAGE_NAME).hdd
 .PHONY: run-bios
 run-bios: $(IMAGE_NAME).iso $(FS_NAME).img
 	$(QEMU_X86_64) \
+		-cpu $(QEMU_CPU_X86_64) \
 		-M pc,i8042=on \
 		-cdrom $(IMAGE_NAME).iso \
 		-boot d \
@@ -188,6 +192,7 @@ run-bios: $(IMAGE_NAME).iso $(FS_NAME).img
 .PHONY: run-hdd-bios
 run-hdd-bios: $(IMAGE_NAME).hdd $(FS_NAME).img
 	$(QEMU_X86_64) \
+		-cpu $(QEMU_CPU_X86_64) \
 		-M pc,i8042=on \
 		-hda $(IMAGE_NAME).hdd \
 		-drive id=$(FS_NAME),file=$(FS_NAME).img,format=raw,if=none \

@@ -235,6 +235,8 @@ void execute_command(const char *cmd)
             Gpu::print(" -bootapp                            - Application manager command\n");
             Gpu::print("    --app <application_name>         - (Required) Load and execute selected application\n");
             Gpu::print("    --list                           - List all available applications\n");
+            Gpu::print(" -download                           - Download files from a GitHub repository\n");
+            Gpu::print("    --repo OWNER/REPO ... list|get   - List or download catalog files\n");
             Gpu::print(" -clear                              - Clear the terminal screen\n");
         }
 

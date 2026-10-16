@@ -283,7 +283,7 @@ namespace Network
                 return false;
             }
 
-            days = 0;
+            days = 719528;
             for (uint32_t year = 1970; year < time.year; ++year)
             {
                 days += is_leap_year(year) ? 366 : 365;

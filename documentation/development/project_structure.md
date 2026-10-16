@@ -206,6 +206,7 @@ documentation/
 | `/sbin/cat`   | `utilities/system_functions/cat/`   |
 | `/sbin/cd`    | `utilities/system_functions/cd/`    |
 | `/sbin/cp`    | `utilities/system_functions/cp/`    |
+| `/sbin/download` | `utilities/system_functions/download/` |
 | `/sbin/ls`    | `utilities/system_functions/ls/`    |
 | `/sbin/mkdir` | `utilities/system_functions/mkdir/` |
 | `/sbin/mv`    | `utilities/system_functions/mv/`    |

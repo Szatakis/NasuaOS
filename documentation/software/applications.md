@@ -201,3 +201,37 @@ bootapp --app snake        # Launch Snake game
 ```
 
 See [NAPP Running](napp/running.md) for the full application loading lifecycle.
+
+## Downloading Files from GitHub
+
+The `download` system command reads a public file catalog and downloads ordinary
+files over verified HTTPS:
+
+```text
+download --repo OWNER/REPO list
+download --repo OWNER/REPO get example.txt
+```
+
+The repository contains a `catalog.txt` manifest and a `files/` directory. Each
+catalog entry records the destination filename, file version, SHA-256, and path
+inside the repository. Downloads are verified against that hash before being
+saved to `/home/user/downloads`; existing files are not overwritten. Files are
+limited to 60,000 bytes. HTTPS and a catalog hash verify transport and
+integrity, but do not authenticate the publisher, so download files only from
+repositories you trust.
+
+Create a public GitHub repository with this structure, then replace
+`OWNER/REPO` in the commands with its location:
+
+```text
+catalog.txt
+files/
+└── example.txt
+```
+
+The catalog entry for `example.txt` looks like this:
+
+```text
+NASUA-FILE-CATALOG-1
+example.txt|1.0.0|91d5cc20a5e6696f6a3549a76b6ff40c9855fa7d5de017942d9af69ee871e53e|files/example.txt
+```

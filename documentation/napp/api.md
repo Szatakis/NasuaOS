@@ -151,6 +151,23 @@ validation failure, `NAPP_HTTPS_ERROR_CLOCK` indicates an unusable RTC date,
 and `NAPP_HTTPS_ERROR_ENTROPY` indicates that secure handshake entropy is
 unavailable.
 
+### GitHub file catalog format
+
+The `download` system command fetches files from public GitHub repositories
+using `https_get`. A repository's root `catalog.txt` starts with
+`NASUA-FILE-CATALOG-1`; each following non-empty line contains four
+pipe-separated fields:
+
+```text
+filename|version|sha256-lowercase|files/path/to/file
+```
+
+Each repository file must be under `files/`. The command checks the downloaded
+file's SHA-256 and saves it to `/home/user/downloads/<filename>` in ClawFS.
+Files are capped at 60,000 bytes, and existing destination files are not
+overwritten. HTTPS plus a catalog hash verifies transport and integrity but is
+not a digital publisher signature; download only from repositories you trust.
+
 #### Output Redirect for Integrated Terminals
 
 The `set_print_redirect` function allows a NAPP application (such as an editor
