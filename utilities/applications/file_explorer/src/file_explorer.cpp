@@ -119,8 +119,7 @@ static void files_load_preview()
     for (uint32_t index = 0; index < length; ++index)
     {
         const char character = state.preview[index];
-        if ((character < ' ' && character != '\n' && character != '\t' && character != '\r') ||
-            character == '\x7f')
+        if ((character < ' ' && character != '\n' && character != '\t' && character != '\r') || character == '\x7f')
         {
             state.preview[index] = '.';
         }

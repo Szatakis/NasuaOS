@@ -13,8 +13,8 @@ struct framebuffer_info
 
 #define WINDOW_TITLEBAR_HEIGHT 24
 #define WINDOW_RESIZE_BORDER 6
-#define WINDOW_MIN_WIDTH 150
-#define WINDOW_MIN_HEIGHT 100
+#define WINDOW_MIN_WIDTH 220
+#define WINDOW_MIN_HEIGHT 140
 
 namespace Gpu {
     extern framebuffer_info* fb;
@@ -31,6 +31,8 @@ namespace Gpu {
     const uint32_t CHAR_HEIGHT = 8;
 
     void put_pixel(size_t x, size_t y, uint32_t color);
+    void set_clip_rect(int x, int y, int width, int height);
+    void clear_clip_rect();
 
     void clear_screen(uint32_t color = 0);
     void backspace_console_char();
@@ -113,11 +115,15 @@ namespace Gpu {
         typedef struct window_struct {
             const char* name;
             uint32_t id;
+            uint32_t process_id;
+            bool process_attached;
 
             int pos_x;
             int pos_y;
             int width;
             int height;
+            int min_width;
+            int min_height;
 
             bool visible;
             bool minimized;

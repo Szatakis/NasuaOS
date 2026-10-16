@@ -13,6 +13,7 @@
 
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
+#include "system/process/process.hpp"
 
 #include "applications/shell/shell.hpp"
 #include "applications/terminal/terminal.hpp"
@@ -57,6 +58,7 @@ struct napp_resident_image
     bool used;
 
     char name[NAPP_MAX_NAME];
+    uint32_t process_id;
     void* image;
 };
 
@@ -65,6 +67,7 @@ static napp_resident_image resident_images[NAPP_MAX_WINDOWS];
 
 static char loading_application[NAPP_MAX_NAME];
 static uint32_t loading_window_count = 0;
+static uint32_t loading_process_id = 0;
 
 static void napp_api_print(const char* text)
 {
@@ -495,6 +498,7 @@ bool napp_api_open_window(const napp_window_config* config)
     slot->view.userdata = config->userdata;
 
     slot->window.name = slot->title;
+    slot->window.process_id = loading_process_id;
     slot->window.pos_x = 10;
     slot->window.pos_y = 10;
     slot->window.width = config->width > 0 ? config->width : 320;
@@ -585,7 +589,7 @@ static napp_api kernel_napp_api =
      napp_api_clawfs_write_file
 };
 
-static bool remember_image(const char* name, void* image)
+static bool remember_image(const char* name, uint32_t process_id, void* image)
 {
     for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
     {
@@ -593,6 +597,7 @@ static bool remember_image(const char* name, void* image)
         {
             resident_images[i].used = true;
             resident_images[i].image = image;
+            resident_images[i].process_id = process_id;
 
             strcpy(resident_images[i].name, name);
 
@@ -601,6 +606,36 @@ static bool remember_image(const char* name, void* image)
     }
 
     return false;
+}
+
+void napp_process_window_closed(uint32_t process_id)
+{
+    if (process_id == 0 || Process::window_count(process_id) != 0)
+    {
+        return;
+    }
+
+    for (uint32_t index = 0; index < NAPP_MAX_WINDOWS; ++index)
+    {
+        if (!resident_images[index].used || resident_images[index].process_id != process_id)
+        {
+            continue;
+        }
+
+        const char* application_name = resident_images[index].name;
+        for (uint32_t slot_index = 0; slot_index < NAPP_MAX_WINDOWS; ++slot_index)
+        {
+            if (window_slots[slot_index].used &&
+                strcmp(window_slots[slot_index].owner, application_name) == 0)
+            {
+                window_slots[slot_index].used = false;
+            }
+        }
+
+        Memory::heap::kfree(resident_images[index].image);
+        resident_images[index] = {};
+        return;
+    }
 }
 
 static void build_application_path(const char* name, char* output)
@@ -851,9 +886,18 @@ bool napp_run(const char* name, int* exit_code)
     }
 
     napp_window_slot* existing = find_window_of(name);
-
     if (existing != nullptr)
     {
+        if (existing->window.process_id == 0)
+        {
+            existing->window.process_id = Process::start(name, Process::Type::Application);
+            if (existing->window.process_id == 0)
+            {
+                Memory::heap::kfree(image);
+                return false;
+            }
+        }
+        Process::set_running(existing->window.process_id);
         show_window(existing);
 
         if (exit_code != nullptr)
@@ -865,6 +909,23 @@ bool napp_run(const char* name, int* exit_code)
         return true;
     }
 
+    const uint32_t process_id = Process::start(name, Process::Type::Application);
+    if (process_id == 0)
+    {
+        Memory::heap::kfree(image);
+        return false;
+    }
+
+    const napp_header* header = (const napp_header*)image;
+    if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION &&
+        (header->entry_offset < header->header_size || header->entry_offset >= info.size))
+    {
+        log(ERROR, "NAPP", "Invalid application entry point");
+        Process::finish(process_id, 1);
+        Memory::heap::kfree(image);
+        return false;
+    }
+
     Uart::puts("[NAPP] Starting application: ");
     Uart::puts(name);
     Uart::puts("\n");
@@ -872,20 +933,13 @@ bool napp_run(const char* name, int* exit_code)
 
     strcpy(loading_application, name);
     loading_window_count = 0;
+    loading_process_id = process_id;
 
     int result = 0;
 
     // Check for NAPP header (graphical applications)
-    const napp_header* header = (const napp_header*)image;
     if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
     {
-        if (header->entry_offset < header->header_size || header->entry_offset >= info.size)
-        {
-            log(ERROR, "NAPP", "Invalid application entry point");
-            Memory::heap::kfree(image);
-            return false;
-        }
-
         napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
         result = entry(&kernel_napp_api);
     }
@@ -901,6 +955,7 @@ bool napp_run(const char* name, int* exit_code)
 
     loading_application[0] = '\0';
     loading_window_count = 0;
+    loading_process_id = 0;
 
     if (exit_code != nullptr)
     {
@@ -909,8 +964,19 @@ bool napp_run(const char* name, int* exit_code)
 
     // A graphical application keeps running through its window callbacks, so
     // its image has to stay mapped.
-    if (opened_windows == 0 || !remember_image(name, image))
+    if (opened_windows == 0)
     {
+        Process::finish(process_id, result);
+        Memory::heap::kfree(image);
+    }
+    else if (remember_image(name, process_id, image))
+    {
+        Process::set_running(process_id);
+    }
+    else
+    {
+        log(ERROR, "NAPP", "Unable to retain application image for open windows");
+        Process::finish(process_id, 1);
         Memory::heap::kfree(image);
     }
 
@@ -1044,10 +1110,30 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         Uart::puts("\n");
     }
 
-    // Populate runtime fields
-    kernel_napp_api.argc = argc;
-    kernel_napp_api.argv = argv;
-    // current_path already points at napp_current_path (live pointer)
+    char process_name[Process::PROCESS_NAME_LENGTH];
+    const char* name_start = path;
+    for (const char* cursor = path; *cursor != '\0'; ++cursor)
+    {
+        if (*cursor == '/')
+        {
+            name_start = cursor + 1;
+        }
+    }
+    uint32_t name_length = 0;
+    while (name_start[name_length] != '\0' &&
+           name_start[name_length] != '.' &&
+           name_length < Process::PROCESS_NAME_LENGTH - 1)
+    {
+        process_name[name_length] = name_start[name_length];
+        ++name_length;
+    }
+    process_name[name_length] = '\0';
+    const uint32_t process_id = Process::start(process_name, Process::Type::Command);
+    if (process_id == 0)
+    {
+        Memory::heap::kfree(image);
+        return false;
+    }
 
     int result = 0;
 
@@ -1067,10 +1153,13 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         if (header->entry_offset < header->header_size || header->entry_offset >= image_size)
         {
             log(ERROR, "NAPP", "Invalid application entry point");
+            Process::finish(process_id, 1);
             Memory::heap::kfree(image);
             return false;
         }
 
+        kernel_napp_api.argc = argc;
+        kernel_napp_api.argv = argv;
         napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
         
         Uart::puts("[NAPP] NAPP entry point: ");
@@ -1082,6 +1171,8 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     else
     {
         // Flat binary (no header)
+        kernel_napp_api.argc = argc;
+        kernel_napp_api.argv = argv;
         typedef int (*flat_entry)(const napp_api*);
         flat_entry entry = (flat_entry)image;
         
@@ -1097,6 +1188,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     kernel_napp_api.argv = nullptr;
 
     Memory::heap::kfree(image);
+    Process::finish(process_id, result);
 
     if (exit_code != nullptr)
     {

@@ -19,6 +19,11 @@ namespace Gpu
         size_t backbuffer_width = 0;
         size_t backbuffer_height = 0;
         size_t backbuffer_pitch = 0;
+        bool clip_enabled = false;
+        size_t clip_x = 0;
+        size_t clip_y = 0;
+        size_t clip_right = 0;
+        size_t clip_bottom = 0;
     }
 
     framebuffer_info* fb = nullptr;
@@ -71,7 +76,39 @@ namespace Gpu
             return;
         }
 
+        if (clip_enabled &&
+            (x < clip_x || x >= clip_right || y < clip_y || y >= clip_bottom))
+        {
+            return;
+        }
+
         backbuffer[y * backbuffer_pitch + x] = color;
+    }
+
+    void set_clip_rect(int x, int y, int width, int height)
+    {
+        if (!fb || width <= 0 || height <= 0)
+        {
+            clip_enabled = true;
+            clip_x = clip_y = clip_right = clip_bottom = 0;
+            return;
+        }
+
+        const int left = x < 0 ? 0 : x;
+        const int top = y < 0 ? 0 : y;
+        const int right = x + width > (int)fb->width ? (int)fb->width : x + width;
+        const int bottom = y + height > (int)fb->height ? (int)fb->height : y + height;
+
+        clip_enabled = true;
+        clip_x = (size_t)left;
+        clip_y = (size_t)top;
+        clip_right = right > left ? (size_t)right : clip_x;
+        clip_bottom = bottom > top ? (size_t)bottom : clip_y;
+    }
+
+    void clear_clip_rect()
+    {
+        clip_enabled = false;
     }
 
     void clear_screen(uint32_t color)

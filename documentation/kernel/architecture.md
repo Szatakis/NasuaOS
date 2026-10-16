@@ -36,7 +36,8 @@ iqu_init()                // Kernel initialization queue
     ├── usb_init()         // USB controller initialization
     ├── mouse_init()       // PS/2 mouse setup
     ├── image_init()       // Load rootfs/boot modules from Limine
-    ├── napp_init()        // Initialize NAPP application loader
+    ├── Process::init()   // Process registry and system service entries
+    ├── napp_init()       // Initialize NAPP application loader
     └── shell_init()       // Start the shell
 ```
 
@@ -53,6 +54,7 @@ iqu_init()                // Kernel initialization queue
 | `heap_init()`   | `heap.cpp`    | Initialize kernel heap (`kmalloc`/`kfree`) |
 | `idt_init()`    | `interrupts/` | Set up interrupt descriptor table          |
 | `pit_init()`    | `timer.cpp`   | Initialize PIT for timekeeping             |
+| `Process::init()` | `system/process/process.cpp` | Initialize process registry and system service entries |
 
 ## Subsystems
 
@@ -78,9 +80,13 @@ iqu_init()                // Kernel initialization queue
 
 | File                                 | Component                 |
 |--------------------------------------|---------------------------|
-| `kernel_64bit/src/system/process/`   | ELF loading and execution |
-| `kernel_64bit/src/system/scheduler/` | Process scheduler         |
-| `kernel_64bit/src/system/syscalls/`  | System call handlers      |
+| `kernel_64bit/src/system/process/process.cpp` | Process registry, IDs, lifecycle, and snapshots |
+| `kernel_64bit/src/system/process/elf.cpp`     | ELF loading support |
+
+The registry tracks system services, running GUI applications, and completed
+NAPP commands for the Task Manager. It is bookkeeping only: applications and
+shell commands currently execute synchronously, and the kernel does not yet
+provide process isolation or a preemptive scheduler.
 
 ### System Functions
 

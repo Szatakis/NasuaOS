@@ -332,11 +332,15 @@ Gpu::Window_Manager::window_struct terminal =
 {
     .name = "Terminal",
     .id = 0,
+    .process_id = 0,
+    .process_attached = false,
 
     .pos_x = 10,
     .pos_y = 10,
     .width = 500,
     .height = 350,
+    .min_width = WINDOW_MIN_WIDTH,
+    .min_height = WINDOW_MIN_HEIGHT,
 
     .visible = false,
     .minimized = false,

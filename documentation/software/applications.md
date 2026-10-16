@@ -43,9 +43,14 @@ A process/task manager.
 |   Property  | Value                                                   |
 |-------------|---------------------------------------------------------|
 | Type        | GUI window                                              |
-| Entry       | `task_manager_main()`                                   |
-| API         | Uses `napp_gui` for drawing                             |
-| Description | Displays running NAPP processes and their status         |
+| Entry       | `draw_task_manager()`                                   |
+| API         | Kernel process registry and GPU drawing services       |
+| Description | Lists system services, GUI apps, and shell commands with PID, type, and state |
+
+Use `j`/`s` or `k`/`w` to scroll the process list. System components are shown
+as logical processes; applications and commands are tracked as they start and
+exit. The list refreshes automatically. NasuaOS does not yet have a scheduler,
+so this list does not imply preemptive multitasking or process isolation.
 
 ```
 user@nasua-os:/home> bootapp --app task_manager

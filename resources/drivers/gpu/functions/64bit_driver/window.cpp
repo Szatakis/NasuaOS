@@ -6,6 +6,8 @@
 
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
+#include "system/applications/napp/napp.hpp"
+#include "system/process/process.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -40,7 +42,7 @@ namespace Gpu::Window_Manager
 
     void register_window(window_struct* window) 
     {
-        if (!window || window_count >= MAX_WINDOWS) 
+        if (!window)
         {
             return;
         }
@@ -49,8 +51,28 @@ namespace Gpu::Window_Manager
         {
             if (window_list[i] == window) 
             {
+                if (!window->process_attached && window->process_id != 0)
+                {
+                    Process::attach_window(window->process_id);
+                    window->process_attached = true;
+                }
                 return;
             }
+        }
+
+        if (window_count >= MAX_WINDOWS)
+        {
+            return;
+        }
+
+        if (window->process_id == 0)
+        {
+            window->process_id = Process::start(window->name, Process::Type::Application);
+        }
+        if (window->process_id != 0 && !window->process_attached)
+        {
+            Process::attach_window(window->process_id);
+            window->process_attached = true;
         }
 
         window->is_dragging = false;
@@ -89,6 +111,14 @@ namespace Gpu::Window_Manager
                 window_count--;
                 window->visible = false;
                 window->focused = false;
+                if (window->process_attached)
+                {
+                    const uint32_t process_id = window->process_id;
+                    Process::detach_window(process_id);
+                    window->process_attached = false;
+                    napp_process_window_closed(process_id);
+                }
+                window->process_id = 0;
                 if (window_count > 0)
                 {
                     active_window = window_list[window_count - 1];
@@ -396,14 +426,16 @@ namespace Gpu::Window_Manager
                     }
 
                     // Minimum dimensions
-                    if (win->resize_right && new_width < WINDOW_MIN_WIDTH) 
+                    int min_width = win->min_width > 0 ? win->min_width : WINDOW_MIN_WIDTH;
+                    int min_height = win->min_height > 0 ? win->min_height : WINDOW_MIN_HEIGHT;
+                    if (win->resize_right && new_width < min_width)
                     {
-                        new_width = WINDOW_MIN_WIDTH;
+                        new_width = min_width;
                     }
 
-                    if (win->resize_bottom && new_height < WINDOW_MIN_HEIGHT) 
+                    if (win->resize_bottom && new_height < min_height)
                     {
-                        new_height = WINDOW_MIN_HEIGHT;
+                        new_height = min_height;
                     }
 
                     // Maximum dimensions (window limit and screen limit)
@@ -414,10 +446,18 @@ namespace Gpu::Window_Manager
                         {
                             max_w = win->max_width;
                         }
+                        if (max_w < min_width)
+                        {
+                            min_width = max_w;
+                        }
 
-                        if (new_width > max_w) 
+                        if (new_width > max_w)
                         {
                             new_width = max_w;
+                        }
+                        if (new_width < min_width)
+                        {
+                            new_width = min_width;
                         }
                     }
 
@@ -428,10 +468,18 @@ namespace Gpu::Window_Manager
                         {
                             max_h = win->max_height;
                         }
+                        if (max_h < min_height)
+                        {
+                            min_height = max_h;
+                        }
 
                         if (new_height > max_h) 
                         {
                             new_height = max_h;
+                        }
+                        if (new_height < min_height)
+                        {
+                            new_height = min_height;
                         }
                     }
 
@@ -856,6 +904,8 @@ namespace Gpu::Window_Manager
             return;
         }
 
+        set_clip_rect(window->pos_x, window->pos_y, window->width, window->height);
+
         int title_height = WINDOW_TITLEBAR_HEIGHT;
 
         if (window->pos_x >= 0 && window->pos_y >= 0) 
@@ -901,10 +951,14 @@ namespace Gpu::Window_Manager
         }
 
         // Draw window
-        if (window->draw_content) 
+        if (window->draw_content && window->height > title_height)
         {
+            set_clip_rect(window->pos_x, window->pos_y + title_height,
+                          window->width, window->height - title_height);
             window->draw_content(window);
         }
+
+        clear_clip_rect();
     }
 
     bool is_mouse_over_window(window_struct* window, int mouse_x, int mouse_y) 

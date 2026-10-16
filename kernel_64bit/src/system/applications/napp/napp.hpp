@@ -25,6 +25,10 @@ bool napp_should_show_in_start_menu(const char* name);
 // Called from the kernel main loop.
 void napp_update_ticks();
 
+// Releases an application's resident image and window slots when its last
+// window is closed by the window manager.
+void napp_process_window_closed(uint32_t process_id);
+
 bool napp_exists(const char* name);
 
 // Loads a flat binary from an absolute FAT rootfs path and runs it.

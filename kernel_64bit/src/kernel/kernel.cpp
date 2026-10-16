@@ -9,6 +9,7 @@
 #include "applications/shell/shell.hpp"
 
 #include "system/applications/napp/napp.hpp"
+#include "system/process/process.hpp"
 
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
@@ -106,6 +107,7 @@ void iqu_init()
 
     image_init();
 
+    Process::init();
     napp_init(rootfs_module_address, rootfs_module_size);
 
     if(safe_mode) 
