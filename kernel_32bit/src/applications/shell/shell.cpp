@@ -20,6 +20,7 @@ void shell()
             "info\n"
             "fetch\n"
             "version\n"
+            "shutdown\n"
             "reboot\n"
             "halt\n\n"
         );
@@ -53,6 +54,10 @@ void shell()
     else if(strcmp(cmd,"reboot") == 0)
     {
         reboot();
+    }
+    else if(strcmp(cmd,"shutdown") == 0)
+    {
+        shutdown();
     }
     else if(strcmp(cmd,"halt") == 0)
     {

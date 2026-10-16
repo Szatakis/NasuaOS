@@ -93,7 +93,7 @@ kernel_32bit/
 │   │       └── video/
 │   └── applications/
 │       └── shell/
-│           └── shell.cpp       # Limited shell (7 commands)
+│           └── shell.cpp       # Limited shell (8 commands, including ACPI shutdown)
 └── Makefile
 ```
 

@@ -31,6 +31,7 @@ void kmain(uint32_t mbi)
     Keyboard::keyboard_init();
 
     Gpu::fetch();
+    init_shutdown(mbi);
     check_modules(mbi);
 
     while(true)
