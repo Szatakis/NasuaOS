@@ -55,6 +55,27 @@ user@nasua-os:/home> bootapp --app task_manager
 
 These are dynamically loaded flat binaries from `/bin/<app>` (the rootfs `/bin` directory):
 
+### file_explorer
+
+A graphical ClawFS file explorer.
+
+| Property   | Value |
+|------------|-------|
+| Type       | GUI window |
+| Source     | `utilities/applications/file_explorer/src/file_explorer.cpp` |
+| API        | `napp_gui` and ClawFS directory/file read services |
+| Description| Browse folders, select locations, and preview text files |
+
+Use the sidebar to jump to Home, Documents, Downloads, or the filesystem root.
+Double-click a folder to open it, use Up or Backspace to go to its parent, and
+select a text file to preview its contents. F5 refreshes the current folder;
+`j`/`s` and `k`/`w` move the selection, and Enter opens the selected folder.
+The preview displays up to 1 KB of a file.
+
+```
+user@nasua-os:/home> bootapp --app file_explorer
+```
+
 ### browser
 
 A simple graphical browser that renders HTML from a local ClawFS file or an HTTP/HTTPS URL.
