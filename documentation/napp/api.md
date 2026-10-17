@@ -151,10 +151,12 @@ validation failure, `NAPP_HTTPS_ERROR_CLOCK` indicates an unusable RTC date,
 and `NAPP_HTTPS_ERROR_ENTROPY` indicates that secure handshake entropy is
 unavailable.
 
-### GitHub file catalog format
+### Download file catalog format
 
-The `download` system command fetches files from public GitHub repositories
-using `https_get`. A repository's root `catalog.txt` starts with
+The `download` system command fetches files from HTTPS repositories using
+`https_get`. For GitHub links it reads from `raw.githubusercontent.com`; other
+HTTPS links are treated as compatible file-server roots. The root
+`catalog.txt` starts with
 `NASUA-FILE-CATALOG-1`; each following non-empty line contains four
 pipe-separated fields:
 

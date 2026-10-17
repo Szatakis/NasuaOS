@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("download", "Download files from GitHub repositories", false);
+NAPP_APPLICATION("download", "Download files from HTTPS repositories", false);
 
 namespace
 {
@@ -8,7 +8,15 @@ namespace
     constexpr uint32_t max_file_size = 60000;
     constexpr char catalog_header[] = "NASUA-FILE-CATALOG-1";
     constexpr char download_directory[] = "/home/user/downloads";
+    constexpr uint32_t source_host_capacity = 96;
+    constexpr uint32_t source_path_capacity = 192;
     char response[response_capacity];
+
+    struct RepoSource
+    {
+        char host[source_host_capacity];
+        char path[source_path_capacity];
+    };
 
     struct FileEntry
     {
@@ -70,9 +78,9 @@ namespace
         return true;
     }
 
-    bool valid_repo(const char* repo)
+    bool valid_source_path(const char* path, bool require_repo_path)
     {
-        if (repo == nullptr || *repo == '\0')
+        if (path == nullptr || *path == '\0')
         {
             return false;
         }
@@ -81,7 +89,7 @@ namespace
         bool component_is_dots = true;
         for (uint32_t index = 0;; ++index)
         {
-            const char character = repo[index];
+            const char character = path[index];
             if (character == '/' || character == '\0')
             {
                 if (component_length == 0 ||
@@ -91,10 +99,10 @@ namespace
                 }
                 if (character == '\0')
                 {
-                    return slash_count == 1;
+                    return !require_repo_path || slash_count == 1;
                 }
                 ++slash_count;
-                if (slash_count > 1)
+                if (require_repo_path && slash_count > 1)
                 {
                     return false;
                 }
@@ -109,6 +117,86 @@ namespace
             ++component_length;
             component_is_dots = component_is_dots && character == '.';
         }
+    }
+
+    bool parse_repo_link(const char* link, RepoSource& source)
+    {
+        constexpr char scheme[] = "https://";
+        for (uint32_t index = 0; index < sizeof(scheme) - 1; ++index)
+        {
+            if (link[index] == '\0' || link[index] != scheme[index])
+            {
+                return false;
+            }
+        }
+
+        uint32_t host_length = 0;
+        uint32_t index = sizeof(scheme) - 1;
+        while (link[index] != '\0' && link[index] != '/')
+        {
+            const char character = link[index];
+            if (!((character >= 'a' && character <= 'z') ||
+                  (character >= 'A' && character <= 'Z') ||
+                  (character >= '0' && character <= '9') ||
+                  character == '.' || character == '-'))
+            {
+                return false;
+            }
+            if (host_length + 1 >= sizeof(source.host))
+            {
+                return false;
+            }
+            source.host[host_length++] = character;
+            ++index;
+        }
+        if (host_length == 0 || link[index] != '/')
+        {
+            return false;
+        }
+        source.host[host_length] = '\0';
+
+        uint32_t path_length = 0;
+        ++index;
+        while (link[index] != '\0')
+        {
+            if (path_length + 1 >= sizeof(source.path))
+            {
+                return false;
+            }
+            source.path[path_length++] = link[index++];
+        }
+        while (path_length > 0 && source.path[path_length - 1] == '/')
+        {
+            --path_length;
+        }
+        source.path[path_length] = '\0';
+        if (!valid_source_path(source.path, strings_equal(source.host, "github.com")))
+        {
+            return false;
+        }
+
+        if (strings_equal(source.host, "github.com"))
+        {
+            const uint32_t repo_start = string_length(source.path);
+            if (repo_start >= 4 &&
+                source.path[repo_start - 4] == '.' &&
+                source.path[repo_start - 3] == 'g' &&
+                source.path[repo_start - 2] == 'i' &&
+                source.path[repo_start - 1] == 't')
+            {
+                source.path[repo_start - 4] = '\0';
+                if (!valid_source_path(source.path, true))
+                {
+                    return false;
+                }
+            }
+            const char raw_host[] = "raw.githubusercontent.com";
+            for (uint32_t host_index = 0; host_index < sizeof(raw_host); ++host_index)
+            {
+                source.host[host_index] = raw_host[host_index];
+            }
+        }
+        return true;
     }
 
     bool valid_branch(const char* branch)
@@ -259,12 +347,12 @@ namespace
         return false;
     }
 
-    int32_t fetch_file(const napp_api* api, const char* repo, const char* branch,
+    int32_t fetch_file(const napp_api* api, const RepoSource& source, const char* branch,
                        const char* file_path, const char*& body, uint32_t& body_length)
     {
-        char request_path[256] = {};
+        char request_path[384] = {};
         uint32_t offset = 0;
-        const char* parts[] = {"/", repo, "/", branch, "/", file_path};
+        const char* parts[] = {"/", source.path, "/", branch, "/", file_path};
         for (uint32_t part = 0; part < sizeof(parts) / sizeof(parts[0]); ++part)
         {
             for (const char* text = parts[part]; *text != '\0'; ++text)
@@ -280,7 +368,7 @@ namespace
         request_path[offset] = '\0';
 
         const int32_t response_length = api->https_get(
-            "raw.githubusercontent.com", 443, request_path,
+            source.host, 443, request_path,
             response, sizeof(response), 30000);
         if (response_length < 0)
         {
@@ -445,10 +533,10 @@ namespace
         return true;
     }
 
-    bool load_catalog(const napp_api* api, const char* repo, const char* branch,
+    bool load_catalog(const napp_api* api, const RepoSource& source, const char* branch,
                       const char*& body, uint32_t& body_length)
     {
-        if (fetch_file(api, repo, branch, "catalog.txt", body, body_length) < 0)
+        if (fetch_file(api, source, branch, "catalog.txt", body, body_length) < 0)
         {
             return false;
         }
@@ -563,8 +651,8 @@ namespace
     void print_usage(const napp_api* api)
     {
         api->print_line("Usage:");
-        api->print_line("  download --repo OWNER/REPO [--branch BRANCH] list");
-        api->print_line("  download --repo OWNER/REPO [--branch BRANCH] get NAME");
+        api->print_line("  download --link https://HOST/PATH [--branch BRANCH] list");
+        api->print_line("  download --link https://HOST/PATH [--branch BRANCH] get NAME");
         api->print_line("Files are saved to /home/user/downloads.");
     }
 }
@@ -582,7 +670,7 @@ int _start(const napp_api* api)
         return 1;
     }
 
-    const char* repo = nullptr;
+    const char* link = nullptr;
     const char* branch = "main";
     const char* action = nullptr;
     const char* requested_name = nullptr;
@@ -590,14 +678,14 @@ int _start(const napp_api* api)
     for (int index = 1; index < api->argc; ++index)
     {
         const char* argument = api->argv[index];
-        if (strings_equal(argument, "--repo"))
+        if (strings_equal(argument, "--link"))
         {
-            if (repo != nullptr || index + 1 >= api->argc)
+            if (link != nullptr || index + 1 >= api->argc)
             {
                 print_usage(api);
                 return 1;
             }
-            repo = api->argv[++index];
+            link = api->argv[++index];
         }
         else if (strings_equal(argument, "--branch"))
         {
@@ -624,9 +712,10 @@ int _start(const napp_api* api)
         }
     }
 
-    if (repo == nullptr || !valid_repo(repo) || !valid_branch(branch))
+    RepoSource source = {};
+    if (link == nullptr || !parse_repo_link(link, source) || !valid_branch(branch))
     {
-        api->print_error("Specify a valid public GitHub repository as OWNER/REPO.\n");
+        api->print_error("Specify a valid HTTPS repository link, such as https://github.com/OWNER/REPO.\n");
         print_usage(api);
         return 1;
     }
@@ -640,7 +729,7 @@ int _start(const napp_api* api)
 
     const char* catalog = nullptr;
     uint32_t catalog_length = 0;
-    if (!load_catalog(api, repo, branch, catalog, catalog_length))
+    if (!load_catalog(api, source, branch, catalog, catalog_length))
     {
         return 1;
     }
@@ -685,7 +774,7 @@ int _start(const napp_api* api)
 
     const char* file_data = nullptr;
     uint32_t file_length = 0;
-    if (fetch_file(api, repo, branch, selected.path, file_data, file_length) < 0)
+    if (fetch_file(api, source, branch, selected.path, file_data, file_length) < 0)
     {
         return 1;
     }

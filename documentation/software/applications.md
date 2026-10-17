@@ -234,8 +234,8 @@ The `download` system command reads a public file catalog and downloads ordinary
 files over verified HTTPS:
 
 ```text
-download --repo OWNER/REPO list
-download --repo OWNER/REPO get example.txt
+download --link https://github.com/OWNER/REPO list
+download --link https://github.com/OWNER/REPO get example.txt
 ```
 
 The repository contains a `catalog.txt` manifest and a `files/` directory. Each
@@ -246,8 +246,13 @@ limited to 60,000 bytes. HTTPS and a catalog hash verify transport and
 integrity, but do not authenticate the publisher, so download files only from
 repositories you trust.
 
+GitHub links are resolved through `raw.githubusercontent.com`. Other HTTPS
+links can point to a compatible file server; the command requests
+`/<link-path>/<branch>/catalog.txt` and files below that same branch path. This
+lets a self-hosted server use the same catalog and file layout.
+
 Create a public GitHub repository with this structure, then replace
-`OWNER/REPO` in the commands with its location:
+`OWNER/REPO` in the commands with its URL:
 
 ```text
 catalog.txt
