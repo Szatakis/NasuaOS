@@ -48,7 +48,8 @@ and extract `freedoom2.wad` to `data/freedoom2.wad`. Its SHA-256 is
 Place the IWAD at `data/freedoom2.wad` before building the ISO. The build
 copies it into the ISO rootfs; no separate ClawFS installation is required.
 The file is about 28.8 MB. It remains ignored by Git, so it must be supplied
-locally when building from a fresh checkout.
+locally when building from a fresh checkout. GitHub Actions downloads the
+official release archive and verifies the IWAD checksum before building.
 
 Freedoom's complete license and credits are included in
 [`third_party/freedoom/`](third_party/freedoom/). The license requires

@@ -7,7 +7,7 @@ on:
     paths:
       - "kernel_32bit/**"
       - "kernel_64bit/**"
-      - "utillities/**"
+      - "utilities/**"
       - ".config/**"
       - "GNUmakefile"
   workflow_dispatch:
@@ -36,6 +36,13 @@ jobs:
             lld \
             nasm \
             mtools
+
+      - name: Download Freedoom IWAD
+        run: |
+          curl -fL \
+            https://github.com/freedoom/freedoom/releases/download/v0.13.0/freedoom-0.13.0.zip \
+            -o /tmp/freedoom-0.13.0.zip
+          python3 utilities/applications/doom/tools/extract_iwad.py /tmp/freedoom-0.13.0.zip
 
       - name: Build ISO
         run: |
