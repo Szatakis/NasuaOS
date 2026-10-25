@@ -380,4 +380,4 @@ distclean:
 
 	$(MAKE) -C utilities distclean
 
-	rm -rf iso_root *.iso *.hdd limine-binary edk2-bins
+	rm -rf iso_root *.iso *.hdd limine-binary edk2-bins *.img
