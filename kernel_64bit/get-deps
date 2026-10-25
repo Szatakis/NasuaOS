@@ -8,13 +8,9 @@ test -z "$srcdir" && srcdir=.
 cd "$srcdir"
 
 rm -f .deps-obtained
-
 rm -rf temp-files
 
-git clone --depth 1 \
-    --branch main \
-    https://github.com/Szatakis/NasuaOS-Bootloader.git \
-    temp-files
+git clone --depth 1 --branch main https://github.com/Szatakis/NasuaOS-Bootloader.git temp-files
 
 cp -r temp-files/freestanding-c-hdrs .
 cp -r temp-files/freestanding-cxx-hdrs .
