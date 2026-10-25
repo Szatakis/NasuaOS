@@ -81,26 +81,72 @@ The preview displays up to 1 KB of a file.
 user@nasua-os:/home> bootapp --app file_explorer
 ```
 
-### browser
+### WebBrowser
 
-A simple graphical browser that renders HTML from a local ClawFS file or an HTTP/HTTPS URL.
+A graphical web browser that renders HTML and CSS from a local ClawFS file or an HTTP/HTTPS URL.
 
 | Property   | Value |
 |------------|-------|
 | Type       | GUI window |
-| Source     | `utilities/applications/browser/src/browser.cpp` |
+| Source     | `utilities/applications/WebBrowser/src/WebBrowser.cpp` |
 | API        | `napp_gui`, ClawFS read/resolve, and the NAPP `http_get`/`https_get` services |
-| Description| Fetches HTTP and HTTPS pages over DNS/TCP and renders basic HTML structure, including headings, paragraphs, lists, line breaks, and common text entities |
+| Description| Fetches HTTP and HTTPS pages, follows redirects, opens bare domains over HTTPS, and renders common HTML elements with clickable links and a subset of CSS |
 
 Enter an `http://` or `https://` URL or a local path such as
 `/home/user/page.html` in the address field and press Enter. HTTPS uses TLS 1.2
 and verifies the server certificate; it requires a valid RTC date and a CPU
-with RDRAND. Use `j`/`k` or Page Up/Page Down to scroll, and `e` to edit the
-path. Automatic redirects, JavaScript, and CSS are not supported. Local files
-and network responses are limited to 8 KB.
+with RDRAND. A bare domain such as `google.com` is opened over HTTPS.
+Click links to navigate to other web pages or relative local HTML files.
+Use `j`/`k` or Page Up/Page Down to scroll, and `e` to edit the address. The
+renderer supports linked stylesheets (up to eight per page), embedded
+`<style>` rules, and inline `style` attributes. Linked stylesheets can be loaded
+over HTTP/HTTPS or from ClawFS; common redirects are followed. `@media`
+`min-width` and `max-width` queries in px, em, rem, and vw units are evaluated
+when the viewport is resized. `@supports`, `@container`, and `@layer` blocks
+are parsed without evaluating their conditions. Selectors include tag names, `.class`, `#id`,
+same-element combinations such as
+`p.note`, descendant and direct-child selectors, and comma-separated selector
+groups. CSS supports text and background colors, `:root` custom
+properties with `var()`, alpha hex colors, the first color stop of simple
+gradients, bold weight, basic text decoration and transform, text alignment,
+vertical spacing from margin and padding, simple text-run borders,
+`min-height` spacing for viewport-sized sections, block `width` in px and %,
+`max-width` in px, `min(px, %)`, horizontal padding and auto horizontal margins,
+`display: none`,
+`visibility: hidden`, and preformatted whitespace. Block-element backgrounds
+and solid borders are painted over the full content width and the lines occupied
+by each element; inline borders remain text-run decorations. Colors
+include common named colors, `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`, and
+`rgb()` values. The HTML parser supports headings, paragraphs, semantic emphasis,
+blockquotes, lists, tables, links, image alt text, and static form controls.
+It handles common omitted end tags, custom element names, comments, template
+contents, numeric character references, and common named character references.
+Entities are decoded in text and displayed text attributes. Links support
+absolute, relative, and same-page `#fragment` destinations. Layout is still
+text-based: basic block widths and horizontal padding affect wrapping, and
+backgrounds/borders follow the resulting lines. Rounded corners and font sizing
+are not implemented. The parser retains a bounded element/text tree, but the
+painter still lays out a separate text stream. Simple CSS Grid layouts with
+equal-width `repeat(N, 1fr)` columns and approximate gaps form columns; nested
+grids and other grid track definitions are not laid out. Flex content still
+flows in document order rather than forming rows or columns; center-aligned flex
+blocks approximate viewport-based `min-height` with blank lines, leaving less
+space above the content; the added top spacing is limited to about one tenth of
+the minimum height, and no extra blank space is added below. Polish UTF-8
+letters are transliterated to ASCII because the system font renderer is
+single-byte. The browser does not execute JavaScript or handle form input.
+Local files, network responses, and linked stylesheets can be up
+to 1 MiB; rendered text is limited by the browser's 768-line display capacity.
+
+When the page has keyboard focus, press Enter once to focus the address field,
+type or edit the address, then press Enter again to open it. The first Enter
+shows a prompt in the status line.
+
+When an application captures the arrow keys, hold Alt and use the arrow keys
+to move the system cursor instead.
 
 ```
-user@nasua-os:/home> bootapp --app browser
+user@nasua-os:/home> bootapp --app WebBrowser
 ```
 
 ### suaedit
@@ -221,7 +267,7 @@ All applications are launched through the `bootapp` command:
 bootapp --list        # List all available apps
 bootapp --app settings     # Launch settings
 bootapp --app calculator   # Launch calculator
-bootapp --app browser      # Open the local HTML browser
+bootapp --app WebBrowser   # Open the HTML/CSS web browser
 bootapp --app suaedit      # Launch text editor with integrated terminal
 bootapp --app snake        # Launch Snake game
 ```

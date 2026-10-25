@@ -39,9 +39,7 @@ jobs:
 
       - name: Download Freedoom IWAD
         run: |
-          curl -fL \
-            https://github.com/freedoom/freedoom/releases/download/v0.13.0/freedoom-0.13.0.zip \
-            -o /tmp/freedoom-0.13.0.zip
+          curl -fL https://github.com/freedoom/freedoom/releases/download/v0.13.0/freedoom-0.13.0.zip -o /tmp/freedoom-0.13.0.zip
           python3 utilities/applications/doom/tools/extract_iwad.py /tmp/freedoom-0.13.0.zip
 
       - name: Download Limine
@@ -49,9 +47,7 @@ jobs:
           rm -rf limine-binary
           rm -f limine-binary.tar.gz
 
-          curl -fL \
-            https://github.com/Szatakis/NasuaOS-Bootloader/raw/main/limine-binary.tar.gz \
-            -o limine-binary.tar.gz
+          curl -fL https://github.com/Szatakis/NasuaOS-Bootloader/raw/main/limine-binary.tar.gz -o limine-binary.tar.gz
 
           echo "Limine archive:"
           file limine-binary.tar.gz

@@ -191,6 +191,30 @@ namespace Keyboard
 
             if (scancode == 0x48 || scancode == 0x50 || scancode == 0x4B || scancode == 0x4D)
             {
+                if (alt_pressed)
+                {
+                    const int speed = 12;
+                    int dx = 0;
+                    int dy = 0;
+                    if (scancode == 0x48)
+                    {
+                        dy = speed;
+                    }
+                    else if (scancode == 0x50)
+                    {
+                        dy = -speed;
+                    }
+                    else if (scancode == 0x4B)
+                    {
+                        dx = -speed;
+                    }
+                    else
+                    {
+                        dx = speed;
+                    }
+                    Mouse::update_position(dx, dy);
+                    return;
+                }
                 const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP :
                                        scancode == 0x50 ? NAPP_KEY_DOWN :
                                        scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
