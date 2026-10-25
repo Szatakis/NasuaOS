@@ -725,6 +725,64 @@ bool clawfs_read_file(const char* path, void* buffer, uint32_t capacity, uint32_
     return true;
 }
 
+bool clawfs_get_file_size(const char* path, uint32_t* size)
+{
+    if (size == nullptr)
+    {
+        return false;
+    }
+
+    char parent_path[128];
+    uint32_t parent_sector = 0;
+    uint8_t directory_buffer[512];
+    CLAWFSEntry entry;
+    if (!get_file_entry(path, parent_path, &parent_sector, &entry, directory_buffer) ||
+        entry.entry_count == 0 || entry.entry_count > CLAWFS_MAX_FILE_SIZE)
+    {
+        return false;
+    }
+
+    *size = entry.entry_count;
+    return true;
+}
+
+bool clawfs_read_file_range(const char* path, uint32_t offset, void* buffer, uint32_t length)
+{
+    char parent_path[128];
+    uint32_t parent_sector = 0;
+    uint8_t directory_buffer[512];
+    CLAWFSEntry entry;
+    if (!get_file_entry(path, parent_path, &parent_sector, &entry, directory_buffer) ||
+        entry.entry_count == 0 || entry.entry_count > CLAWFS_MAX_FILE_SIZE ||
+        offset > entry.entry_count || length > entry.entry_count - offset ||
+        (length != 0 && buffer == nullptr))
+    {
+        return false;
+    }
+
+    uint8_t sector_buffer[512];
+    uint32_t copied = 0;
+    while (copied < length)
+    {
+        const uint32_t file_offset = offset + copied;
+        const uint32_t sector_offset = file_offset % sizeof(sector_buffer);
+        if (!Disk::read_sector(entry.data_sector + file_offset / sizeof(sector_buffer), sector_buffer))
+        {
+            return false;
+        }
+
+        uint32_t chunk_size = sizeof(sector_buffer) - sector_offset;
+        if (chunk_size > length - copied)
+        {
+            chunk_size = length - copied;
+        }
+        Memory::memcpy((uint8_t*)buffer + copied, sector_buffer + sector_offset, chunk_size);
+        copied += chunk_size;
+    }
+
+    return true;
+}
+
 bool clawfs_write_file(const char* path, const void* buffer, uint32_t length)
 {
     if ((buffer == nullptr && length != 0) || length > CLAWFS_MAX_FILE_SIZE)

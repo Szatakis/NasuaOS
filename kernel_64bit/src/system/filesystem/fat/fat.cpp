@@ -615,6 +615,77 @@ bool fat_read_file(fat_volume* volume, const char* path, void* buffer, uint32_t 
     return true;
 }
 
+bool fat_read_file_range(fat_volume* volume, const char* path, uint32_t offset, void* buffer, uint32_t length)
+{
+    if (volume == nullptr || !volume->mounted || path == nullptr ||
+        (length > 0 && buffer == nullptr))
+    {
+        return false;
+    }
+
+    fat_entry_info info;
+    if (!resolve_path(volume, path, &info, nullptr) || info.directory ||
+        offset > info.size || length > info.size - offset)
+    {
+        return false;
+    }
+    if (length == 0)
+    {
+        return true;
+    }
+
+    const uint32_t cluster_size = volume->sectors_per_cluster * volume->bytes_per_sector;
+    if (cluster_size == 0)
+    {
+        return false;
+    }
+
+    uint32_t cluster = info.first_cluster;
+    uint32_t cluster_offset = offset % cluster_size;
+    uint32_t clusters_to_skip = offset / cluster_size;
+
+    while (clusters_to_skip > 0)
+    {
+        if (cluster < 2 || is_last_cluster(volume, cluster))
+        {
+            return false;
+        }
+        cluster = next_cluster(volume, cluster);
+        --clusters_to_skip;
+    }
+
+    uint8_t* output = (uint8_t*)buffer;
+    uint32_t remaining = length;
+    while (remaining > 0)
+    {
+        if (cluster < 2 || is_last_cluster(volume, cluster))
+        {
+            return false;
+        }
+
+        const uint32_t first_sector = cluster_first_sector(volume, cluster);
+        const uint8_t* data = sector_pointer(volume, first_sector);
+        const uint64_t cluster_start = (uint64_t)first_sector * volume->bytes_per_sector;
+        if (data == nullptr || cluster_start + cluster_size > volume->image_size)
+        {
+            return false;
+        }
+
+        const uint32_t available = cluster_size - cluster_offset;
+        const uint32_t chunk = remaining < available ? remaining : available;
+        Memory::memcpy(output, data + cluster_offset, chunk);
+        output += chunk;
+        remaining -= chunk;
+        cluster_offset = 0;
+        if (remaining > 0)
+        {
+            cluster = next_cluster(volume, cluster);
+        }
+    }
+
+    return true;
+}
+
 struct fat_listing
 {
     fat_entry_info* entries;

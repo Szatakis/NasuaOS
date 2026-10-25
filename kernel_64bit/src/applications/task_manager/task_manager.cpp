@@ -202,5 +202,7 @@ Gpu::Window_Manager::window_struct task_manager =
     .draw_content = draw_task_manager,
     .key_press = task_manager_key,
     .mouse_click = task_manager_mouse,
-    .mouse_button = 0
+    .mouse_button = 0,
+    .key_event = nullptr,
+    .close = nullptr
 };

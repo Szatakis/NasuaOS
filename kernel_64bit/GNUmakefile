@@ -110,7 +110,8 @@ ifeq ($(ARCH),x86_64)
     # Internal nasm flags that should not be changed by the user.
     override NASMFLAGS := \
         $(patsubst -g,-g -F dwarf,$(NASMFLAGS)) \
-        -Wall
+        -Wall \
+        -w-reloc-rel-dword
 endif
 
 # Architecture specific internal flags.

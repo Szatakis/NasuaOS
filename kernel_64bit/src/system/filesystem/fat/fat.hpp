@@ -52,6 +52,7 @@ bool fat_mount(fat_volume* volume, const void* image, uint64_t image_size);
 
 bool fat_stat(fat_volume* volume, const char* path, fat_entry_info* info);
 bool fat_read_file(fat_volume* volume, const char* path, void* buffer, uint32_t buffer_size, uint32_t* read_size);
+bool fat_read_file_range(fat_volume* volume, const char* path, uint32_t offset, void* buffer, uint32_t length);
 
 // Fills entries with the content of the directory, returns the number of entries.
 uint32_t fat_list_directory(fat_volume* volume, const char* path, fat_entry_info* entries, uint32_t max_entries);

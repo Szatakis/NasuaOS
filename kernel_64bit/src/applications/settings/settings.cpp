@@ -496,5 +496,7 @@ Gpu::Window_Manager::window_struct settings =
     .draw_content = draw_settings,
     .key_press = nullptr,
     .mouse_click = settings_mouse_click,
-    .mouse_button = 0
+    .mouse_button = 0,
+    .key_event = nullptr,
+    .close = nullptr
 };

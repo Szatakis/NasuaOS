@@ -24,6 +24,58 @@ namespace Keyboard
 
     char command_buffer[64];
     size_t cmd_idx = 0;
+    static char napp_key_codes[256];
+    static Gpu::Window_Manager::window_struct* napp_key_windows[256];
+
+    static void send_napp_key_event(uint8_t index, char key, bool pressed)
+    {
+        if (pressed)
+        {
+            Gpu::Window_Manager::window_struct* window = Gpu::Window_Manager::active_window;
+            if (window == nullptr ||
+                !Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+            {
+                return;
+            }
+            if (window->key_event == nullptr)
+            {
+                Gpu::Window_Manager::send_key_to_window(key);
+                return;
+            }
+
+            napp_key_codes[index] = key;
+            napp_key_windows[index] = window;
+            Gpu::Window_Manager::send_key_event_to_window(window, key, true);
+            return;
+        }
+
+        Gpu::Window_Manager::window_struct* window = napp_key_windows[index];
+        if (window != nullptr)
+        {
+            Gpu::Window_Manager::send_key_event_to_window(window, napp_key_codes[index], false);
+            napp_key_windows[index] = nullptr;
+            napp_key_codes[index] = 0;
+        }
+    }
+
+    void release_window_keys(Gpu::Window_Manager::window_struct* window)
+    {
+        if (window == nullptr)
+        {
+            return;
+        }
+
+        for (uint32_t index = 0; index < 256; ++index)
+        {
+            if (napp_key_windows[index] == window)
+            {
+                Gpu::Window_Manager::send_key_event_to_window(
+                    window, napp_key_codes[index], false);
+                napp_key_windows[index] = nullptr;
+                napp_key_codes[index] = 0;
+            }
+        }
+    }
 
     void print_sc(uint8_t scancode)
     {
@@ -95,20 +147,32 @@ namespace Keyboard
         {
             extended_scancode = false;
 
+            if (scancode & 0x80)
+            {
+                const uint8_t key = scancode & 0x7F;
+                send_napp_key_event((uint8_t)(0x80 | key), 0, false);
+                if (key == 0x38)
+                {
+                    alt_pressed = false;
+                }
+                return;
+            }
+
             if (scancode == 0x38)
             {
                 alt_pressed = true;
+                if (Gpu::Window_Manager::active_window &&
+                    Gpu::Window_Manager::active_window->key_event != nullptr &&
+                    Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+                {
+                    send_napp_key_event((uint8_t)(0x80 | scancode), NAPP_KEY_ALT, true);
+                }
                 return;
             }
 
             if (scancode == 0xB8)
             {
                 alt_pressed = false;
-                return;
-            }
-
-            if (scancode & 0x80)
-            {
                 return;
             }
 
@@ -127,7 +191,16 @@ namespace Keyboard
 
             if (scancode == 0x48 || scancode == 0x50 || scancode == 0x4B || scancode == 0x4D)
             {
-                if (shift_pressed)
+                const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP :
+                                       scancode == 0x50 ? NAPP_KEY_DOWN :
+                                       scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
+                if (Gpu::Window_Manager::active_window &&
+                    Gpu::Window_Manager::active_window->key_event != nullptr &&
+                    Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+                {
+                    send_napp_key_event((uint8_t)(0x80 | scancode), arrow_key, true);
+                }
+                else if (shift_pressed)
                 {
                     if (scancode == 0x48)
                     {
@@ -189,6 +262,7 @@ namespace Keyboard
         {
             uint8_t rel = scancode & 0x7F;
 
+            send_napp_key_event(rel, 0, false);
             if (rel == 0x2A || rel == 0x36)
             {
                 shift_pressed = false;
@@ -203,6 +277,12 @@ namespace Keyboard
         if (scancode == 0x2A || scancode == 0x36)
         {
             shift_pressed = true;
+            if (Gpu::Window_Manager::active_window &&
+                Gpu::Window_Manager::active_window->key_event != nullptr &&
+                Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+            {
+                send_napp_key_event(scancode, NAPP_KEY_SHIFT, true);
+            }
             return;
         }
 
@@ -218,6 +298,12 @@ namespace Keyboard
         if (scancode == 0x38)
         {
             alt_pressed = true;
+            if (Gpu::Window_Manager::active_window &&
+                Gpu::Window_Manager::active_window->key_event != nullptr &&
+                Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+            {
+                send_napp_key_event(scancode, NAPP_KEY_ALT, true);
+            }
             return;
         }
 
@@ -227,7 +313,7 @@ namespace Keyboard
             {
                 if(Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
                 {
-                    Gpu::Window_Manager::send_key_to_window('\b');
+                    send_napp_key_event(scancode, '\b', true);
                 }
             }
             if(shell_input_enabled && !Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
@@ -250,7 +336,7 @@ namespace Keyboard
             {
                 if(Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
                 {
-                    Gpu::Window_Manager::send_key_to_window('\n');
+                    send_napp_key_event(scancode, '\n', true);
                 }
             }
             return;
@@ -258,9 +344,34 @@ namespace Keyboard
 
         if (scancode == 0x3F)
         {
-            if (Gpu::Window_Manager::active_window)
+            if (Gpu::Window_Manager::active_window &&
+                Gpu::Window_Manager::active_window->key_event != nullptr)
+            {
+                send_napp_key_event(scancode, NAPP_KEY_F5, true);
+            }
+            else
             {
                 Gpu::Window_Manager::send_key_to_window(NAPP_KEY_F5);
+            }
+            return;
+        }
+
+        if (scancode == 0x01)
+        {
+            if (Gpu::Window_Manager::active_window &&
+                Gpu::Window_Manager::active_window->key_event != nullptr)
+            {
+                send_napp_key_event(scancode, NAPP_KEY_ESCAPE, true);
+            }
+            return;
+        }
+
+        if (scancode == 0x1D)
+        {
+            if (Gpu::Window_Manager::active_window &&
+                Gpu::Window_Manager::active_window->key_event != nullptr)
+            {
+                send_napp_key_event(scancode, NAPP_KEY_CTRL, true);
             }
             return;
         }
@@ -294,7 +405,7 @@ namespace Keyboard
             {
                 if(Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
                 {
-                    Gpu::Window_Manager::send_key_to_window(c);
+                    send_napp_key_event(scancode, c, true);
                 }
             }
 

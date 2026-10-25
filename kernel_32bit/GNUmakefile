@@ -34,6 +34,7 @@ CFLAGS := \
 
 LDFLAGS := \
 	-m32 \
+	-Wl,--build-id=none \
 	-nostdlib \
 	-no-pie
 

@@ -2,6 +2,7 @@
 
 #include "drivers/gpu/driver.hpp"
 #include "drivers/mouse/driver.hpp"
+#include "drivers/keyboard/driver.hpp"
 #include "system/gui/gui.hpp"
 
 #include "system/gui/vars/colors.hpp"
@@ -109,8 +110,13 @@ namespace Gpu::Window_Manager
                     window_list[j] = window_list[j + 1];
                 }
                 window_count--;
+                Keyboard::release_window_keys(window);
                 window->visible = false;
                 window->focused = false;
+                if (window->close != nullptr)
+                {
+                    window->close(window);
+                }
                 if (window->process_attached)
                 {
                     const uint32_t process_id = window->process_id;
@@ -302,6 +308,23 @@ namespace Gpu::Window_Manager
         }
 
         if(window->key_press)
+        {
+            window->key_press(window, key);
+        }
+    }
+
+    void send_key_event_to_window(window_struct* window, char key, bool pressed)
+    {
+        if (window == nullptr)
+        {
+            return;
+        }
+
+        if (window->key_event != nullptr)
+        {
+            window->key_event(window, key, pressed);
+        }
+        else if (pressed && window->key_press != nullptr)
         {
             window->key_press(window, key);
         }

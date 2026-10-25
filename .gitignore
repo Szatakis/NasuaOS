@@ -5,6 +5,11 @@
 *.img
 compile_commands.json
 
+# Freedoom game data is separately licensed and must not be committed.
+/utilities/applications/doom/data/*.wad
+/utilities/rootfs/dir/home/freedoom2.wad
+/utilities/rootfs/dir/share/licenses/doom/
+
 /limine-binary
 /edk2-bins
 

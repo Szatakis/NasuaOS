@@ -373,5 +373,7 @@ Gpu::Window_Manager::window_struct terminal =
     .draw_content = draw_terminal,
     .key_press = terminal_key,
     .mouse_click = nullptr,
-    .mouse_button = 0
+    .mouse_button = 0,
+    .key_event = nullptr,
+    .close = nullptr
 };

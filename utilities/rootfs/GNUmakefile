@@ -1,7 +1,7 @@
 IMAGE = rootfs.img
 DIR_FOLDER = dir
 
-SIZE_MB = 8
+SIZE_MB = 40
 
 .PHONY: all
 all:

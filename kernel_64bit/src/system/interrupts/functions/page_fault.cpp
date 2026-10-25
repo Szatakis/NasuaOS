@@ -106,7 +106,25 @@ void page_fault_handler(Registers* regs)
         return;
     }
 
-    //Normal demand paging.
+    const bool page_exists = (error & 0x1) != 0;
+    const bool is_instruction_fetch = (error & 0x10) != 0;
+
+    if (page_exists || is_instruction_fetch)
+    {
+        Uart::puts(page_exists
+            ? "[PAGE FAULT] Protection violation\n"
+            : "[PAGE FAULT] Instruction fetch from an unmapped page\n");
+        log(ERROR, "PAGE FAULT", page_exists
+            ? "Protection violation"
+            : "Instruction fetch from an unmapped page");
+        kernel_panic(page_exists
+            ? "Page Fault - Protection Violation"
+            : "Page Fault - Invalid Instruction Fetch",
+            err_buf, rip_buf, rsp_buf, addr_buf);
+        return;
+    }
+
+    // Demand paging is only valid for non-present data accesses.
 
     uint64_t page = Memory::pmm::alloc_page();
 
@@ -117,19 +135,6 @@ void page_fault_handler(Registers* regs)
         log(ERROR, "PAGE FAULT", "OUT OF MEMORY");
 
         kernel_panic("Page Fault - Out of Memory", err_buf, rip_buf, rsp_buf, addr_buf);
-
-        return;
-    }
-
-    bool page_exists = (error & 0x1) != 0;  
-    bool is_write    = (error & 0x2) != 0;
-
-    if (page_exists && is_write)
-    {
-        Uart::puts("[PAGE FAULT] Write violation on read-only page!\n");
-        log(ERROR, "PAGE FAULT", "Attempted write to read-only memory");
-    
-        kernel_panic("Access Violation - Write to Read-Only Memory", err_buf, rip_buf, rsp_buf, addr_buf);
 
         return;
     }

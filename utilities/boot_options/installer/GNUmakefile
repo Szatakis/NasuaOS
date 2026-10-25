@@ -30,6 +30,7 @@ CFLAGS := \
 LDFLAGS := \
 	-m32 \
 	-nostdlib \
+	-Wl,--build-id=none \
 	-no-pie
 
 CPP_SRC := $(shell find src -type f -name "*.cpp")

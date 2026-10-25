@@ -1,5 +1,10 @@
 ENTRY(_start)
 
+PHDRS
+{
+    text PT_LOAD FLAGS(5);
+    data PT_LOAD FLAGS(6);
+}
 
 SECTIONS
 {
@@ -9,21 +14,21 @@ SECTIONS
     {
         *(.multiboot)
         *(.text*)
-    }
+    } :text
 
     .rodata :
     {
         *(.rodata*)
-    }
+    } :text
 
     .data :
     {
         *(.data*)
-    }
+    } :data
 
     .bss :
     {
         *(COMMON)
         *(.bss*)
-    }
+    } :data
 }

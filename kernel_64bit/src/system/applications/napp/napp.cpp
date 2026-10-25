@@ -25,6 +25,21 @@
 #define NAPP_EXTENSION ".napp"
 #define NAPP_MAX_IMAGE_SIZE (1024 * 1024)
 
+static bool napp_abi_supported(uint32_t version)
+{
+    return version >= NAPP_ABI_MIN_VERSION && version <= NAPP_ABI_VERSION;
+}
+
+static uint32_t napp_entry_offset(const napp_header* header)
+{
+    // ABI 6 recorded the struct size even though the linker padded it to 64 bytes.
+    if (header->abi_version == NAPP_ABI_MIN_VERSION && header->header_size == sizeof(napp_header) && header->entry_offset == header->header_size)
+    {
+        return NAPP_ALIGNED_HEADER_SIZE;
+    }
+    return header->entry_offset;
+}
+
 fat_volume rootfs_volume;
 bool rootfs_mounted = false;
 
@@ -45,6 +60,8 @@ struct napp_window_slot
 
     napp_window_draw draw;
     napp_window_key key;
+    napp_window_key_event key_event;
+    napp_window_close close;
     napp_window_mouse mouse;
     napp_window_mouse_button mouse_button;
 
@@ -68,6 +85,7 @@ static napp_resident_image resident_images[NAPP_MAX_WINDOWS];
 static char loading_application[NAPP_MAX_NAME];
 static uint32_t loading_window_count = 0;
 static uint32_t loading_process_id = 0;
+static uint32_t loading_napp_abi_version = NAPP_ABI_VERSION;
 
 static void napp_api_print(const char* text)
 {
@@ -224,15 +242,81 @@ static bool napp_api_clawfs_build_file_path(const char* path, char* absolute_pat
 static bool napp_api_clawfs_read_file(const char* path, void* buffer, uint32_t capacity, uint32_t* length)
 {
     char absolute_path[256];
-    return napp_api_clawfs_build_file_path(path, absolute_path) &&
-           clawfs_read_file(absolute_path, buffer, capacity, length);
+    return napp_api_clawfs_build_file_path(path, absolute_path) && clawfs_read_file(absolute_path, buffer, capacity, length);
 }
 
 static bool napp_api_clawfs_write_file(const char* path, const void* buffer, uint32_t length)
 {
     char absolute_path[256];
-    return napp_api_clawfs_build_file_path(path, absolute_path) &&
-           clawfs_write_file(absolute_path, buffer, length);
+    return napp_api_clawfs_build_file_path(path, absolute_path) && clawfs_write_file(absolute_path, buffer, length);
+}
+
+static bool napp_api_clawfs_get_file_size(const char* path, uint32_t* size)
+{
+    char absolute_path[256];
+    if (!napp_api_clawfs_build_file_path(path, absolute_path) || size == nullptr)
+    {
+        return false;
+    }
+    if (clawfs_get_file_size(absolute_path, size))
+    {
+        return true;
+    }
+
+    fat_entry_info info;
+    if (!rootfs_mounted || !fat_stat(&rootfs_volume, absolute_path, &info) || info.directory)
+    {
+        return false;
+    }
+    *size = info.size;
+    return true;
+}
+
+static bool napp_api_clawfs_read_file_range(const char* path, uint32_t offset, void* buffer, uint32_t length)
+{
+    char absolute_path[256];
+    if (!napp_api_clawfs_build_file_path(path, absolute_path))
+    {
+        return false;
+    }
+
+    uint32_t clawfs_size;
+    if (clawfs_get_file_size(absolute_path, &clawfs_size))
+    {
+        return clawfs_read_file_range(absolute_path, offset, buffer, length);
+    }
+
+    return rootfs_mounted &&
+           fat_read_file_range(&rootfs_volume, absolute_path, offset, buffer, length);
+}
+
+static void* napp_api_allocate(uint32_t size)
+{
+    return size == 0 ? nullptr : Memory::heap::kmalloc(size);
+}
+
+static void napp_api_deallocate(void* memory)
+{
+    Memory::heap::kfree(memory);
+}
+
+static bool napp_api_enable_fpu()
+{
+#if defined(__x86_64__)
+    uint64_t cr0;
+    uint64_t cr4;
+    asm volatile("mov %%cr0, %0" : "=r"(cr0));
+    asm volatile("mov %%cr4, %0" : "=r"(cr4));
+    cr0 &= ~((1ULL << 2) | (1ULL << 3));
+    cr0 |= 1ULL << 1;
+    cr4 |= (1ULL << 9) | (1ULL << 10);
+    asm volatile("mov %0, %%cr0" : : "r"(cr0) : "memory");
+    asm volatile("mov %0, %%cr4" : : "r"(cr4) : "memory");
+    asm volatile("fninit");
+    return true;
+#else
+    return false;
+#endif
 }
 
 static void napp_api_clawfs_mkdir(const char* parent_path, const char* dir_name)
@@ -386,6 +470,26 @@ static void napp_window_key_trampoline(Gpu::Window_Manager::window_struct* windo
     }
 }
 
+static void napp_window_key_event_trampoline(Gpu::Window_Manager::window_struct* window, char key, bool pressed)
+{
+    napp_window_slot* slot = sync_slot(window);
+
+    if (slot != nullptr && slot->key_event != nullptr)
+    {
+        slot->key_event(&slot->view, key, pressed);
+    }
+}
+
+static void napp_window_close_trampoline(Gpu::Window_Manager::window_struct* window)
+{
+    napp_window_slot* slot = sync_slot(window);
+
+    if (slot != nullptr && slot->close != nullptr)
+    {
+        slot->close(&slot->view);
+    }
+}
+
 static void napp_window_mouse_trampoline(Gpu::Window_Manager::window_struct* window, int mouse_x, int mouse_y)
 {
     napp_window_slot* slot = sync_slot(window);
@@ -488,6 +592,11 @@ bool napp_api_open_window(const napp_window_config* config)
 
     slot->draw = config->draw;
     slot->key = config->key;
+    if (loading_napp_abi_version >= 7)
+    {
+        slot->key_event = config->key_event;
+        slot->close = config->close;
+    }
     slot->mouse = config->mouse;
     slot->mouse_button = config->mouse_button;
 
@@ -508,6 +617,8 @@ bool napp_api_open_window(const napp_window_config* config)
     slot->window.userdata = slot;
     slot->window.draw_content = napp_window_draw_trampoline;
     slot->window.key_press = napp_window_key_trampoline;
+    slot->window.key_event = slot->key_event != nullptr ? napp_window_key_event_trampoline : nullptr;
+    slot->window.close = slot->close != nullptr ? napp_window_close_trampoline : nullptr;
     slot->window.mouse_click = napp_window_mouse_trampoline;
     slot->window.mouse_button = napp_window_mouse_button_trampoline;
 
@@ -586,7 +697,12 @@ static napp_api kernel_napp_api =
      napp_api_http_get,
      napp_api_https_get,
      napp_api_clawfs_read_file,
-     napp_api_clawfs_write_file
+     napp_api_clawfs_write_file,
+     napp_api_allocate,
+     napp_api_deallocate,
+     napp_api_clawfs_get_file_size,
+     napp_api_clawfs_read_file_range,
+     napp_api_enable_fpu
 };
 
 static bool remember_image(const char* name, uint32_t process_id, void* image)
@@ -770,7 +886,7 @@ bool napp_should_show_in_start_menu(const char* name)
 
     bool result = true;
 
-    if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
+    if (header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version))
     {
         // If the header carries the show_in_start_menu field, honour it.
         // The field lives at offset NAPP_HEADER_SIZE (96); headers whose
@@ -917,8 +1033,13 @@ bool napp_run(const char* name, int* exit_code)
     }
 
     const napp_header* header = (const napp_header*)image;
-    if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION &&
-        (header->entry_offset < header->header_size || header->entry_offset >= info.size))
+    const bool has_napp_header =
+        header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version);
+    const uint32_t entry_offset = has_napp_header
+        ? napp_entry_offset(header)
+        : header->entry_offset;
+    if (has_napp_header &&
+        (entry_offset < header->header_size || entry_offset >= info.size))
     {
         log(ERROR, "NAPP", "Invalid application entry point");
         Process::finish(process_id, 1);
@@ -934,13 +1055,18 @@ bool napp_run(const char* name, int* exit_code)
     strcpy(loading_application, name);
     loading_window_count = 0;
     loading_process_id = process_id;
+    loading_napp_abi_version =
+        header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version)
+            ? header->abi_version
+            : NAPP_ABI_VERSION;
+    kernel_napp_api.abi_version = loading_napp_abi_version;
 
     int result = 0;
 
     // Check for NAPP header (graphical applications)
-    if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
+    if (header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version))
     {
-        napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
+        napp_entry entry = (napp_entry)((uint8_t*)image + entry_offset);
         result = entry(&kernel_napp_api);
     }
     else
@@ -956,6 +1082,8 @@ bool napp_run(const char* name, int* exit_code)
     loading_application[0] = '\0';
     loading_window_count = 0;
     loading_process_id = 0;
+    loading_napp_abi_version = NAPP_ABI_VERSION;
+    kernel_napp_api.abi_version = NAPP_ABI_VERSION;
 
     if (exit_code != nullptr)
     {
@@ -1148,9 +1276,10 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     Uart::puthex(NAPP_MAGIC);
     Uart::puts("\n");
     
-    if (header->magic == NAPP_MAGIC && header->abi_version == NAPP_ABI_VERSION)
+    if (header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version))
     {
-        if (header->entry_offset < header->header_size || header->entry_offset >= image_size)
+        const uint32_t entry_offset = napp_entry_offset(header);
+        if (entry_offset < header->header_size || entry_offset >= image_size)
         {
             log(ERROR, "NAPP", "Invalid application entry point");
             Process::finish(process_id, 1);
@@ -1160,7 +1289,9 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
 
         kernel_napp_api.argc = argc;
         kernel_napp_api.argv = argv;
-        napp_entry entry = (napp_entry)((uint8_t*)image + header->entry_offset);
+        loading_napp_abi_version = header->abi_version;
+        kernel_napp_api.abi_version = header->abi_version;
+        napp_entry entry = (napp_entry)((uint8_t*)image + entry_offset);
         
         Uart::puts("[NAPP] NAPP entry point: ");
         Uart::puthex((uint64_t)entry);
@@ -1173,6 +1304,8 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         // Flat binary (no header)
         kernel_napp_api.argc = argc;
         kernel_napp_api.argv = argv;
+        loading_napp_abi_version = NAPP_ABI_VERSION;
+        kernel_napp_api.abi_version = NAPP_ABI_VERSION;
         typedef int (*flat_entry)(const napp_api*);
         flat_entry entry = (flat_entry)image;
         
@@ -1186,6 +1319,8 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     // Reset argc/argv after return
     kernel_napp_api.argc = 0;
     kernel_napp_api.argv = nullptr;
+    loading_napp_abi_version = NAPP_ABI_VERSION;
+    kernel_napp_api.abi_version = NAPP_ABI_VERSION;
 
     Memory::heap::kfree(image);
     Process::finish(process_id, result);
@@ -1231,7 +1366,7 @@ static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint3
     {
         const napp_header* h = (const napp_header*)image;
 
-        if (h->magic == NAPP_MAGIC && h->abi_version == NAPP_ABI_VERSION && h->header_size >= NAPP_HEADER_SIZE && h->description[0] != '\0')
+        if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) && h->header_size >= NAPP_HEADER_SIZE && h->description[0] != '\0')
         {
             uint32_t i = 0;
             while (h->description[i] && i < desc_size - 1)
@@ -1261,7 +1396,7 @@ static bool read_sbin_description_clawfs(uint32_t data_sector, char* desc_buffer
 
     const napp_header* h = (const napp_header*)sector_buf;
 
-    if (h->magic == NAPP_MAGIC && h->abi_version == NAPP_ABI_VERSION && h->header_size >= NAPP_HEADER_SIZE && h->description[0] != '\0')
+    if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) && h->header_size >= NAPP_HEADER_SIZE && h->description[0] != '\0')
     {
         uint32_t i = 0;
         while (h->description[i] && i < desc_size - 1)

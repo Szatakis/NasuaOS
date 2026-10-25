@@ -10,10 +10,12 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 6
+#define NAPP_ABI_VERSION 7
+#define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
 #define NAPP_HEADER_SIZE 96
+#define NAPP_ALIGNED_HEADER_SIZE ((sizeof(napp_header) + 63U) & ~63U)
 
 struct napp_header
 {
@@ -38,7 +40,15 @@ struct napp_header
 #define NAPP_COLOR_GRAY       0xFFAAAAAA
 #define NAPP_COLOR_WINDOW     0xFF1A1F2C
 #define NAPP_COLOR_TITLEBAR   0xFF2B3140
+#define NAPP_KEY_ESCAPE       ((char)0xF0)
+#define NAPP_KEY_LEFT         ((char)0xF1)
+#define NAPP_KEY_RIGHT        ((char)0xF2)
+#define NAPP_KEY_UP           ((char)0xF3)
+#define NAPP_KEY_DOWN         ((char)0xF4)
 #define NAPP_KEY_F5           ((char)0xF5)
+#define NAPP_KEY_CTRL         ((char)0xF6)
+#define NAPP_KEY_SHIFT        ((char)0xF7)
+#define NAPP_KEY_ALT          ((char)0xF8)
 #define NAPP_HTTP_ERROR_NETWORK  -1
 #define NAPP_HTTP_ERROR_DNS      -2
 #define NAPP_HTTP_ERROR_CONNECT -3
@@ -65,6 +75,8 @@ struct napp_window
 
 typedef void (*napp_window_draw)(struct napp_window* window);
 typedef void (*napp_window_key)(struct napp_window* window, char key);
+typedef void (*napp_window_key_event)(struct napp_window* window, char key, bool pressed);
+typedef void (*napp_window_close)(struct napp_window* window);
 typedef void (*napp_window_mouse)(struct napp_window* window, int mouse_x, int mouse_y);
 
 // Button-enabled mouse callback. The button parameter is 0 for left click,
@@ -98,6 +110,11 @@ struct napp_window_config
     // registered and the field is simply ignored.
     napp_window_tick tick;
     int tick_interval_ms;
+
+    // Optional press/release events, available in NAPP ABI version 7.
+    // When set, key receives both transitions instead of the legacy key callback.
+    napp_window_key_event key_event;
+    napp_window_close close;
 };
 
 // Drawing and window services, only usable while a window callback runs or to
@@ -159,20 +176,26 @@ struct napp_api
     // Perform a plain HTTP GET. The response buffer includes headers and must
     // reserve one byte for the trailing NUL. Returns the response byte count
     // or one of the NAPP_HTTP_ERROR_* values.
-    int32_t (*http_get)(const char* hostname, uint16_t port, const char* path,
-                        char* response, uint32_t response_capacity, uint32_t timeout_ms);
-    int32_t (*https_get)(const char* hostname, uint16_t port, const char* path,
-                         char* response, uint32_t response_capacity, uint32_t timeout_ms);
+    int32_t (*http_get)(const char* hostname, uint16_t port, const char* path, char* response, uint32_t response_capacity, uint32_t timeout_ms);
+    int32_t (*https_get)(const char* hostname, uint16_t port, const char* path, char* response, uint32_t response_capacity, uint32_t timeout_ms);
 
     // Read or replace a complete ClawFS file. The length is stored in
     // ClawFS metadata, so files can span multiple sectors.
     bool (*clawfs_read_file)(const char* path, void* buffer, uint32_t capacity, uint32_t* length);
     bool (*clawfs_write_file)(const char* path, const void* buffer, uint32_t length);
+
+    // ABI 7 additions.
+    void* (*allocate)(uint32_t size);
+    void (*deallocate)(void* memory);
+    bool (*clawfs_get_file_size)(const char* path, uint32_t* size);
+    bool (*clawfs_read_file_range)(const char* path, uint32_t offset,
+                                   void* buffer, uint32_t length);
+    bool (*enable_fpu)(void);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);
 
-// Emits the header and pins the entry point right behind it.
+// The linker aligns the header section to 64 bytes before placing the entry.
 // The third parameter controls whether the application appears in the
 // Start Menu. Use false for utility/console apps and games that should
 // only be launched on demand.
@@ -185,8 +208,8 @@ typedef int (*napp_entry)(const struct napp_api* api);
     {                                                                       \
         NAPP_MAGIC,                                                         \
         NAPP_ABI_VERSION,                                                   \
-        sizeof(napp_header),                                                \
-        sizeof(napp_header),                                                \
+        NAPP_ALIGNED_HEADER_SIZE,                                           \
+        NAPP_ALIGNED_HEADER_SIZE,                                           \
         app_name,                                                           \
         app_description,                                                    \
         app_show_in_menu                                                    \

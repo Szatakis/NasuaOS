@@ -1,5 +1,11 @@
 ENTRY(_start)
 
+PHDRS
+{
+    text PT_LOAD FLAGS(5);
+    data PT_LOAD FLAGS(6);
+}
+
 SECTIONS
 {
     . = 1M;
@@ -11,17 +17,17 @@ SECTIONS
         KEEP(*(.multiboot))
 
         *(.text*)
-    }
+    } :text
 
     .rodata :
     {
         *(.rodata*)
-    }
+    } :text
 
     .data :
     {
         *(.data*)
-    }
+    } :data
 
     .bss :
     {
@@ -29,7 +35,7 @@ SECTIONS
 
         *(COMMON)
         *(.bss*)
-    }
+    } :data
 
     /DISCARD/ :
     {

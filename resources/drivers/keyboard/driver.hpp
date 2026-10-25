@@ -2,6 +2,11 @@
 #include <stdint.h>
 #include <stddef.h>
 
+namespace Gpu::Window_Manager
+{
+    struct window_struct;
+}
+
 namespace Keyboard
 {
     char scancode_to_ascii_normal(uint8_t scancode);
@@ -27,4 +32,5 @@ namespace Keyboard
     uint8_t read_scancode();
     void backspace();
     void read_line();
+    void release_window_keys(Gpu::Window_Manager::window_struct* window);
 }
