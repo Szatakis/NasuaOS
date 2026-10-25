@@ -22,8 +22,7 @@ static doom_allocation* allocation_head;
 static void* runtime_exit_buffer[5];
 static int runtime_exit_active;
 
-__attribute__((visibility("hidden"))) void doom_relocate_image(
-    void* image_base, const uint32_t* relocations, const void* image_end)
+__attribute__((visibility("hidden"))) void doom_relocate_image(void* image_base, const uint32_t* relocations, const void* image_end)
 {
     const uintptr_t base = (uintptr_t)image_base;
     const uintptr_t image_size = (uintptr_t)image_end - base;
@@ -147,9 +146,21 @@ int strcasecmp(const char* first, const char* second)
     {
         unsigned char a = (unsigned char)*first++;
         unsigned char b = (unsigned char)*second++;
-        if (a >= 'A' && a <= 'Z') a = (unsigned char)(a + 'a' - 'A');
-        if (b >= 'A' && b <= 'Z') b = (unsigned char)(b + 'a' - 'A');
-        if (a != b) return a - b;
+
+        if (a >= 'A' && a <= 'Z') 
+        {
+            a = (unsigned char)(a + 'a' - 'A');
+        }
+
+        if (b >= 'A' && b <= 'Z') 
+        {
+            b = (unsigned char)(b + 'a' - 'A');
+        }
+
+        if (a != b) 
+        {
+            return a - b;
+        }
     }
     return (unsigned char)*first - (unsigned char)*second;
 }
@@ -160,9 +171,20 @@ int strncasecmp(const char* first, const char* second, size_t length)
     {
         unsigned char a = (unsigned char)first[i];
         unsigned char b = (unsigned char)second[i];
-        if (a >= 'A' && a <= 'Z') a = (unsigned char)(a + 'a' - 'A');
-        if (b >= 'A' && b <= 'Z') b = (unsigned char)(b + 'a' - 'A');
-        if (a != b || a == '\0') return a - b;
+        if (a >= 'A' && a <= 'Z')
+        {
+            a = (unsigned char)(a + 'a' - 'A');
+        }
+
+        if (b >= 'A' && b <= 'Z') 
+        {
+            b = (unsigned char)(b + 'a' - 'A');
+        }
+
+        if (a != b || a == '\0') 
+        {
+            return a - b;
+        }
     }
     return 0;
 }
@@ -171,7 +193,11 @@ char* strchr(const char* text, int character)
 {
     while (*text != '\0')
     {
-        if (*text == (char)character) return (char*)text;
+        if (*text == (char)character) 
+        {
+            return (char*)text;
+        }
+
         ++text;
     }
     return character == '\0' ? (char*)text : NULL;
@@ -182,14 +208,21 @@ char* strrchr(const char* text, int character)
     const char* result = NULL;
     do
     {
-        if (*text == (char)character) result = text;
+        if (*text == (char)character)
+        {
+            result = text;
+        }
     } while (*text++ != '\0');
     return (char*)result;
 }
 
 char* strstr(const char* text, const char* needle)
 {
-    if (*needle == '\0') return (char*)text;
+    if (*needle == '\0') 
+    {
+        return (char*)text;
+    }
+    
     for (; *text != '\0'; ++text)
     {
         if (*text == *needle && strncmp(text, needle, strlen(needle)) == 0)

@@ -99,8 +99,7 @@ static void doom_draw(napp_window* window)
     if (doom_quit_requested || !doom_started || DG_ScreenBuffer == nullptr)
     {
         doom_gui->fill_block(origin_x, origin_y, NAPP_COLOR_BLACK, canvas_width, canvas_height);
-        doom_gui->draw_text(doom_quit_requested ? "Doom exited." : "Loading Freedoom...",
-                            origin_x + 8, origin_y + 8, NAPP_COLOR_WHITE);
+        doom_gui->draw_text(doom_quit_requested ? "Doom exited." : "Loading Freedoom...", origin_x + 8, origin_y + 8, NAPP_COLOR_WHITE);
         return;
     }
 
@@ -135,8 +134,7 @@ static void doom_draw(napp_window* window)
             const uint32_t pixel = DG_ScreenBuffer[row + x];
             const uint32_t color = 0xFF000000 | (pixel & 0x00FFFFFF);
             int run_end = x + 1;
-            while (run_end < doom_width &&
-                   DG_ScreenBuffer[row + run_end] == pixel)
+            while (run_end < doom_width && DG_ScreenBuffer[row + run_end] == pixel)
             {
                 ++run_end;
             }
@@ -145,10 +143,7 @@ static void doom_draw(napp_window* window)
             const int scaled_x_end = run_end * render_width / doom_width;
             if (scaled_x_end > scaled_x_start)
             {
-                doom_gui->fill_block(render_x + scaled_x_start,
-                                     render_y + scaled_y_start,
-                                     color, scaled_x_end - scaled_x_start,
-                                     scaled_y_end - scaled_y_start);
+                doom_gui->fill_block(render_x + scaled_x_start, render_y + scaled_y_start, color, scaled_x_end - scaled_x_start, scaled_y_end - scaled_y_start);
             }
             x = run_end;
         }
@@ -172,16 +167,14 @@ static void doom_tick(napp_window* window)
 
 extern "C" int doom_nasua_file_size(const char* path, uint32_t* size)
 {
-    if (doom_api == nullptr || path == nullptr || size == nullptr ||
-        doom_api->clawfs_get_file_size == nullptr)
+    if (doom_api == nullptr || path == nullptr || size == nullptr || doom_api->clawfs_get_file_size == nullptr)
     {
         return 0;
     }
     return doom_api->clawfs_get_file_size(path, size);
 }
 
-extern "C" int doom_nasua_read_range(const char* path, uint32_t offset,
-                                     void* buffer, uint32_t length)
+extern "C" int doom_nasua_read_range(const char* path, uint32_t offset, void* buffer, uint32_t length)
 {
     if (doom_api == nullptr || path == nullptr || doom_api->clawfs_read_file_range == nullptr)
     {
@@ -197,9 +190,7 @@ extern "C" void doom_nasua_set_api(const napp_api* api)
 
 extern "C" uint64_t doom_nasua_get_ticks(void)
 {
-    return doom_api != nullptr && doom_api->get_ticks != nullptr
-        ? doom_api->get_ticks()
-        : 0;
+    return doom_api != nullptr && doom_api->get_ticks != nullptr ? doom_api->get_ticks() : 0;
 }
 
 extern "C" void* doom_nasua_allocate_memory(uint32_t size)
@@ -261,20 +252,10 @@ int _start(const napp_api* api)
     uintptr_t entry_address;
     uintptr_t relocations_address;
     uintptr_t image_end_address;
-    __asm__ volatile(
-        "leaq _start(%%rip), %0\n\t"
-        "leaq __napp_relocs_start(%%rip), %1\n\t"
-        "leaq __napp_image_end(%%rip), %2"
-        : "=r"(entry_address), "=r"(relocations_address),
-          "=r"(image_end_address));
-    doom_relocate_image(
-        (void*)(entry_address - NAPP_ALIGNED_HEADER_SIZE),
-        (const uint32_t*)relocations_address, (const void*)image_end_address);
+    __asm__ volatile("leaq _start(%%rip), %0\n\t" "leaq __napp_relocs_start(%%rip), %1\n\t" "leaq __napp_image_end(%%rip), %2" : "=r"(entry_address), "=r"(relocations_address), "=r"(image_end_address));
+    doom_relocate_image((void*)(entry_address - NAPP_ALIGNED_HEADER_SIZE), (const uint32_t*)relocations_address, (const void*)image_end_address);
 
-    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION ||
-        api->gui == nullptr || api->allocate == nullptr || api->deallocate == nullptr ||
-        api->clawfs_get_file_size == nullptr || api->clawfs_read_file_range == nullptr ||
-        api->enable_fpu == nullptr || !api->enable_fpu())
+    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr || api->allocate == nullptr || api->deallocate == nullptr || api->clawfs_get_file_size == nullptr || api->clawfs_read_file_range == nullptr || api->enable_fpu == nullptr || !api->enable_fpu())
     {
         return 1;
     }
