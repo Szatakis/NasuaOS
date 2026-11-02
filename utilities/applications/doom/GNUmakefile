@@ -6,6 +6,11 @@ ENGINE_DIR := third_party/doomgeneric
 OBJ_DIR := obj
 LINKER_SCRIPT := napp.lds
 INCLUDE_DIR := include
+DATA_DIR := data
+FREEDOOM_VERSION := 0.13.0
+FREEDOOM_ZIP := /tmp/freedoom-$(FREEDOOM_VERSION).zip
+FREEDOOM_DIR := /tmp/freedoom-$(FREEDOOM_VERSION)
+WAD_FILE := $(DATA_DIR)/freedoom2.wad
 
 CXX := g++
 CC := gcc
@@ -18,62 +23,71 @@ PORT_OBJECTS := $(OBJ_DIR)/app/doomgeneric_nasua.o $(OBJ_DIR)/app/w_file_nasua.o
 OBJECTS := $(ENGINE_OBJECTS) $(APP_OBJECTS) $(PORT_OBJECTS)
 
 COMMON_FLAGS := \
-	-O2 \
-	-Wall \
-	-Wextra \
-	-ffreestanding \
-	-fno-builtin \
-	-fno-stack-protector \
-	-fno-stack-check \
-	-fno-lto \
-	-fno-plt \
-	-fPIC \
-	-m64 \
-	-mno-red-zone \
-	-mno-mmx \
-	-mcmodel=small \
-	-DNORMALUNIX \
-	-DLINUX \
-	-DSNDSERV \
-	-D_DEFAULT_SOURCE \
-	-U_FORTIFY_SOURCE \
-	-D_FORTIFY_SOURCE=0 \
-	-DNASUA_NAPP \
-	-DDOOMGENERIC_RESX=320 \
-	-DDOOMGENERIC_RESY=200 \
-	-I$(INCLUDE_DIR) \
-	-I$(ENGINE_DIR)
+    -O2 \
+    -Wall \
+    -Wextra \
+    -ffreestanding \
+    -fno-builtin \
+    -fno-stack-protector \
+    -fno-stack-check \
+    -fno-lto \
+    -fno-plt \
+    -fPIC \
+    -m64 \
+    -mno-red-zone \
+    -mno-mmx \
+    -mcmodel=small \
+    -DNORMALUNIX \
+    -DLINUX \
+    -DSNDSERV \
+    -D_DEFAULT_SOURCE \
+    -U_FORTIFY_SOURCE \
+    -D_FORTIFY_SOURCE=0 \
+    -DNASUA_NAPP \
+    -DDOOMGENERIC_RESX=320 \
+    -DDOOMGENERIC_RESY=200 \
+    -I$(INCLUDE_DIR) \
+    -I$(ENGINE_DIR)
 
 CFLAGS := $(COMMON_FLAGS) -std=gnu11
 CXXFLAGS := $(COMMON_FLAGS) -std=gnu++20 -fno-exceptions -fno-rtti \
-	-mno-sse -mno-sse2 -mno-80387
+    -mno-sse -mno-sse2 -mno-80387
 UPSTREAM_CFLAGS := $(CFLAGS) \
-	-Wno-dangling-pointer \
-	-Wno-enum-conversion \
-	-Wno-implicit-fallthrough \
-	-Wno-missing-field-initializers \
-	-Wno-pointer-to-int-cast \
-	-Wno-sign-compare \
-	-Wno-type-limits \
-	-Wno-unterminated-string-initialization \
-	-Wno-unused-but-set-parameter \
-	-Wno-unused-but-set-variable \
-	-Wno-unused-const-variable \
-	-Wno-unused-parameter \
-	-Wno-unused-variable
+    -Wno-dangling-pointer \
+    -Wno-enum-conversion \
+    -Wno-implicit-fallthrough \
+    -Wno-missing-field-initializers \
+    -Wno-pointer-to-int-cast \
+    -Wno-sign-compare \
+    -Wno-type-limits \
+    -Wno-unterminated-string-initialization \
+    -Wno-unused-but-set-parameter \
+    -Wno-unused-but-set-variable \
+    -Wno-unused-const-variable \
+    -Wno-unused-parameter \
+    -Wno-unused-variable
 
 LDFLAGS := \
-	-nostdlib \
-	-static \
-	-Wl,--no-dynamic-linker \
-	-Wl,--build-id=none \
-	-Wl,--no-relax \
-	-Wl,-T,$(LINKER_SCRIPT) \
-	-Wl,--gc-sections \
-	-Wl,--emit-relocs
+    -nostdlib \
+    -static \
+    -Wl,--no-dynamic-linker \
+    -Wl,--build-id=none \
+    -Wl,--no-relax \
+    -Wl,-T,$(LINKER_SCRIPT) \
+    -Wl,--gc-sections \
+    -Wl,--emit-relocs
 
-.PHONY: all clean distclean
-all: $(TARGET)
+.PHONY: all clean distclean assets
+all: assets $(TARGET)
+
+assets: $(WAD_FILE)
+
+$(WAD_FILE):
+	mkdir -p $(DATA_DIR)
+	curl -fL https://github.com/freedoom/freedoom/releases/download/v$(FREEDOOM_VERSION)/freedoom-$(FREEDOOM_VERSION).zip -o $(FREEDOOM_ZIP)
+	unzip -q $(FREEDOOM_ZIP) -d /tmp
+	cp $(FREEDOOM_DIR)/freedoom2.wad $(WAD_FILE)
+	rm -rf $(FREEDOOM_ZIP) $(FREEDOOM_DIR)
 
 $(OBJ_DIR)/engine/%.o: $(ENGINE_DIR)/%.c
 	mkdir -p $(@D)
@@ -96,3 +110,4 @@ clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
 
 distclean: clean
+	rm -rf $(DATA_DIR)
