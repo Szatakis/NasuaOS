@@ -213,6 +213,7 @@ documentation/
 | `/sbin/pwd`   | `utilities/system_functions/pwd/`   |
 | `/sbin/rm`    | `utilities/system_functions/rm/`    |
 | `/sbin/tree`  | `utilities/system_functions/tree/`  |
+| `/sbin/wc`    | `utilities/system_functions/wc/`    |
 
 ## NAPP Application Sources (/bin)
 

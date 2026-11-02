@@ -319,6 +319,8 @@ void execute_command(const char *cmd)
             Gpu::print(" -ip                                 - Display the current IP address\n");
             Gpu::print(" -ping                               - Send a ping request to an IP address or hostname\n");
             Gpu::print("   --target <address>                - (Required) Specify target IP address or hostname\n");
+            Gpu::print(" -wc                                 - Count lines, words, and bytes in files\n");
+            Gpu::print("   --file <file>                     - (Required, repeatable) Specify a file to count\n");
         }
 
         else if (page == 8)
@@ -536,6 +538,7 @@ void execute_command(const char *cmd)
                         file_contents[content_index] = text_buf[content_index];
                     }
                     file_contents[i] = '\n';
+                    Gpu::print("\n");
                     if (!clawfs_write_file(file_path, file_contents, static_cast<uint32_t>(i + 1)))
                     {
                         Gpu::print_error("Could not write file!\n");

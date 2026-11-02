@@ -37,7 +37,7 @@ static void normalize_path(const char* input, char* output)
 
     char* p = temp;
 
-    // Pomijamy początkowe /
+    // Skip the leading slash.
     if (*p == '/')
     {
         p++;

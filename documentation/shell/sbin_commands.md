@@ -20,17 +20,19 @@ The file resolver determines the source:
 
 ## Available /sbin Commands
 
-| Command | Description              | Flags                        |
-|---------|--------------------------|------------------------------|
-| `cat`   | Display file contents    | `--file`, `--file_n`         |
-| `cd`    | Change directory         | `[path]` (no flags)          |
-| `cp`    | Copy file                | `--source`, `--destination`  |
-| `ls`    | List directory           | `[path]` (no flags)          |
-| `mkdir` | Create directory         | `--dir_name`                 |
-| `mv`    | Move/rename file         | `--source`, `--destination`  |
-| `pwd`   | Print working directory  | No flags                     |
-| `rm`    | Remove file or directory | `--name`, `--type`           |
-| `tree`  | Display directory tree   | `[path]` (no flags)          |
+| Command    | Description                   | Arguments / Flags             |
+|------------|-------------------------------|-------------------------------|
+| `cat`      | Display file contents         | `--file`, `--file_n`          |
+| `cd`       | Change directory              | `[path]`                      |
+| `cp`       | Copy file                     | `--source`, `--destination`   |
+| `download` | Download files over HTTPS     | `--link`, `list` or `get`     |
+| `ls`       | List directory                | `[path]`                      |
+| `mkdir`    | Create directory              | `--dir_name`                  |
+| `mv`       | Move/rename file              | `--source`, `--destination`   |
+| `pwd`      | Print working directory       | No arguments                  |
+| `rm`       | Remove file or directory      | `--name`, `--type`            |
+| `tree`     | Display directory tree        | `[path]`                      |
+| `wc`       | Count lines, words, and bytes | `--file <file>` (repeatable)  |
 
 ## Help System
 
@@ -175,6 +177,21 @@ tree /home/user
 With no arguments, displays the tree starting from the current working directory. If a path is given, it is resolved relative to the current directory (or treated as absolute if it starts with `/`).
 
 Hidden entries (names starting with `.`) are not displayed. Only directories are traversed recursively; files are listed but not entered. Each entry is prefixed with `<DIR>` for directories or `<FILE>` for files, matching the `ls` output format.
+
+### wc
+
+Count newline characters, whitespace-delimited words, and bytes in one or more
+files. Files are read in small chunks, so the command does not need to load an
+entire file into memory.
+
+```
+wc --file <file> [--file <file> ...]
+```
+
+Specify `--file` once for each input. Files are processed in the order given.
+Each file prints one row in the order `lines words bytes filename`. When all
+requested files are read successfully, multiple files also produce a `total`
+row. A file that cannot be read is reported and causes a nonzero exit status.
 
 ## Copy-on-Write and Persistence
 
