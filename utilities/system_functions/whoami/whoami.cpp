@@ -1,7 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("whoami", "Display the current user", false,
-                 "   (no arguments)                    - Print the active username\n");
+NAPP_APPLICATION("whoami", "Display the current user", false, "");
 
 int _start(const napp_api* api)
 {
