@@ -5,6 +5,7 @@
 #include "system/drivers/drivers.hpp"
 #include "system/interrupts/interrupts.hpp"
 #include "system/filesystem/filesystem.hpp"
+#include "system/authentication/authentication.hpp"
 
 #include "applications/shell/shell.hpp"
 
@@ -109,6 +110,7 @@ void iqu_init()
 
     Process::init();
     napp_init(rootfs_module_address, rootfs_module_size);
+    auth_init();
 
     if(safe_mode) 
     {
@@ -228,6 +230,7 @@ extern "C" void kmain()
 
             napp_update_ticks();
 
+            auth_draw_screen();
             Gpu::handle_mouse();
 
             Gpu::render_frame();

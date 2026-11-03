@@ -20,6 +20,7 @@
 
 #include "system/filesystem/clawfs/clawfs.hpp"
 #include "system/filesystem/file_resolver/file_resolver.hpp"
+#include "system/authentication/authentication.hpp"
 
 #include "system/applications/napp/napp.hpp"
 
@@ -102,6 +103,16 @@ static const HelpCommand HELP_COMMANDS[] =
     {"ip", "Display the current IP address", ""},
     {"ping", "Send a ping request to an IP address or hostname", 
      "   --target <address>                - (Required) Specify target IP address or hostname\n"},
+    {"useradd", "Create a user account",
+     "   <username>                        - Create account, then enter its password securely\n"},
+    {"usermod", "Rename a user account",
+     "   <old-name> <new-name>             - Change an account name\n"},
+    {"passwd", "Change an account password",
+     "   [username]                        - Enter and confirm a new password securely\n"},
+    {"su", "Switch to another user",
+     "   <username>                        - Authenticate as the selected account\n"},
+    {"login", "Enable, disable, or open the login screen",
+     "   --on | --off                      - Require or skip login on the next boot\n"},
 };
 
 static constexpr uint32_t HELP_COMMAND_COUNT = sizeof(HELP_COMMANDS) / sizeof(HELP_COMMANDS[0]);
@@ -199,6 +210,24 @@ void execute_command(const char *cmd)
     char single_char_buf[2] = {0, 0};
 
     Gpu::print(CMD_TEXT_WHITE);
+    char command_name[64];
+    if (cmd_name_len >= sizeof(command_name))
+    {
+        Gpu::print_error("Command name is too long.\n");
+        Gpu::print_cmd();
+        return;
+    }
+    for (size_t i = 0; i < cmd_name_len; ++i)
+    {
+        command_name[i] = cmd[i];
+    }
+    command_name[cmd_name_len] = '\0';
+    if (auth_execute_command(command_name, args))
+    {
+        Gpu::print_cmd();
+        return;
+    }
+
     // Command: help
     if (cmd_name_len == 4 && Memory::memcmp(cmd, "help", 4) == 0) 
     {

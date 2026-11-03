@@ -10,6 +10,7 @@
 #include "system/gui/icons/icons.hpp"
 #include "system/gui/gui.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
+#include "system/authentication/authentication.hpp"
 
 #include "libs/qr_code/qr_code.hpp"
 #include "libs/libc/libc.hpp"
@@ -135,6 +136,57 @@ namespace Keyboard
         if (debug_mode)
         {
             print_sc(scancode);
+        }
+
+        if (auth_is_capturing_input())
+        {
+            if (scancode == 0xE0)
+            {
+                extended_scancode = true;
+                return;
+            }
+            if (extended_scancode)
+            {
+                extended_scancode = false;
+                return;
+            }
+            if (scancode & 0x80)
+            {
+                const uint8_t released = scancode & 0x7F;
+                if (released == 0x2A || released == 0x36)
+                {
+                    shift_pressed = false;
+                }
+                return;
+            }
+            if (scancode == 0x2A || scancode == 0x36)
+            {
+                shift_pressed = true;
+                return;
+            }
+            if (scancode == 0x3A)
+            {
+                caps_lock = !caps_lock;
+                keyboard_set_leds(caps_lock ? 0x04 : 0x00);
+                return;
+            }
+            if (scancode == 0x1C)
+            {
+                auth_handle_key('\n');
+            }
+            else if (scancode == 0x0E)
+            {
+                auth_handle_key('\b');
+            }
+            else
+            {
+                const char key = translate_scancode(scancode);
+                if (key != 0)
+                {
+                    auth_handle_key(key);
+                }
+            }
+            return;
         }
 
         if (scancode == 0xE0)

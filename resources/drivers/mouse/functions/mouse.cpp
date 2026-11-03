@@ -11,6 +11,7 @@
 #include "system/gui/icons/icons.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
 #include "system/gui/gui.hpp"
+#include "system/authentication/authentication.hpp"
 
 #include "libs/libc/libc.hpp"
 #include "libs/asm/asm.hpp"
@@ -413,6 +414,16 @@ namespace Mouse
             new_buttons |= (mouse_packet[3] >> 1) & 0x18;
         }
 
+        if (auth_is_capturing_input())
+        {
+            if ((new_buttons & 0x01) && !(old_mouse_buttons & 0x01))
+            {
+                auth_handle_mouse_click(x, y);
+            }
+            old_mouse_buttons = new_buttons;
+            mouse_buttons = new_buttons;
+            return;
+        }
 
         // LEFT BUTTON
         if ((new_buttons & 0x01) && !(old_mouse_buttons & 0x01))
@@ -482,6 +493,11 @@ namespace Mouse
     // LEFT CLICK
     void left_click(bool cmd_enter)
     {
+        if (auth_handle_mouse_click(x, y))
+        {
+            return;
+        }
+
         // START MENU BUTTON
         if (is_mouse_over_start(x, y))
         {

@@ -4,21 +4,23 @@ These commands are compiled directly into the 64-bit kernel. They are always ava
 
 ## help
 
-Display the help system, paginated across 10 static pages plus dynamic `/sbin` pages.
+Display the help system, paginated across built-in commands and dynamic `/sbin` pages.
 
 ```
 help
 help --page <n>
 ```
 
-Pages 1–10 list built-in commands. Page 11 and above list `/sbin` commands loaded from the filesystem. The number of `/sbin` pages depends on how many commands are available.
+The first pages list built-in commands; subsequent pages list `/sbin` commands
+loaded from the filesystem. The page range is calculated from the commands
+available on the system.
 
 ```
 user@nasua-os:/home> help --page 1
 Available commands (Page 1/<total>):
- See page 11 and above to view commands loaded from /sbin.
+ See later pages to view commands loaded from /sbin.
  -help                               - Show the first page of help
-   --page [1-10]                     - Show specific help page
+   --page <number>                   - Show specific help page
  -info                               - Display OS version and hardware info
  -source                             - Show link to the OS source code
  -shutdown                           - Power off the system safely
@@ -182,6 +184,52 @@ Display the NasuaOS source code URL.
 ```
 source
 ```
+
+## User accounts and login
+
+The first boot provides two accounts:
+
+| Username | Initial password |
+|----------|------------------|
+| `root`   | `admin`          |
+| `user`   | `user`           |
+
+Login is disabled by default; the system automatically starts as `user`.
+Enable the login screen with `login --on`. The setting is stored alongside the
+accounts in `/etc/accounts.db` on ClawFS and remains enabled after reboot.
+
+Change the initial passwords after logging in. Passwords are entered in a
+masked prompt and stored as salted PBKDF2-HMAC-SHA-256 hashes; they are not
+stored as recoverable plaintext. Account and login-setting changes persist
+only when ClawFS is formatted and writable. Existing account databases are
+updated to the new format and default to login disabled once.
+The login switch cannot be saved when the OS is running from a RAM-only disk.
+Formatting ClawFS initializes the storage area and can replace existing ClawFS
+data, so back up anything important before formatting.
+Accounts currently provide login identity and account-command checks; they do
+not yet isolate files or restrict other shell commands by user.
+
+```
+passwd [username]
+useradd <username>
+usermod <old-name> <new-name>
+su <username>
+login
+login --on
+login --off
+```
+
+`passwd` changes your password, or an administrator can name another account.
+`useradd` is administrator-only and asks for the new password twice.
+`usermod` lets a user rename their own account; administrators can rename any
+account. `su` opens the login prompt for the selected account. `login` asks you
+to authenticate again. `login --on` requires a login at the next boot, while
+`login --off` selects the currently logged-in account for automatic login on
+the next boot. These two settings require administrator privileges.
+
+If ClawFS has not been formatted, the default accounts still work for the
+current boot, but account changes cannot be saved. Format ClawFS before
+changing accounts if you need those changes to survive a reboot.
 
 ## debug
 
