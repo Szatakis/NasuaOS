@@ -28,14 +28,20 @@ static char* strrchr(const char* str, int ch)
 
 static bool strcmp(const char* s1, const char* s2)
 {
-    while (*s1 && *s1 == *s2) { s1++; s2++; }
+    while (*s1 && *s1 == *s2) 
+    { 
+        s1++; s2++; 
+    }
     return *s1 == *s2;
 }
 
 static bool is_flag(const char* arg, const char* flag)
 {
     int i = 0;
-    while (flag[i] && arg[i] == flag[i]) i++;
+    while (flag[i] && arg[i] == flag[i]) 
+    {
+        i++;
+    }
     return flag[i] == '\0' && arg[i] == '\0';
 }
 

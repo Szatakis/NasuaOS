@@ -481,8 +481,7 @@ static void ms_draw(napp_window* win)
 
     // Background — fill entire client area so buttons outside the board
     // area (Easy/Medium) are properly covered.
-    gui->fill_block(win->pos_x, win->pos_y + win->title_height,
-        NAPP_COLOR_WINDOW, win->width, win->height - win->title_height);
+    gui->fill_block(win->pos_x, win->pos_y + win->title_height, NAPP_COLOR_WINDOW, win->width, win->height - win->title_height);
 
 
     // Header.

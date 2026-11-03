@@ -60,55 +60,14 @@ def main():
 
     config = parse_defaults(DEFAULTS)
 
-    resolution = get(
-        config,
-        "Graphics",
-        "Resolution",
-        "1280x720"
-    )
+    resolution = get(config, "Graphics", "Resolution", "1280x720")
+    timeout = get(config, "Boot", "Timeout", "5")
+    default_entry = get(config, "Boot", "DefaultEntry", "NasuaOS 64-bit")
+    verbose = bool_to_limine(get(config, "Boot", "Verbose", "true"))
+    wallpaper = get(config, "Desktop", "Wallpaper", "/system/assets/images/background.png")
+    help_hidden = bool_to_limine(get(config, "Boot", "HelpHidden", "true"))
 
-    timeout = get(
-        config,
-        "Boot",
-        "Timeout",
-        "5"
-    )
-
-    default_entry = get(
-        config,
-        "Boot",
-        "DefaultEntry",
-        "NasuaOS 64-bit"
-    )
-
-    verbose = bool_to_limine(
-        get(
-            config,
-            "Boot",
-            "Verbose",
-            "true"
-        )
-    )
-
-    wallpaper = get(
-        config,
-        "Desktop",
-        "Wallpaper",
-        "/system/assets/images/background.png"
-    )
-
-    help_hidden = bool_to_limine(
-        get(
-            config,
-            "Boot",
-            "HelpHidden",
-            "true"
-        )
-    )
-
-    template = TEMPLATE.read_text(
-        encoding="utf-8"
-    )
+    template = TEMPLATE.read_text(encoding="utf-8")
 
     replacements = {
         "{TIMEOUT}": timeout,
@@ -120,15 +79,9 @@ def main():
     }
 
     for key, value in replacements.items():
-        template = template.replace(
-            key,
-            value
-        )
+        template = template.replace(key, value)
 
-    OUTPUT.write_text(
-        template,
-        encoding="utf-8"
-    )
+    OUTPUT.write_text(template, encoding="utf-8")
 
 if __name__ == "__main__":
     main()

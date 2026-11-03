@@ -301,8 +301,7 @@ static void capture_explorer_char(char character)
 static void refresh_explorer()
 {
     explorer_file_count = 0;
-    if (!api || !api->clawfs_get_sector || !api->clawfs_dir || !api->set_print_redirect ||
-        api->clawfs_get_sector("/") == 0 || api->clawfs_get_sector(api->current_path) == 0)
+    if (!api || !api->clawfs_get_sector || !api->clawfs_dir || !api->set_print_redirect || api->clawfs_get_sector("/") == 0 || api->clawfs_get_sector(api->current_path) == 0)
     {
         return;
     }
@@ -321,10 +320,7 @@ static void refresh_explorer()
         {
             ++line_end;
         }
-        const bool is_file = line_end - line_start >= 7 &&
-                             explorer_capture[line_start] == '<' &&
-                             explorer_capture[line_start + 1] == 'F' &&
-                             explorer_capture[line_start + 2] == 'I';
+        const bool is_file = line_end - line_start >= 7 && explorer_capture[line_start] == '<' && explorer_capture[line_start + 1] == 'F' && explorer_capture[line_start + 2] == 'I';
         if (is_file)
         {
             uint16_t name_start = line_start + 7;
@@ -1342,8 +1338,7 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
         const int menu_x = content_x + 6;
         const int menu_y = content_y + top_menu_h;
         const int menu_w = content_w - 8 < 156 ? content_w - 8 : 156;
-        if (menu_w > 0 && mouse_x >= menu_x && mouse_x < menu_x + menu_w &&
-            mouse_y >= menu_y && mouse_y < menu_y + 76)
+        if (menu_w > 0 && mouse_x >= menu_x && mouse_x < menu_x + menu_w && mouse_y >= menu_y && mouse_y < menu_y + 76)
         {
             const int item = (mouse_y - menu_y) / 24;
             file_menu_open = false;
@@ -1390,8 +1385,7 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
         side_bar_w = 0;
     }
     const int sidebar_x = content_x + activity_bar_w;
-    if (active_activity_tab == 0 && mouse_x >= sidebar_x && mouse_x < sidebar_x + side_bar_w &&
-        mouse_y >= middle_y + 108 && mouse_y < middle_y + 108 + explorer_file_count * 18)
+    if (active_activity_tab == 0 && mouse_x >= sidebar_x && mouse_x < sidebar_x + side_bar_w && mouse_y >= middle_y + 108 && mouse_y < middle_y + 108 + explorer_file_count * 18)
     {
         const int file_index = (mouse_y - (middle_y + 108)) / 18;
         if (file_index >= 0 && file_index < explorer_file_count)
@@ -1418,8 +1412,7 @@ static void suaedit_mouse(napp_window* win, int mouse_x, int mouse_y)
     const int text_top = middle_y + 45;
     const int status_top = middle_y + editor_h - 18;
 
-    if (mouse_x >= editor_x && mouse_x < editor_x + editor_w &&
-        mouse_y >= text_top && mouse_y < status_top && file_prompt_mode == 0)
+    if (mouse_x >= editor_x && mouse_x < editor_x + editor_w && mouse_y >= text_top && mouse_y < status_top && file_prompt_mode == 0)
     {
         const int columns_raw = (editor_w - 28) / 9;
         int columns = columns_raw < 1 ? 1 : columns_raw;

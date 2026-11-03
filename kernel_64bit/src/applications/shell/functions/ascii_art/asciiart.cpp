@@ -449,7 +449,7 @@ void print_ascii_art(const char* text)
         {
             char c = text[i];
 
-            // lover case letters -> upper case letters
+            // lover case letters to upper case letters
             if(c >= 'a' && c <= 'z')
             {
                 c -= 32;
@@ -474,18 +474,42 @@ void print_ascii_art(const char* text)
             {
                 switch(c)
                 {
-                    case '!': index = 36; break;
-                    case '@': index = 37; break;
-                    case '#': index = 38; break;
-                    case '$': index = 39; break;
-                    case '%': index = 40; break;
-                    case '&': index = 41; break;
-                    case '?': index = 42; break;
-                    case ':': index = 43; break;
-                    case ';': index = 44; break;
-                    case '+': index = 45; break;
-                    case '-': index = 46; break;
-                    case '=': index = 47; break;
+                    case '!': 
+                        index = 36; 
+                        break;
+                    case '@': 
+                        index = 37; 
+                        break;
+                    case '#': 
+                        index = 38; 
+                        break;
+                    case '$': 
+                        index = 39; 
+                        break;
+                    case '%': 
+                        index = 40; 
+                        break;
+                    case '&': 
+                        index = 41; 
+                        break;
+                    case '?': 
+                        index = 42; 
+                        break;
+                    case ':': 
+                        index = 43; 
+                        break;
+                    case ';': 
+                        index = 44; 
+                        break;
+                    case '+': 
+                        index = 45; 
+                        break;
+                    case '-': 
+                        index = 46; 
+                        break;
+                    case '=': 
+                        index = 47; 
+                        break;
                 }
             }
 

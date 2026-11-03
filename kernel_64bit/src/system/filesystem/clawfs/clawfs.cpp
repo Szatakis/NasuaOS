@@ -94,9 +94,7 @@ static void update_allocator_from_directory(uint32_t dir_sector, uint32_t depth)
         }
 
         uint32_t sector_count = 1;
-        if (entries[i].type == CLAWFS_FILE &&
-            entries[i].entry_count > 512 &&
-            entries[i].entry_count <= CLAWFS_MAX_FILE_SIZE)
+        if (entries[i].type == CLAWFS_FILE && entries[i].entry_count > 512 && entries[i].entry_count <= CLAWFS_MAX_FILE_SIZE)
         {
             sector_count = (entries[i].entry_count + 511) / 512;
         }
@@ -642,8 +640,7 @@ static bool split_file_path(const char* path, char* parent_path, char* file_name
     return true;
 }
 
-static bool get_file_entry(const char* path, char* parent_path, uint32_t* parent_sector,
-                           CLAWFSEntry* entry, uint8_t* directory_buffer)
+static bool get_file_entry(const char* path, char* parent_path, uint32_t* parent_sector, CLAWFSEntry* entry, uint8_t* directory_buffer)
 {
     char file_name[28];
     if (!split_file_path(path, parent_path, file_name))
@@ -736,8 +733,7 @@ bool clawfs_get_file_size(const char* path, uint32_t* size)
     uint32_t parent_sector = 0;
     uint8_t directory_buffer[512];
     CLAWFSEntry entry;
-    if (!get_file_entry(path, parent_path, &parent_sector, &entry, directory_buffer) ||
-        entry.entry_count == 0 || entry.entry_count > CLAWFS_MAX_FILE_SIZE)
+    if (!get_file_entry(path, parent_path, &parent_sector, &entry, directory_buffer) || entry.entry_count == 0 || entry.entry_count > CLAWFS_MAX_FILE_SIZE)
     {
         return false;
     }
@@ -752,10 +748,7 @@ bool clawfs_read_file_range(const char* path, uint32_t offset, void* buffer, uin
     uint32_t parent_sector = 0;
     uint8_t directory_buffer[512];
     CLAWFSEntry entry;
-    if (!get_file_entry(path, parent_path, &parent_sector, &entry, directory_buffer) ||
-        entry.entry_count == 0 || entry.entry_count > CLAWFS_MAX_FILE_SIZE ||
-        offset > entry.entry_count || length > entry.entry_count - offset ||
-        (length != 0 && buffer == nullptr))
+    if (!get_file_entry(path, parent_path, &parent_sector, &entry, directory_buffer) || entry.entry_count == 0 || entry.entry_count > CLAWFS_MAX_FILE_SIZE || offset > entry.entry_count || length > entry.entry_count - offset || (length != 0 && buffer == nullptr))
     {
         return false;
     }
@@ -829,9 +822,7 @@ bool clawfs_write_file(const char* path, const void* buffer, uint32_t length)
         return false;
     }
 
-    const uint32_t existing_sector_count = entry.entry_count == 0
-        ? 1
-        : (entry.entry_count + 511) / 512;
+    const uint32_t existing_sector_count = entry.entry_count == 0 ? 1 : (entry.entry_count + 511) / 512;
     const uint32_t required_sector_count = length == 0 ? 1 : (length + 511) / 512;
     uint32_t target_sector = entry.data_sector;
     if (required_sector_count > existing_sector_count)

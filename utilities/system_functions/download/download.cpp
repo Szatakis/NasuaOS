@@ -58,14 +58,10 @@ namespace
 
     bool is_name_character(char character)
     {
-        return (character >= 'a' && character <= 'z') ||
-               (character >= 'A' && character <= 'Z') ||
-               (character >= '0' && character <= '9') ||
-               character == '-' || character == '_' || character == '.';
+        return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9') || character == '-' || character == '_' || character == '.';
     }
 
-    bool copy_field(char* destination, uint32_t capacity,
-                    const char* source, uint32_t length)
+    bool copy_field(char* destination, uint32_t capacity, const char* source, uint32_t length)
     {
         if (length == 0 || length >= capacity)
         {
@@ -93,8 +89,7 @@ namespace
             const char character = path[index];
             if (character == '/' || character == '\0')
             {
-                if (component_length == 0 ||
-                    (component_is_dots && component_length <= 2))
+                if (component_length == 0 || (component_is_dots && component_length <= 2))
                 {
                     return false;
                 }
@@ -136,10 +131,7 @@ namespace
         while (link[index] != '\0' && link[index] != '/')
         {
             const char character = link[index];
-            if (!((character >= 'a' && character <= 'z') ||
-                  (character >= 'A' && character <= 'Z') ||
-                  (character >= '0' && character <= '9') ||
-                  character == '.' || character == '-'))
+            if (!((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9') || character == '.' || character == '-'))
             {
                 return false;
             }
@@ -179,11 +171,7 @@ namespace
         if (strings_equal(source.host, "github.com"))
         {
             const uint32_t repo_start = string_length(source.path);
-            if (repo_start >= 4 &&
-                source.path[repo_start - 4] == '.' &&
-                source.path[repo_start - 3] == 'g' &&
-                source.path[repo_start - 2] == 'i' &&
-                source.path[repo_start - 1] == 't')
+            if (repo_start >= 4 && source.path[repo_start - 4] == '.' && source.path[repo_start - 3] == 'g' && source.path[repo_start - 2] == 'i' && source.path[repo_start - 1] == 't')
             {
                 source.path[repo_start - 4] = '\0';
                 if (!valid_source_path(source.path, true))
@@ -218,8 +206,7 @@ namespace
 
     bool valid_file_path(const char* path)
     {
-        if (path[0] != 'f' || path[1] != 'i' || path[2] != 'l' ||
-            path[3] != 'e' || path[4] != 's' || path[5] != '/')
+        if (path[0] != 'f' || path[1] != 'i' || path[2] != 'l' || path[3] != 'e' || path[4] != 's' || path[5] != '/')
         {
             return false;
         }
@@ -248,8 +235,7 @@ namespace
             component_is_dots = component_is_dots && character == '.';
             has_filename_character = true;
         }
-        return has_filename_character && component_length != 0 &&
-               !(component_is_dots && component_length <= 2);
+        return has_filename_character && component_length != 0 && !(component_is_dots && component_length <= 2);
     }
 
     bool parse_entry(const char* line, uint32_t length, FileEntry& entry)
@@ -272,12 +258,7 @@ namespace
                 field_start = index + 1;
             }
         }
-        if (field_index != 4 ||
-            !copy_field(entry.name, sizeof(entry.name), fields[0], field_lengths[0]) ||
-            !copy_field(entry.version, sizeof(entry.version), fields[1], field_lengths[1]) ||
-            field_lengths[2] != 64 ||
-            !copy_field(entry.sha256, sizeof(entry.sha256), fields[2], field_lengths[2]) ||
-            !copy_field(entry.path, sizeof(entry.path), fields[3], field_lengths[3]))
+        if (field_index != 4 || !copy_field(entry.name, sizeof(entry.name), fields[0], field_lengths[0]) || !copy_field(entry.version, sizeof(entry.version), fields[1], field_lengths[1]) || field_lengths[2] != 64 || !copy_field(entry.sha256, sizeof(entry.sha256), fields[2], field_lengths[2]) || !copy_field(entry.path, sizeof(entry.path), fields[3], field_lengths[3]))
         {
             return false;
         }
@@ -303,8 +284,7 @@ namespace
         for (uint32_t index = 0; index < 64; ++index)
         {
             const char character = entry.sha256[index];
-            if (!((character >= '0' && character <= '9') ||
-                  (character >= 'a' && character <= 'f')))
+            if (!((character >= '0' && character <= '9') || (character >= 'a' && character <= 'f')))
             {
                 return false;
             }
@@ -319,8 +299,7 @@ namespace
             return false;
         }
         const uint32_t length = static_cast<uint32_t>(response_length);
-        if (length < 12 || response[0] != 'H' || response[1] != 'T' ||
-            response[2] != 'T' || response[3] != 'P')
+        if (length < 12 || response[0] != 'H' || response[1] != 'T' || response[2] != 'T' || response[3] != 'P')
         {
             return false;
         }
@@ -329,16 +308,13 @@ namespace
         {
             ++status_start;
         }
-        if (status_start + 4 >= length || response[status_start + 1] != '2' ||
-            response[status_start + 2] != '0' || response[status_start + 3] != '0' ||
-            response[status_start + 4] != ' ')
+        if (status_start + 4 >= length || response[status_start + 1] != '2' || response[status_start + 2] != '0' || response[status_start + 3] != '0' || response[status_start + 4] != ' ')
         {
             return false;
         }
         for (uint32_t index = 0; index + 3 < length; ++index)
         {
-            if (response[index] == '\r' && response[index + 1] == '\n' &&
-                response[index + 2] == '\r' && response[index + 3] == '\n')
+            if (response[index] == '\r' && response[index + 1] == '\n' && response[index + 2] == '\r' && response[index + 3] == '\n')
             {
                 body = response + index + 4;
                 body_length = length - index - 4;
@@ -348,8 +324,7 @@ namespace
         return false;
     }
 
-    int32_t fetch_file(const napp_api* api, const RepoSource& source, const char* branch,
-                       const char* file_path, const char*& body, uint32_t& body_length)
+    int32_t fetch_file(const napp_api* api, const RepoSource& source, const char* branch, const char* file_path, const char*& body, uint32_t& body_length)
     {
         char request_path[384] = {};
         uint32_t offset = 0;
@@ -368,9 +343,7 @@ namespace
         }
         request_path[offset] = '\0';
 
-        const int32_t response_length = api->https_get(
-            source.host, 443, request_path,
-            response, sizeof(response), 30000);
+        const int32_t response_length = api->https_get(source.host, 443, request_path, response, sizeof(response), 30000);
         if (response_length < 0)
         {
             api->print_error("HTTPS download failed (error ");
@@ -445,8 +418,7 @@ namespace
                 }
                 else if (position >= padded_length - 8)
                 {
-                    block[index] = static_cast<uint8_t>(
-                        bit_length >> ((padded_length - 1 - position) * 8));
+                    block[index] = static_cast<uint8_t>(bit_length >> ((padded_length - 1 - position) * 8));
                 }
                 else
                 {
@@ -456,35 +428,25 @@ namespace
             uint32_t words[64];
             for (uint32_t index = 0; index < 16; ++index)
             {
-                words[index] = (static_cast<uint32_t>(block[index * 4]) << 24) |
-                               (static_cast<uint32_t>(block[index * 4 + 1]) << 16) |
-                               (static_cast<uint32_t>(block[index * 4 + 2]) << 8) |
-                               block[index * 4 + 3];
+                words[index] = (static_cast<uint32_t>(block[index * 4]) << 24) | (static_cast<uint32_t>(block[index * 4 + 1]) << 16) | (static_cast<uint32_t>(block[index * 4 + 2]) << 8) | block[index * 4 + 3];
             }
             for (uint32_t index = 16; index < 64; ++index)
             {
                 const uint32_t x = words[index - 15];
                 const uint32_t y = words[index - 2];
-                const uint32_t sigma0 = ((x >> 7) | (x << 25)) ^
-                                        ((x >> 18) | (x << 14)) ^ (x >> 3);
-                const uint32_t sigma1 = ((y >> 17) | (y << 15)) ^
-                                        ((y >> 19) | (y << 13)) ^ (y >> 10);
-                words[index] = words[index - 16] + sigma0 +
-                               words[index - 7] + sigma1;
+                const uint32_t sigma0 = ((x >> 7) | (x << 25)) ^ ((x >> 18) | (x << 14)) ^ (x >> 3);
+                const uint32_t sigma1 = ((y >> 17) | (y << 15)) ^ ((y >> 19) | (y << 13)) ^ (y >> 10);
+                words[index] = words[index - 16] + sigma0 + words[index - 7] + sigma1;
             }
 
             uint32_t a = state[0], b = state[1], c = state[2], d = state[3];
             uint32_t e = state[4], f = state[5], g = state[6], h = state[7];
             for (uint32_t index = 0; index < 64; ++index)
             {
-                const uint32_t sum1 = ((e >> 6) | (e << 26)) ^
-                                      ((e >> 11) | (e << 21)) ^
-                                      ((e >> 25) | (e << 7));
+                const uint32_t sum1 = ((e >> 6) | (e << 26)) ^ ((e >> 11) | (e << 21)) ^ ((e >> 25) | (e << 7));
                 const uint32_t choose = (e & f) ^ (~e & g);
                 const uint32_t temp1 = h + sum1 + choose + constants[index] + words[index];
-                const uint32_t sum0 = ((a >> 2) | (a << 30)) ^
-                                      ((a >> 13) | (a << 19)) ^
-                                      ((a >> 22) | (a << 10));
+                const uint32_t sum0 = ((a >> 2) | (a << 30)) ^ ((a >> 13) | (a << 19)) ^ ((a >> 22) | (a << 10));
                 const uint32_t majority = (a & b) ^ (a & c) ^ (b & c);
                 const uint32_t temp2 = sum0 + majority;
                 h = g;
@@ -525,8 +487,7 @@ namespace
         static const char hex[] = "0123456789abcdef";
         for (uint32_t index = 0; index < sizeof(digest); ++index)
         {
-            if (expected[index * 2] != hex[digest[index] >> 4] ||
-                expected[index * 2 + 1] != hex[digest[index] & 0x0F])
+            if (expected[index * 2] != hex[digest[index] >> 4] || expected[index * 2 + 1] != hex[digest[index] & 0x0F])
             {
                 return false;
             }
@@ -534,8 +495,7 @@ namespace
         return true;
     }
 
-    bool load_catalog(const napp_api* api, const RepoSource& source, const char* branch,
-                      const char*& body, uint32_t& body_length)
+    bool load_catalog(const napp_api* api, const RepoSource& source, const char* branch, const char*& body, uint32_t& body_length)
     {
         if (fetch_file(api, source, branch, "catalog.txt", body, body_length) < 0)
         {
@@ -552,9 +512,7 @@ namespace
         return true;
     }
 
-    bool for_each_entry(const napp_api* api, const char* body, uint32_t body_length,
-                        const char* requested_name, bool list_entries,
-                        FileEntry* match, uint32_t* match_count)
+    bool for_each_entry(const napp_api* api, const char* body, uint32_t body_length, const char* requested_name, bool list_entries, FileEntry* match, uint32_t* match_count)
     {
         uint32_t line_start = 0;
         bool header_seen = false;
@@ -660,9 +618,7 @@ namespace
 
 int _start(const napp_api* api)
 {
-    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION ||
-        api->https_get == nullptr || api->clawfs_write_file == nullptr ||
-        api->clawfs_get_entry_type == nullptr || api->clawfs_mkdir == nullptr)
+    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->https_get == nullptr || api->clawfs_write_file == nullptr || api->clawfs_get_entry_type == nullptr || api->clawfs_mkdir == nullptr)
     {
         if (api != nullptr)
         {
@@ -720,9 +676,7 @@ int _start(const napp_api* api)
         print_usage(api);
         return 1;
     }
-    if ((!strings_equal(action, "list") && !strings_equal(action, "get")) ||
-        (strings_equal(action, "list") && requested_name != nullptr) ||
-        (strings_equal(action, "get") && requested_name == nullptr))
+    if ((!strings_equal(action, "list") && !strings_equal(action, "get")) || (strings_equal(action, "list") && requested_name != nullptr) || (strings_equal(action, "get") && requested_name == nullptr))
     {
         print_usage(api);
         return 1;
@@ -737,14 +691,12 @@ int _start(const napp_api* api)
     if (strings_equal(action, "list"))
     {
         api->print_line("Available files:");
-        return for_each_entry(api, catalog, catalog_length, nullptr, true, nullptr, nullptr)
-            ? 0 : 1;
+        return for_each_entry(api, catalog, catalog_length, nullptr, true, nullptr, nullptr) ? 0 : 1;
     }
 
     FileEntry selected = {};
     uint32_t match_count = 0;
-    if (!for_each_entry(api, catalog, catalog_length, requested_name, false,
-                        &selected, &match_count))
+    if (!for_each_entry(api, catalog, catalog_length, requested_name, false, &selected, &match_count))
     {
         return 1;
     }
@@ -784,8 +736,7 @@ int _start(const napp_api* api)
         api->print_error("Downloaded file is empty or exceeds the 60,000-byte limit.\n");
         return 1;
     }
-    if (!verify_sha256(reinterpret_cast<const uint8_t*>(file_data), file_length,
-                       selected.sha256))
+    if (!verify_sha256(reinterpret_cast<const uint8_t*>(file_data), file_length, selected.sha256))
     {
         api->print_error("Downloaded file SHA-256 does not match the catalog.\n");
         return 1;

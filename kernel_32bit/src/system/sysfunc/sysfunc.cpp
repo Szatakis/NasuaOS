@@ -200,7 +200,7 @@ namespace
         uint8_t byte_count;
         switch(opcode)
         {
-            case 0x0A: 
+            case 0x0A:
                 byte_count = 1; 
                 break;
             case 0x0B: 

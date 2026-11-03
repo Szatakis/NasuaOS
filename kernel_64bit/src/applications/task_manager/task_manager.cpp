@@ -64,8 +64,7 @@ static void draw_task_manager(Gpu::Window_Manager::window_struct* win)
     Gpu::fill_block(x, y, TASK_MANAGER_BG, width, height);
     Gpu::fill_block(x + 12, y + 10, TASK_MANAGER_PANEL, width - 24, height - 22);
     Gpu::print_at8("PROCESS MANAGER", x + 24, y + 22, TASK_MANAGER_GREEN);
-    Gpu::print_at8("Logical system services and application processes",
-                   x + 24, y + 42, TASK_MANAGER_MUTED);
+    Gpu::print_at8("Logical system services and application processes", x + 24, y + 42, TASK_MANAGER_MUTED);
 
     Process::Info processes[Process::MAX_PROCESSES];
     const uint32_t count = Process::snapshot(processes, Process::MAX_PROCESSES);
@@ -99,10 +98,8 @@ static void draw_task_manager(Gpu::Window_Manager::window_struct* win)
     Gpu::print_at8("TYPE", table_x + table_width - 180, table_y + 7, TASK_MANAGER_MUTED);
     Gpu::print_at8("STATE", table_x + table_width - 105, table_y + 7, TASK_MANAGER_MUTED);
 
-    const uint32_t available_rows = height > 135 ?
-        (uint32_t)(height - 135) / TASK_MANAGER_ROW_HEIGHT : 1;
-    visible_process_rows = available_rows < TASK_MANAGER_MAX_VISIBLE ?
-        available_rows : TASK_MANAGER_MAX_VISIBLE;
+    const uint32_t available_rows = height > 135 ? (uint32_t)(height - 135) / TASK_MANAGER_ROW_HEIGHT : 1;
+    visible_process_rows = available_rows < TASK_MANAGER_MAX_VISIBLE ? available_rows : TASK_MANAGER_MAX_VISIBLE;
     if (process_scroll + visible_process_rows > count)
     {
         process_scroll = count > visible_process_rows ? count - visible_process_rows : 0;
@@ -122,21 +119,16 @@ static void draw_task_manager(Gpu::Window_Manager::window_struct* win)
         append_number(pid_text, &pid_length, process.pid);
         Gpu::print_at8(pid_text, table_x + 8, row_y + 8, TASK_MANAGER_TEXT);
         Gpu::print_at8(process.name, table_x + 52, row_y + 8, TASK_MANAGER_TEXT);
-        Gpu::print_at8(process_type_name(process.type), table_x + table_width - 180,
-                       row_y + 8, TASK_MANAGER_MUTED);
-        Gpu::print_at8(process.state == Process::State::Running ? "RUNNING" : "EXITED",
-                       table_x + table_width - 105, row_y + 8,
-                       process.state == Process::State::Running ? TASK_MANAGER_GREEN : TASK_MANAGER_RED);
+        Gpu::print_at8(process_type_name(process.type), table_x + table_width - 180, row_y + 8, TASK_MANAGER_MUTED);
+        Gpu::print_at8(process.state == Process::State::Running ? "RUNNING" : "EXITED", table_x + table_width - 105, row_y + 8, process.state == Process::State::Running ? TASK_MANAGER_GREEN : TASK_MANAGER_RED);
     }
 
-    Gpu::print_at8("J/K: scroll  |  F5: reset",
-                   x + 24, y + height - 24, TASK_MANAGER_MUTED);
+    Gpu::print_at8("J/K: scroll  |  F5: reset", x + 24, y + height - 24, TASK_MANAGER_MUTED);
 }
 
 static void task_manager_key(Gpu::Window_Manager::window_struct*, char key)
 {
-    if ((key == 'j' || key == 's' || key == '2') &&
-        process_scroll + visible_process_rows < Process::MAX_PROCESSES)
+    if ((key == 'j' || key == 's' || key == '2') && process_scroll + visible_process_rows < Process::MAX_PROCESSES)
     {
         ++process_scroll;
     }

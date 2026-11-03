@@ -90,9 +90,8 @@ void pic_remap()
 
     /*
         Mask:
-        
-        IRQ0  = ON
-        rest = OFF
+            IRQ0  = ON
+            rest = OFF
     */
 
     outb(PIC1_DATA, 0xFE);

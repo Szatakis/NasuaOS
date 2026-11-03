@@ -26,7 +26,6 @@ multiboot_header_start:
     dd 720 ; Height
     dd 32 ; Bits per pixel
 
-
     ; End tag
     align 8
 

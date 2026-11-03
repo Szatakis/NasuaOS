@@ -24,8 +24,7 @@ namespace
 
     bool is_whitespace(char character)
     {
-        return character == ' ' || character == '\t' || character == '\n' ||
-               character == '\r' || character == '\v' || character == '\f';
+        return character == ' ' || character == '\t' || character == '\n' || character == '\r' || character == '\v' || character == '\f';
     }
 
     void print_count(const napp_api* api, uint64_t value)
@@ -46,8 +45,7 @@ namespace
         }
     }
 
-    void print_counts(const napp_api* api, const FileCounts& counts,
-                      const char* filename)
+    void print_counts(const napp_api* api, const FileCounts& counts, const char* filename)
     {
         print_count(api, counts.lines);
         api->print(" ");

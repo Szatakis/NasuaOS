@@ -238,8 +238,7 @@ void execute_command(const char *cmd)
         static char sbin_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
         static char sbin_descs[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
         static char sbin_help_texts[NAPP_MAX_APPLICATIONS][NAPP_HELP_TEXT_LENGTH];
-        uint32_t sbin_count = napp_list_sbin(sbin_names, sbin_descs, sbin_help_texts,
-                                             NAPP_MAX_APPLICATIONS);
+        uint32_t sbin_count = napp_list_sbin(sbin_names, sbin_descs, sbin_help_texts, NAPP_MAX_APPLICATIONS);
         uint32_t total_commands = HELP_COMMAND_COUNT + sbin_count;
         uint32_t total_pages = (total_commands + HELP_COMMANDS_PER_PAGE - 1) / HELP_COMMANDS_PER_PAGE;
         if (total_pages == 0)
@@ -304,8 +303,7 @@ void execute_command(const char *cmd)
             else
             {
                 uint32_t sbin_index = i - HELP_COMMAND_COUNT;
-                print_help_command(sbin_names[sbin_index], sbin_descs[sbin_index],
-                                   sbin_help_texts[sbin_index]);
+                print_help_command(sbin_names[sbin_index], sbin_descs[sbin_index], sbin_help_texts[sbin_index]);
             }
         }
     }
@@ -1027,11 +1025,17 @@ void execute_command(const char *cmd)
             if (op_arg[0] == '"') 
             {
                 op_arg++;
-                while (op_arg[i] != '"' && op_arg[i] != '\0' && i < 7) { op_buf[i] = op_arg[i]; i++; }
+                while (op_arg[i] != '"' && op_arg[i] != '\0' && i < 7) 
+                { 
+                    op_buf[i] = op_arg[i]; i++; 
+                }
             }
             else 
             {
-                while (op_arg[i] != ' ' && op_arg[i] != '\0' && i < 7) { op_buf[i] = op_arg[i]; i++; }
+                while (op_arg[i] != ' ' && op_arg[i] != '\0' && i < 7) 
+                { 
+                    op_buf[i] = op_arg[i]; i++; 
+                }
             }
             op_buf[i] = '\0';
 
@@ -1233,7 +1237,8 @@ void execute_command(const char *cmd)
             Gpu::print_error("Syntax error!\n");
             Gpu::print_info("Usage: inb --port [0xHEX]\n");
         }
-        else {
+        else 
+        {
             const char* port_str = port_flag + 7;
 
             uint16_t port = (uint16_t)parse_hex(port_str);

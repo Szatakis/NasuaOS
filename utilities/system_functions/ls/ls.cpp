@@ -113,13 +113,7 @@ int _start(const napp_api* api)
         return 1;
     }
 
-    if (api->argv[1][0] != '-' ||
-        api->argv[1][1] != '-' ||
-        api->argv[1][2] != 'f' ||
-        api->argv[1][3] != 'i' ||
-        api->argv[1][4] != 'l' ||
-        api->argv[1][5] != 'e' ||
-        api->argv[1][6] != '\0')
+    if (api->argv[1][0] != '-' || api->argv[1][1] != '-' || api->argv[1][2] != 'f' || api->argv[1][3] != 'i' || api->argv[1][4] != 'l' || api->argv[1][5] != 'e' || api->argv[1][6] != '\0')
     {
         api->print_error("Syntax error!\n");
         api->print("Usage: ls --file \"directory_path\"\n");

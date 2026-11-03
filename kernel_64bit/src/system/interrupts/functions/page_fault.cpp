@@ -27,9 +27,7 @@ static bool is_mmio_address(uint64_t addr)
 {
     /*
         Common PCI MMIO regions.
-    
         This is intentionally conservative.
-    
         Do NOT allocate normal RAM for these addresses.
     */
 
@@ -111,16 +109,9 @@ void page_fault_handler(Registers* regs)
 
     if (page_exists || is_instruction_fetch)
     {
-        Uart::puts(page_exists
-            ? "[PAGE FAULT] Protection violation\n"
-            : "[PAGE FAULT] Instruction fetch from an unmapped page\n");
-        log(ERROR, "PAGE FAULT", page_exists
-            ? "Protection violation"
-            : "Instruction fetch from an unmapped page");
-        kernel_panic(page_exists
-            ? "Page Fault - Protection Violation"
-            : "Page Fault - Invalid Instruction Fetch",
-            err_buf, rip_buf, rsp_buf, addr_buf);
+        Uart::puts(page_exists ? "[PAGE FAULT] Protection violation\n" : "[PAGE FAULT] Instruction fetch from an unmapped page\n");
+        log(ERROR, "PAGE FAULT", page_exists ? "Protection violation" : "Instruction fetch from an unmapped page");
+        kernel_panic(page_exists ? "Page Fault - Protection Violation" : "Page Fault - Invalid Instruction Fetch", err_buf, rip_buf, rsp_buf, addr_buf);
         return;
     }
 

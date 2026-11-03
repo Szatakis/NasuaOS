@@ -9,7 +9,9 @@ static bool is_flag(const char* arg, const char* flag)
     int i = 0;
 
     while (flag[i] && arg[i] == flag[i])
+    {
         i++;
+    }
 
     return flag[i] == '\0' && arg[i] == '\0';
 }
@@ -100,7 +102,9 @@ int _start(const napp_api* api)
         for (int j = 0; j < 512; j++)
         {
             if (buffer[j] == '\0')
+            {
                 break;
+            }
 
             char c[2] = { buffer[j], '\0' };
             api->print(c);

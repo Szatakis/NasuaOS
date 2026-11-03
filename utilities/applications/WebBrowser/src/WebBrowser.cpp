@@ -277,16 +277,46 @@ static void browser_release_page_buffers()
     {
         return;
     }
-    if (browser_response != nullptr) browser_api->deallocate(browser_response);
-    if (browser_page_source != nullptr) browser_api->deallocate(browser_page_source);
-    if (browser_document != nullptr) browser_api->deallocate(browser_document);
-    if (browser_document_colors != nullptr) browser_api->deallocate(browser_document_colors);
-    if (browser_document_backgrounds != nullptr) browser_api->deallocate(browser_document_backgrounds);
-    if (browser_document_borders != nullptr) browser_api->deallocate(browser_document_borders);
-    if (browser_document_flags != nullptr) browser_api->deallocate(browser_document_flags);
-    if (browser_document_alignment != nullptr) browser_api->deallocate(browser_document_alignment);
-    if (browser_document_links != nullptr) browser_api->deallocate(browser_document_links);
-    if (browser_dom_nodes != nullptr) browser_api->deallocate(browser_dom_nodes);
+    if (browser_response != nullptr) 
+    {
+        browser_api->deallocate(browser_response);
+    }
+    if (browser_page_source != nullptr) 
+    {
+        browser_api->deallocate(browser_page_source);
+    }
+    if (browser_document != nullptr) 
+    {
+        browser_api->deallocate(browser_document);
+    }
+    if (browser_document_colors != nullptr) 
+    {
+        browser_api->deallocate(browser_document_colors);
+    }
+    if (browser_document_backgrounds != nullptr) 
+    {
+        browser_api->deallocate(browser_document_backgrounds);
+    }
+    if (browser_document_borders != nullptr) 
+    {
+        browser_api->deallocate(browser_document_borders);
+    }
+    if (browser_document_flags != nullptr) 
+    {
+        browser_api->deallocate(browser_document_flags);
+    }
+    if (browser_document_alignment != nullptr) 
+    {
+        browser_api->deallocate(browser_document_alignment);
+    }
+    if (browser_document_links != nullptr) 
+    {
+        browser_api->deallocate(browser_document_links);
+    }
+    if (browser_dom_nodes != nullptr) 
+    {
+        browser_api->deallocate(browser_dom_nodes);
+    }
     browser_response = nullptr;
     browser_page_source = nullptr;
     browser_document = nullptr;
@@ -301,17 +331,11 @@ static void browser_release_page_buffers()
 
 static bool browser_allocate_page_buffers()
 {
-    if (browser_response != nullptr && browser_page_source != nullptr &&
-        browser_document != nullptr && browser_document_colors != nullptr &&
-        browser_document_backgrounds != nullptr && browser_document_borders != nullptr &&
-        browser_document_flags != nullptr &&
-        browser_document_alignment != nullptr && browser_document_links != nullptr &&
-        browser_dom_nodes != nullptr)
+    if (browser_response != nullptr && browser_page_source != nullptr && browser_document != nullptr && browser_document_colors != nullptr && browser_document_backgrounds != nullptr && browser_document_borders != nullptr && browser_document_flags != nullptr && browser_document_alignment != nullptr && browser_document_links != nullptr && browser_dom_nodes != nullptr)
     {
         return true;
     }
-    if (browser_api == nullptr || browser_api->allocate == nullptr ||
-        browser_api->deallocate == nullptr)
+    if (browser_api == nullptr || browser_api->allocate == nullptr || browser_api->deallocate == nullptr)
     {
         return false;
     }
@@ -319,27 +343,15 @@ static bool browser_allocate_page_buffers()
     browser_response = static_cast<char*>(browser_api->allocate(BROWSER_RESPONSE_CAPACITY));
     browser_page_source = static_cast<char*>(browser_api->allocate(BROWSER_RESPONSE_CAPACITY));
     browser_document = static_cast<char*>(browser_api->allocate(BROWSER_DOCUMENT_CAPACITY));
-    browser_document_colors = static_cast<uint32_t*>(
-        browser_api->allocate(BROWSER_DOCUMENT_CAPACITY * sizeof(uint32_t)));
-    browser_document_backgrounds = static_cast<uint32_t*>(
-        browser_api->allocate(BROWSER_DOCUMENT_CAPACITY * sizeof(uint32_t)));
-    browser_document_borders = static_cast<uint32_t*>(
-        browser_api->allocate(BROWSER_DOCUMENT_CAPACITY * sizeof(uint32_t)));
-    browser_document_flags = static_cast<uint8_t*>(
-        browser_api->allocate(BROWSER_DOCUMENT_CAPACITY));
-    browser_document_alignment = static_cast<uint8_t*>(
-        browser_api->allocate(BROWSER_DOCUMENT_CAPACITY));
-    browser_document_links = static_cast<uint8_t*>(
-        browser_api->allocate(BROWSER_DOCUMENT_CAPACITY));
-    browser_dom_nodes = static_cast<browser_dom_node*>(browser_api->allocate(
-        BROWSER_MAX_DOM_NODES * sizeof(browser_dom_node)));
+    browser_document_colors = static_cast<uint32_t*>(browser_api->allocate(BROWSER_DOCUMENT_CAPACITY * sizeof(uint32_t)));
+    browser_document_backgrounds = static_cast<uint32_t*>(browser_api->allocate(BROWSER_DOCUMENT_CAPACITY * sizeof(uint32_t)));
+    browser_document_borders = static_cast<uint32_t*>(browser_api->allocate(BROWSER_DOCUMENT_CAPACITY * sizeof(uint32_t)));
+    browser_document_flags = static_cast<uint8_t*>(browser_api->allocate(BROWSER_DOCUMENT_CAPACITY));
+    browser_document_alignment = static_cast<uint8_t*>(browser_api->allocate(BROWSER_DOCUMENT_CAPACITY));
+    browser_document_links = static_cast<uint8_t*>(browser_api->allocate(BROWSER_DOCUMENT_CAPACITY));
+    browser_dom_nodes = static_cast<browser_dom_node*>(browser_api->allocate(BROWSER_MAX_DOM_NODES * sizeof(browser_dom_node)));
 
-    if (browser_response == nullptr || browser_page_source == nullptr ||
-        browser_document == nullptr || browser_document_colors == nullptr ||
-        browser_document_backgrounds == nullptr || browser_document_borders == nullptr ||
-        browser_document_flags == nullptr ||
-        browser_document_alignment == nullptr || browser_document_links == nullptr ||
-        browser_dom_nodes == nullptr)
+    if (browser_response == nullptr || browser_page_source == nullptr || browser_document == nullptr || browser_document_colors == nullptr || browser_document_backgrounds == nullptr || browser_document_borders == nullptr || browser_document_flags == nullptr || browser_document_alignment == nullptr || browser_document_links == nullptr || browser_dom_nodes == nullptr)
     {
         browser_release_page_buffers();
         return false;
@@ -401,9 +413,7 @@ static bool browser_has_prefix_ignore_case(const char* text, const char* prefix)
     return true;
 }
 
-static bool browser_parse_url(const char* url, bool secure, char* hostname,
-                              int hostname_capacity, uint16_t& port,
-                              char* path, int path_capacity)
+static bool browser_parse_url(const char* url, bool secure, char* hostname, int hostname_capacity, uint16_t& port, char* path, int path_capacity)
 {
     const char* cursor = url;
     if (secure && browser_has_prefix_ignore_case(cursor, "https://"))
@@ -538,10 +548,8 @@ static bool browser_append_document(char character, bool& pending_space, const b
                 browser_document[length] = '\n';
                 browser_document_colors[length] = style.color;
                 browser_document_backgrounds[length] = style.background;
-                browser_document_borders[length] = style.border_enabled
-                    ? style.border_color : BROWSER_NO_BACKGROUND;
-                browser_document_flags[length] = style.flags |
-                    (style.preformatted ? BROWSER_PREFORMATTED : 0);
+                browser_document_borders[length] = style.border_enabled ? style.border_color : BROWSER_NO_BACKGROUND;
+                browser_document_flags[length] = style.flags | (style.preformatted ? BROWSER_PREFORMATTED : 0);
                 browser_document_alignment[length] = style.alignment;
                 browser_document_links[length] = style.link_id;
                 browser_document[length + 1] = '\0';
@@ -558,14 +566,15 @@ static bool browser_append_document(char character, bool& pending_space, const b
     }
     if ((character == ' ' || character == '\t') && style.preformatted)
     {
-        if (length >= BROWSER_DOCUMENT_CAPACITY - 1) return false;
+        if (length >= BROWSER_DOCUMENT_CAPACITY - 1) 
+        {
+            return false;
+        }
         browser_document[length] = character == '\t' ? ' ' : character;
         browser_document_colors[length] = style.color;
         browser_document_backgrounds[length] = style.background;
-        browser_document_borders[length] = style.border_enabled
-            ? style.border_color : BROWSER_NO_BACKGROUND;
-        browser_document_flags[length] = style.flags |
-            (style.preformatted ? BROWSER_PREFORMATTED : 0);
+        browser_document_borders[length] = style.border_enabled ? style.border_color : BROWSER_NO_BACKGROUND;
+        browser_document_flags[length] = style.flags | (style.preformatted ? BROWSER_PREFORMATTED : 0);
         browser_document_alignment[length] = style.alignment;
         browser_document_links[length] = style.link_id;
         browser_document[length + 1] = '\0';
@@ -588,8 +597,7 @@ static bool browser_append_document(char character, bool& pending_space, const b
         browser_document[length++] = ' ';
         browser_document_colors[length - 1] = style.color;
         browser_document_backgrounds[length - 1] = style.background;
-        browser_document_borders[length - 1] = style.border_enabled
-            ? style.border_color : BROWSER_NO_BACKGROUND;
+        browser_document_borders[length - 1] = style.border_enabled ? style.border_color : BROWSER_NO_BACKGROUND;
         browser_document_flags[length - 1] = style.flags;
         browser_document_alignment[length - 1] = style.alignment;
         browser_document_links[length - 1] = style.link_id;
@@ -600,26 +608,23 @@ static bool browser_append_document(char character, bool& pending_space, const b
     {
         return false;
     }
-    const bool word_start = length == 0 || pending_space ||
-        browser_document[length - 1] == '\n' || browser_document[length - 1] == ' ';
-    if ((style.flags & BROWSER_UPPERCASE) != 0 ||
-        ((style.flags & BROWSER_CAPITALIZE) != 0 && word_start))
+    const bool word_start = length == 0 || pending_space || browser_document[length - 1] == '\n' || browser_document[length - 1] == ' ';
+    if ((style.flags & BROWSER_UPPERCASE) != 0 || ((style.flags & BROWSER_CAPITALIZE) != 0 && word_start))
     {
         if (character >= 'a' && character <= 'z')
+        {
             character = static_cast<char>(character - 'a' + 'A');
+        }
     }
-    else if ((style.flags & BROWSER_LOWERCASE) != 0 &&
-             character >= 'A' && character <= 'Z')
+    else if ((style.flags & BROWSER_LOWERCASE) != 0 && character >= 'A' && character <= 'Z')
     {
         character = static_cast<char>(character - 'A' + 'a');
     }
     browser_document[length] = character;
     browser_document_colors[length] = style.color;
     browser_document_backgrounds[length] = style.background;
-    browser_document_borders[length] = style.border_enabled
-        ? style.border_color : BROWSER_NO_BACKGROUND;
-    browser_document_flags[length] = style.flags |
-        (style.preformatted ? BROWSER_PREFORMATTED : 0);
+    browser_document_borders[length] = style.border_enabled ? style.border_color : BROWSER_NO_BACKGROUND;
+    browser_document_flags[length] = style.flags | (style.preformatted ? BROWSER_PREFORMATTED : 0);
     browser_document_alignment[length] = style.alignment;
     browser_document_links[length] = style.link_id;
     browser_document[length + 1] = '\0';
@@ -632,13 +637,15 @@ static bool browser_append_blank_lines(uint8_t count, const browser_style& style
     while (count-- > 0)
     {
         const int length = browser_document_length;
-        if (length >= BROWSER_DOCUMENT_CAPACITY - 1) return false;
+        if (length >= BROWSER_DOCUMENT_CAPACITY - 1) 
+        {
+            return false;
+        }
         browser_document[length] = '\n';
         browser_document[length + 1] = '\0';
         browser_document_colors[length] = style.color;
         browser_document_backgrounds[length] = style.background;
-        browser_document_borders[length] = style.border_enabled
-            ? style.border_color : BROWSER_NO_BACKGROUND;
+        browser_document_borders[length] = style.border_enabled ? style.border_color : BROWSER_NO_BACKGROUND;
         browser_document_flags[length] = style.flags;
         browser_document_alignment[length] = style.alignment;
         browser_document_links[length] = style.link_id;
@@ -649,52 +656,12 @@ static bool browser_append_blank_lines(uint8_t count, const browser_style& style
 
 static bool browser_tag_is_block(const char* tag)
 {
-    return browser_equal_ignore_case(tag, "p")
-        || browser_equal_ignore_case(tag, "div")
-        || browser_equal_ignore_case(tag, "h1")
-        || browser_equal_ignore_case(tag, "h2")
-        || browser_equal_ignore_case(tag, "h3")
-        || browser_equal_ignore_case(tag, "h4")
-        || browser_equal_ignore_case(tag, "h5")
-        || browser_equal_ignore_case(tag, "h6")
-        || browser_equal_ignore_case(tag, "li")
-        || browser_equal_ignore_case(tag, "ul")
-        || browser_equal_ignore_case(tag, "ol")
-        || browser_equal_ignore_case(tag, "tr")
-        || browser_equal_ignore_case(tag, "section")
-        || browser_equal_ignore_case(tag, "article")
-        || browser_equal_ignore_case(tag, "header")
-        || browser_equal_ignore_case(tag, "footer")
-        || browser_equal_ignore_case(tag, "main")
-        || browser_equal_ignore_case(tag, "nav")
-        || browser_equal_ignore_case(tag, "form")
-        || browser_equal_ignore_case(tag, "figure")
-        || browser_equal_ignore_case(tag, "figcaption")
-        || browser_equal_ignore_case(tag, "table")
-        || browser_equal_ignore_case(tag, "thead")
-        || browser_equal_ignore_case(tag, "tbody")
-        || browser_equal_ignore_case(tag, "tfoot")
-        || browser_equal_ignore_case(tag, "caption")
-        || browser_equal_ignore_case(tag, "dl")
-        || browser_equal_ignore_case(tag, "dt")
-        || browser_equal_ignore_case(tag, "dd")
-        || browser_equal_ignore_case(tag, "blockquote")
-        || browser_equal_ignore_case(tag, "pre")
-        || browser_equal_ignore_case(tag, "address")
-        || browser_equal_ignore_case(tag, "details")
-        || browser_equal_ignore_case(tag, "summary")
-        || browser_equal_ignore_case(tag, "fieldset")
-        || browser_equal_ignore_case(tag, "legend")
-        || browser_equal_ignore_case(tag, "hgroup");
+    return browser_equal_ignore_case(tag, "p") || browser_equal_ignore_case(tag, "div") || browser_equal_ignore_case(tag, "h1") || browser_equal_ignore_case(tag, "h2") || browser_equal_ignore_case(tag, "h3") || browser_equal_ignore_case(tag, "h4") || browser_equal_ignore_case(tag, "h5") || browser_equal_ignore_case(tag, "h6") || browser_equal_ignore_case(tag, "li") || browser_equal_ignore_case(tag, "ul") || browser_equal_ignore_case(tag, "ol") || browser_equal_ignore_case(tag, "tr") || browser_equal_ignore_case(tag, "section") || browser_equal_ignore_case(tag, "article") || browser_equal_ignore_case(tag, "header") || browser_equal_ignore_case(tag, "footer") || browser_equal_ignore_case(tag, "main") || browser_equal_ignore_case(tag, "nav") || browser_equal_ignore_case(tag, "form") || browser_equal_ignore_case(tag, "figure") || browser_equal_ignore_case(tag, "figcaption") || browser_equal_ignore_case(tag, "table") || browser_equal_ignore_case(tag, "thead") || browser_equal_ignore_case(tag, "tbody") || browser_equal_ignore_case(tag, "tfoot") || browser_equal_ignore_case(tag, "caption") || browser_equal_ignore_case(tag, "dl") || browser_equal_ignore_case(tag, "dt") || browser_equal_ignore_case(tag, "dd") || browser_equal_ignore_case(tag, "blockquote") || browser_equal_ignore_case(tag, "pre") || browser_equal_ignore_case(tag, "address") || browser_equal_ignore_case(tag, "details") || browser_equal_ignore_case(tag, "summary") || browser_equal_ignore_case(tag, "fieldset") || browser_equal_ignore_case(tag, "legend") || browser_equal_ignore_case(tag, "hgroup");
 }
 
 static int browser_create_box(int start_offset, const browser_style& style)
 {
-    if (style.background_specificity == 0 && !style.border_enabled &&
-        !style.width_set && style.max_width_pixels == 0 &&
-        style.padding_left_chars == 0 && style.padding_right_chars == 0 &&
-        style.layout_mode == BROWSER_LAYOUT_NORMAL &&
-        !(style.margin_left_auto && style.margin_right_auto))
+    if (style.background_specificity == 0 && !style.border_enabled && !style.width_set && style.max_width_pixels == 0 && style.padding_left_chars == 0 && style.padding_right_chars == 0 && style.layout_mode == BROWSER_LAYOUT_NORMAL && !(style.margin_left_auto && style.margin_right_auto))
     {
         return -1;
     }
@@ -710,8 +677,7 @@ static int browser_create_box(int start_offset, const browser_style& style)
     box.end_offset = -1;
     box.first_line = -1;
     box.last_line = -1;
-    box.background = style.background_specificity > 0
-        ? style.background : BROWSER_NO_BACKGROUND;
+    box.background = style.background_specificity > 0 ? style.background : BROWSER_NO_BACKGROUND;
     box.border = style.border_enabled ? style.border_color : BROWSER_NO_BACKGROUND;
     box.dom_node = -1;
     box.width_pixels = style.width_pixels;
@@ -731,79 +697,82 @@ static int browser_create_box(int start_offset, const browser_style& style)
 
 static void browser_close_box(int box_index, int end_offset)
 {
-    if (box_index < 0 || box_index >= browser_box_count) return;
+    if (box_index < 0 || box_index >= browser_box_count) 
+    {
+        return;
+    }
     browser_boxes[box_index].end_offset = end_offset;
 }
 
 static bool browser_box_contains_offset(const browser_box& box, int offset)
 {
-    return box.end_offset > box.start_offset &&
-           offset >= box.start_offset && offset < box.end_offset;
+    return box.end_offset > box.start_offset && offset >= box.start_offset && offset < box.end_offset;
 }
 
-static void browser_box_outer_geometry(const browser_box& box, int parent_x,
-                                       int parent_width, int& box_x,
-                                       int& box_width)
+static void browser_box_outer_geometry(const browser_box& box, int parent_x, int parent_width, int& box_x, int& box_width)
 {
     box_width = parent_width;
     if (box.width_set)
     {
-        box_width = box.width_percent > 0
-            ? parent_width * box.width_percent / 100
-            : box.width_pixels;
-        if (box.width_cap_pixels > 0 &&
-            box_width > box.width_cap_pixels)
+        box_width = box.width_percent > 0 ? parent_width * box.width_percent / 100 : box.width_pixels;
+        if (box.width_cap_pixels > 0 && box_width > box.width_cap_pixels)
+        {
             box_width = box.width_cap_pixels;
+        }
     }
-    if (box.max_width_pixels > 0 &&
-        box_width > box.max_width_pixels)
+    if (box.max_width_pixels > 0 && box_width > box.max_width_pixels)
+    {
         box_width = box.max_width_pixels;
-    if (box_width > parent_width) box_width = parent_width;
-    if (box_width < 9) box_width = 9;
+    }
+    if (box_width > parent_width) 
+    {
+        box_width = parent_width;
+    }
+    if (box_width < 9) 
+    {
+        box_width = 9;
+    }
     box_x = parent_x;
-    if (box.margin_left_auto && box.margin_right_auto &&
-        box_width < parent_width)
+    if (box.margin_left_auto && box.margin_right_auto && box_width < parent_width)
+    {
         box_x += (parent_width - box_width) / 2;
+    }
 }
 
-static void browser_get_content_geometry_linear(int document_offset,
-                                                int first_box, int box_limit,
-                                                int& content_x,
-                                                int& content_width)
+static void browser_get_content_geometry_linear(int document_offset, int first_box, int box_limit, int& content_x, int& content_width)
 {
     for (int index = first_box; index < box_limit; ++index)
     {
         const browser_box& box = browser_boxes[index];
-        if (!browser_box_contains_offset(box, document_offset)) continue;
+        if (!browser_box_contains_offset(box, document_offset)) 
+        {
+            continue;
+        }
 
         int outer_x = content_x;
         int outer_width = content_width;
-        browser_box_outer_geometry(box, content_x, content_width,
-                                   outer_x, outer_width);
+        browser_box_outer_geometry(box, content_x, content_width, outer_x, outer_width);
         content_x = outer_x + box.padding_left_chars * 9;
-        content_width = outer_width -
-            (box.padding_left_chars + box.padding_right_chars) * 9;
-        if (content_width < 9) content_width = 9;
+        content_width = outer_width - (box.padding_left_chars + box.padding_right_chars) * 9;
+        if (content_width < 9) 
+        {
+            content_width = 9;
+        }
     }
 }
 
-static bool browser_find_grid_item(int document_offset, int& grid_node_index,
-                                   int& item_column)
+static bool browser_find_grid_item(int document_offset, int& grid_node_index, int& item_column)
 {
     for (int node_index = 1; node_index < browser_dom_node_count; ++node_index)
     {
         const browser_dom_node& grid = browser_dom_nodes[node_index];
-        if (grid.kind != BROWSER_DOM_ELEMENT ||
-            grid.layout_mode != BROWSER_LAYOUT_GRID ||
-            grid.hidden ||
-            grid.grid_columns < 2 ||
-            document_offset < static_cast<int>(grid.document_start) ||
-            document_offset >= static_cast<int>(grid.document_end))
+        if (grid.kind != BROWSER_DOM_ELEMENT || grid.layout_mode != BROWSER_LAYOUT_GRID || grid.hidden || grid.grid_columns < 2 || document_offset < static_cast<int>(grid.document_start) || document_offset >= static_cast<int>(grid.document_end))
+        {
             continue;
+        }
 
         bool nested_grid = false;
-        for (int ancestor = grid.parent; ancestor > 0;
-             ancestor = browser_dom_nodes[ancestor].parent)
+        for (int ancestor = grid.parent; ancestor > 0; ancestor = browser_dom_nodes[ancestor].parent)
         {
             if (browser_dom_nodes[ancestor].layout_mode == BROWSER_LAYOUT_GRID)
             {
@@ -814,14 +783,18 @@ static bool browser_find_grid_item(int document_offset, int& grid_node_index,
         if (nested_grid) continue;
 
         int column = 0;
-        for (int child = grid.first_child; child >= 0;
-             child = browser_dom_nodes[child].next_sibling)
+        for (int child = grid.first_child; child >= 0; child = browser_dom_nodes[child].next_sibling)
         {
             const browser_dom_node& item = browser_dom_nodes[child];
-            if (item.kind != BROWSER_DOM_ELEMENT) continue;
-            if (item.hidden) continue;
-            if (document_offset >= static_cast<int>(item.document_start) &&
-                document_offset < static_cast<int>(item.document_end))
+            if (item.kind != BROWSER_DOM_ELEMENT) 
+            {
+                continue;
+            }
+            if (item.hidden) 
+            {
+                continue;
+            }
+            if (document_offset >= static_cast<int>(item.document_start) && document_offset < static_cast<int>(item.document_end))
             {
                 grid_node_index = node_index;
                 item_column = column;
@@ -833,9 +806,7 @@ static bool browser_find_grid_item(int document_offset, int& grid_node_index,
     return false;
 }
 
-static void browser_get_content_geometry(int document_offset, int box_limit,
-                                        int viewport_width, int& content_x,
-                                        int& content_width)
+static void browser_get_content_geometry(int document_offset, int box_limit, int viewport_width, int& content_x, int& content_width)
 {
     int grid_node_index = -1;
     int item_column = -1;
@@ -855,35 +826,28 @@ static void browser_get_content_geometry(int document_offset, int box_limit,
     {
         content_x = 0;
         content_width = viewport_width;
-        browser_get_content_geometry_linear(document_offset, 0, box_limit,
-                                            content_x,
-                                            content_width);
+        browser_get_content_geometry_linear(document_offset, 0, box_limit, content_x, content_width);
         return;
     }
 
     content_x = 0;
     content_width = viewport_width;
-    browser_get_content_geometry_linear(document_offset, 0,
-                                        grid_box_index + 1,
-                                        content_x, content_width);
+    browser_get_content_geometry_linear(document_offset, 0, grid_box_index + 1, content_x, content_width);
     const browser_dom_node& grid = browser_dom_nodes[grid_node_index];
     const int column_count = grid.grid_columns;
     const int gap_pixels = grid.grid_gap_chars * 9;
-    int available_width = content_width -
-        gap_pixels * (column_count - 1);
+    int available_width = content_width - gap_pixels * (column_count - 1);
     if (available_width < column_count * 9)
+    {
         available_width = column_count * 9;
+    }
     const int cell_width = available_width / column_count;
-    content_x += (item_column % column_count) *
-                 (cell_width + gap_pixels);
+    content_x += (item_column % column_count) * (cell_width + gap_pixels);
     content_width = cell_width;
-    browser_get_content_geometry_linear(document_offset, grid_box_index + 1,
-                                        box_limit,
-                                        content_x, content_width);
+    browser_get_content_geometry_linear(document_offset, grid_box_index + 1, box_limit, content_x, content_width);
 }
 
-static void browser_get_box_geometry(int box_index, int viewport_width,
-                                     int& box_x, int& box_width)
+static void browser_get_box_geometry(int box_index, int viewport_width, int& box_x, int& box_width)
 {
     if (box_index < 0 || box_index >= browser_box_count)
     {
@@ -894,16 +858,11 @@ static void browser_get_box_geometry(int box_index, int viewport_width,
 
     int parent_x = 0;
     int parent_width = viewport_width;
-    browser_get_content_geometry(browser_boxes[box_index].start_offset,
-                                 box_index, viewport_width, parent_x,
-                                 parent_width);
-    browser_box_outer_geometry(browser_boxes[box_index], parent_x,
-                               parent_width, box_x, box_width);
+    browser_get_content_geometry(browser_boxes[box_index].start_offset, box_index, viewport_width, parent_x, parent_width);
+    browser_box_outer_geometry(browser_boxes[box_index], parent_x, parent_width, box_x, box_width);
 }
 
-static int browser_create_dom_node(int parent, uint8_t kind, const char* tag,
-                                  const char* class_name, const char* id,
-                                  int source_start, int source_end)
+static int browser_create_dom_node(int parent, uint8_t kind, const char* tag, const char* class_name, const char* id, int source_start, int source_end)
 {
     if (browser_dom_node_count >= BROWSER_MAX_DOM_NODES)
     {
@@ -911,7 +870,10 @@ static int browser_create_dom_node(int parent, uint8_t kind, const char* tag,
         return -1;
     }
 
-    if (parent < 0 || parent >= browser_dom_node_count) parent = 0;
+    if (parent < 0 || parent >= browser_dom_node_count) 
+    {
+        parent = 0;
+    }
     const int index = browser_dom_node_count++;
     browser_dom_node& node = browser_dom_nodes[index];
     node = {};
@@ -922,128 +884,151 @@ static int browser_create_dom_node(int parent, uint8_t kind, const char* tag,
     node.next_sibling = -1;
     node.source_start = static_cast<uint32_t>(source_start);
     node.source_end = static_cast<uint32_t>(source_end);
-    for (int character = 0; tag != nullptr && tag[character] != '\0' &&
-         character < static_cast<int>(sizeof(node.tag) - 1); ++character)
+    for (int character = 0; tag != nullptr && tag[character] != '\0' && character < static_cast<int>(sizeof(node.tag) - 1); ++character)
+    {
         node.tag[character] = tag[character];
-    for (int character = 0; class_name != nullptr &&
-         class_name[character] != '\0' &&
-         character < static_cast<int>(sizeof(node.class_name) - 1); ++character)
+    }
+    for (int character = 0; class_name != nullptr && class_name[character] != '\0' && character < static_cast<int>(sizeof(node.class_name) - 1); ++character)
+    {
         node.class_name[character] = class_name[character];
-    for (int character = 0; id != nullptr && id[character] != '\0' &&
-         character < static_cast<int>(sizeof(node.id) - 1); ++character)
+    }
+    for (int character = 0; id != nullptr && id[character] != '\0' && character < static_cast<int>(sizeof(node.id) - 1); ++character)
+    {
         node.id[character] = id[character];
+    }
 
     browser_dom_node& parent_node = browser_dom_nodes[parent];
     if (parent_node.first_child < 0)
+    {
         parent_node.first_child = index;
+    }
     else
+    {
         browser_dom_nodes[parent_node.last_child].next_sibling = index;
+    }
     parent_node.last_child = index;
     return index;
 }
 
 static void browser_append_dom_text(int parent, int source_start, int source_end)
 {
-    if (parent < 0 || parent >= browser_dom_node_count) parent = 0;
+    if (parent < 0 || parent >= browser_dom_node_count) 
+    {
+        parent = 0;
+    }
     browser_dom_node& parent_node = browser_dom_nodes[parent];
     if (parent_node.last_child >= 0)
     {
-        browser_dom_node& last_child =
-            browser_dom_nodes[parent_node.last_child];
-        if (last_child.kind == BROWSER_DOM_TEXT &&
-            last_child.source_end == static_cast<uint32_t>(source_start))
+        browser_dom_node& last_child = browser_dom_nodes[parent_node.last_child];
+        if (last_child.kind == BROWSER_DOM_TEXT && last_child.source_end == static_cast<uint32_t>(source_start))
         {
             last_child.source_end = static_cast<uint32_t>(source_end);
             return;
         }
     }
-    browser_create_dom_node(parent, BROWSER_DOM_TEXT, nullptr, nullptr, nullptr,
-                           source_start, source_end);
+    browser_create_dom_node(parent, BROWSER_DOM_TEXT, nullptr, nullptr, nullptr, source_start, source_end);
 }
 
-static void browser_close_dom_node(int node_index, int source_end,
-                                   int document_end)
+static void browser_close_dom_node(int node_index, int source_end, int document_end)
 {
-    if (node_index < 0 || node_index >= browser_dom_node_count) return;
-    browser_dom_nodes[node_index].source_end =
-        static_cast<uint32_t>(source_end);
-    browser_dom_nodes[node_index].document_end =
-        static_cast<uint32_t>(document_end);
+    if (node_index < 0 || node_index >= browser_dom_node_count) 
+    {
+        return;
+    }
+    browser_dom_nodes[node_index].source_end = static_cast<uint32_t>(source_end);
+    browser_dom_nodes[node_index].document_end = static_cast<uint32_t>(document_end);
 }
 
 static char browser_unicode_to_ascii(uint32_t codepoint)
 {
     if (codepoint >= 0x20 && codepoint <= 0x7E)
+    {
         return static_cast<char>(codepoint);
-    if (codepoint == 0xA0 || codepoint == 0x2002 ||
-        codepoint == 0x2003 || codepoint == 0x2009)
+    }
+    if (codepoint == 0xA0 || codepoint == 0x2002 || codepoint == 0x2003 || codepoint == 0x2009)
+    {
         return ' ';
+    }
     if (codepoint == 0xC4 || codepoint == 0xC6)
+    {
         return 'A';
+    }
     if (codepoint == 0xE4 || codepoint == 0xE6)
+    {
         return 'a';
-    if (codepoint == 0x0104 || codepoint == 0x0106 ||
-        codepoint == 0x0118 || codepoint == 0x0143 ||
-        codepoint == 0x015A || codepoint == 0x0179 ||
-        codepoint == 0x017B || codepoint == 0x017D)
-        return codepoint == 0x0104 ? 'A' :
-               codepoint == 0x0106 ? 'C' :
-               codepoint == 0x0118 ? 'E' :
-               codepoint == 0x0143 ? 'N' :
-               codepoint == 0x015A ? 'S' : 'Z';
-    if (codepoint == 0x0105 || codepoint == 0x0107 ||
-        codepoint == 0x0119 || codepoint == 0x0144 ||
-        codepoint == 0x015B || codepoint == 0x017A ||
-        codepoint == 0x017C || codepoint == 0x017E)
-        return codepoint == 0x0105 ? 'a' :
-               codepoint == 0x0107 ? 'c' :
-               codepoint == 0x0119 ? 'e' :
-               codepoint == 0x0144 ? 'n' :
-               codepoint == 0x015B ? 's' : 'z';
-    if (codepoint == 0xC7) return 'C';
-    if (codepoint == 0xE7) return 'c';
-    if (codepoint == 0xD0 || codepoint == 0xD2 || codepoint == 0xD3 ||
-        codepoint == 0xD5 || codepoint == 0xD6 || codepoint == 0xD8)
+    }
+    if (codepoint == 0x0104 || codepoint == 0x0106 || codepoint == 0x0118 || codepoint == 0x0143 || codepoint == 0x015A || codepoint == 0x0179 || codepoint == 0x017B || codepoint == 0x017D)
+    {
+        return codepoint == 0x0104 ? 'A' : codepoint == 0x0106 ? 'C' : codepoint == 0x0118 ? 'E' : codepoint == 0x0143 ? 'N' : codepoint == 0x015A ? 'S' : 'Z';
+    }
+    if (codepoint == 0x0105 || codepoint == 0x0107 || codepoint == 0x0119 || codepoint == 0x0144 || codepoint == 0x015B || codepoint == 0x017A || codepoint == 0x017C || codepoint == 0x017E)
+    {
+        return codepoint == 0x0105 ? 'a' : codepoint == 0x0107 ? 'c' : codepoint == 0x0119 ? 'e' : codepoint == 0x0144 ? 'n' : codepoint == 0x015B ? 's' : 'z';
+    }
+    if (codepoint == 0xC7) 
+    {
+        return 'C';
+    }
+    if (codepoint == 0xE7) 
+    {
+        return 'c';
+    }
+    if (codepoint == 0xD0 || codepoint == 0xD2 || codepoint == 0xD3 || codepoint == 0xD5 || codepoint == 0xD6 || codepoint == 0xD8)
+    {
         return 'O';
-    if (codepoint == 0xF0 || codepoint == 0xF2 || codepoint == 0xF3 ||
-        codepoint == 0xF5 || codepoint == 0xF6 || codepoint == 0xF8)
+    }
+    if (codepoint == 0xF0 || codepoint == 0xF2 || codepoint == 0xF3 || codepoint == 0xF5 || codepoint == 0xF6 || codepoint == 0xF8)
+    {
         return 'o';
-    if (codepoint == 0xD1) return 'N';
-    if (codepoint == 0xF1) return 'n';
-    if (codepoint == 0xDE) return 'T';
-    if (codepoint == 0xFE) return 't';
-    if (codepoint == 0xDF) return 's';
-    if (codepoint == 0xC0 || codepoint == 0xC1 || codepoint == 0xC2 ||
-        codepoint == 0xC3 || codepoint == 0xC5 || codepoint == 0x100 ||
-        codepoint == 0x102 || codepoint == 0x104 || codepoint == 0x106 ||
-        codepoint == 0x108 || codepoint == 0x10A || codepoint == 0x10C)
+    }
+    if (codepoint == 0xD1) 
+    {
+        return 'N';
+    }
+    if (codepoint == 0xF1) 
+    {
+        return 'n';
+    }
+    if (codepoint == 0xDE) 
+    {
+        return 'T';
+    }
+    if (codepoint == 0xFE) 
+    {
+        return 't';
+    }
+    if (codepoint == 0xDF) 
+    {
+        return 's';
+    }
+    if (codepoint == 0xC0 || codepoint == 0xC1 || codepoint == 0xC2 || codepoint == 0xC3 || codepoint == 0xC5 || codepoint == 0x100 || codepoint == 0x102 || codepoint == 0x104 || codepoint == 0x106 || codepoint == 0x108 || codepoint == 0x10A || codepoint == 0x10C)
+    {
         return 'A';
-    if (codepoint == 0xE0 || codepoint == 0xE1 || codepoint == 0xE2 ||
-        codepoint == 0xE3 || codepoint == 0xE5 || codepoint == 0x101 ||
-        codepoint == 0x103 || codepoint == 0x105 || codepoint == 0x107 ||
-        codepoint == 0x109 || codepoint == 0x10B || codepoint == 0x10D)
+    }
+    if (codepoint == 0xE0 || codepoint == 0xE1 || codepoint == 0xE2 || codepoint == 0xE3 || codepoint == 0xE5 || codepoint == 0x101 || codepoint == 0x103 || codepoint == 0x105 || codepoint == 0x107 || codepoint == 0x109 || codepoint == 0x10B || codepoint == 0x10D)
+    {
         return 'a';
-    if (codepoint == 0xC8 || codepoint == 0xC9 || codepoint == 0xCA ||
-        codepoint == 0xCB || codepoint == 0x112 || codepoint == 0x114 ||
-        codepoint == 0x116 || codepoint == 0x118 || codepoint == 0x11A)
+    }
+    if (codepoint == 0xC8 || codepoint == 0xC9 || codepoint == 0xCA || codepoint == 0xCB || codepoint == 0x112 || codepoint == 0x114 || codepoint == 0x116 || codepoint == 0x118 || codepoint == 0x11A)
+    {
         return 'E';
-    if (codepoint == 0xE8 || codepoint == 0xE9 || codepoint == 0xEA ||
-        codepoint == 0xEB || codepoint == 0x113 || codepoint == 0x115 ||
-        codepoint == 0x117 || codepoint == 0x119 || codepoint == 0x11B)
+    }
+    if (codepoint == 0xE8 || codepoint == 0xE9 || codepoint == 0xEA || codepoint == 0xEB || codepoint == 0x113 || codepoint == 0x115 || codepoint == 0x117 || codepoint == 0x119 || codepoint == 0x11B)
+    {
         return 'e';
-    if (codepoint == 0xCC || codepoint == 0xCD || codepoint == 0xCE ||
-        codepoint == 0xCF || codepoint == 0x128 || codepoint == 0x12A ||
-        codepoint == 0x12C || codepoint == 0x12E || codepoint == 0x130)
+    }
+    if (codepoint == 0xCC || codepoint == 0xCD || codepoint == 0xCE || codepoint == 0xCF || codepoint == 0x128 || codepoint == 0x12A || codepoint == 0x12C || codepoint == 0x12E || codepoint == 0x130)
+    {
         return 'I';
-    if (codepoint == 0xEC || codepoint == 0xED || codepoint == 0xEE ||
-        codepoint == 0xEF || codepoint == 0x129 || codepoint == 0x12B ||
-        codepoint == 0x12D || codepoint == 0x12F || codepoint == 0x131)
+    }
+    if (codepoint == 0xEC || codepoint == 0xED || codepoint == 0xEE || codepoint == 0xEF || codepoint == 0x129 || codepoint == 0x12B || codepoint == 0x12D || codepoint == 0x12F || codepoint == 0x131)
+    {
         return 'i';
-    if (codepoint == 0xD9 || codepoint == 0xDA || codepoint == 0xDB ||
-        codepoint == 0xDC || codepoint == 0x168 || codepoint == 0x16A ||
-        codepoint == 0x16C || codepoint == 0x16E || codepoint == 0x170 ||
-        codepoint == 0x172)
+    }
+    if (codepoint == 0xD9 || codepoint == 0xDA || codepoint == 0xDB || codepoint == 0xDC || codepoint == 0x168 || codepoint == 0x16A || codepoint == 0x16C || codepoint == 0x16E || codepoint == 0x170 || codepoint == 0x172)
+    {
         return 'U';
+    }
     if (codepoint == 0xF9 || codepoint == 0xFA || codepoint == 0xFB ||
         codepoint == 0xFC || codepoint == 0x169 || codepoint == 0x16B ||
         codepoint == 0x16D || codepoint == 0x16F || codepoint == 0x171 ||

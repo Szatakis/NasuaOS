@@ -617,15 +617,13 @@ bool fat_read_file(fat_volume* volume, const char* path, void* buffer, uint32_t 
 
 bool fat_read_file_range(fat_volume* volume, const char* path, uint32_t offset, void* buffer, uint32_t length)
 {
-    if (volume == nullptr || !volume->mounted || path == nullptr ||
-        (length > 0 && buffer == nullptr))
+    if (volume == nullptr || !volume->mounted || path == nullptr || (length > 0 && buffer == nullptr))
     {
         return false;
     }
 
     fat_entry_info info;
-    if (!resolve_path(volume, path, &info, nullptr) || info.directory ||
-        offset > info.size || length > info.size - offset)
+    if (!resolve_path(volume, path, &info, nullptr) || info.directory || offset > info.size || length > info.size - offset)
     {
         return false;
     }

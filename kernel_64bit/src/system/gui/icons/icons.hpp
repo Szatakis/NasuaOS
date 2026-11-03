@@ -49,7 +49,10 @@ bool is_mouse_over_icon(int mx, int my, int x, int y, int w, int h);
 template <size_t width, size_t height>
 void draw_icon(const uint32_t* icon, size_t start_x, size_t start_y)
 {
-    if (!Gpu::fb) return;
+    if (!Gpu::fb) 
+    {
+        return;
+    }
 
     uint32_t* bb_ptr = Gpu::get_backbuffer();
     size_t pitch = Gpu::get_backbuffer_pitch();
@@ -62,12 +65,16 @@ void draw_icon(const uint32_t* icon, size_t start_x, size_t start_y)
             size_t py = start_y + y;
 
             if (px >= Gpu::fb->width || py >= Gpu::fb->height)
+            {
                 continue;
+            }
 
             uint32_t color = icon[y * width + x];
 
             if (color == 0x000000)
+            {
                 continue;
+            }
 
             bb_ptr[py * pitch + px] = 0xFF000000 | color;
         }

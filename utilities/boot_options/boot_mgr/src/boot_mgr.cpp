@@ -100,8 +100,7 @@ static void draw_char(char c, uint32_t x, uint32_t y, uint32_t color)
         {
             if (bits & (1 << (7 - col)))
             {
-                put_pixel(x + col, y + row, color
-                );
+                put_pixel(x + col, y + row, color);
             }
         }
     }
@@ -235,8 +234,7 @@ static bool cpu_has_long_mode()
     uint32_t edx;
 
 
-    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000000)
-    );
+    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000000));
 
     if (eax < 0x80000001)
     {
@@ -252,7 +250,6 @@ static bool cpu_has_long_mode()
 
 
 static mb2_tag_module* modules[8];
-
 static uint32_t module_count = 0;
 
 
@@ -322,7 +319,6 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
         cursor_y = 10;
 
         print("NasuaOS Boot Manager\n", COLOR_WHITE);
-
         print("--------------------\n\n", COLOR_WHITE);
     }
 

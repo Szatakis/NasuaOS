@@ -70,8 +70,7 @@ namespace Keyboard
         {
             if (napp_key_windows[index] == window)
             {
-                Gpu::Window_Manager::send_key_event_to_window(
-                    window, napp_key_codes[index], false);
+                Gpu::Window_Manager::send_key_event_to_window(window, napp_key_codes[index], false);
                 napp_key_windows[index] = nullptr;
                 napp_key_codes[index] = 0;
             }
@@ -213,9 +212,7 @@ namespace Keyboard
             if (scancode == 0x38)
             {
                 alt_pressed = true;
-                if (Gpu::Window_Manager::active_window &&
-                    Gpu::Window_Manager::active_window->key_event != nullptr &&
-                    Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+                if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr && Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
                 {
                     send_napp_key_event((uint8_t)(0x80 | scancode), NAPP_KEY_ALT, true);
                 }
@@ -267,12 +264,8 @@ namespace Keyboard
                     Mouse::update_position(dx, dy);
                     return;
                 }
-                const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP :
-                                       scancode == 0x50 ? NAPP_KEY_DOWN :
-                                       scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
-                if (Gpu::Window_Manager::active_window &&
-                    Gpu::Window_Manager::active_window->key_event != nullptr &&
-                    Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+                const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP : scancode == 0x50 ? NAPP_KEY_DOWN : scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
+                if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr && Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
                 {
                     send_napp_key_event((uint8_t)(0x80 | scancode), arrow_key, true);
                 }
@@ -353,9 +346,7 @@ namespace Keyboard
         if (scancode == 0x2A || scancode == 0x36)
         {
             shift_pressed = true;
-            if (Gpu::Window_Manager::active_window &&
-                Gpu::Window_Manager::active_window->key_event != nullptr &&
-                Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+            if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr && Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
             {
                 send_napp_key_event(scancode, NAPP_KEY_SHIFT, true);
             }
@@ -374,9 +365,7 @@ namespace Keyboard
         if (scancode == 0x38)
         {
             alt_pressed = true;
-            if (Gpu::Window_Manager::active_window &&
-                Gpu::Window_Manager::active_window->key_event != nullptr &&
-                Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+            if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr && Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
             {
                 send_napp_key_event(scancode, NAPP_KEY_ALT, true);
             }
@@ -420,8 +409,7 @@ namespace Keyboard
 
         if (scancode == 0x3F)
         {
-            if (Gpu::Window_Manager::active_window &&
-                Gpu::Window_Manager::active_window->key_event != nullptr)
+            if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr)
             {
                 send_napp_key_event(scancode, NAPP_KEY_F5, true);
             }
@@ -434,8 +422,7 @@ namespace Keyboard
 
         if (scancode == 0x01)
         {
-            if (Gpu::Window_Manager::active_window &&
-                Gpu::Window_Manager::active_window->key_event != nullptr)
+            if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr)
             {
                 send_napp_key_event(scancode, NAPP_KEY_ESCAPE, true);
             }
@@ -444,8 +431,7 @@ namespace Keyboard
 
         if (scancode == 0x1D)
         {
-            if (Gpu::Window_Manager::active_window &&
-                Gpu::Window_Manager::active_window->key_event != nullptr)
+            if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr)
             {
                 send_napp_key_event(scancode, NAPP_KEY_CTRL, true);
             }

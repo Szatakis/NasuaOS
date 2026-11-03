@@ -33,9 +33,7 @@ static bool napp_abi_supported(uint32_t version)
 static uint32_t napp_entry_offset(const napp_header* header)
 {
     // ABI 6 recorded the struct size even though the linker padded it to 64 bytes.
-    if (header->abi_version == NAPP_ABI_MIN_VERSION &&
-        header->header_size == NAPP_HEADER_SIZE + sizeof(bool) &&
-        header->entry_offset == header->header_size)
+    if (header->abi_version == NAPP_ABI_MIN_VERSION && header->header_size == NAPP_HEADER_SIZE + sizeof(bool) && header->entry_offset == header->header_size)
     {
         return (NAPP_HEADER_SIZE + sizeof(bool) + 63U) & ~63U;
     }
@@ -165,13 +163,15 @@ static void napp_api_set_cwd(const char* path)
     if (path != nullptr)
     {
         uint32_t i = 0;
-        while (path[i] && i < 255) { napp_current_path[i] = path[i]; i++; }
+        while (path[i] && i < 255) 
+        { 
+            napp_current_path[i] = path[i]; i++; 
+        }
         napp_current_path[i] = '\0';
     }
 }
 
 // ClawFS wrappers (give userspace flat binaries access to the disk FS)
-
 static uint32_t napp_api_clawfs_get_sector(const char* path)
 {
     return get_sector_by_path(path);
@@ -288,8 +288,7 @@ static bool napp_api_clawfs_read_file_range(const char* path, uint32_t offset, v
         return clawfs_read_file_range(absolute_path, offset, buffer, length);
     }
 
-    return rootfs_mounted &&
-           fat_read_file_range(&rootfs_volume, absolute_path, offset, buffer, length);
+    return rootfs_mounted && fat_read_file_range(&rootfs_volume, absolute_path, offset, buffer, length);
 }
 
 static void* napp_api_allocate(uint32_t size)
@@ -660,14 +659,12 @@ static const char* napp_api_get_username()
     return user_name;
 }
 
-static int32_t napp_api_http_get(const char* hostname, uint16_t port, const char* path,
-                                 char* response, uint32_t response_capacity, uint32_t timeout_ms)
+static int32_t napp_api_http_get(const char* hostname, uint16_t port, const char* path, char* response, uint32_t response_capacity, uint32_t timeout_ms)
 {
     return Network::http_get(hostname, port, path, response, response_capacity, timeout_ms);
 }
 
-static int32_t napp_api_https_get(const char* hostname, uint16_t port, const char* path,
-                                  char* response, uint32_t response_capacity, uint32_t timeout_ms)
+static int32_t napp_api_https_get(const char* hostname, uint16_t port, const char* path, char* response, uint32_t response_capacity, uint32_t timeout_ms)
 {
     return Network::https_get(hostname, port, path, response, response_capacity, timeout_ms);
 }
@@ -698,19 +695,19 @@ static napp_api kernel_napp_api =
     napp_api_clawfs_dir,
     napp_api_clawfs_get_entry_type,
     napp_api_clawfs_resolve_path,
-     napp_api_get_ticks,
-     napp_api_execute_command,
-     napp_api_set_print_redirect,
-     napp_api_http_get,
-     napp_api_https_get,
-     napp_api_clawfs_read_file,
-     napp_api_clawfs_write_file,
-     napp_api_allocate,
-     napp_api_deallocate,
-     napp_api_clawfs_get_file_size,
-     napp_api_clawfs_read_file_range,
-     napp_api_enable_fpu,
-     napp_api_get_username
+    napp_api_get_ticks,
+    napp_api_execute_command,
+    napp_api_set_print_redirect,
+    napp_api_http_get,
+    napp_api_https_get,
+    napp_api_clawfs_read_file,
+    napp_api_clawfs_write_file,
+    napp_api_allocate,
+    napp_api_deallocate,
+    napp_api_clawfs_get_file_size,
+    napp_api_clawfs_read_file_range,
+    napp_api_enable_fpu,
+    napp_api_get_username
 };
 
 static bool remember_image(const char* name, uint32_t process_id, void* image)
@@ -1041,13 +1038,9 @@ bool napp_run(const char* name, int* exit_code)
     }
 
     const napp_header* header = (const napp_header*)image;
-    const bool has_napp_header =
-        header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version);
-    const uint32_t entry_offset = has_napp_header
-        ? napp_entry_offset(header)
-        : header->entry_offset;
-    if (has_napp_header &&
-        (entry_offset < header->header_size || entry_offset >= info.size))
+    const bool has_napp_header = header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version);
+    const uint32_t entry_offset = has_napp_header ? napp_entry_offset(header) : header->entry_offset;
+    if (has_napp_header && (entry_offset < header->header_size || entry_offset >= info.size))
     {
         log(ERROR, "NAPP", "Invalid application entry point");
         Process::finish(process_id, 1);
@@ -1063,10 +1056,7 @@ bool napp_run(const char* name, int* exit_code)
     strcpy(loading_application, name);
     loading_window_count = 0;
     loading_process_id = process_id;
-    loading_napp_abi_version =
-        header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version)
-            ? header->abi_version
-            : NAPP_ABI_VERSION;
+    loading_napp_abi_version = header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version) ? header->abi_version : NAPP_ABI_VERSION;
     kernel_napp_api.abi_version = loading_napp_abi_version;
 
     int result = 0;
@@ -1256,9 +1246,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         }
     }
     uint32_t name_length = 0;
-    while (name_start[name_length] != '\0' &&
-           name_start[name_length] != '.' &&
-           name_length < Process::PROCESS_NAME_LENGTH - 1)
+    while (name_start[name_length] != '\0' && name_start[name_length] != '.' && name_length < Process::PROCESS_NAME_LENGTH - 1)
     {
         process_name[name_length] = name_start[name_length];
         ++name_length;
@@ -1345,8 +1333,7 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
 
 #define NAPP_SBIN_DEFAULT_DESC "No description available."
 
-static void copy_napp_text(char* destination, uint32_t destination_size,
-                           const char* source, uint32_t source_size)
+static void copy_napp_text(char* destination, uint32_t destination_size, const char* source, uint32_t source_size)
 {
     if (destination_size == 0)
     {
@@ -1363,8 +1350,7 @@ static void copy_napp_text(char* destination, uint32_t destination_size,
 }
 
 // Read the NAPP description and optional command help text from the FAT rootfs.
-static bool read_sbin_metadata_fat(const char* path, char* desc_buffer, uint32_t desc_size,
-                                   char* help_buffer, uint32_t help_size)
+static bool read_sbin_metadata_fat(const char* path, char* desc_buffer, uint32_t desc_size, char* help_buffer, uint32_t help_size)
 {
     if (help_size > 0)
     {
@@ -1396,12 +1382,10 @@ static bool read_sbin_metadata_fat(const char* path, char* desc_buffer, uint32_t
     {
         const napp_header* h = (const napp_header*)image;
 
-        if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) &&
-            h->header_size >= NAPP_HEADER_SIZE && h->header_size <= read_size)
+        if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) && h->header_size >= NAPP_HEADER_SIZE && h->header_size <= read_size)
         {
             copy_napp_text(desc_buffer, desc_size, h->description, sizeof(h->description));
-            if (h->abi_version >= 8 && h->header_size >= sizeof(napp_header) &&
-                read_size >= sizeof(napp_header))
+            if (h->abi_version >= 8 && h->header_size >= sizeof(napp_header) && read_size >= sizeof(napp_header))
             {
                 copy_napp_text(help_buffer, help_size, h->help_text, sizeof(h->help_text));
             }
@@ -1414,8 +1398,7 @@ static bool read_sbin_metadata_fat(const char* path, char* desc_buffer, uint32_t
 }
 
 // Read NAPP command metadata from a ClawFS file stored in its first sector.
-static bool read_sbin_metadata_clawfs(uint32_t data_sector, char* desc_buffer, uint32_t desc_size,
-                                      char* help_buffer, uint32_t help_size)
+static bool read_sbin_metadata_clawfs(uint32_t data_sector, char* desc_buffer, uint32_t desc_size, char* help_buffer, uint32_t help_size)
 {
     if (help_size > 0)
     {
@@ -1431,8 +1414,7 @@ static bool read_sbin_metadata_clawfs(uint32_t data_sector, char* desc_buffer, u
 
     const napp_header* h = (const napp_header*)sector_buf;
 
-    if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) &&
-        h->header_size >= NAPP_HEADER_SIZE && h->header_size <= sizeof(sector_buf))
+    if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) && h->header_size >= NAPP_HEADER_SIZE && h->header_size <= sizeof(sector_buf))
     {
         copy_napp_text(desc_buffer, desc_size, h->description, sizeof(h->description));
         if (h->abi_version >= 8 && h->header_size >= sizeof(napp_header))
@@ -1445,10 +1427,7 @@ static bool read_sbin_metadata_clawfs(uint32_t data_sector, char* desc_buffer, u
     return false;
 }
 
-uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME],
-                        char descriptions[][NAPP_MAX_NAME],
-                        char help_texts[][NAPP_HELP_TEXT_LENGTH],
-                        uint32_t max_names)
+uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], char descriptions[][NAPP_MAX_NAME], char help_texts[][NAPP_HELP_TEXT_LENGTH], uint32_t max_names)
 {
     if (!rootfs_mounted || names == nullptr || descriptions == nullptr ||
         help_texts == nullptr || max_names == 0)
@@ -1489,9 +1468,7 @@ uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME],
         strcat(sbin_path, "/");
         strcat(sbin_path, files[i].name);
 
-        if (!read_sbin_metadata_fat(sbin_path, descriptions[found], NAPP_MAX_NAME,
-                                    help_texts[found], NAPP_HELP_TEXT_LENGTH) ||
-            descriptions[found][0] == '\0')
+        if (!read_sbin_metadata_fat(sbin_path, descriptions[found], NAPP_MAX_NAME, help_texts[found], NAPP_HELP_TEXT_LENGTH) || descriptions[found][0] == '\0')
         {
             strcpy(descriptions[found], NAPP_SBIN_DEFAULT_DESC);
             help_texts[found][0] = '\0';
@@ -1556,19 +1533,14 @@ uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME],
                     names[found][m] = '\0';
 
                     // Read command metadata from the NAPP header on ClawFS
-                    if (!read_sbin_metadata_clawfs(entries[j].data_sector,
-                                                    descriptions[found], NAPP_MAX_NAME,
-                                                    help_texts[found], NAPP_HELP_TEXT_LENGTH) ||
-                        descriptions[found][0] == '\0')
+                    if (!read_sbin_metadata_clawfs(entries[j].data_sector, descriptions[found], NAPP_MAX_NAME, help_texts[found], NAPP_HELP_TEXT_LENGTH) || descriptions[found][0] == '\0')
                     {
                         // Fallback: try reading from the FAT rootfs
                         char fat_path[64];
                         strcpy(fat_path, NAPP_SBIN_DIRECTORY);
                         strcat(fat_path, "/");
                         strcat(fat_path, entries[j].name);
-                        if (!read_sbin_metadata_fat(fat_path, descriptions[found], NAPP_MAX_NAME,
-                                                     help_texts[found], NAPP_HELP_TEXT_LENGTH) ||
-                            descriptions[found][0] == '\0')
+                        if (!read_sbin_metadata_fat(fat_path, descriptions[found], NAPP_MAX_NAME, help_texts[found], NAPP_HELP_TEXT_LENGTH) || descriptions[found][0] == '\0')
                         {
                             strcpy(descriptions[found], NAPP_SBIN_DEFAULT_DESC);
                             help_texts[found][0] = '\0';

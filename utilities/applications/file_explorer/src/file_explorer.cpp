@@ -272,11 +272,9 @@ static void files_draw(napp_window* window)
             files_gui->fill_block(list_x + 4, row_y - 3, FILES_SELECTED, list_width - 8, row_height);
         }
         const bool directory = state.entries[index].type == 1;
-        files_gui->draw_text(directory ? "[D]" : "[F]", list_x + 12, row_y + 3,
-                             directory ? FILES_ACCENT : FILES_MUTED);
+        files_gui->draw_text(directory ? "[D]" : "[F]", list_x + 12, row_y + 3, directory ? FILES_ACCENT : FILES_MUTED);
         files_gui->draw_text(state.entries[index].name, list_x + 42, row_y + 3, FILES_TEXT);
-        files_gui->draw_text(directory ? "Folder" : "File", list_x + list_width - 90,
-                             row_y + 3, FILES_MUTED);
+        files_gui->draw_text(directory ? "Folder" : "File", list_x + list_width - 90, row_y + 3, FILES_MUTED);
     }
 
     const int footer_y = y + content_height - 38;
@@ -441,9 +439,7 @@ static void files_mouse(napp_window* window, int mouse_x, int mouse_y)
 
 int _start(const napp_api* api)
 {
-    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr ||
-        api->clawfs_get_sector == nullptr || api->clawfs_read_sector == nullptr ||
-        api->clawfs_read_file == nullptr)
+    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr || api->clawfs_get_sector == nullptr || api->clawfs_read_sector == nullptr || api->clawfs_read_file == nullptr)
     {
         if (api != nullptr && api->print_error != nullptr)
         {

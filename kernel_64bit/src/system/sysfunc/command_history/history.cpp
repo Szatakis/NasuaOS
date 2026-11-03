@@ -79,7 +79,11 @@ const char* history_navigate_down()
     {
         history_index++;
         int pos = history_head - history_count + history_index;
-        while (pos < 0) pos += HISTORY_SIZE;
+        while (pos < 0) 
+        {
+            pos += HISTORY_SIZE;
+        }
+        
         return command_history[pos];
     }
     else 

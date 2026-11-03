@@ -100,9 +100,7 @@ namespace
         while (name[length] != '\0')
         {
             const char c = name[length];
-            if (length >= USERNAME_CAPACITY - 1 ||
-                !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                  (c >= '0' && c <= '9') || c == '_' || c == '-'))
+            if (length >= USERNAME_CAPACITY - 1 || !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-'))
             {
                 return false;
             }
@@ -148,22 +146,17 @@ namespace
 
     int current_account()
     {
-        if (!current_user_valid || active_account_index < 0 ||
-            static_cast<uint32_t>(active_account_index) >= account_count)
+        if (!current_user_valid || active_account_index < 0 || static_cast<uint32_t>(active_account_index) >= account_count)
         {
             return -1;
         }
 
-        return strcmp(user_name, accounts[active_account_index].name) == 0
-            ? active_account_index : -1;
+        return strcmp(user_name, accounts[active_account_index].name) == 0 ? active_account_index : -1;
     }
 
     bool is_administrator(int index)
     {
-        return index >= 0 &&
-               static_cast<uint32_t>(index) < account_count &&
-               accounts[index].administrator &&
-               strcmp(accounts[index].name, "root") == 0;
+        return index >= 0 && static_cast<uint32_t>(index) < account_count && accounts[index].administrator && strcmp(accounts[index].name, "root") == 0;
     }
 
     void generate_salt(uint8_t salt[SALT_SIZE])
@@ -176,8 +169,7 @@ namespace
         }
     }
 
-    void derive_password_hash(const char* password, const uint8_t salt[SALT_SIZE],
-                              uint8_t output[HASH_SIZE])
+    void derive_password_hash(const char* password, const uint8_t salt[SALT_SIZE], uint8_t output[HASH_SIZE])
     {
         const size_t password_length = strlen(password);
         br_hmac_key_context key_context;
@@ -235,8 +227,7 @@ namespace
 
     char hex_digit(uint8_t value)
     {
-        return value < 10 ? static_cast<char>('0' + value)
-                          : static_cast<char>('a' + value - 10);
+        return value < 10 ? static_cast<char>('0' + value) : static_cast<char>('a' + value - 10);
     }
 
     int hex_value(char c)
@@ -279,13 +270,11 @@ namespace
         return true;
     }
 
-    bool append_hex(char* buffer, uint32_t capacity, uint32_t* length,
-                    const uint8_t* bytes, uint32_t count)
+    bool append_hex(char* buffer, uint32_t capacity, uint32_t* length, const uint8_t* bytes, uint32_t count)
     {
         for (uint32_t i = 0; i < count; ++i)
         {
-            if (!append_char(buffer, capacity, length, hex_digit(bytes[i] >> 4)) ||
-                !append_char(buffer, capacity, length, hex_digit(bytes[i] & 0x0F)))
+            if (!append_char(buffer, capacity, length, hex_digit(bytes[i] >> 4)) || !append_char(buffer, capacity, length, hex_digit(bytes[i] & 0x0F)))
             {
                 return false;
             }
@@ -297,11 +286,7 @@ namespace
     {
         *length = 0;
         buffer[0] = '\0';
-        if (!append_text(buffer, capacity, length, "NASUAUTH2\n") ||
-            !append_char(buffer, capacity, length, login_enabled ? '1' : '0') ||
-            !append_char(buffer, capacity, length, '\n') ||
-            !append_text(buffer, capacity, length, automatic_login) ||
-            !append_char(buffer, capacity, length, '\n'))
+        if (!append_text(buffer, capacity, length, "NASUAUTH2\n") || !append_char(buffer, capacity, length, login_enabled ? '1' : '0') || !append_char(buffer, capacity, length, '\n') || !append_text(buffer, capacity, length, automatic_login) || !append_char(buffer, capacity, length, '\n'))
         {
             return false;
         }
@@ -309,14 +294,7 @@ namespace
         for (uint32_t i = 0; i < account_count; ++i)
         {
             const account_t& account = accounts[i];
-            if (!append_text(buffer, capacity, length, account.name) ||
-                !append_char(buffer, capacity, length, '|') ||
-                !append_char(buffer, capacity, length, account.administrator ? '1' : '0') ||
-                !append_char(buffer, capacity, length, '|') ||
-                !append_hex(buffer, capacity, length, account.salt, SALT_SIZE) ||
-                !append_char(buffer, capacity, length, '|') ||
-                !append_hex(buffer, capacity, length, account.password_hash, HASH_SIZE) ||
-                !append_char(buffer, capacity, length, '\n'))
+            if (!append_text(buffer, capacity, length, account.name) || !append_char(buffer, capacity, length, '|') || !append_char(buffer, capacity, length, account.administrator ? '1' : '0') || !append_char(buffer, capacity, length, '|') || !append_hex(buffer, capacity, length, account.salt, SALT_SIZE) || !append_char(buffer, capacity, length, '|') || !append_hex(buffer, capacity, length, account.password_hash, HASH_SIZE) || !append_char(buffer, capacity, length, '\n'))
             {
                 return false;
             }
@@ -347,9 +325,7 @@ namespace
             etc_sector = get_sector_by_path("/etc");
         }
         CLAWFSEntry etc_entry = {};
-        if (etc_sector == 0 ||
-            find_entry_in_dir(CLAWFS_ROOT_SECTOR, "etc", &etc_entry) == 0 ||
-            etc_entry.type != CLAWFS_DIRECTORY)
+        if (etc_sector == 0 || find_entry_in_dir(CLAWFS_ROOT_SECTOR, "etc", &etc_entry) == 0 || etc_entry.type != CLAWFS_DIRECTORY)
         {
             set_status("ClawFS has no writable /etc directory.");
             return false;
@@ -377,8 +353,7 @@ namespace
         Gpu::print("\n");
     }
 
-    bool parse_line(const char* data, uint32_t size, uint32_t* offset,
-                    char* line, uint32_t capacity)
+    bool parse_line(const char* data, uint32_t size, uint32_t* offset, char* line, uint32_t capacity)
     {
         uint32_t length = 0;
         while (*offset < size && data[*offset] != '\n')
@@ -417,22 +392,18 @@ namespace
     {
         uint32_t offset = 0;
         char line[128];
-        if (needs_migration == nullptr ||
-            !parse_line(data, size, &offset, line, sizeof(line)))
+        if (needs_migration == nullptr || !parse_line(data, size, &offset, line, sizeof(line)))
         {
             return false;
         }
         *needs_migration = strcmp(line, "NASUAUTH1") == 0;
-        if ((!*needs_migration && strcmp(line, "NASUAUTH2") != 0) ||
-            !parse_line(data, size, &offset, line, sizeof(line)) ||
-            (strcmp(line, "0") != 0 && strcmp(line, "1") != 0))
+        if ((!*needs_migration && strcmp(line, "NASUAUTH2") != 0) || !parse_line(data, size, &offset, line, sizeof(line)) || (strcmp(line, "0") != 0 && strcmp(line, "1") != 0))
         {
             return false;
         }
         login_enabled = line[0] == '1';
 
-        if (!parse_line(data, size, &offset, line, sizeof(line)) ||
-            !valid_username(line))
+        if (!parse_line(data, size, &offset, line, sizeof(line)) || !valid_username(line))
         {
             return false;
         }
@@ -470,18 +441,13 @@ namespace
             *third++ = '\0';
 
             account_t& account = accounts[account_count];
-            if (!valid_username(line) ||
-                (strcmp(first, "0") != 0 && strcmp(first, "1") != 0) ||
-                strlen(second) != SALT_SIZE * 2 ||
-                strlen(third) != HASH_SIZE * 2 ||
-                find_account(line) >= 0)
+            if (!valid_username(line) || (strcmp(first, "0") != 0 && strcmp(first, "1") != 0) || strlen(second) != SALT_SIZE * 2 || strlen(third) != HASH_SIZE * 2 || find_account(line) >= 0)
             {
                 return false;
             }
             strcpy(account.name, line);
             account.administrator = first[0] == '1';
-            if (!decode_hex(second, account.salt, SALT_SIZE) ||
-                !decode_hex(third, account.password_hash, HASH_SIZE))
+            if (!decode_hex(second, account.salt, SALT_SIZE) || !decode_hex(third, account.password_hash, HASH_SIZE))
             {
                 return false;
             }
@@ -556,8 +522,7 @@ namespace
         set_status("Invalid username or password.");
     }
 
-    bool parse_arguments(const char* args, char* first, size_t first_capacity,
-                         char* second, size_t second_capacity)
+    bool parse_arguments(const char* args, char* first, size_t first_capacity, char* second, size_t second_capacity)
     {
         while (*args == ' ')
         {
@@ -618,9 +583,7 @@ namespace
         storage_available = clawfs_exists();
         if (!storage_available || Disk::storage_is_ram())
         {
-            Gpu::print_error(Disk::storage_is_ram()
-                ? "A persistent disk is required to change accounts.\n"
-                : "Account changes require a formatted ClawFS disk.\n");
+            Gpu::print_error(Disk::storage_is_ram() ? "A persistent disk is required to change accounts.\n" : "Account changes require a formatted ClawFS disk.\n");
             return false;
         }
         strcpy(password_target, target);
@@ -669,8 +632,7 @@ namespace
             strcpy(added_account.name, password_target);
             added_account.administrator = false;
             generate_salt(added_account.salt);
-            derive_password_hash(pending_password, added_account.salt,
-                                 added_account.password_hash);
+            derive_password_hash(pending_password, added_account.salt, added_account.password_hash);
             accounts[account_count++] = added_account;
         }
         else
@@ -684,8 +646,7 @@ namespace
             }
             previous_account = accounts[target_index];
             generate_salt(accounts[target_index].salt);
-            derive_password_hash(pending_password, accounts[target_index].salt,
-                                 accounts[target_index].password_hash);
+            derive_password_hash(pending_password, accounts[target_index].salt, accounts[target_index].password_hash);
         }
 
         if (!persist_database())
@@ -705,8 +666,7 @@ namespace
         }
         else
         {
-            set_status(adding_user ? "Account created successfully."
-                                   : "Password changed successfully.");
+            set_status(adding_user ? "Account created successfully." : "Password changed successfully.");
         }
 
         password_action = PASSWORD_ACTION_NONE;
@@ -753,8 +713,7 @@ namespace
     void finish_login()
     {
         const int index = find_account(input);
-        if (!database_valid || index < 0 ||
-            !password_matches(accounts[index], password_input))
+        if (!database_valid || index < 0 || !password_matches(accounts[index], password_input))
         {
             fail_login();
             return;
@@ -781,11 +740,7 @@ bool auth_init()
             char database[DATABASE_CAPACITY];
             uint32_t read_size = 0;
             bool needs_migration = false;
-            database_valid = size < sizeof(database) &&
-                             clawfs_read_file(DATABASE_PATH, database,
-                                              sizeof(database), &read_size) &&
-                             read_size == size &&
-                             parse_database(database, read_size, &needs_migration);
+            database_valid = size < sizeof(database) && clawfs_read_file(DATABASE_PATH, database, sizeof(database), &read_size) && read_size == size && parse_database(database, read_size, &needs_migration);
             clear_secret(database, sizeof(database));
             if (!database_valid)
             {
@@ -819,18 +774,14 @@ bool auth_init()
             }
             if (!storage_available)
             {
-                set_status(Disk::storage_is_ram()
-                    ? "Only a RAM disk is available; settings will not survive reboot."
-                    : "ClawFS is not formatted; settings will not survive reboot.");
+                set_status(Disk::storage_is_ram() ? "Only a RAM disk is available; settings will not survive reboot." : "ClawFS is not formatted; settings will not survive reboot.");
             }
         }
     }
     else
     {
         seed_defaults();
-        set_status(Disk::storage_is_ram()
-            ? "Only a RAM disk is available; settings will not survive reboot."
-            : "ClawFS is not formatted; settings will not survive reboot.");
+        set_status(Disk::storage_is_ram() ? "Only a RAM disk is available; settings will not survive reboot." : "ClawFS is not formatted; settings will not survive reboot.");
     }
 
     if (login_enabled)
@@ -874,9 +825,7 @@ void auth_handle_key(char key)
                 input[length - 1] = '\0';
             }
         }
-        else if (screen_mode == SCREEN_LOGIN_PASSWORD ||
-                 screen_mode == SCREEN_NEW_PASSWORD ||
-                 screen_mode == SCREEN_CONFIRM_PASSWORD)
+        else if (screen_mode == SCREEN_LOGIN_PASSWORD || screen_mode == SCREEN_NEW_PASSWORD || screen_mode == SCREEN_CONFIRM_PASSWORD)
         {
             const size_t length = strlen(password_input);
             if (length > 0)
@@ -921,8 +870,7 @@ void auth_handle_key(char key)
     }
 
     char* target = screen_mode == SCREEN_LOGIN_USERNAME ? input : password_input;
-    const size_t capacity = screen_mode == SCREEN_LOGIN_USERNAME
-        ? sizeof(input) : sizeof(password_input);
+    const size_t capacity = screen_mode == SCREEN_LOGIN_USERNAME ? sizeof(input) : sizeof(password_input);
     const size_t length = strlen(target);
     if (length + 1 < capacity)
     {
@@ -960,13 +908,11 @@ bool auth_handle_mouse_click(int x, int y)
     return true;
 }
 
-static uint32_t blend_channel(uint32_t start, uint32_t end, uint32_t step,
-                              uint32_t steps, uint32_t shift)
+static uint32_t blend_channel(uint32_t start, uint32_t end, uint32_t step, uint32_t steps, uint32_t shift)
 {
     const int32_t first = static_cast<int32_t>((start >> shift) & 0xFF);
     const int32_t last = static_cast<int32_t>((end >> shift) & 0xFF);
-    return static_cast<uint32_t>(first + ((last - first) * static_cast<int32_t>(step)) /
-                                          static_cast<int32_t>(steps));
+    return static_cast<uint32_t>(first + ((last - first) * static_cast<int32_t>(step)) / static_cast<int32_t>(steps));
 }
 
 static void draw_outline(int x, int y, int width, int height, uint32_t color)
@@ -1005,14 +951,7 @@ void auth_draw_screen()
     const int background_bands = 48;
     for (int band = 0; band < background_bands; ++band)
     {
-        const uint32_t color =
-            (0xFFu << 24) |
-            (blend_channel(background_top, background_bottom, band,
-                           background_bands - 1, 16) << 16) |
-            (blend_channel(background_top, background_bottom, band,
-                           background_bands - 1, 8) << 8) |
-            blend_channel(background_top, background_bottom, band,
-                           background_bands - 1, 0);
+        const uint32_t color = (0xFFu << 24) | (blend_channel(background_top, background_bottom, band, background_bands - 1, 16) << 16) | (blend_channel(background_top, background_bottom, band, background_bands - 1, 8) << 8) | blend_channel(background_top, background_bottom, band, background_bands - 1, 0);
         const int y1 = height * band / background_bands;
         const int y2 = height * (band + 1) / background_bands;
         Gpu::fill_block(0, y1, color, width, y2 - y1 + 1);
@@ -1029,18 +968,13 @@ void auth_draw_screen()
     {
         const uint32_t hero_top = 0xFF142437;
         const uint32_t hero_bottom = 0xFF0D1726;
-        const uint32_t color =
-            (0xFFu << 24) |
-            (blend_channel(hero_top, hero_bottom, band, hero_bands - 1, 16) << 16) |
-            (blend_channel(hero_top, hero_bottom, band, hero_bands - 1, 8) << 8) |
-            blend_channel(hero_top, hero_bottom, band, hero_bands - 1, 0);
+        const uint32_t color = (0xFFu << 24) | (blend_channel(hero_top, hero_bottom, band, hero_bands - 1, 16) << 16) | (blend_channel(hero_top, hero_bottom, band, hero_bands - 1, 8) << 8) | blend_channel(hero_top, hero_bottom, band, hero_bands - 1, 0);
         const int y1 = hero_y + hero_height * band / hero_bands;
         const int y2 = hero_y + hero_height * (band + 1) / hero_bands;
         Gpu::fill_block(hero_x, y1, color, hero_width - 1, y2 - y1 + 1);
     }
 
-    Gpu::fill_block(left + hero_width - 3, top + 28, 0xFF45C4B0, 3,
-                    panel_height - 56);
+    Gpu::fill_block(left + hero_width - 3, top + 28, 0xFF45C4B0, 3, panel_height - 56);
     if (hero_width > 150)
     {
         Gpu::fill_block(left + 16, top + 32, 0xFF45C4B0, 34, 34);
@@ -1061,15 +995,13 @@ void auth_draw_screen()
     if (screen_mode == SCREEN_NEW_PASSWORD)
     {
         title = password_action == PASSWORD_ACTION_ADD_USER ? "Create account" : "New password";
-        subtitle = password_action == PASSWORD_ACTION_ADD_USER
-            ? "Choose a password for this account." : "Choose a strong new password.";
+        subtitle = password_action == PASSWORD_ACTION_ADD_USER ? "Choose a password for this account." : "Choose a strong new password.";
         field_label = "NEW PASSWORD";
         button_label = "CONTINUE";
     }
     else if (screen_mode == SCREEN_CONFIRM_PASSWORD)
     {
-        title = password_action == PASSWORD_ACTION_ADD_USER
-            ? "Confirm account" : "Confirm password";
+        title = password_action == PASSWORD_ACTION_ADD_USER ? "Confirm account" : "Confirm password";
         subtitle = "Enter the same password again to confirm.";
         field_label = "CONFIRM PASSWORD";
         button_label = "SAVE PASSWORD";
@@ -1091,25 +1023,21 @@ void auth_draw_screen()
     const int helper_y = top + (compact ? 216 : 277);
     const int footer_y = top + panel_height - 18;
 
-    Gpu::print_at8_clipped("ACCOUNT ACCESS", form_left, top + (compact ? 20 : 34),
-                           0xFF568A8A, form_left, form_right);
+    Gpu::print_at8_clipped("ACCOUNT ACCESS", form_left, top + (compact ? 20 : 34), 0xFF568A8A, form_left, form_right);
     if (compact || panel_width < 440)
     {
-        Gpu::print_at8_clipped(title, form_left, top + (compact ? 46 : 66), 0xFF182333,
-                               form_left, form_right);
+        Gpu::print_at8_clipped(title, form_left, top + (compact ? 46 : 66), 0xFF182333, form_left, form_right);
     }
     else
     {
         Gpu::print_at16(title, form_left, top + 62, 0xFF182333);
     }
-    Gpu::print_at8_clipped(subtitle, form_left, top + (compact ? 68 : 92), 0xFF65758A,
-                           form_left, form_right);
+    Gpu::print_at8_clipped(subtitle, form_left, top + (compact ? 68 : 92), 0xFF65758A, form_left, form_right);
 
     if (screen_mode == SCREEN_LOGIN_PASSWORD)
     {
         Gpu::print_at8("USER", form_left, top + (compact ? 91 : 120), 0xFF8290A2);
-        Gpu::print_at8_clipped(input, form_left + 40, top + (compact ? 91 : 120), 0xFF243247,
-                               form_left + 40, form_right);
+        Gpu::print_at8_clipped(input, form_left + 40, top + (compact ? 91 : 120), 0xFF243247, form_left + 40, form_right);
     }
     Gpu::print_at8(field_label, form_left, label_y, 0xFF56677D);
     Gpu::fill_block(form_left, field_y, 0xFFE1E7EF, form_width, field_height);
@@ -1118,16 +1046,13 @@ void auth_draw_screen()
 
     if (screen_mode == SCREEN_LOGIN_USERNAME)
     {
-        Gpu::print_at8_clipped(input, form_left + 12, field_y + (compact ? 12 : 15), 0xFF243247,
-                               form_left + 12, form_right - 8);
+        Gpu::print_at8_clipped(input, form_left + 12, field_y + (compact ? 12 : 15), 0xFF243247, form_left + 12, form_right - 8);
     }
     else
     {
         char masked[PASSWORD_CAPACITY];
         size_t length = strlen(password_input);
-        const size_t visible_capacity = form_width > 28
-            ? static_cast<size_t>((form_width - 28) / 8)
-            : 1;
+        const size_t visible_capacity = form_width > 28 ? static_cast<size_t>((form_width - 28) / 8) : 1;
         if (length > visible_capacity)
         {
             length = visible_capacity;
@@ -1147,14 +1072,8 @@ void auth_draw_screen()
 
     Gpu::fill_block(form_left, button_y, 0xFF167F7A, form_width, button_height);
     Gpu::fill_block(form_left, button_y, 0xFF219A8D, form_width, 3);
-    Gpu::print_at8_clipped(button_label, form_left + 14,
-                           button_y + (compact ? 13 : 15), 0xFFFFFFFF,
-                           form_left + 14, form_right);
-    Gpu::print_at8_clipped(status_message[0] != '\0'
-                               ? status_message : "Press Enter to continue",
-                           form_left, helper_y,
-                           status_message[0] != '\0' ? 0xFFB04450 : 0xFF7C899A,
-                           form_left, form_right);
+    Gpu::print_at8_clipped(button_label, form_left + 14, button_y + (compact ? 13 : 15), 0xFFFFFFFF, form_left + 14, form_right);
+    Gpu::print_at8_clipped(status_message[0] != '\0' ? status_message : "Press Enter to continue", form_left, helper_y, status_message[0] != '\0' ? 0xFFB04450 : 0xFF7C899A, form_left, form_right);
 }
 
 bool auth_execute_command(const char* command, const char* args)
@@ -1250,8 +1169,7 @@ bool auth_execute_command(const char* command, const char* args)
     {
         char name[USERNAME_CAPACITY];
         char extra[2];
-        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) ||
-            !valid_username(name) || extra[0] != '\0')
+        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) || !valid_username(name) || extra[0] != '\0')
         {
             print_usage("su <username>");
             return true;
@@ -1274,8 +1192,7 @@ bool auth_execute_command(const char* command, const char* args)
     {
         char name[USERNAME_CAPACITY];
         char extra[2];
-        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) ||
-            !valid_username(name) || extra[0] != '\0')
+        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) || !valid_username(name) || extra[0] != '\0')
         {
             print_usage("useradd <username>");
             return true;
@@ -1302,8 +1219,7 @@ bool auth_execute_command(const char* command, const char* args)
     {
         char name[USERNAME_CAPACITY];
         char extra[2];
-        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) ||
-            !valid_username(name) || extra[0] != '\0')
+        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) || !valid_username(name) || extra[0] != '\0')
         {
             print_usage("userdel <username>");
             return true;
@@ -1332,9 +1248,7 @@ bool auth_execute_command(const char* command, const char* args)
         }
         if (Disk::storage_is_ram() || !clawfs_exists())
         {
-            Gpu::print_error(Disk::storage_is_ram()
-                ? "A persistent disk is required to change accounts.\n"
-                : "Account changes require a formatted ClawFS disk.\n");
+            Gpu::print_error(Disk::storage_is_ram() ? "A persistent disk is required to change accounts.\n" : "Account changes require a formatted ClawFS disk.\n");
             return true;
         }
 
@@ -1343,8 +1257,7 @@ bool auth_execute_command(const char* command, const char* args)
         strcpy(previous_auto, automatic_login);
         const int previous_active_index = active_account_index;
 
-        for (uint32_t index = static_cast<uint32_t>(target);
-             index + 1 < account_count; ++index)
+        for (uint32_t index = static_cast<uint32_t>(target); index + 1 < account_count; ++index)
         {
             accounts[index] = accounts[index + 1];
         }
@@ -1361,8 +1274,7 @@ bool auth_execute_command(const char* command, const char* args)
 
         if (!persist_database())
         {
-            for (uint32_t index = account_count;
-                 index > static_cast<uint32_t>(target); --index)
+            for (uint32_t index = account_count; index > static_cast<uint32_t>(target); --index)
             {
                 accounts[index] = accounts[index - 1];
             }
@@ -1382,8 +1294,7 @@ bool auth_execute_command(const char* command, const char* args)
     {
         char name[USERNAME_CAPACITY];
         char extra[2];
-        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) ||
-            extra[0] != '\0')
+        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) || extra[0] != '\0')
         {
             print_usage("passwd [username]");
             return true;
@@ -1417,8 +1328,7 @@ bool auth_execute_command(const char* command, const char* args)
     {
         char old_name[USERNAME_CAPACITY];
         char new_name[USERNAME_CAPACITY];
-        if (!parse_arguments(args, old_name, sizeof(old_name), new_name, sizeof(new_name)) ||
-            !valid_username(old_name) || !valid_username(new_name))
+        if (!parse_arguments(args, old_name, sizeof(old_name), new_name, sizeof(new_name)) || !valid_username(old_name) || !valid_username(new_name))
         {
             print_usage("usermod <current-name> <new-name>");
             return true;
@@ -1448,9 +1358,7 @@ bool auth_execute_command(const char* command, const char* args)
         }
         if (!storage_available)
         {
-            Gpu::print_error(Disk::storage_is_ram()
-                ? "A persistent disk is required to change accounts.\n"
-                : "Account changes require a formatted ClawFS disk.\n");
+            Gpu::print_error(Disk::storage_is_ram() ? "A persistent disk is required to change accounts.\n" : "Account changes require a formatted ClawFS disk.\n");
             return true;
         }
 

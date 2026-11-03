@@ -512,7 +512,6 @@ static bool test_ram_range(uint32_t start, uint32_t end, uint32_t& error_address
         return true;
     }
 
-
     volatile uint32_t* memory = reinterpret_cast<volatile uint32_t*>(static_cast<uintptr_t>(start));
     uint32_t words = (end - start) / 4;
 

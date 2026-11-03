@@ -11,7 +11,7 @@ static void strcpy(char* dest, const char* src)
 
 static void strcat(char* dest, const char* src)
 {
-    while (*dest) dest++;
+    while (*dest) dest++; 
     while ((*dest++ = *src++));
 }
 
@@ -28,14 +28,21 @@ static char* strrchr(const char* str, int ch)
 
 static bool strcmp(const char* s1, const char* s2)
 {
-    while (*s1 && *s1 == *s2) { s1++; s2++; }
+    while (*s1 && *s1 == *s2) 
+    { 
+        s1++; 
+        s2++; 
+    }
     return *s1 == *s2;
 }
 
 static bool is_flag(const char* arg, const char* flag)
 {
     int i = 0;
-    while (flag[i] && arg[i] == flag[i]) i++;
+    while (flag[i] && arg[i] == flag[i]) 
+    {
+        i++;
+    }
     return flag[i] == '\0' && arg[i] == '\0';
 }
 
@@ -55,7 +62,10 @@ static void split_path(const char* path, char* parent, char* filename)
     else
     {
         int len = last_slash - path;
-        for (int i = 0; i < len; i++) parent[i] = path[i];
+        for (int i = 0; i < len; i++) 
+        {
+            parent[i] = path[i];
+        }
         parent[len] = '\0';
         strcpy(filename, last_slash + 1);
     }
