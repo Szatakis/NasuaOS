@@ -655,6 +655,11 @@ static void napp_api_set_print_redirect(void (*callback)(char))
     napp_print_redirect_cb = callback;
 }
 
+static const char* napp_api_get_username()
+{
+    return user_name;
+}
+
 static int32_t napp_api_http_get(const char* hostname, uint16_t port, const char* path,
                                  char* response, uint32_t response_capacity, uint32_t timeout_ms)
 {
@@ -704,7 +709,8 @@ static napp_api kernel_napp_api =
      napp_api_deallocate,
      napp_api_clawfs_get_file_size,
      napp_api_clawfs_read_file_range,
-     napp_api_enable_fpu
+     napp_api_enable_fpu,
+     napp_api_get_username
 };
 
 static bool remember_image(const char* name, uint32_t process_id, void* image)

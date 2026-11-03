@@ -687,6 +687,7 @@ namespace
         clear_secret(pending_password, sizeof(pending_password));
         Gpu::print_info(status_message);
         Gpu::print("\n");
+        Gpu::print_cmd();
     }
 
     void finish_password_entry()

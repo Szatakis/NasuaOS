@@ -33,6 +33,7 @@ The file resolver determines the source:
 | `rm`       | Remove file or directory      | `--name`, `--type`            |
 | `tree`     | Display directory tree        | `[path]`                      |
 | `wc`       | Count lines, words, and bytes | `--file <file>` (repeatable)  |
+| `whoami`   | Display the current username  | No arguments                  |
 
 ## Help System
 
@@ -147,6 +148,14 @@ Print the current working directory.
 
 ```
 pwd
+```
+
+### whoami
+
+Print the username of the currently active account.
+
+```
+whoami
 ```
 
 ### rm

@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 8
+#define NAPP_ABI_VERSION 9
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
@@ -195,6 +195,9 @@ struct napp_api
     bool (*clawfs_read_file_range)(const char* path, uint32_t offset,
                                    void* buffer, uint32_t length);
     bool (*enable_fpu)(void);
+
+    // ABI 9 addition.
+    const char* (*get_username)(void);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);
