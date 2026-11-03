@@ -1021,7 +1021,6 @@ void auth_draw_screen()
     const int button_y = top + (compact ? 174 : 224);
     const int button_height = compact ? 34 : 38;
     const int helper_y = top + (compact ? 216 : 277);
-    const int footer_y = top + panel_height - 18;
 
     Gpu::print_at8_clipped("ACCOUNT ACCESS", form_left, top + (compact ? 20 : 34), 0xFF568A8A, form_left, form_right);
     if (compact || panel_width < 440)
