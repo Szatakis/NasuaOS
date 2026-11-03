@@ -67,6 +67,7 @@ namespace
     password_action_t password_action = PASSWORD_ACTION_NONE;
     bool switching_user = false;
     bool current_user_valid = false;
+    int active_account_index = -1;
 
     void clear_secret(char* secret, size_t length)
     {
@@ -147,7 +148,22 @@ namespace
 
     int current_account()
     {
-        return current_user_valid ? find_account(user_name) : -1;
+        if (!current_user_valid || active_account_index < 0 ||
+            static_cast<uint32_t>(active_account_index) >= account_count)
+        {
+            return -1;
+        }
+
+        return strcmp(user_name, accounts[active_account_index].name) == 0
+            ? active_account_index : -1;
+    }
+
+    bool is_administrator(int index)
+    {
+        return index >= 0 &&
+               static_cast<uint32_t>(index) < account_count &&
+               accounts[index].administrator &&
+               strcmp(accounts[index].name, "root") == 0;
     }
 
     void generate_salt(uint8_t salt[SALT_SIZE])
@@ -511,6 +527,7 @@ namespace
     void apply_account_session(uint32_t index, bool reset_shell)
     {
         const bool switching_from_existing_session = current_user_valid;
+        active_account_index = static_cast<int>(index);
         strcpy(user_name, accounts[index].name);
         current_user_valid = true;
         strcpy(current_path, "/home");
@@ -588,7 +605,7 @@ namespace
     bool require_admin()
     {
         const int index = current_account();
-        if (index < 0 || !accounts[index].administrator)
+        if (!is_administrator(index))
         {
             Gpu::print_error("Administrator privileges required.\n");
             return false;
@@ -623,6 +640,17 @@ namespace
         account_t previous_account = {};
         if (adding_user)
         {
+            const int current = current_account();
+            if (!is_administrator(current))
+            {
+                Gpu::print_error("Administrator privileges required.\n");
+                password_action = PASSWORD_ACTION_NONE;
+                screen_mode = SCREEN_HIDDEN;
+                clear_secret(password_input, sizeof(password_input));
+                clear_secret(pending_password, sizeof(pending_password));
+                Gpu::print_cmd();
+                return;
+            }
             if (target_index >= 0)
             {
                 set_status("That account already exists.");
@@ -687,6 +715,10 @@ namespace
         clear_secret(pending_password, sizeof(pending_password));
         Gpu::print_info(status_message);
         Gpu::print("\n");
+        if (current_account() >= 0)
+        {
+            strcpy(user_name, accounts[current_account()].name);
+        }
         Gpu::print_cmd();
     }
 
@@ -737,6 +769,7 @@ bool auth_init()
     storage_available = clawfs_available && !Disk::storage_is_ram();
     database_valid = true;
     current_user_valid = false;
+    active_account_index = -1;
     switching_user = false;
     password_action = PASSWORD_ACTION_NONE;
 
@@ -815,7 +848,7 @@ bool auth_init()
         screen_mode = SCREEN_LOGIN_USERNAME;
         return false;
     }
-    apply_account_session(static_cast<uint32_t>(automatic_index), false);
+    apply_account_session(static_cast<uint32_t>(automatic_index), true);
     return true;
 }
 
@@ -1126,6 +1159,37 @@ void auth_draw_screen()
 
 bool auth_execute_command(const char* command, const char* args)
 {
+    if (strcmp(command, "users") == 0)
+    {
+        while (*args == ' ')
+        {
+            ++args;
+        }
+        if (*args != '\0')
+        {
+            print_usage("users");
+            return true;
+        }
+        if (current_account() < 0)
+        {
+            Gpu::print_error("No authenticated user.\n");
+            return true;
+        }
+
+        Gpu::print_info("User accounts:\n");
+        for (uint32_t index = 0; index < account_count; ++index)
+        {
+            Gpu::print(" - ");
+            Gpu::print(accounts[index].name);
+            if (is_administrator(static_cast<int>(index)))
+            {
+                Gpu::print(" (administrator)");
+            }
+            Gpu::print("\n");
+        }
+        return true;
+    }
+
     if (strcmp(command, "login") == 0)
     {
         if (strcmp(args, "--on") == 0)
@@ -1234,6 +1298,86 @@ bool auth_execute_command(const char* command, const char* args)
         return true;
     }
 
+    if (strcmp(command, "userdel") == 0)
+    {
+        char name[USERNAME_CAPACITY];
+        char extra[2];
+        if (!parse_arguments(args, name, sizeof(name), extra, sizeof(extra)) ||
+            !valid_username(name) || extra[0] != '\0')
+        {
+            print_usage("userdel <username>");
+            return true;
+        }
+        if (!require_admin())
+        {
+            return true;
+        }
+
+        const int target = find_account(name);
+        if (target < 0)
+        {
+            Gpu::print_error("Unknown account.\n");
+            return true;
+        }
+        if (strcmp(accounts[target].name, "root") == 0)
+        {
+            Gpu::print_error("The root account cannot be deleted.\n");
+            return true;
+        }
+        const int current = current_account();
+        if (target == current)
+        {
+            Gpu::print_error("You cannot delete the currently logged-in account.\n");
+            return true;
+        }
+        if (Disk::storage_is_ram() || !clawfs_exists())
+        {
+            Gpu::print_error(Disk::storage_is_ram()
+                ? "A persistent disk is required to change accounts.\n"
+                : "Account changes require a formatted ClawFS disk.\n");
+            return true;
+        }
+
+        account_t removed_account = accounts[target];
+        char previous_auto[USERNAME_CAPACITY];
+        strcpy(previous_auto, automatic_login);
+        const int previous_active_index = active_account_index;
+
+        for (uint32_t index = static_cast<uint32_t>(target);
+             index + 1 < account_count; ++index)
+        {
+            accounts[index] = accounts[index + 1];
+        }
+        --account_count;
+        accounts[account_count] = {};
+        if (strcmp(automatic_login, name) == 0)
+        {
+            strcpy(automatic_login, "root");
+        }
+        if (target < active_account_index)
+        {
+            --active_account_index;
+        }
+
+        if (!persist_database())
+        {
+            for (uint32_t index = account_count;
+                 index > static_cast<uint32_t>(target); --index)
+            {
+                accounts[index] = accounts[index - 1];
+            }
+            accounts[target] = removed_account;
+            ++account_count;
+            strcpy(automatic_login, previous_auto);
+            active_account_index = previous_active_index;
+            print_save_error("Could not save account changes.");
+            return true;
+        }
+
+        Gpu::print_info("Account deleted successfully.\n");
+        return true;
+    }
+
     if (strcmp(command, "passwd") == 0)
     {
         char name[USERNAME_CAPACITY];
@@ -1260,7 +1404,7 @@ bool auth_execute_command(const char* command, const char* args)
             Gpu::print_error("Unknown account.\n");
             return true;
         }
-        if (!accounts[current].administrator && target != current)
+        if (!is_administrator(current) && target != current)
         {
             Gpu::print_error("You may only change your own password.\n");
             return true;
@@ -1287,7 +1431,7 @@ bool auth_execute_command(const char* command, const char* args)
             Gpu::print_error("Unknown account.\n");
             return true;
         }
-        if (!accounts[current].administrator && target != current)
+        if (!is_administrator(current) && target != current)
         {
             Gpu::print_error("You may only rename your own account.\n");
             return true;

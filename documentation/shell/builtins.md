@@ -212,6 +212,7 @@ not yet isolate files or restrict other shell commands by user.
 ```
 passwd [username]
 useradd <username>
+userdel <username>
 usermod <old-name> <new-name>
 su <username>
 login
@@ -221,11 +222,20 @@ login --off
 
 `passwd` changes your password, or an administrator can name another account.
 `useradd` is administrator-only and asks for the new password twice.
+`userdel` is administrator-only; it cannot delete `root` or the currently
+logged-in account. If it deletes the automatic-login account, automatic login
+switches to `root`.
 `usermod` lets a user rename their own account; administrators can rename any
 account. `su` opens the login prompt for the selected account. `login` asks you
 to authenticate again. `login --on` requires a login at the next boot, while
 `login --off` selects the currently logged-in account for automatic login on
 the next boot. These two settings require administrator privileges.
+
+List account names with `users`. The command does not display password data.
+
+```
+users
+```
 
 If ClawFS has not been formatted, the default accounts still work for the
 current boot, but account changes cannot be saved. Format ClawFS before
