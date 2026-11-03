@@ -1,6 +1,7 @@
 #include <napp.h>
 
-NAPP_APPLICATION("wc", "Count lines, words, and bytes in files", false);
+NAPP_APPLICATION("wc", "Count lines, words, and bytes in files", false,
+                 "   --file <file>                     - (Required, repeatable) Specify a file to count\n");
 
 namespace
 {

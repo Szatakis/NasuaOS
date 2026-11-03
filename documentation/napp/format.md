@@ -9,29 +9,34 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 | Offset | Size | Field              | Description                                             |
 |--------|------|--------------------|---------------------------------------------------------|
 | 0x00   | 4    | magic              | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NAPP")             |
-| 0x04   | 4    | abi_version        | `6` (current ABI version)                               |
-| 0x08   | 4    | header_size        | Size of the header (97 bytes with `show_in_start_menu`) |
+| 0x04   | 4    | abi_version        | `8` (current ABI version)                               |
+| 0x08   | 4    | header_size        | Aligned header size (384 bytes in ABI 8)                |
 | 0x0C   | 4    | entry_offset       | Offset from start of file to `_start` function          |
 | 0x10   | 32   | name               | Null-terminated application name                        |
 | 0x30   | 48   | description        | Null-terminated short description (shown in `help`)     |
 | 0x60   | 1    | show_in_start_menu | Whether the app appears in the Start Menu               |
+| 0x61   | 256  | help_text          | Optional command usage and argument details             |
 
-**Total header size**: 97 bytes (was 96; the `show_in_start_menu` field was added)
+The unaligned ABI 8 header is 353 bytes; `header_size` and `entry_offset` are
+rounded up to the next 64-byte boundary. Older ABI 6/7 binaries remain
+supported and do not contain `help_text`.
 
 ```cpp
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
+#define NAPP_HELP_TEXT_LENGTH 256
 #define NAPP_HEADER_SIZE 96  // Legacy minimum (without show_in_start_menu)
 
 struct napp_header
 {
     uint32_t magic;                    // 0x5050414E
     uint32_t abi_version;              // 4
-    uint32_t header_size;              // sizeof(napp_header) = 97
+    uint32_t header_size;              // Aligned size of the header (384 in ABI 8)
     uint32_t entry_offset;
     char     name[NAPP_NAME_LENGTH];   // 32
     char     description[NAPP_DESCRIPTION_LENGTH];  // 48
     bool     show_in_start_menu;       // 1 byte, present when header_size > 96
+    char     help_text[NAPP_HELP_TEXT_LENGTH]; // ABI 8 optional help details
 } __attribute__((packed));
 ```
 
@@ -42,7 +47,7 @@ Start Menu.  When `true`, the application icon and name are shown in the Start
 Menu.  When `false`, the application can still be launched via `bootapp --app
 <name>` but will not appear in the Start Menu.
 
-This field is only present when `header_size > NAPP_HEADER_SIZE` (96).  Older
+This field was added in ABI 7 and is only present when `header_size > NAPP_HEADER_SIZE` (96). Older
 binaries compiled without this field default to `true`, so they remain visible
 in the Start Menu.
 
@@ -71,11 +76,13 @@ The loader checks this magic value to verify the file is a valid NAPP binary. If
 ## ABI Version
 
 ```cpp
-#define NAPP_ABI_VERSION 6
+#define NAPP_ABI_VERSION 8
 ```
 
-The current NAPP ABI version is 6. The loader validates this field and rejects
-binaries with an incompatible version. ABI version 4 added the `http_get`
+The current NAPP ABI version is 8. The loader validates this field and rejects
+binaries with an incompatible version. ABI version 8 added optional command
+help text to the header. ABI version 7 added the Start Menu visibility field.
+ABI version 4 added the `http_get`
 service for plain HTTP requests over the kernel's DNS and TCP network stack.
 ABI version 5 added complete-file ClawFS read and write services. ABI version 6
 added the `https_get` service with TLS 1.2 and certificate verification.
@@ -148,12 +155,21 @@ All NAPP applications declare their name using the `NAPP_APPLICATION` macro:
 NAPP_APPLICATION("my_app", "Short description of the app", true);
 ```
 
-The macro takes three arguments:
+The optional fourth argument contains command usage and argument descriptions.
+For example:
+
+```cpp
+NAPP_APPLICATION("cat", "Display the contents of one or more files", false,
+                 "    --file <filename> - File to display\n");
+```
+
+The macro takes these arguments:
 - **`app_name`** — The application name (max 32 chars)
 - **`app_description`** — A short description shown in the help system (max 48 chars)
 - **`app_show_in_menu`** — Whether the application appears in the Start Menu (`true` for GUI apps shown in the menu, `false` for console/utility apps and games)
+- **`app_help_text`** — Optional command usage and argument details (max 255 chars); read from the NAPP header by shell help
 
-This macro sets up the `_napp_name` symbol used by the loader. The name should match the directory and binary name in `/bin`.
+The macro emits the NAPP header and declares the application entry point. The name should match the directory and binary name in `/bin`.
 
 ## Color Constants
 

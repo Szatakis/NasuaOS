@@ -1,6 +1,8 @@
 #include <napp.h>
 
-NAPP_APPLICATION("mv", "Move or rename a file or directory", false);
+NAPP_APPLICATION("mv", "Move a file or directory", false,
+                 "   --source <source>                - (Required) Source path\n"
+                 "   --destination <destination>      - (Required) Destination path\n");
 
 static void strcpy(char* dest, const char* src)
 {

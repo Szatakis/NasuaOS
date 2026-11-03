@@ -1,6 +1,8 @@
 #include <napp.h>
 
-NAPP_APPLICATION("rm", "Remove a file or an empty directory", false);
+NAPP_APPLICATION("rm", "Remove file or directory", false,
+                 "   --name <name>                    - (Required) Name of the item to remove\n"
+                 "   --type <file|dir>                - (Required) Specify if it is a file or directory\n");
 
 static bool strcmp(const char* s1, const char* s2)
 {

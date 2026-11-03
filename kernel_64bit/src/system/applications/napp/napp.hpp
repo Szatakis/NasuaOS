@@ -40,10 +40,12 @@ bool napp_exists_path(const char* path);
 bool napp_run(const char* name, int* exit_code);
 
 // Lists flat-binary commands found in the rootfs /sbin folder.
-// Optionally fills descriptions[] with each command's description (read from
-// the NAPP header). If a binary lacks a description, the default
-// "No description available." is written.
-uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], char descriptions[][NAPP_MAX_NAME], uint32_t max_names);
+// Fills descriptions[] and help_texts[] from each command's NAPP header.
+// Older binaries without help text receive an empty help_texts[] entry.
+uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME],
+                        char descriptions[][NAPP_MAX_NAME],
+                        char help_texts[][NAPP_HELP_TEXT_LENGTH],
+                        uint32_t max_names);
 
 // Path sync between shell's current_path and napp runtime
 const char* napp_get_current_path(void);

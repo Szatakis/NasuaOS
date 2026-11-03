@@ -1,6 +1,7 @@
 #include <napp.h>
 
-NAPP_APPLICATION("download", "Download files from HTTPS repositories", false);
+NAPP_APPLICATION("download", "Download files from an HTTPS repository", false,
+                 "   --link https://HOST/PATH ...     - List or download catalog files\n");
 
 namespace
 {

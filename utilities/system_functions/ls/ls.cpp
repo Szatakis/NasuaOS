@@ -1,6 +1,7 @@
 #include <napp.h>
 
-NAPP_APPLICATION("ls", "List files and directories in a path", false);
+NAPP_APPLICATION("ls", "List files and directories in current path", false,
+                 "   --file <path>                    - (Optional) List contents of specified path\n");
 
 static void strcpy(char* dest, const char* src)
 {

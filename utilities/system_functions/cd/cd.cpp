@@ -1,6 +1,7 @@
 #include <napp.h>
 
-NAPP_APPLICATION("cd", "Change the current working directory", false);
+NAPP_APPLICATION("cd", "Change current directory", false,
+                 "   [path]                           - (Optional) Path to change to (default: /home)\n");
 
 static void strcpy(char* dest, const char* src)
 {

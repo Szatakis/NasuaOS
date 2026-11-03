@@ -10,10 +10,11 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 7
+#define NAPP_ABI_VERSION 8
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
+#define NAPP_HELP_TEXT_LENGTH 256
 #define NAPP_HEADER_SIZE 96
 #define NAPP_ALIGNED_HEADER_SIZE ((sizeof(napp_header) + 63U) & ~63U)
 
@@ -31,6 +32,9 @@ struct napp_header
     // Present only when header_size > NAPP_HEADER_SIZE; older binaries
     // default to true.
     bool show_in_start_menu;
+
+    // Optional command usage and argument details, used by shell help.
+    char help_text[NAPP_HELP_TEXT_LENGTH] = {};
 } __attribute__((packed));
 
 // Colors of the system theme, usable by graphical applications.
@@ -201,7 +205,7 @@ typedef int (*napp_entry)(const struct napp_api* api);
 // The third parameter controls whether the application appears in the
 // Start Menu. Use false for utility/console apps and games that should
 // only be launched on demand.
-#define NAPP_APPLICATION(app_name, app_description, app_show_in_menu)       \
+#define NAPP_APPLICATION(app_name, app_description, app_show_in_menu, ...)  \
     extern "C" __attribute__((section(".napp_entry"), used))                \
     int _start(const napp_api* api);                                        \
                                                                             \
@@ -214,5 +218,5 @@ typedef int (*napp_entry)(const struct napp_api* api);
         NAPP_ALIGNED_HEADER_SIZE,                                           \
         app_name,                                                           \
         app_description,                                                    \
-        app_show_in_menu                                                    \
+        app_show_in_menu __VA_OPT__(,) __VA_ARGS__                          \
     }

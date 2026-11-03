@@ -33,9 +33,11 @@ static bool napp_abi_supported(uint32_t version)
 static uint32_t napp_entry_offset(const napp_header* header)
 {
     // ABI 6 recorded the struct size even though the linker padded it to 64 bytes.
-    if (header->abi_version == NAPP_ABI_MIN_VERSION && header->header_size == sizeof(napp_header) && header->entry_offset == header->header_size)
+    if (header->abi_version == NAPP_ABI_MIN_VERSION &&
+        header->header_size == NAPP_HEADER_SIZE + sizeof(bool) &&
+        header->entry_offset == header->header_size)
     {
-        return NAPP_ALIGNED_HEADER_SIZE;
+        return (NAPP_HEADER_SIZE + sizeof(bool) + 63U) & ~63U;
     }
     return header->entry_offset;
 }
@@ -1337,10 +1339,32 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
 
 #define NAPP_SBIN_DEFAULT_DESC "No description available."
 
-// Read the NAPP header description from a file on the FAT rootfs.
-// Returns true when a non-empty description was extracted, false otherwise.
-static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint32_t desc_size)
+static void copy_napp_text(char* destination, uint32_t destination_size,
+                           const char* source, uint32_t source_size)
 {
+    if (destination_size == 0)
+    {
+        return;
+    }
+
+    uint32_t i = 0;
+    while (i + 1 < destination_size && i < source_size && source[i] != '\0')
+    {
+        destination[i] = source[i];
+        i++;
+    }
+    destination[i] = '\0';
+}
+
+// Read the NAPP description and optional command help text from the FAT rootfs.
+static bool read_sbin_metadata_fat(const char* path, char* desc_buffer, uint32_t desc_size,
+                                   char* help_buffer, uint32_t help_size)
+{
+    if (help_size > 0)
+    {
+        help_buffer[0] = '\0';
+    }
+
     fat_entry_info info;
     if (!fat_stat(&rootfs_volume, path, &info) || info.directory)
     {
@@ -1366,15 +1390,15 @@ static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint3
     {
         const napp_header* h = (const napp_header*)image;
 
-        if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) && h->header_size >= NAPP_HEADER_SIZE && h->description[0] != '\0')
+        if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) &&
+            h->header_size >= NAPP_HEADER_SIZE && h->header_size <= read_size)
         {
-            uint32_t i = 0;
-            while (h->description[i] && i < desc_size - 1)
+            copy_napp_text(desc_buffer, desc_size, h->description, sizeof(h->description));
+            if (h->abi_version >= 8 && h->header_size >= sizeof(napp_header) &&
+                read_size >= sizeof(napp_header))
             {
-                desc_buffer[i] = h->description[i];
-                i++;
+                copy_napp_text(help_buffer, help_size, h->help_text, sizeof(h->help_text));
             }
-            desc_buffer[i] = '\0';
             found = true;
         }
     }
@@ -1383,10 +1407,15 @@ static bool read_sbin_description_fat(const char* path, char* desc_buffer, uint3
     return found;
 }
 
-// Read the NAPP header description from a ClawFS file stored as disk sectors.
-// Returns true when a non-empty description was extracted, false otherwise.
-static bool read_sbin_description_clawfs(uint32_t data_sector, char* desc_buffer, uint32_t desc_size)
+// Read NAPP command metadata from a ClawFS file stored in its first sector.
+static bool read_sbin_metadata_clawfs(uint32_t data_sector, char* desc_buffer, uint32_t desc_size,
+                                      char* help_buffer, uint32_t help_size)
 {
+    if (help_size > 0)
+    {
+        help_buffer[0] = '\0';
+    }
+
     uint8_t sector_buf[512];
 
     if (!Disk::read_sector(data_sector, sector_buf))
@@ -1396,24 +1425,27 @@ static bool read_sbin_description_clawfs(uint32_t data_sector, char* desc_buffer
 
     const napp_header* h = (const napp_header*)sector_buf;
 
-    if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) && h->header_size >= NAPP_HEADER_SIZE && h->description[0] != '\0')
+    if (h->magic == NAPP_MAGIC && napp_abi_supported(h->abi_version) &&
+        h->header_size >= NAPP_HEADER_SIZE && h->header_size <= sizeof(sector_buf))
     {
-        uint32_t i = 0;
-        while (h->description[i] && i < desc_size - 1)
+        copy_napp_text(desc_buffer, desc_size, h->description, sizeof(h->description));
+        if (h->abi_version >= 8 && h->header_size >= sizeof(napp_header))
         {
-            desc_buffer[i] = h->description[i];
-            i++;
+            copy_napp_text(help_buffer, help_size, h->help_text, sizeof(h->help_text));
         }
-        desc_buffer[i] = '\0';
         return true;
     }
 
     return false;
 }
 
-uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], char descriptions[][NAPP_MAX_NAME], uint32_t max_names)
+uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME],
+                        char descriptions[][NAPP_MAX_NAME],
+                        char help_texts[][NAPP_HELP_TEXT_LENGTH],
+                        uint32_t max_names)
 {
-    if (!rootfs_mounted || names == nullptr || descriptions == nullptr || max_names == 0)
+    if (!rootfs_mounted || names == nullptr || descriptions == nullptr ||
+        help_texts == nullptr || max_names == 0)
     {
         return 0;
     }
@@ -1445,15 +1477,18 @@ uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], char descriptions[][NAPP_MA
         }
         names[found][j] = '\0';
 
-        // Read description from the NAPP header on the FAT rootfs
+        // Read command metadata from the NAPP header on the FAT rootfs
         char sbin_path[64];
         strcpy(sbin_path, NAPP_SBIN_DIRECTORY);
         strcat(sbin_path, "/");
         strcat(sbin_path, files[i].name);
 
-        if (!read_sbin_description_fat(sbin_path, descriptions[found], NAPP_MAX_NAME))
+        if (!read_sbin_metadata_fat(sbin_path, descriptions[found], NAPP_MAX_NAME,
+                                    help_texts[found], NAPP_HELP_TEXT_LENGTH) ||
+            descriptions[found][0] == '\0')
         {
             strcpy(descriptions[found], NAPP_SBIN_DEFAULT_DESC);
+            help_texts[found][0] = '\0';
         }
 
         found++;
@@ -1514,17 +1549,23 @@ uint32_t napp_list_sbin(char names[][NAPP_MAX_NAME], char descriptions[][NAPP_MA
                     }
                     names[found][m] = '\0';
 
-                    // Read description from the NAPP header on ClawFS
-                    if (!read_sbin_description_clawfs(entries[j].data_sector, descriptions[found], NAPP_MAX_NAME))
+                    // Read command metadata from the NAPP header on ClawFS
+                    if (!read_sbin_metadata_clawfs(entries[j].data_sector,
+                                                    descriptions[found], NAPP_MAX_NAME,
+                                                    help_texts[found], NAPP_HELP_TEXT_LENGTH) ||
+                        descriptions[found][0] == '\0')
                     {
                         // Fallback: try reading from the FAT rootfs
                         char fat_path[64];
                         strcpy(fat_path, NAPP_SBIN_DIRECTORY);
                         strcat(fat_path, "/");
                         strcat(fat_path, entries[j].name);
-                        if (!read_sbin_description_fat(fat_path, descriptions[found], NAPP_MAX_NAME))
+                        if (!read_sbin_metadata_fat(fat_path, descriptions[found], NAPP_MAX_NAME,
+                                                     help_texts[found], NAPP_HELP_TEXT_LENGTH) ||
+                            descriptions[found][0] == '\0')
                         {
                             strcpy(descriptions[found], NAPP_SBIN_DEFAULT_DESC);
+                            help_texts[found][0] = '\0';
                         }
                     }
 

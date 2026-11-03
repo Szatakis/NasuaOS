@@ -31,7 +31,98 @@ extern bool debug_mode;
 extern bool safe_mode;
 
 static constexpr uint32_t HELP_COMMANDS_PER_PAGE = 13;
-static constexpr uint32_t HELP_STATIC_PAGES = 10;
+
+struct HelpCommand
+{
+    const char* name;
+    const char* description;
+    const char* details;
+};
+
+static const HelpCommand HELP_COMMANDS[] =
+{
+    {"help", "Show the first page of help", "   --page <number>                  - Show a specific help page\n"},
+    {"info", "Display OS version and hardware info", ""},
+    {"source", "Show link to the OS source code", ""},
+    {"shutdown", "Power off the system safely", ""},
+    {"reboot", "Restart the computer", ""},
+    {"echo", "Print text to the screen or write to file",
+     "   --text <text>                     - (Required) Specify the text to Gpu::print\n"
+     "   --color [0xRRGGBB]                - (Optional) Set custom HEX text color\n"
+     "   --file <file_name.file_ext>       - (Optional) Save the text output into a file\n"},
+    {"asciiart", "Convert text into large ASCII banner",
+     "   --text <string>                  - (Required) Text to transform\n"},
+    {"rand", "Generate a random number within a range",
+     "   --min [value]                     - (Required) Minimum value of the range\n"
+     "   --max [value]                     - (Required) Maximum value of the range\n"},
+    {"touch", "Create a new empty file",
+     "   --file <file_name.file_ext>       - (Required) Name of the file to create\n"},
+    {"mount", "Mount ClawFS overlay for command override", ""},
+    {"unmount", "Unmount ClawFS overlay", ""},
+    {"time", "System clock utility",
+     "   --get                             - (Required 1 of 3) Display current date and time\n"
+     "   --set <DD.MM.YYYY-HH:MM:SS>       - (Required 1 of 3) Set new system date and time\n"
+     "   --info                            - (Required 1 of 3) Display CMOS storage and RTC battery status\n"},
+    {"uptime", "Display system uptime since boot", ""},
+    {"panic", "Trigger kernel panic for debugging", ""},
+    {"resolution", "Display current screen resolution and video mode information", ""},
+    {"logs", "Kernel log management utility",
+     "   --show                           - (Required 1 of 5) Display stored kernel logs from memory\n"
+     "   --clear                          - (Required 1 of 5) Clear kernel log buffer\n"
+     "   --level <INFO|WARN|ERROR|DEBUG>  - (Required 1 of 5) Display only selected level messages\n"
+     "   --subsystem <subsystem_name>     - (Required 1 of 5) Display logs from selected subsystem\n"
+     "   --put <text>                     - (Required 1 of 5) Add custom log message with INFO level\n"},
+    {"bootapp", "Application manager command",
+     "   --app <application_name>         - (Required) Load and execute selected application\n"
+     "   --list                           - List all available applications\n"},
+    {"clear", "Clear the terminal screen", ""},
+    {"uart", "Send data over serial port",
+     "   --text <text>                     - (Required) Text string to transmit via UART\n"},
+    {"format", "Format storage drive",
+     "   --commands                        - Copy system commands from ISO to ClawFS\n"
+     "   --clear                           - Completely wipe the disk without creating the base file structure\n"
+     "   --distclear                       - Completely wipe ClawFS and remove all filesystem data\n"},
+    {"outb", "Write a byte to an I/O port",
+     "   --port [0xHEX]                   - (Required) Specify I/O port address\n"
+     "   --val [0xHEX]                    - (Required) Value byte to write\n"},
+    {"fetch", "Display system summary and ASCII logo", ""},
+    {"debug", "Enable or disable debug mode",
+     "   --on                              - (Required 1 of 2) Enable debug mode\n"
+     "   --off                             - (Required 1 of 2) Disable debug mode\n"},
+    {"beep", "Play a sound through the PC speaker",
+     "   --freq [frequency]                - (Optional) Set beep frequency in Hz\n"
+     "   --dur [time]                      - (Optional) Set beep duration in milliseconds\n"},
+    {"calc", "Perform a basic arithmetic calculation",
+     "   --op <add|sub|mul|div>            - (Required) Select the arithmetic operation\n"
+     "   --num1 [value]                    - (Required) First number\n"
+     "   --num2 [value]                    - (Required) Second number\n"},
+    {"safe_mode", "Enable safe mode for system debugging", ""},
+    {"inb", "Read a byte from an I/O port",
+     "   --port [0xHEX]                   - (Required) Specify I/O port address\n"},
+    {"ip", "Display the current IP address", ""},
+    {"ping", "Send a ping request to an IP address or hostname", 
+     "   --target <address>                - (Required) Specify target IP address or hostname\n"},
+};
+
+static constexpr uint32_t HELP_COMMAND_COUNT = sizeof(HELP_COMMANDS) / sizeof(HELP_COMMANDS[0]);
+
+static void print_help_command(const char* name, const char* description, const char* details)
+{
+    Gpu::print(" -");
+    Gpu::print(name);
+
+    size_t position = strlen(name) + 2;
+    while (position < 37)
+    {
+        Gpu::print(" ");
+        position++;
+    }
+
+    Gpu::print("- ");
+    Gpu::print(description);
+    Gpu::print("\n");
+    Gpu::print(details);
+}
 
 // Build argv array from shell args string (splits by spaces, strips quotes)
 static int build_argv(const char* args, const char** argv, int max_args)
@@ -111,55 +202,41 @@ void execute_command(const char *cmd)
     // Command: help
     if (cmd_name_len == 4 && Memory::memcmp(cmd, "help", 4) == 0) 
     {
-        const char* arg_check = args;
-
-        uint32_t page = 1; // default page
-
+        uint32_t page = 1;
         static char sbin_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
         static char sbin_descs[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
-        uint32_t sbin_count = napp_list_sbin(sbin_names, sbin_descs, NAPP_MAX_APPLICATIONS);
-        uint32_t sbin_pages = (sbin_count + HELP_COMMANDS_PER_PAGE - 1) / HELP_COMMANDS_PER_PAGE;
-
-
-        if (sbin_count > NAPP_MAX_APPLICATIONS)
+        static char sbin_help_texts[NAPP_MAX_APPLICATIONS][NAPP_HELP_TEXT_LENGTH];
+        uint32_t sbin_count = napp_list_sbin(sbin_names, sbin_descs, sbin_help_texts,
+                                             NAPP_MAX_APPLICATIONS);
+        uint32_t total_commands = HELP_COMMAND_COUNT + sbin_count;
+        uint32_t total_pages = (total_commands + HELP_COMMANDS_PER_PAGE - 1) / HELP_COMMANDS_PER_PAGE;
+        if (total_pages == 0)
         {
-            sbin_count = NAPP_MAX_APPLICATIONS;
+            total_pages = 1;
         }
 
-        if (sbin_pages == 0)
-        {
-            sbin_pages = 1;
-        }
-
-        uint32_t total_pages = HELP_STATIC_PAGES + sbin_pages;
-
-        while (*arg_check == ' ') 
+        const char* arg_check = args;
+        while (*arg_check == ' ')
         {
             arg_check++;
         }
 
-        if (*arg_check != '\0') 
+        if (*arg_check != '\0' && Memory::memcmp(arg_check, "--page ", 7) != 0)
         {
-            if (Memory::memcmp(arg_check, "--page ", 7) != 0) 
-            {
-                Gpu::print_error("Syntax error!\n");
-                Gpu::print_info("Usage: help --page [1-");
-                char total_buf[16];
-                itoa(total_pages, total_buf);
-                Gpu::print(total_buf);
-                Gpu::print("]:\n");
-                Gpu::print_cmd();
-                return;
-            }
+            Gpu::print_error("Syntax error!\n");
+            Gpu::print_info("Usage: help --page [1-");
+            char total_buf[16];
+            itoa(total_pages, total_buf);
+            Gpu::print(total_buf);
+            Gpu::print("]:\n");
+            Gpu::print_cmd();
+            return;
         }
 
         const char* page_flag = strstr(args, "--page ");
-
-        if (page_flag) 
+        if (page_flag)
         {
-            const char* page_num = page_flag + 7;
-
-            page = parse_number(page_num);
+            page = parse_number(page_flag + 7);
         }
 
         if (page < 1 || page > total_pages)
@@ -172,255 +249,31 @@ void execute_command(const char *cmd)
             return;
         }
 
-        if (page == 1) 
+        Gpu::print_info("Available commands (Page ");
+        Gpu::print_num8(page);
+        Gpu::print("/");
+        Gpu::print_num8(total_pages);
+        Gpu::print("):\n");
+
+        uint32_t start = (page - 1) * HELP_COMMANDS_PER_PAGE;
+        uint32_t end = start + HELP_COMMANDS_PER_PAGE;
+        if (end > total_commands)
         {
-            Gpu::print_info("Available commands (Page 1/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-            Gpu::print(" See page 11 and above to view commands loaded from /sbin.\n");
-            Gpu::print(" -help                               - Show the first page of help\n");
-            Gpu::print("   --page [1-10]                     - Show specific help page\n");
-            Gpu::print(" -info                               - Display OS version and hardware info\n");
-            Gpu::print(" -source                             - Show link to the OS source code\n");
-            Gpu::print(" -shutdown                           - Power off the system safely\n");
-            Gpu::print(" -reboot                             - Restart the computer\n");
-            Gpu::print(" -echo                               - Print text to the screen or write to file\n");
-            Gpu::print("   --text <text>                     - (Required) Specify the text to Gpu::print\n");
-            Gpu::print("   --color [0xRRGGBB]                - (Optional) Set custom HEX text color\n");
-            Gpu::print("   --file <file_name.file_ext>       - (Optional) Save the text output into a file\n");
-            Gpu::print(" -asciiart                           - Convert text into large ASCII banner\n");
-            Gpu::print("    --text <string>                  - (Required) Text to transform\n");
+            end = total_commands;
         }
 
-        else if (page == 2) 
+        for (uint32_t i = start; i < end; i++)
         {
-            Gpu::print_info("Available commands (Page 2/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-            Gpu::print(" -rand                               - Generate a random number within a range\n");
-            Gpu::print("   --min [value]                     - (Required) Minimum value of the range\n");
-            Gpu::print("   --max [value]                     - (Required) Maximum value of the range\n");
-            Gpu::print(" -ls                                 - List files and directories in current path\n");
-            Gpu::print("    --file <path>                    - (Optional) List contents of specified path\n");
-            Gpu::print(" -touch                              - Create a new empty file\n");
-            Gpu::print("   --file <file_name.file_ext>       - (Required) Name of the file to create\n");
-            Gpu::print(" -mount                              - Mount ClawFS overlay for command override\n");
-            Gpu::print(" -unmount                            - Unmount ClawFS overlay\n");
-            Gpu::print(" -time                               - System clock utility\n");
-            Gpu::print("   --get                             - (Required 1 of 3) Display current date and time\n");
-            Gpu::print("   --set <DD.MM.YYYY-HH:MM:SS>       - (Required 1 of 3) Set new system date and time\n");
-            Gpu::print("   --info                            - (Required 1 of 3) Display CMOS storage and RTC battery status\n");
-        }
-
-        else if (page == 3) 
-        {
-            Gpu::print_info("Available commands (Page 3/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-            Gpu::print(" -uptime                             - Display system uptime since boot\n");
-            Gpu::print(" -panic                              - Trigger kernel panic for debugging\n");
-            Gpu::print(" -resolution                         - Display current screen resolution and video mode information\n");
-            Gpu::print(" -logs                               - Kernel log management utility\n");
-            Gpu::print("    --show                           - (Required 1 of 5) Display stored kernel logs from memory\n");
-            Gpu::print("    --clear                          - (Required 1 of 5) Clear kernel log buffer\n");
-            Gpu::print("    --level <INFO|WARN|ERROR|DEBUG>  - (Required 1 of 5) Display only selected level messages\n");
-            Gpu::print("    --subsystem <subsystem_name>     - (Required 1 of 5) Display logs from selected subsystem\n");
-            Gpu::print("    --put <text>                     - (Required 1 of 5) Add custom log message with INFO level\n");
-            Gpu::print(" -bootapp                            - Application manager command\n");
-            Gpu::print("    --app <application_name>         - (Required) Load and execute selected application\n");
-            Gpu::print("    --list                           - List all available applications\n");
-            Gpu::print(" -download                           - Download files from an HTTPS repository\n");
-            Gpu::print("    --link https://HOST/PATH ...     - List or download catalog files\n");
-            Gpu::print(" -clear                              - Clear the terminal screen\n");
-        }
-
-        else if (page == 4)
-        {
-            Gpu::print_info("Available commands (Page 4/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-            Gpu::print(" -mkdir                              - Create a new directory\n");
-            Gpu::print("    --dir_name <name>                - (Required) Name of the new directory\n");
-            Gpu::print(" -rm                                 - Remove file or directory\n");
-            Gpu::print("    --name <name>                    - (Required) Name of the item to remove\n");
-            Gpu::print("    --type <file|dir>                - (Required) Specify if it is a file or directory\n");
-            Gpu::print(" -cd                                 - Change current directory\n");
-            Gpu::print("    [path]                           - (Optional) Path to change to (default: /home)\n");
-            Gpu::print(" -uart                               - Send data over serial port\n");
-            Gpu::print("   --text <text>                     - (Required) Text string to transmit via UART\n");
-            Gpu::print(" -format                             - Format storage drive\n");
-            Gpu::print("   --commands                        - Copy system commands from ISO to ClawFS\n");
-            Gpu::print("   --clear                           - Completely wipe the disk without creating the base file structure\n");
-            Gpu::print("   --distclear                       - Completely wipe ClawFS and remove all filesystem data\n");
-        }
-
-        else if (page == 5)
-        {
-            Gpu::print_info("Available commands (Page 5/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-            Gpu::print(" -outb                               - Write a byte to an I/O port\n");
-            Gpu::print("    --port [0xHEX]                   - (Required) Specify I/O port address\n");
-            Gpu::print("    --val [0xHEX]                    - (Required) Value byte to write\n");
-            Gpu::print(" -mv                                 - Move a file or directory\n");
-            Gpu::print("    --source <source>                - (Required) Source path\n");
-            Gpu::print("    --destination <destination>      - (Required) Destination path\n");
-            Gpu::print(" -cp                                 - Copy a file or directory\n");
-            Gpu::print("    --source <source>                - (Required) Source path\n");
-            Gpu::print("    --destination <destination>      - (Required) Destination path\n");
-            Gpu::print(" -cat                                - Display the contents of one or more files\n");
-            Gpu::print("    --file <filename>                - (Required) First file to display\n");
-            Gpu::print("    --file_n <filename>              - (Optional) Additional file to display\n");
-            Gpu::print(" -fetch                              - Display system summary and ASCII logo\n");
-        }
-
-        else if (page == 6)
-        {
-            Gpu::print_info("Available commands (Page 6/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-            Gpu::print(" -debug                              - Enable or disable debug mode\n");
-            Gpu::print("   --on                              - (Required 1 of 2) Enable debug mode\n");
-            Gpu::print("   --off                             - (Required 1 of 2) Disable debug mode\n");
-            Gpu::print(" -beep                               - Play a sound through the PC speaker\n");
-            Gpu::print("   --freq [frequency]                - (Optional) Set beep frequency in Hz\n");
-            Gpu::print("   --dur [time]                      - (Optional) Set beep duration in milliseconds\n");
-            Gpu::print(" -calc                               - Perform a basic arithmetic calculation\n");
-            Gpu::print("   --op <add|sub|mul|div>            - (Required) Select the arithmetic operation\n");
-            Gpu::print("   --num1 [value]                    - (Required) First number\n");
-            Gpu::print("   --num2 [value]                    - (Required) Second number\n");
-            Gpu::print(" -safe_mode                          - Enable safe mode for system debugging\n");
-            Gpu::print(" -inb                                - Read a byte from an I/O port\n");
-            Gpu::print("    --port [0xHEX]                   - (Required) Specify I/O port address\n");
-        }
-
-        else if (page == 7)
-        {
-            Gpu::print_info("Available commands (Page 7/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");\
-            Gpu::print(" -tree                               - Display directory tree\n");
-            Gpu::print("    --file <path>                    - (Optional) Directory to start from\n");
-            Gpu::print(" -pwd                                - Display the current working directory\n");
-            Gpu::print(" -ip                                 - Display the current IP address\n");
-            Gpu::print(" -ping                               - Send a ping request to an IP address or hostname\n");
-            Gpu::print("   --target <address>                - (Required) Specify target IP address or hostname\n");
-            Gpu::print(" -wc                                 - Count lines, words, and bytes in files\n");
-            Gpu::print("   --file <file>                     - (Required, repeatable) Specify a file to count\n");
-        }
-
-        else if (page == 8)
-        {
-            Gpu::print_info("Available commands (Page 8/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-        }
-
-        else if (page == 9)
-        {
-            Gpu::print_info("Available commands (Page 9/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-        }
-
-        else if (page == 10)
-        {
-            Gpu::print_info("Available commands (Page 10/");
-            char total_buf[16];
-            itoa(total_pages, total_buf);
-            Gpu::print(total_buf);
-            Gpu::print("):\n");
-        }
-
-        else if (page > HELP_STATIC_PAGES)
-        {
-            if (page > total_pages)
+            if (i < HELP_COMMAND_COUNT)
             {
-                Gpu::print_error("Invalid page number!\n");
-                Gpu::print_info("Total pages: ");
-                Gpu::print_num8(total_pages);
-                Gpu::print("\n");
-                Gpu::print_cmd();
-                return;
-            }
-
-            Gpu::print_info("System commands from /sbin (Page ");
-            Gpu::print_num8(page);
-            Gpu::print("/");
-            Gpu::print_num8(total_pages);
-            Gpu::print("):\n");
-
-            if (sbin_count == 0)
-            {
-                Gpu::print(" (no commands found in /sbin — rootfs may not be mounted)\n");
+                const HelpCommand& command = HELP_COMMANDS[i];
+                print_help_command(command.name, command.description, command.details);
             }
             else
             {
-                uint32_t start = (page - HELP_STATIC_PAGES - 1) * HELP_COMMANDS_PER_PAGE;
-                uint32_t end = start + HELP_COMMANDS_PER_PAGE;
-
-                if (end > sbin_count)
-                {
-                    end = sbin_count;
-                }
-
-                for (uint32_t i = start; i < end; i++)
-                {
-                    if (sbin_names[i][0] == '.')
-                    {
-                        continue;
-                    }
-
-                    // Format: " -<name>" padded to 37 chars, then "- <description>"
-                    char line_buf[256];
-                    uint32_t pos = 0;
-
-                    line_buf[pos++] = ' ';
-                    line_buf[pos++] = '-';
-
-                    uint32_t name_len = strlen(sbin_names[i]);
-                    for (uint32_t c = 0; c < name_len; c++)
-                    {
-                        line_buf[pos++] = sbin_names[i][c];
-                    }
-
-                    while (pos < 37)
-                    {
-                        line_buf[pos++] = ' ';
-                    }
-
-                    line_buf[pos++] = '-';
-                    line_buf[pos++] = ' ';
-
-                    uint32_t desc_len = strlen(sbin_descs[i]);
-                    for (uint32_t c = 0; c < desc_len && pos < sizeof(line_buf) - 2; c++)
-                    {
-                        line_buf[pos++] = sbin_descs[i][c];
-                    }
-
-                    line_buf[pos++] = '\n';
-                    line_buf[pos] = '\0';
-
-                    Gpu::print(line_buf);
-                }
+                uint32_t sbin_index = i - HELP_COMMAND_COUNT;
+                print_help_command(sbin_names[sbin_index], sbin_descs[sbin_index],
+                                   sbin_help_texts[sbin_index]);
             }
         }
     }
