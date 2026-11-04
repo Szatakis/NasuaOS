@@ -91,16 +91,18 @@ synchronously and are not separate schedulable processes.
 
 The x86_64 kernel includes a round-robin scheduler for kernel tasks. PIT ticks
 preempt the current task; tasks may also call `Scheduler::yield()` to give up
-their time slice. `Scheduler::create_task()` allocates a 16 KiB stack and starts
-a task entry function with its argument. Returning from the entry function
-terminates that task. Tasks share kernel address space and privilege level;
-this scheduler does not provide process isolation.
+their time slice. `Scheduler::sleep_ticks()` blocks a task until the requested
+number of 10 ms PIT ticks has elapsed; sleeping tasks do not consume round-robin
+slots until they wake. `Scheduler::create_task()` allocates a 16 KiB stack and
+starts a task entry function with its argument. Returning from the entry
+function terminates that task. Tasks share kernel address space and privilege
+level; this scheduler does not provide process isolation.
 
 The kernel's boot/main loop is the initial scheduler task. Scheduler tasks can
 be exercised with the host-side test:
 
 ```bash
-g++ -std=c++20 -DSCHEDULER_TEST -Ikernel_64bit/src \
+g++ -std=c++20 -DSCHEDULER_TEST -Ikernel_64bit/src -Iresources \
   tests/scheduler_test.cpp \
   kernel_64bit/src/system/scheduler/functions/scheduler.cpp \
   kernel_64bit/src/system/scheduler/pr_map/pr_map.cpp \

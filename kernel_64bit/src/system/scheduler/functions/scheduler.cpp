@@ -3,6 +3,7 @@
 #include "../pr_map/pr_map.hpp"
 #include "system/interrupts/functions/isr.hpp"
 #include "system/sysfunc/logger/logger.hpp"
+#include "drivers/timer/driver.hpp"
 
 #include <stddef.h>
 
@@ -19,6 +20,7 @@ namespace Scheduler
         Empty,
         Ready,
         Running,
+        Sleeping,
         Dead
     };
 
@@ -30,6 +32,7 @@ namespace Scheduler
         void* argument;
         void* stack;
         Registers* context;
+        uint64_t wake_tick;
     };
 
     static Task tasks[MAX_TASKS];
@@ -82,6 +85,41 @@ namespace Scheduler
             Memory::heap::kfree(task.stack);
             task = {};
         }
+    }
+
+    static bool tick_deadline_reached(uint64_t now, uint64_t deadline)
+    {
+        return now - deadline < (1ULL << 63);
+    }
+
+    static void wake_sleeping_tasks()
+    {
+        const uint64_t now = Timer::pit_get_ticks();
+        for (uint32_t index = 1; index < MAX_TASKS; ++index)
+        {
+            Task& task = tasks[index];
+            if (task.state == TaskState::Sleeping &&
+                tick_deadline_reached(now, task.wake_tick))
+            {
+                task.state = TaskState::Ready;
+            }
+        }
+    }
+
+    static Task* next_ready_task(uint32_t current_id)
+    {
+        const uint32_t count = PrMap::size();
+        uint32_t candidate_id = current_id;
+        for (uint32_t index = 0; index < count; ++index)
+        {
+            candidate_id = PrMap::next(candidate_id);
+            Task* candidate = find_task(candidate_id);
+            if (candidate != nullptr && candidate->state == TaskState::Ready)
+            {
+                return candidate;
+            }
+        }
+        return nullptr;
     }
 
     static void task_trampoline(Task* task)
@@ -201,6 +239,32 @@ namespace Scheduler
 #endif
     }
 
+    void sleep_ticks(uint64_t ticks)
+    {
+        if (ticks == 0)
+        {
+            yield();
+            return;
+        }
+
+        const uint64_t flags = disable_interrupts();
+        Task* current = find_task(running_task_id);
+        if (current == nullptr || current->id == 1)
+        {
+            restore_interrupts(flags);
+            const uint64_t max_ticks = UINT64_MAX / 10;
+            Timer::sleep(ticks > max_ticks ? UINT64_MAX : ticks * 10);
+            return;
+        }
+
+        current->wake_tick = Timer::pit_get_ticks() + ticks;
+        current->state = TaskState::Sleeping;
+#ifndef SCHEDULER_TEST
+        asm volatile("int $0x81" : : : "memory");
+#endif
+        restore_interrupts(flags);
+    }
+
     [[noreturn]] void exit_current()
     {
         const uint64_t flags = disable_interrupts();
@@ -234,13 +298,9 @@ namespace Scheduler
         }
 
         reap_dead_tasks();
+        wake_sleeping_tasks();
 
-        const uint32_t next_id = PrMap::next(running_task_id);
-        Task* next = find_task(next_id);
-        if (next == nullptr)
-        {
-            next = find_task(1);
-        }
+        Task* next = next_ready_task(running_task_id);
         if (next == nullptr)
         {
             return frame;

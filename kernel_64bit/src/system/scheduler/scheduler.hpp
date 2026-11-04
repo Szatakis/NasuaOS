@@ -14,6 +14,7 @@ namespace Scheduler
     void init();
     uint32_t create_task(TaskEntry entry, void* argument = nullptr);
     void yield();
+    void sleep_ticks(uint64_t ticks);
     [[noreturn]] void exit_current();
     uint32_t current_task_id();
     uint32_t task_count();
