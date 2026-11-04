@@ -112,13 +112,16 @@ g++ -std=c++20 -DSCHEDULER_TEST -Ikernel_64bit/src -Iresources \
 
 ### CPU Privilege Rings
 
-The x86_64 GDT now defines kernel code/data selectors, user code/data selectors,
-and a 64-bit TSS. The IDT targets the kernel code selector, and the scheduler
-updates the TSS kernel-stack pointer when selecting a task with its own stack.
-This is the descriptor-table groundwork only: NAPP applications still execute
-in ring 0 until user address spaces, validated system calls, and user-mode
-callback dispatch are implemented. Embedded drivers remain in ring 0; x86-64
-page permissions do not distinguish rings 0, 1, and 2 from one another.
+The x86_64 GDT defines code/data selectors for rings 0 through 3 and a 64-bit
+TSS. The IDT targets the kernel code selector, and the scheduler updates the
+TSS kernel-stack pointer when selecting a task with its own stack. The VMM can
+create and destroy per-process address spaces with a private lower-half user
+mapping while retaining the kernel's upper-half mappings as supervisor pages.
+NAPP applications still execute in ring 0: the validated syscall ABI and
+user-mode GUI callback dispatch are not implemented yet. Embedded drivers
+remain in ring 0; x86-64 page permissions do not distinguish rings 0, 1, and 2
+from one another, so those selectors are descriptor groundwork rather than
+isolation boundaries.
 
 ### System Functions
 

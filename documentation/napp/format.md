@@ -9,7 +9,7 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 | Offset | Size | Field              | Description                                             |
 |--------|------|--------------------|---------------------------------------------------------|
 | 0x00   | 4    | magic              | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NAPP")             |
-| 0x04   | 4    | abi_version        | `10` (current ABI version)                              |
+| 0x04   | 4    | abi_version        | `11` (current ABI version)                              |
 | 0x08   | 4    | header_size        | Aligned header size (384 bytes in ABI 8 and later)      |
 | 0x0C   | 4    | entry_offset       | Offset from start of file to `_start` function          |
 | 0x10   | 32   | name               | Null-terminated application name                        |
@@ -76,13 +76,14 @@ The loader checks this magic value to verify the file is a valid NAPP binary. If
 ## ABI Version
 
 ```cpp
-#define NAPP_ABI_VERSION 10
+#define NAPP_ABI_VERSION 11
 ```
 
-The current NAPP ABI version is 10. The loader supports ABI versions 6 through
-10. ABI version 10 adds process snapshots and system information to the
-application API; ABI version 9 added username lookup; ABI version 8 added
-optional command help text to the header. ABI version 7 added the Start Menu visibility field.
+The current NAPP ABI version is 11. The loader supports ABI versions 6 through
+11. ABI version 11 adds colored output redirection; ABI version 10 adds process
+snapshots and system information; ABI version 9 added username lookup; ABI
+version 8 added optional command help text to the header. ABI version 7 added
+the Start Menu visibility field.
 ABI version 4 added the `http_get`
 service for plain HTTP requests over the kernel's DNS and TCP network stack.
 ABI version 5 added complete-file ClawFS read and write services. ABI version 6

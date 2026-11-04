@@ -104,6 +104,12 @@ namespace Gpu
 
     void print_char8(char c)
     {
+        if (napp_print_redirect_colored_cb != nullptr)
+        {
+            napp_print_redirect_colored_cb(c, current_text_color);
+            return;
+        }
+
         if (napp_print_redirect_cb != nullptr)
         {
             napp_print_redirect_cb(c);

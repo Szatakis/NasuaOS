@@ -42,12 +42,14 @@ struct napp_api
     bool (*clawfs_write_file)(const char* path, const void* buffer, uint32_t length);
     uint32_t (*get_processes)(struct napp_process_info* output, uint32_t capacity);
     bool (*get_system_info)(struct napp_system_info* output);
+    void (*set_print_redirect_colored)(void (*callback)(char, uint32_t));
 };
 ```
 
 The full structure is defined in `utilities/applications/include/napp.h`.
-ABI 10 adds the process snapshot and system information services at the end of
-the structure; earlier ABI layouts retain their existing field offsets.
+ABI 11 adds colored output redirection at the end of the structure. ABI 10
+added process snapshots and system information; earlier ABI layouts retain
+their existing field offsets.
 
 ```cpp
 struct napp_process_info
@@ -77,7 +79,7 @@ struct napp_system_info
 
 | Field        | Signature                | Description                                      |
 |--------------|--------------------------|--------------------------------------------------|
-| `abi_version`| `uint32_t`               | NAPP ABI version (currently 10)                  |
+| `abi_version`| `uint32_t`               | NAPP ABI version (currently 11)                  |
 | `argc`       | `int`                    | Number of command-line arguments                 |
 | `argv`       | `char**`                 | Array of argument strings (`argv[0]` = app name) |
 | `print`      | `void (*)(const char*)`  | Print a string to the terminal/log               |
@@ -216,6 +218,11 @@ directly into its own terminal buffer.  The callback receives one character at
 a time (ANSI colour escape sequences are already consumed by the kernel's
 `print` layer before the callback is invoked).  Pass `nullptr` to the same
 function to stop redirecting output back to the screen.
+
+ABI 11 adds `set_print_redirect_colored`, whose callback receives each
+redirected character and its resolved foreground color. Applications can use
+it to preserve the kernel's INFO, WARN, ERROR, and ordinary text colors in
+integrated terminal output. Setting either redirect replaces the other.
 
 ## Window Configuration
 

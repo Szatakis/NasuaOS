@@ -45,6 +45,7 @@ static uint32_t napp_entry_offset(const napp_header* header)
 fat_volume rootfs_volume;
 bool rootfs_mounted = false;
 void (*napp_print_redirect_cb)(char) = nullptr;
+void (*napp_print_redirect_colored_cb)(char, uint32_t) = nullptr;
 
 // Current working directory exposed to napp programs
 static char napp_current_path[256] = "/home";
@@ -684,6 +685,13 @@ static void napp_api_execute_command(const char* cmd)
 static void napp_api_set_print_redirect(void (*callback)(char))
 {
     napp_print_redirect_cb = callback;
+    napp_print_redirect_colored_cb = nullptr;
+}
+
+static void napp_api_set_print_redirect_colored(void (*callback)(char, uint32_t))
+{
+    napp_print_redirect_cb = nullptr;
+    napp_print_redirect_colored_cb = callback;
 }
 
 static const char* napp_api_get_username()
@@ -803,7 +811,8 @@ static napp_api kernel_napp_api =
     napp_api_enable_fpu,
     napp_api_get_username,
     napp_api_get_processes,
-    napp_api_get_system_info
+    napp_api_get_system_info,
+    napp_api_set_print_redirect_colored
 };
 
 static bool remember_image(const char* name, uint32_t process_id, void* image)

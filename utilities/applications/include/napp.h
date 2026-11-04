@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 10
+#define NAPP_ABI_VERSION 11
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
@@ -237,6 +237,10 @@ struct napp_api
     // ABI 10 additions.
     uint32_t (*get_processes)(struct napp_process_info* output, uint32_t capacity);
     bool (*get_system_info)(struct napp_system_info* output);
+
+    // ABI 11 addition. The callback receives the resolved foreground color
+    // for every redirected character.
+    void (*set_print_redirect_colored)(void (*callback)(char, uint32_t));
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);

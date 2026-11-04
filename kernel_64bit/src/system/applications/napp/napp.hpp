@@ -40,6 +40,7 @@ bool napp_exists_path(const char* path);
 bool napp_run(const char* name, int* exit_code);
 
 extern void (*napp_print_redirect_cb)(char);
+extern void (*napp_print_redirect_colored_cb)(char, uint32_t);
 
 // Lists flat-binary commands found in the rootfs /sbin folder.
 // Fills descriptions[] and help_texts[] from each command's NAPP header.

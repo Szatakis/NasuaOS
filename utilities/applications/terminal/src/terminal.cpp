@@ -14,6 +14,7 @@ struct terminal_state
     char input[256];
     uint32_t input_length;
     char output[MAX_OUTPUT_LINES][MAX_LINE_LENGTH];
+    uint32_t output_colors[MAX_OUTPUT_LINES][MAX_LINE_LENGTH];
     uint32_t output_count;
     uint32_t scroll_offset;
     uint32_t characters_per_line;
@@ -23,7 +24,6 @@ struct terminal_state
 static terminal_state terminal{};
 static constexpr uint32_t COLOR_BACKGROUND = 0xFF11151D;
 static constexpr uint32_t COLOR_TEXT = 0xFFE1E7EF;
-static constexpr uint32_t COLOR_MUTED = 0xFF9BA8B8;
 static constexpr uint32_t COLOR_ACCENT = 0xFF59E81B;
 
 static uint32_t output_visual_line_count(uint32_t characters_per_line)
@@ -54,7 +54,7 @@ static void clear_output()
     terminal.scroll_offset = 0;
 }
 
-static void terminal_write_char(char character)
+static void terminal_write_char_colored(char character, uint32_t color)
 {
     if (terminal.output_count == 0)
     {
@@ -78,6 +78,7 @@ static void terminal_write_char(char character)
                 for (uint32_t column = 0; column < MAX_LINE_LENGTH; ++column)
                 {
                     terminal.output[index - 1][column] = terminal.output[index][column];
+                    terminal.output_colors[index - 1][column] = terminal.output_colors[index][column];
                 }
             }
             terminal.output[MAX_OUTPUT_LINES - 1][0] = '\0';
@@ -95,13 +96,19 @@ static void terminal_write_char(char character)
     if (length + 1 < MAX_LINE_LENGTH)
     {
         terminal.output[line][length] = character;
+        terminal.output_colors[line][length] = color;
         terminal.output[line][length + 1] = '\0';
     }
     else
     {
-        terminal_write_char('\n');
-        terminal_write_char(character);
+        terminal_write_char_colored('\n', color);
+        terminal_write_char_colored(character, color);
     }
+}
+
+static void terminal_write_char(char character)
+{
+    terminal_write_char_colored(character, COLOR_TEXT);
 }
 
 static void terminal_write_string(const char* text)
@@ -201,13 +208,30 @@ static void draw_terminal(napp_window* window)
                 }
                 if (chunk_length > 0)
                 {
-                    char output_line[MAX_LINE_LENGTH];
-                    for (uint32_t index = 0; index < chunk_length; ++index)
+                    uint32_t run_start = 0;
+                    while (run_start < chunk_length)
                     {
-                        output_line[index] = terminal.output[line][start + index];
+                        const uint32_t color = terminal.output_colors[line][start + run_start];
+                        uint32_t run_end = run_start + 1;
+                        while (run_end < chunk_length &&
+                            terminal.output_colors[line][start + run_end] == color)
+                        {
+                            ++run_end;
+                        }
+
+                        char output_run[MAX_LINE_LENGTH];
+                        const uint32_t run_length = run_end - run_start;
+                        for (uint32_t index = 0; index < run_length; ++index)
+                        {
+                            output_run[index] = terminal.output[line][start + run_start + index];
+                        }
+                        output_run[run_length] = '\0';
+                        terminal_api->gui->draw_text(output_run,
+                            left + static_cast<int>(run_start * CHARACTER_WIDTH),
+                            content_y + 30 + static_cast<int>(output_row * LINE_HEIGHT),
+                            color);
+                        run_start = run_end;
                     }
-                    output_line[chunk_length] = '\0';
-                    terminal_api->gui->draw_text(output_line, left, content_y + 30 + static_cast<int>(output_row * LINE_HEIGHT),COLOR_TEXT);
                 }
                 ++output_row;
             }
@@ -287,6 +311,11 @@ static void terminal_key(napp_window*, char key)
 
 static void terminal_close(napp_window*)
 {
+    if (terminal_api != nullptr && terminal_api->abi_version >= 11 &&
+        terminal_api->set_print_redirect_colored != nullptr)
+    {
+        terminal_api->set_print_redirect_colored(nullptr);
+    }
     if (terminal_api != nullptr && terminal_api->set_print_redirect != nullptr)
     {
         terminal_api->set_print_redirect(nullptr);
@@ -314,7 +343,14 @@ int _start(const napp_api* api)
     }
     clear_output();
     terminal_write_string("NasuaOS Terminal\nType a command and press Enter.\n");
-    api->set_print_redirect(terminal_write_char);
+    if (api->abi_version >= 11 && api->set_print_redirect_colored != nullptr)
+    {
+        api->set_print_redirect_colored(terminal_write_char_colored);
+    }
+    else
+    {
+        api->set_print_redirect(terminal_write_char);
+    }
 
     const napp_window_config config =
     {
@@ -323,6 +359,10 @@ int _start(const napp_api* api)
     };
     if (!api->gui->open_window(&config))
     {
+        if (api->abi_version >= 11 && api->set_print_redirect_colored != nullptr)
+        {
+            api->set_print_redirect_colored(nullptr);
+        }
         api->set_print_redirect(nullptr);
         terminal_api = nullptr;
         return 1;
