@@ -17,6 +17,7 @@
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
 #include "system/process/process.hpp"
+#include "system/scheduler/scheduler.hpp"
 
 #include "shell/shell.hpp"
 
@@ -30,6 +31,31 @@
 static bool napp_abi_supported(uint32_t version)
 {
     return version >= NAPP_ABI_MIN_VERSION && version <= NAPP_ABI_VERSION;
+}
+
+static bool napp_user_mode_metadata_valid(const napp_header* header, uint32_t image_size)
+{
+    constexpr uint32_t BASE_HEADER_END =
+        __builtin_offsetof(napp_header, header_size) + sizeof(napp_header::header_size);
+    constexpr uint32_t USER_MODE_FIELD_END =
+        __builtin_offsetof(napp_header, user_mode) + sizeof(napp_header::user_mode);
+    if (header == nullptr || image_size < BASE_HEADER_END ||
+        header->magic != NAPP_MAGIC ||
+        !napp_abi_supported(header->abi_version))
+    {
+        return false;
+    }
+
+    return header->abi_version < 12 ||
+           (image_size >= USER_MODE_FIELD_END &&
+            header->header_size >= USER_MODE_FIELD_END &&
+            header->header_size <= image_size);
+}
+
+static bool napp_header_is_user_mode(const napp_header* header, uint32_t image_size)
+{
+    return napp_user_mode_metadata_valid(header, image_size) &&
+           header->abi_version >= 12 && header->user_mode;
 }
 
 static uint32_t napp_entry_offset(const napp_header* header)
@@ -815,6 +841,92 @@ static napp_api kernel_napp_api =
     napp_api_set_print_redirect_colored
 };
 
+static bool napp_launch_user_image(const void* image, uint32_t image_size,
+                                   uint32_t entry_offset, uint32_t process_id)
+{
+    constexpr uint64_t USER_IMAGE_OFFSET = 0x10000;
+    constexpr uint64_t USER_STACK_OFFSET = 0x200000;
+    constexpr uint64_t PAGE_SIZE = Memory::PAGE_SIZE;
+
+    if (image == nullptr || image_size == 0 || entry_offset >= image_size ||
+        image_size > NAPP_MAX_IMAGE_SIZE)
+    {
+        return false;
+    }
+
+    Memory::vmm::UserAddressSpace address_space{};
+    if (!Memory::vmm::create_user_address_space(&address_space))
+    {
+        log(ERROR, "NAPP", "Unable to create user address space");
+        return false;
+    }
+
+    const uint64_t code_address = address_space.base + USER_IMAGE_OFFSET;
+    const uint32_t page_count =
+        static_cast<uint32_t>((image_size + PAGE_SIZE - 1) / PAGE_SIZE);
+    for (uint32_t page_index = 0; page_index < page_count; ++page_index)
+    {
+        const uint64_t physical_page = Memory::pmm::alloc_page();
+        if (physical_page == 0)
+        {
+            Memory::vmm::destroy_user_address_space(&address_space);
+            log(ERROR, "NAPP", "Unable to allocate user image page");
+            return false;
+        }
+
+        const uint64_t virtual_page = code_address + page_index * PAGE_SIZE;
+        if (!Memory::vmm::map_user_page(&address_space, virtual_page, physical_page,
+                                        Memory::vmm::PAGE_USER))
+        {
+            Memory::pmm::free_page(physical_page);
+            Memory::vmm::destroy_user_address_space(&address_space);
+            log(ERROR, "NAPP", "Unable to map user image page");
+            return false;
+        }
+
+        auto* destination = reinterpret_cast<void*>(
+            Memory::paging::get_hhdm_offset() + physical_page);
+        Memory::memset(destination, 0, PAGE_SIZE);
+        const uint32_t image_offset = page_index * PAGE_SIZE;
+        const uint32_t copy_size =
+            image_size - image_offset < PAGE_SIZE ? image_size - image_offset : PAGE_SIZE;
+        Memory::memcpy(destination,
+                       static_cast<const uint8_t*>(image) + image_offset,
+                       copy_size);
+    }
+
+    const uint64_t stack_page = Memory::pmm::alloc_page();
+    if (stack_page == 0)
+    {
+        Memory::vmm::destroy_user_address_space(&address_space);
+        log(ERROR, "NAPP", "Unable to allocate user stack page");
+        return false;
+    }
+
+    const uint64_t stack_address = address_space.base + USER_STACK_OFFSET;
+    if (!Memory::vmm::map_user_page(&address_space, stack_address, stack_page,
+                                    Memory::vmm::PAGE_USER | Memory::vmm::PAGE_WRITE))
+    {
+        Memory::pmm::free_page(stack_page);
+        Memory::vmm::destroy_user_address_space(&address_space);
+        log(ERROR, "NAPP", "Unable to map user stack page");
+        return false;
+    }
+    Memory::memset(reinterpret_cast<void*>(
+                       Memory::paging::get_hhdm_offset() + stack_page),
+                   0, PAGE_SIZE);
+
+    if (Scheduler::create_user_task(&address_space, code_address + entry_offset,
+                                    stack_address + PAGE_SIZE, process_id) == 0)
+    {
+        Memory::vmm::destroy_user_address_space(&address_space);
+        log(ERROR, "NAPP", "Unable to schedule user application");
+        return false;
+    }
+
+    return true;
+}
+
 static bool remember_image(const char* name, uint32_t process_id, void* image)
 {
     for (uint32_t i = 0; i < NAPP_MAX_WINDOWS; i++)
@@ -1145,12 +1257,39 @@ bool napp_run(const char* name, int* exit_code)
     const napp_header* header = (const napp_header*)image;
     const bool has_napp_header = header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version);
     const uint32_t entry_offset = has_napp_header ? napp_entry_offset(header) : header->entry_offset;
+    if (has_napp_header && !napp_user_mode_metadata_valid(header, info.size))
+    {
+        log(ERROR, "NAPP", "Invalid ABI 12 execution-mode metadata");
+        Process::finish(process_id, 1);
+        Memory::heap::kfree(image);
+        return false;
+    }
     if (has_napp_header && (entry_offset < header->header_size || entry_offset >= info.size))
     {
         log(ERROR, "NAPP", "Invalid application entry point");
         Process::finish(process_id, 1);
         Memory::heap::kfree(image);
         return false;
+    }
+
+    if (napp_header_is_user_mode(header, info.size))
+    {
+        const bool launched = napp_launch_user_image(image, info.size, entry_offset, process_id);
+        Memory::heap::kfree(image);
+        if (!launched)
+        {
+            Process::finish(process_id, 1);
+            return false;
+        }
+
+        Uart::puts("[NAPP] User-mode application scheduled: ");
+        Uart::puts(name);
+        Uart::puts("\n");
+        if (exit_code != nullptr)
+        {
+            *exit_code = 0;
+        }
+        return true;
     }
 
     Uart::puts("[NAPP] Starting application: ");
@@ -1379,6 +1518,14 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
     
     if (header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version))
     {
+        if (!napp_user_mode_metadata_valid(header, image_size))
+        {
+            log(ERROR, "NAPP", "Invalid ABI 12 execution-mode metadata");
+            Process::finish(process_id, 1);
+            Memory::heap::kfree(image);
+            return false;
+        }
+
         const uint32_t entry_offset = napp_entry_offset(header);
         if (entry_offset < header->header_size || entry_offset >= image_size)
         {
@@ -1386,6 +1533,32 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
             Process::finish(process_id, 1);
             Memory::heap::kfree(image);
             return false;
+        }
+
+        if (napp_header_is_user_mode(header, image_size))
+        {
+            if (argc != 0)
+            {
+                log(WARN, "NAPP", "User-mode applications do not support command arguments yet");
+                Process::finish(process_id, 1);
+                Memory::heap::kfree(image);
+                return false;
+            }
+
+            const bool launched =
+                napp_launch_user_image(image, image_size, entry_offset, process_id);
+            Memory::heap::kfree(image);
+            if (!launched)
+            {
+                Process::finish(process_id, 1);
+                return false;
+            }
+
+            if (exit_code != nullptr)
+            {
+                *exit_code = 0;
+            }
+            return true;
         }
 
         kernel_napp_api.argc = argc;

@@ -47,7 +47,7 @@ namespace Memory
             return phys_to_virt(entry & ~0xFFFULL);
         }
 
-        static uint64_t* get_user_leaf_table(UserAddressSpace* space, uint64_t virt, bool create)
+        static uint64_t* get_user_leaf_table(const UserAddressSpace* space, uint64_t virt, bool create)
         {
             if (space == nullptr || !space->valid || virt < space->base ||
                 virt >= (1ULL << 47) ||
@@ -93,7 +93,14 @@ namespace Memory
             }
             else
             {
-                pdpt_entry |= PAGE_USER;
+                if (!(pdpt_entry & PAGE_USER))
+                {
+                    if (!create)
+                    {
+                        return nullptr;
+                    }
+                    pdpt_entry |= PAGE_USER;
+                }
             }
 
             uint64_t* pd = table_from_entry(pdpt_entry);
@@ -115,7 +122,14 @@ namespace Memory
             }
             else
             {
-                pd_entry |= PAGE_USER;
+                if (!(pd_entry & PAGE_USER))
+                {
+                    if (!create)
+                    {
+                        return nullptr;
+                    }
+                    pd_entry |= PAGE_USER;
+                }
             }
 
             return table_from_entry(pd_entry);
@@ -387,14 +401,68 @@ namespace Memory
             return true;
         }
 
-        bool activate_address_space(const UserAddressSpace* space)
+        bool is_user_range(const UserAddressSpace* space, uint64_t virt, uint64_t length,
+                           bool write, bool execute)
+        {
+            if (space == nullptr || !space->valid || length == 0 ||
+                virt < space->base || virt >= (1ULL << 47) ||
+                length > (1ULL << 47) - virt ||
+                ((virt >> 39) & 0x1FF) != space->pml4_index)
+            {
+                return false;
+            }
+
+            const uint64_t last_page = (virt + length - 1) & ~0xFFFULL;
+            for (uint64_t page = virt & ~0xFFFULL;; page += 0x1000)
+            {
+                uint64_t* pt = get_user_leaf_table(space, page, false);
+                if (pt == nullptr)
+                {
+                    return false;
+                }
+
+                const uint64_t entry = pt[(page >> 12) & 0x1FF];
+                if (!(entry & PAGE_PRESENT) || !(entry & PAGE_USER) ||
+                    (write && !(entry & PAGE_WRITE)) ||
+                    (execute && (entry & PAGE_NX)))
+                {
+                    return false;
+                }
+
+                if (page == last_page)
+                {
+                    return true;
+                }
+            }
+        }
+
+        bool activate_address_space(UserAddressSpace* space)
         {
             if (space == nullptr || !space->valid || space->root_phys == 0)
             {
                 return false;
             }
 
+            if (!sync_kernel_mappings(space))
+            {
+                return false;
+            }
             write_cr3(space->root_phys);
+            return true;
+        }
+
+        bool sync_kernel_mappings(UserAddressSpace* space)
+        {
+            if (space == nullptr || !space->valid || space->root_phys == 0 || pml4 == nullptr)
+            {
+                return false;
+            }
+
+            uint64_t* root = phys_to_virt(space->root_phys);
+            for (uint32_t index = 256; index < 512; ++index)
+            {
+                root[index] = pml4[index] & ~PAGE_USER;
+            }
             return true;
         }
 

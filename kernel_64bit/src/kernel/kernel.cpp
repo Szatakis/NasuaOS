@@ -13,6 +13,7 @@
 #include "system/applications/napp/napp.hpp"
 #include "system/process/process.hpp"
 #include "system/scheduler/scheduler.hpp"
+#include "system/interrupts/functions/ring3_probe.hpp"
 
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
@@ -99,6 +100,7 @@ void iqu_init()
     idt_init();
     Timer::pit_init();
     Scheduler::init();
+    Ring3::launch_probe();
 
     asm volatile("sti");
 

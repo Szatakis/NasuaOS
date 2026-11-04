@@ -3,6 +3,7 @@
 #include "../pr_map/pr_map.hpp"
 #include "system/interrupts/functions/gdt.hpp"
 #include "system/interrupts/functions/isr.hpp"
+#include "system/process/process.hpp"
 #include "system/sysfunc/logger/logger.hpp"
 #include "drivers/timer/driver.hpp"
 
@@ -35,6 +36,9 @@ namespace Scheduler
         void* stack;
         Registers* context;
         uint64_t wake_tick;
+        bool user_mode;
+        uint32_t process_id;
+        Memory::vmm::UserAddressSpace address_space;
     };
 
     static Task tasks[MAX_TASKS];
@@ -81,6 +85,13 @@ namespace Scheduler
             Task& task = tasks[index];
             if (task.state != TaskState::Dead || task.id == running_task_id)
             {
+                continue;
+            }
+
+            if (task.user_mode && task.address_space.valid &&
+                !Memory::vmm::destroy_user_address_space(&task.address_space))
+            {
+                log(ERROR, "SCHEDULER", "Unable to release a dead user task address space");
                 continue;
             }
 
@@ -233,6 +244,96 @@ namespace Scheduler
         return id;
     }
 
+    uint32_t create_user_task(Memory::vmm::UserAddressSpace* address_space,
+                              uint64_t entry, uint64_t user_stack_pointer,
+                              uint32_t process_id)
+    {
+        if (!initialized || address_space == nullptr || !address_space->valid ||
+            !Memory::vmm::is_user_range(address_space, entry, 1, false, true) ||
+            user_stack_pointer < 8 ||
+            !Memory::vmm::is_user_range(address_space, user_stack_pointer - 8, 8, true))
+        {
+            log(ERROR, "SCHEDULER", "Cannot create a user task with invalid address space or context");
+            return 0;
+        }
+
+        const uint64_t flags = disable_interrupts();
+        reap_dead_tasks();
+
+        Task* slot = nullptr;
+        for (uint32_t index = 1; index < MAX_TASKS; ++index)
+        {
+            if (tasks[index].state == TaskState::Empty)
+            {
+                slot = &tasks[index];
+                break;
+            }
+        }
+        if (slot == nullptr)
+        {
+            restore_interrupts(flags);
+            log(ERROR, "SCHEDULER", "Task table is full");
+            return 0;
+        }
+
+        void* stack = Memory::heap::kmalloc(TASK_STACK_SIZE);
+        if (stack == nullptr)
+        {
+            restore_interrupts(flags);
+            log(ERROR, "SCHEDULER", "Unable to allocate a user task kernel stack");
+            return 0;
+        }
+
+        uint32_t id = next_task_id++;
+        if (next_task_id < 2)
+        {
+            next_task_id = 2;
+        }
+        while (id == 0 || find_task(id) != nullptr)
+        {
+            id = next_task_id++;
+            if (next_task_id < 2)
+            {
+                next_task_id = 2;
+            }
+        }
+
+        slot->id = id;
+        slot->state = TaskState::Ready;
+        slot->stack = stack;
+        slot->user_mode = true;
+        slot->process_id = process_id;
+        slot->address_space = *address_space;
+
+        const uintptr_t stack_end = reinterpret_cast<uintptr_t>(stack) + TASK_STACK_SIZE;
+        const uintptr_t frame_address =
+            (stack_end & ~static_cast<uintptr_t>(0xF)) - sizeof(Registers);
+        Registers* frame = reinterpret_cast<Registers*>(frame_address);
+        for (uint32_t index = 0; index < sizeof(Registers) / sizeof(uint64_t); ++index)
+        {
+            reinterpret_cast<uint64_t*>(frame)[index] = 0;
+        }
+        frame->rip = entry;
+        frame->cs = Gdt::USER_CODE_SELECTOR;
+        frame->rflags = 0x202;
+        frame->rsp = user_stack_pointer - 8;
+        frame->ss = Gdt::USER_DATA_SELECTOR;
+        slot->context = frame;
+
+        if (!PrMap::add(id))
+        {
+            Memory::heap::kfree(stack);
+            *slot = {};
+            restore_interrupts(flags);
+            log(ERROR, "SCHEDULER", "Unable to register the user task");
+            return 0;
+        }
+
+        *address_space = {};
+        restore_interrupts(flags);
+        return id;
+    }
+
     void yield()
     {
 #ifndef SCHEDULER_TEST
@@ -297,6 +398,10 @@ namespace Scheduler
             current->context = frame;
             current->state = TaskState::Ready;
         }
+        else if (current != nullptr && current->state == TaskState::Dead && current->user_mode)
+        {
+            Memory::vmm::activate_kernel_address_space();
+        }
 
         reap_dead_tasks();
         wake_sleeping_tasks();
@@ -309,6 +414,25 @@ namespace Scheduler
 
         running_task_id = next->id;
         next->state = TaskState::Running;
+        if (next->user_mode)
+        {
+            if (!Memory::vmm::activate_address_space(&next->address_space))
+            {
+                log(ERROR, "SCHEDULER", "Unable to activate a user task address space");
+                if (next->process_id != 0)
+                {
+                    Process::finish(next->process_id, -1);
+                }
+                next->state = TaskState::Dead;
+                PrMap::remove(next->id);
+                Memory::vmm::activate_kernel_address_space();
+                return frame;
+            }
+        }
+        else
+        {
+            Memory::vmm::activate_kernel_address_space();
+        }
         if (next->stack != nullptr)
         {
             const uintptr_t stack_top =
@@ -326,5 +450,27 @@ namespace Scheduler
     uint32_t task_count()
     {
         return PrMap::size();
+    }
+
+    const Memory::vmm::UserAddressSpace* current_user_address_space()
+    {
+        Task* current = find_task(running_task_id);
+        return current != nullptr && current->user_mode ? &current->address_space : nullptr;
+    }
+
+    void terminate_current_user_task(int exit_code)
+    {
+        const uint64_t flags = disable_interrupts();
+        Task* current = find_task(running_task_id);
+        if (current != nullptr && current->user_mode && current->state == TaskState::Running)
+        {
+            if (current->process_id != 0)
+            {
+                Process::finish(current->process_id, exit_code);
+            }
+            current->state = TaskState::Dead;
+            PrMap::remove(current->id);
+        }
+        restore_interrupts(flags);
     }
 }

@@ -117,11 +117,26 @@ TSS. The IDT targets the kernel code selector, and the scheduler updates the
 TSS kernel-stack pointer when selecting a task with its own stack. The VMM can
 create and destroy per-process address spaces with a private lower-half user
 mapping while retaining the kernel's upper-half mappings as supervisor pages.
-NAPP applications still execute in ring 0: the validated syscall ABI and
-user-mode GUI callback dispatch are not implemented yet. Embedded drivers
-remain in ring 0; x86-64 page permissions do not distinguish rings 0, 1, and 2
-from one another, so those selectors are descriptor groundwork rather than
-isolation boundaries.
+Kernel upper-half PML4 entries are synchronized before activating a user
+address space so kernel heap growth remains available to interrupt and syscall
+handlers. The scheduler can start ring-3 tasks and switch their address spaces. IDT
+vector `0x80` is a DPL-3 syscall gate; its initial ABI supports bounded writes
+to the kernel log and task exit, and user exceptions terminate the faulting
+task. The syscall wrappers and numbers are in
+`utilities/applications/include/nasua_syscall.h`. Exit status is recorded in
+the process registry.
+
+NAPP ABI 12 adds an opt-in `user_mode` header flag. The loader maps flagged
+images read/execute-only, gives each task a separate writable user stack, and
+starts it through the scheduler. Such applications receive no `napp_api`
+kernel-function pointers; the currently supported user ABI is limited to
+bounded serial writes and exit. `bootcheck` is the first NAPP using this path
+and is available from the Start Menu. Older NAPPs and those without the flag
+continue using the existing ring-0 ABI. In particular, GUI callbacks,
+filesystem services, command arguments, and most applications have not yet
+been migrated. Embedded drivers remain in ring 0; x86-64 page permissions do
+not distinguish rings 0, 1, and 2 from one another, so those selectors are
+descriptor groundwork rather than isolation boundaries.
 
 ### System Functions
 

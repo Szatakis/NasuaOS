@@ -15,6 +15,7 @@ global isr_alignment_check
 global isr_spurious
 global irq0
 global isr_yield
+global isr_syscall
 extern isr_handler
 
 section .text
@@ -179,6 +180,13 @@ isr_yield:
 
     jmp isr_common
 
+; User-mode system call gate.
+isr_syscall:
+    push 0
+    push 0x80
+
+    jmp isr_common
+
 ; LAPIC SPURIOUS INTERRUPT (vector 0xFF)
 
 isr_spurious:
@@ -192,12 +200,32 @@ isr_spurious:
 isr_common:
     cld
 
+    push rax
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    pop rax
+
     PUSH_REGS
 
     mov rdi,rsp
     and rsp,-16
     call isr_handler
     mov rsp,rax
+
+    test byte [rsp + 152], 3
+    jz .return_kernel_segments
+    mov ax, 0x3B
+    jmp .return_data_segments
+.return_kernel_segments:
+    mov ax, 0x10
+.return_data_segments:
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
     POP_REGS
 

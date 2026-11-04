@@ -50,3 +50,4 @@ extern "C" void isr_alignment_check();
 extern "C" void isr_spurious();
 extern "C" void irq0();
 extern "C" void isr_yield();
+extern "C" void isr_syscall();

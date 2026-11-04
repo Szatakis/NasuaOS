@@ -240,6 +240,17 @@ namespace Keyboard
             {
                 if (alt_pressed)
                 {
+                    if (Gpu::Window_Manager::active_window &&
+                        Gpu::Window_Manager::active_window->key_event != nullptr &&
+                        Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
+                    {
+                        const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP :
+                            scancode == 0x50 ? NAPP_KEY_DOWN :
+                            scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
+                        send_napp_key_event((uint8_t)(0x80 | scancode), arrow_key, true);
+                        return;
+                    }
+
                     const int speed = 12;
                     int dx = 0;
                     int dy = 0;

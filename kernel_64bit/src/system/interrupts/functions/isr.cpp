@@ -4,6 +4,7 @@
 #include "page_fault.hpp"
 #include "drivers/uart/driver.hpp"
 #include "drivers/timer/driver.hpp"
+#include "drivers/memory/driver.hpp"
 #include "system/scheduler/scheduler.hpp"
 
 #include "kernel/kernel_panic/kernel_panic.hpp"
@@ -55,6 +56,55 @@ Registers* isr_handler(Registers* regs)
 
     if (regs->vector == 0x81)
     {
+        return Scheduler::on_interrupt(regs);
+    }
+
+    if (regs->vector == 0x80)
+    {
+        if ((regs->cs & 3) != 3)
+        {
+            regs->rax = static_cast<uint64_t>(-1);
+            return regs;
+        }
+
+        switch (regs->rax)
+        {
+            case 1:
+            {
+                constexpr uint64_t MAX_WRITE_LENGTH = 4096;
+                if (regs->rdx == 0)
+                {
+                    regs->rax = 0;
+                    return regs;
+                }
+                const auto* address_space = Scheduler::current_user_address_space();
+                if (regs->rdi != 1 || regs->rdx > MAX_WRITE_LENGTH || !Memory::vmm::is_user_range(address_space, regs->rsi, regs->rdx, false))
+                {
+                    regs->rax = static_cast<uint64_t>(-1);
+                    return regs;
+                }
+
+                const char* text = reinterpret_cast<const char*>(regs->rsi);
+                for (uint64_t index = 0; index < regs->rdx; ++index)
+                {
+                    Uart::putc(text[index]);
+                }
+                regs->rax = regs->rdx;
+                return regs;
+            }
+            case 2:
+                Scheduler::terminate_current_user_task(static_cast<int32_t>(regs->rdi));
+                return Scheduler::on_interrupt(regs);
+            default:
+                regs->rax = static_cast<uint64_t>(-38);
+                return regs;
+        }
+    }
+
+    if ((regs->cs & 3) == 3 && regs->vector < 22)
+    {
+        Uart::puts("[USER] Exception in user task, terminating it\n");
+        Scheduler::terminate_current_user_task(-1);
         return Scheduler::on_interrupt(regs);
     }
 

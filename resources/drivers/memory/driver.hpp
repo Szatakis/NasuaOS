@@ -8,6 +8,7 @@
 
 #include "drivers/uart/driver.hpp"
 #include "system/sysfunc/logger/logger.hpp"
+#include "user_address_space.hpp"
 
 namespace Memory 
 {
@@ -53,14 +54,6 @@ namespace Memory
     // VMM
     namespace vmm 
     {
-        struct UserAddressSpace
-        {
-            uint64_t root_phys;
-            uint64_t base;
-            uint16_t pml4_index;
-            bool valid;
-        };
-
         constexpr uint64_t PAGE_PRESENT = 0x001;
         constexpr uint64_t PAGE_WRITE   = 0x002;
         constexpr uint64_t PAGE_USER    = 0x004;
@@ -70,13 +63,6 @@ namespace Memory
         bool map_page(uint64_t virt, uint64_t phys, uint64_t flags);
         bool unmap_page(uint64_t virt);
         uint64_t translate(uint64_t virt);
-        bool create_user_address_space(UserAddressSpace* space);
-        // User mappings own their physical pages; unmap/destroy releases them.
-        bool map_user_page(UserAddressSpace* space, uint64_t virt, uint64_t phys, uint64_t flags);
-        bool unmap_user_page(UserAddressSpace* space, uint64_t virt);
-        bool activate_address_space(const UserAddressSpace* space);
-        void activate_kernel_address_space();
-        bool destroy_user_address_space(UserAddressSpace* space);
         void init();
     }
 }

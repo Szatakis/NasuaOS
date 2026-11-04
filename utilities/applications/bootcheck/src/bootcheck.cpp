@@ -1,24 +1,18 @@
 #include <napp.h>
+#include <nasua_syscall.h>
 
-NAPP_APPLICATION("bootcheck", "Test the NAPP API and report results", false);
+NAPP_USER_APPLICATION("bootcheck", "Ring-3 syscall smoke test", true);
 
-int _start(const napp_api* api)
+int _start(void)
 {
-    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION)
+    static constexpr char message[] =
+        "[BOOTCHECK] NAPP ran in ring 3 and wrote through syscall\n";
+    constexpr uint64_t message_length = sizeof(message) - 1;
+    if (nasua_user_write(message, message_length) !=
+        static_cast<int64_t>(message_length))
     {
-        return 1;
+        nasua_user_exit(1);
     }
 
-    api->serial_log("[BOOTCHECK] Application started\n");
-
-    api->print_info("NasuaOS boot check\n");
-    api->print_line("Application image: loaded from /bin/bootcheck/bootcheck.napp");
-    api->print("Application ABI:    ");
-    api->print_dec(api->abi_version);
-    api->print("\n");
-    api->print_line("Boot check passed.");
-
-    api->serial_log("[BOOTCHECK] Application finished\n");
-
-    return 0;
+    nasua_user_exit(0);
 }

@@ -41,6 +41,12 @@ static void set_gate(uint8_t vector, void* handler)
     idt[vector].zero = 0;
 }
 
+static void set_user_gate(uint8_t vector, void* handler)
+{
+    set_gate(vector, handler);
+    idt[vector].type_attr = 0xEE;
+}
+
 void idt_init()
 {
     Uart::puts("[IDT] Initializing...\n");
@@ -71,6 +77,7 @@ void idt_init()
 
     set_gate(32, (void*)irq0);
     set_gate(0x81, (void*)isr_yield);
+    set_user_gate(0x80, (void*)isr_syscall);
 
     Uart::puts("[IDT] IRQ0 installed\n");
     log(INFO,"IDT","IRQ0 installed");
