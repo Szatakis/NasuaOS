@@ -5,6 +5,9 @@ NAPP_APPLICATION("terminal", "Graphical shell terminal", true);
 static const napp_api* terminal_api = nullptr;
 static constexpr uint32_t MAX_OUTPUT_LINES = 64;
 static constexpr uint32_t MAX_LINE_LENGTH = 192;
+static constexpr uint32_t CHARACTER_WIDTH = 9;
+static constexpr uint32_t LINE_HEIGHT = 14;
+static constexpr uint32_t DEFAULT_WINDOW_WIDTH = 750;
 
 struct terminal_state
 {
@@ -13,6 +16,8 @@ struct terminal_state
     char output[MAX_OUTPUT_LINES][MAX_LINE_LENGTH];
     uint32_t output_count;
     uint32_t scroll_offset;
+    uint32_t characters_per_line;
+    uint32_t visible_output_lines;
 };
 
 static terminal_state terminal{};
@@ -20,6 +25,27 @@ static constexpr uint32_t COLOR_BACKGROUND = 0xFF11151D;
 static constexpr uint32_t COLOR_TEXT = 0xFFE1E7EF;
 static constexpr uint32_t COLOR_MUTED = 0xFF9BA8B8;
 static constexpr uint32_t COLOR_ACCENT = 0xFF59E81B;
+
+static uint32_t output_visual_line_count(uint32_t characters_per_line)
+{
+    uint32_t visual_lines = 0;
+    for (uint32_t line = 0; line < terminal.output_count; ++line)
+    {
+        uint32_t length = 0;
+        while (length + 1 < MAX_LINE_LENGTH && terminal.output[line][length] != '\0')
+        {
+            ++length;
+        }
+        visual_lines += length == 0 ? 1 : (length + characters_per_line - 1) / characters_per_line;
+    }
+    return visual_lines;
+}
+
+static uint32_t maximum_scroll_offset()
+{
+    const uint32_t total_lines = output_visual_line_count(terminal.characters_per_line);
+    return total_lines > terminal.visible_output_lines ? total_lines - terminal.visible_output_lines : 0;
+}
 
 static void clear_output()
 {
@@ -107,37 +133,87 @@ static void draw_terminal(napp_window* window)
 
     const int left = window->pos_x + 10;
     const int width = window->width - 20;
-    const int line_height = 14;
-    const int line_capacity = (content_height - 42) / line_height;
-    const uint32_t visible = line_capacity > 0 ? static_cast<uint32_t>(line_capacity) : 1;
-    const uint32_t total = terminal.output_count;
-    uint32_t first = total > visible ? total - visible : 0;
-    if (terminal.scroll_offset > first)
+    terminal.characters_per_line = width > 0 ?
+        static_cast<uint32_t>(width) / CHARACTER_WIDTH : 1;
+    if (terminal.characters_per_line == 0)
     {
-        terminal.scroll_offset = first;
+        terminal.characters_per_line = 1;
     }
-    first -= terminal.scroll_offset;
 
     terminal_api->gui->draw_text("NasuaOS Terminal", left, content_y + 8, COLOR_ACCENT);
-    for (uint32_t row = 0; row < visible && first + row < total; ++row)
+    char prompt[260] = "> ";
+    uint32_t prompt_length = 2;
+    for (uint32_t index = 0; index < terminal.input_length && prompt_length + 1 < sizeof(prompt); ++index)
     {
-        terminal_api->gui->draw_text(terminal.output[first + row], left,
-                                     content_y + 30 + static_cast<int>(row * line_height),
-                                     COLOR_TEXT);
+        prompt[prompt_length++] = terminal.input[index];
+    }
+    prompt[prompt_length++] = '_';
+    prompt[prompt_length] = '\0';
+
+    const uint32_t prompt_lines = (prompt_length + terminal.characters_per_line - 1) / terminal.characters_per_line;
+    const int prompt_area_height = static_cast<int>(prompt_lines * LINE_HEIGHT + 8);
+    const int prompt_y = content_y + content_height - prompt_area_height;
+    terminal.visible_output_lines = prompt_y > content_y + 30 ? static_cast<uint32_t>((prompt_y - (content_y + 30)) / LINE_HEIGHT) : 0;
+
+    terminal_api->gui->fill_block(left, prompt_y, COLOR_BACKGROUND, width, prompt_area_height);
+    for (uint32_t line = 0; line < prompt_lines; ++line)
+    {
+        const uint32_t start = line * terminal.characters_per_line;
+        uint32_t length = prompt_length - start;
+        if (length > terminal.characters_per_line)
+        {
+            length = terminal.characters_per_line;
+        }
+        char prompt_line[260];
+        for (uint32_t index = 0; index < length; ++index)
+        {
+            prompt_line[index] = prompt[start + index];
+        }
+        prompt_line[length] = '\0';
+        terminal_api->gui->draw_text(prompt_line, left, prompt_y + static_cast<int>(line * LINE_HEIGHT), COLOR_TEXT);
     }
 
-    char prompt[260] = "> ";
-    uint32_t index = 2;
-    while (terminal.input[index - 2] != '\0' && index + 1 < sizeof(prompt))
+    const uint32_t max_scroll = maximum_scroll_offset();
+    if (terminal.scroll_offset > max_scroll)
     {
-        prompt[index] = terminal.input[index - 2];
-        ++index;
+        terminal.scroll_offset = max_scroll;
     }
-    prompt[index++] = '_';
-    prompt[index] = '\0';
-    terminal_api->gui->fill_block(left, content_y + content_height - 26,
-                                  COLOR_BACKGROUND, width, 24);
-    terminal_api->gui->draw_text(prompt, left, content_y + content_height - 22, COLOR_TEXT);
+    const uint32_t first_visual_line = max_scroll - terminal.scroll_offset;
+    uint32_t visual_line = 0;
+    uint32_t output_row = 0;
+    for (uint32_t line = 0; line < terminal.output_count && output_row < terminal.visible_output_lines; ++line)
+    {
+        uint32_t length = 0;
+        while (length + 1 < MAX_LINE_LENGTH && terminal.output[line][length] != '\0')
+        {
+            ++length;
+        }
+        const uint32_t wrapped_lines = length == 0 ? 1 : (length + terminal.characters_per_line - 1) / terminal.characters_per_line;
+        for (uint32_t wrapped_line = 0; wrapped_line < wrapped_lines; ++wrapped_line)
+        {
+            if (visual_line >= first_visual_line && visual_line < first_visual_line + terminal.visible_output_lines)
+            {
+                const uint32_t start = wrapped_line * terminal.characters_per_line;
+                uint32_t chunk_length = length > start ? length - start : 0;
+                if (chunk_length > terminal.characters_per_line)
+                {
+                    chunk_length = terminal.characters_per_line;
+                }
+                if (chunk_length > 0)
+                {
+                    char output_line[MAX_LINE_LENGTH];
+                    for (uint32_t index = 0; index < chunk_length; ++index)
+                    {
+                        output_line[index] = terminal.output[line][start + index];
+                    }
+                    output_line[chunk_length] = '\0';
+                    terminal_api->gui->draw_text(output_line, left, content_y + 30 + static_cast<int>(output_row * LINE_HEIGHT),COLOR_TEXT);
+                }
+                ++output_row;
+            }
+            ++visual_line;
+        }
+    }
 }
 
 static bool is_clear_command()
@@ -150,8 +226,7 @@ static bool is_clear_command()
             return false;
         }
     }
-    return terminal.input[sizeof(clear) - 1] == '\0' ||
-           terminal.input[sizeof(clear) - 1] == ' ';
+    return terminal.input[sizeof(clear) - 1] == '\0' || terminal.input[sizeof(clear) - 1] == ' ';
 }
 
 static void terminal_key(napp_window*, char key)
@@ -165,8 +240,7 @@ static void terminal_key(napp_window*, char key)
         {
             clear_output();
         }
-        else if (terminal.input[0] != '\0' && terminal_api != nullptr &&
-                 terminal_api->execute_command != nullptr)
+        else if (terminal.input[0] != '\0' && terminal_api != nullptr && terminal_api->execute_command != nullptr)
         {
             terminal_api->execute_command(terminal.input);
         }
@@ -190,7 +264,7 @@ static void terminal_key(napp_window*, char key)
     }
     if (key == NAPP_KEY_UP || key == 0x0B)
     {
-        if (terminal.scroll_offset + 1 < terminal.output_count)
+        if (terminal.scroll_offset < maximum_scroll_offset())
         {
             ++terminal.scroll_offset;
         }
@@ -222,10 +296,7 @@ static void terminal_close(napp_window*)
 
 int _start(const napp_api* api)
 {
-    if (api == nullptr || api->abi_version < 10 || api->gui == nullptr ||
-        api->gui->open_window == nullptr || api->gui->fill_block == nullptr ||
-        api->gui->draw_text == nullptr || api->execute_command == nullptr ||
-        api->set_print_redirect == nullptr)
+    if (api == nullptr || api->abi_version < 10 || api->gui == nullptr || api->gui->open_window == nullptr || api->gui->fill_block == nullptr || api->gui->draw_text == nullptr || api->execute_command == nullptr || api->set_print_redirect == nullptr)
     {
         return 1;
     }
@@ -235,6 +306,8 @@ int _start(const napp_api* api)
     terminal.input[0] = '\0';
     terminal.output_count = 0;
     terminal.scroll_offset = 0;
+    terminal.characters_per_line = (DEFAULT_WINDOW_WIDTH - 20) / CHARACTER_WIDTH;
+    terminal.visible_output_lines = 1;
     for (uint32_t index = 0; index < MAX_OUTPUT_LINES; ++index)
     {
         terminal.output[index][0] = '\0';
@@ -245,7 +318,7 @@ int _start(const napp_api* api)
 
     const napp_window_config config =
     {
-        "Terminal", 560, 370, true, true, nullptr,
+        "Terminal", 750, 500, true, true, nullptr,
         draw_terminal, terminal_key, nullptr, nullptr, nullptr, 0, nullptr, terminal_close
     };
     if (!api->gui->open_window(&config))

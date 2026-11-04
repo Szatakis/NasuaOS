@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "applications/shell/shell.hpp"
+#include "shell/shell.hpp"
 #include "drivers/disk/driver.hpp"
 #include "drivers/gpu/driver.hpp"
 #include "drivers/memory/driver.hpp"

@@ -8,7 +8,7 @@ namespace Keyboard
     bool shift_pressed = false;
     bool caps_lock = false;
     bool extended_scancode = false;
-    bool shell_input_enabled = true;
+    bool shell_input_enabled = false;
     bool alt_pressed = false;
     char input_buffer[128] = {};
     uint32_t input_pos = 0;

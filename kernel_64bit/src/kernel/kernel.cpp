@@ -7,7 +7,7 @@
 #include "system/filesystem/filesystem.hpp"
 #include "system/authentication/authentication.hpp"
 
-#include "applications/shell/shell.hpp"
+#include "shell/shell.hpp"
 
 #include "system/applications/napp/napp.hpp"
 #include "system/process/process.hpp"
@@ -124,6 +124,11 @@ void iqu_init()
     {
         execute_command("debug --on");
         Uart::puts("DEBUG MODE ENABLED");
+    }
+
+    if (!napp_run("terminal", nullptr))
+    {
+        log(ERROR, "NAPP", "Failed to start Terminal at boot");
     }
 }
 

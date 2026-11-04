@@ -6,7 +6,7 @@
 #include "fonts/fonts.hpp"
 #include "system/gui/vars/colors.hpp"
 
-#include "applications/shell/shell.hpp"
+#include "shell/shell.hpp"
 #include "system/applications/napp/napp.hpp"
 
 #include "libs/libc/libc.hpp"
@@ -44,9 +44,6 @@ namespace Gpu
         }
 
         fetch();
-        print(CMD_TEXT_WHITE);
-        print("Enter Command\n");
-        print_cmd();
     }
 
     static void scroll_text()
@@ -293,6 +290,11 @@ namespace Gpu
 
     void print_cmd()
     {
+        if (!Keyboard::shell_input_enabled)
+        {
+            return;
+        }
+
         print(CMD_TEXT_BLUE);
         print(user_name);
         print("@");

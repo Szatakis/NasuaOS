@@ -54,8 +54,7 @@ static const char* process_type_name(uint32_t type)
 
 static void draw_text(const char* text, int x, int y, int width, uint32_t color)
 {
-    if (task_api == nullptr || task_api->gui == nullptr ||
-        task_api->gui->draw_text == nullptr || text == nullptr || width < 8)
+    if (task_api == nullptr || task_api->gui == nullptr || task_api->gui->draw_text == nullptr || text == nullptr || width < 8)
     {
         return;
     }
@@ -73,8 +72,7 @@ static void draw_text(const char* text, int x, int y, int width, uint32_t color)
 
 static void draw_task_manager(napp_window* window)
 {
-    if (window == nullptr || task_api == nullptr || task_api->gui == nullptr ||
-        task_api->abi_version < 10 || task_api->get_processes == nullptr)
+    if (window == nullptr || task_api == nullptr || task_api->gui == nullptr || task_api->abi_version < 10 || task_api->get_processes == nullptr)
     {
         return;
     }
@@ -87,13 +85,11 @@ static void draw_task_manager(napp_window* window)
     }
 
     task_api->gui->fill_block(window->pos_x, content_y, COLOR_BACKGROUND, window->width, content_height);
-    task_api->gui->fill_block(window->pos_x + 12, content_y + 10, COLOR_PANEL,
-                              window->width - 24, content_height - 22);
+    task_api->gui->fill_block(window->pos_x + 12, content_y + 10, COLOR_PANEL, window->width - 24, content_height - 22);
     const int table_x = window->pos_x + 24;
     const int table_width = window->width - 48;
     draw_text("PROCESS MANAGER", table_x, content_y + 22, table_width, COLOR_ACCENT);
-    draw_text("Logical system services and application processes",
-              table_x, content_y + 42, table_width, COLOR_MUTED);
+    draw_text("Logical system services and application processes", table_x, content_y + 42, table_width, COLOR_MUTED);
 
     napp_process_info processes[NAPP_MAX_PROCESSES]{};
     const uint32_t count = task_api->get_processes(processes, NAPP_MAX_PROCESSES);
@@ -134,8 +130,7 @@ static void draw_task_manager(napp_window* window)
     draw_text("TYPE", table_x + table_width - 180, table_y + 7, 72, COLOR_MUTED);
     draw_text("STATE", table_x + table_width - 105, table_y + 7, 96, COLOR_MUTED);
 
-    const uint32_t available = content_height > 135 ?
-        static_cast<uint32_t>(content_height - 135) / 25 : 1;
+    const uint32_t available = content_height > 135 ? static_cast<uint32_t>(content_height - 135) / 25 : 1;
     visible_rows = available < 12 ? available : 12;
     if (process_scroll + visible_rows > count)
     {
@@ -153,21 +148,17 @@ static void draw_task_manager(napp_window* window)
         append_number(number, sizeof(number), process.pid);
         draw_text(number, table_x + 8, row_y + 8, 42, COLOR_TEXT);
         draw_text(process.name, table_x + 52, row_y + 8, table_width - 250, COLOR_TEXT);
-        draw_text(process_type_name(process.type), table_x + table_width - 180,
-                  row_y + 8, 72, COLOR_MUTED);
+        draw_text(process_type_name(process.type), table_x + table_width - 180, row_y + 8, 72, COLOR_MUTED);
         const bool is_running = process.state == NAPP_PROCESS_RUNNING;
-        draw_text(is_running ? "RUNNING" : "EXITED", table_x + table_width - 105,
-                  row_y + 8, 96, is_running ? COLOR_ACCENT : COLOR_RED);
+        draw_text(is_running ? "RUNNING" : "EXITED", table_x + table_width - 105, row_y + 8, 96, is_running ? COLOR_ACCENT : COLOR_RED);
     }
 
-    draw_text("J/K or arrows: scroll  |  F5: reset",
-              table_x, content_y + content_height - 24, table_width, COLOR_MUTED);
+    draw_text("J/K or arrows: scroll  |  F5: reset", table_x, content_y + content_height - 24, table_width, COLOR_MUTED);
 }
 
 static void task_manager_key(napp_window*, char key)
 {
-    if ((key == 'j' || key == 's' || key == NAPP_KEY_DOWN) &&
-        process_scroll + visible_rows < NAPP_MAX_PROCESSES)
+    if ((key == 'j' || key == 's' || key == NAPP_KEY_DOWN) && process_scroll + visible_rows < NAPP_MAX_PROCESSES)
     {
         ++process_scroll;
     }
@@ -188,9 +179,7 @@ static void task_manager_mouse(napp_window*, int, int)
 
 int _start(const napp_api* api)
 {
-    if (api == nullptr || api->abi_version < 10 || api->get_processes == nullptr ||
-        api->gui == nullptr || api->gui->open_window == nullptr ||
-        api->gui->fill_block == nullptr || api->gui->draw_text == nullptr)
+    if (api == nullptr || api->abi_version < 10 || api->get_processes == nullptr || api->gui == nullptr || api->gui->open_window == nullptr || api->gui->fill_block == nullptr || api->gui->draw_text == nullptr)
     {
         return 1;
     }

@@ -26,12 +26,9 @@ static const char* page_name(int page)
     }
 }
 
-static void draw_text_clipped(const char* text, int x, int y, int right_limit,
-                              int bottom_limit, uint32_t color)
+static void draw_text_clipped(const char* text, int x, int y, int right_limit, int bottom_limit, uint32_t color)
 {
-    if (settings_api == nullptr || settings_api->gui == nullptr ||
-        settings_api->gui->draw_text == nullptr || text == nullptr ||
-        y >= bottom_limit || y + CHAR_HEIGHT <= 0 || x >= right_limit)
+    if (settings_api == nullptr || settings_api->gui == nullptr || settings_api->gui->draw_text == nullptr || text == nullptr || y >= bottom_limit || y + CHAR_HEIGHT <= 0 || x >= right_limit)
     {
         return;
     }
@@ -44,8 +41,7 @@ static void draw_text_clipped(const char* text, int x, int y, int right_limit,
 
     char clipped[96];
     int index = 0;
-    while (text[index] != '\0' && index < max_chars &&
-           index + 1 < static_cast<int>(sizeof(clipped)))
+    while (text[index] != '\0' && index < max_chars && index + 1 < static_cast<int>(sizeof(clipped)))
     {
         clipped[index] = text[index];
         ++index;
@@ -56,8 +52,7 @@ static void draw_text_clipped(const char* text, int x, int y, int right_limit,
 
 static void draw_panel(int x, int y, int width, int height, uint32_t color)
 {
-    if (settings_api == nullptr || settings_api->gui == nullptr ||
-        settings_api->gui->fill_block == nullptr || width <= 0 || height <= 0)
+    if (settings_api == nullptr || settings_api->gui == nullptr || settings_api->gui->fill_block == nullptr || width <= 0 || height <= 0)
     {
         return;
     }
@@ -78,12 +73,9 @@ static void draw_border(int x, int y, int width, int height, uint32_t color)
     draw_panel(x + width - 1, y, 1, height, color);
 }
 
-static void draw_page_button(int x, int y, int width, int height,
-                             const char* text, bool selected)
+static void draw_page_button(int x, int y, int width, int height, const char* text, bool selected)
 {
-    if (width <= 0 || height <= 0 || text == nullptr ||
-        settings_api == nullptr || settings_api->gui == nullptr ||
-        settings_api->gui->draw_text == nullptr)
+    if (width <= 0 || height <= 0 || text == nullptr || settings_api == nullptr || settings_api->gui == nullptr || settings_api->gui->draw_text == nullptr)
     {
         return;
     }
@@ -137,16 +129,14 @@ static void format_megabytes(char* output, uint32_t capacity, uint64_t bytes)
         ++index;
     }
     const char suffix[] = " MB";
-    for (uint32_t character = 0; suffix[character] != '\0' &&
-         index + 1 < capacity; ++character)
+    for (uint32_t character = 0; suffix[character] != '\0' && index + 1 < capacity; ++character)
     {
         output[index++] = suffix[character];
     }
     output[index] = '\0';
 }
 
-static void format_resolution(char* output, uint32_t capacity,
-                              uint64_t width, uint64_t height)
+static void format_resolution(char* output, uint32_t capacity, uint64_t width, uint64_t height)
 {
     if (capacity < 2)
     {
@@ -159,8 +149,7 @@ static void format_resolution(char* output, uint32_t capacity,
     append_number(height_text, sizeof(height_text), height);
 
     uint32_t index = 0;
-    for (uint32_t character = 0; width_text[character] != '\0' &&
-         index + 1 < capacity; ++character)
+    for (uint32_t character = 0; width_text[character] != '\0' && index + 1 < capacity; ++character)
     {
         output[index++] = width_text[character];
     }
@@ -168,8 +157,7 @@ static void format_resolution(char* output, uint32_t capacity,
     {
         output[index++] = 'x';
     }
-    for (uint32_t character = 0; height_text[character] != '\0' &&
-         index + 1 < capacity; ++character)
+    for (uint32_t character = 0; height_text[character] != '\0' && index + 1 < capacity; ++character)
     {
         output[index++] = height_text[character];
     }
@@ -188,9 +176,7 @@ static void draw_system_page(int x, int y, int width, int height)
     draw_text_clipped("System Information", x, y, right, bottom, 0xFFFFFFFF);
 
     napp_system_info info{};
-    const bool has_system_info = settings_api != nullptr &&
-        settings_api->abi_version >= 10 && settings_api->get_system_info != nullptr &&
-        settings_api->get_system_info(&info);
+    const bool has_system_info = settings_api != nullptr && settings_api->abi_version >= 10 && settings_api->get_system_info != nullptr && settings_api->get_system_info(&info);
 
     draw_text_clipped("Operating System:", x, y + 28, right, bottom, 0x9AA4B2);
     draw_text_clipped("NasuaOS", x + 160, y + 28, right, bottom, 0xFFFFFFFF);
@@ -211,8 +197,7 @@ static void draw_system_page(int x, int y, int width, int height)
     if (has_system_info)
     {
         char resolution[48];
-        format_resolution(resolution, sizeof(resolution),
-                          info.framebuffer_width, info.framebuffer_height);
+        format_resolution(resolution, sizeof(resolution), info.framebuffer_width, info.framebuffer_height);
         draw_text_clipped(resolution, x + 160, y + 116, right, bottom, 0xFFFFFFFF);
     }
 
@@ -298,8 +283,7 @@ static void draw_settings(napp_window* window)
             break;
         }
 
-        draw_page_button(button_x, button_y, button_width, draw_height,
-                         page_name(page), settings_page == page);
+        draw_page_button(button_x, button_y, button_width, draw_height, page_name(page), settings_page == page);
         button_y += button_height + 6;
     }
 
@@ -318,8 +302,7 @@ static void draw_settings(napp_window* window)
     }
     else
     {
-        draw_text_clipped(page_name(settings_page), page_x, page_y,
-                          page_x + page_width, page_y + page_height, 0xFFFFFFFF);
+        draw_text_clipped(page_name(settings_page), page_x, page_y, page_x + page_width, page_y + page_height, 0xFFFFFFFF);
     }
 }
 
@@ -341,8 +324,7 @@ static void settings_mouse(napp_window* window, int mouse_x, int mouse_y)
 
     for (int page = 0; page < PAGE_COUNT; ++page)
     {
-        if (mouse_x >= button_x && mouse_x < button_x + button_width &&
-            mouse_y >= button_y && mouse_y < button_y + button_height)
+        if (mouse_x >= button_x && mouse_x < button_x + button_width && mouse_y >= button_y && mouse_y < button_y + button_height)
         {
             settings_page = page;
             return;
@@ -353,9 +335,7 @@ static void settings_mouse(napp_window* window, int mouse_x, int mouse_y)
 
 int _start(const napp_api* api)
 {
-    if (api == nullptr || api->abi_version < 10 || api->gui == nullptr ||
-        api->gui->open_window == nullptr || api->gui->fill_block == nullptr ||
-        api->gui->draw_text == nullptr)
+    if (api == nullptr || api->abi_version < 10 || api->gui == nullptr || api->gui->open_window == nullptr || api->gui->fill_block == nullptr || api->gui->draw_text == nullptr)
     {
         return 1;
     }

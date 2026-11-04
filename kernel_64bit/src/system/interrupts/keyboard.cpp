@@ -1,7 +1,7 @@
 #include "system/drivers/drivers.hpp"
 #include "system/interrupts/interrupts.hpp"
 
-#include "applications/shell/shell.hpp"
+#include "shell/shell.hpp"
 #include "system/sysfunc/command_history/history.hpp"
 
 #include "system/gui/vars/colors.hpp"

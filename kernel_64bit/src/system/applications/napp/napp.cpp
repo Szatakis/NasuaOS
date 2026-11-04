@@ -4,6 +4,7 @@
 #include "drivers/cpu/driver.hpp"
 #include "drivers/disk/ata/driver.hpp"
 #include "drivers/memory/driver.hpp"
+#include "drivers/mouse/driver.hpp"
 #include "drivers/timer/driver.hpp"
 #include "drivers/uart/driver.hpp"
 #include "drivers/network/driver.hpp"
@@ -12,11 +13,12 @@
 #include "system/filesystem/clawfs/clawfs.hpp"
 #include "system/filesystem/file_resolver/file_resolver.hpp"
 
+#include "system/gui/gui.hpp"
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
 #include "system/process/process.hpp"
 
-#include "applications/shell/shell.hpp"
+#include "shell/shell.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -614,6 +616,35 @@ bool napp_api_open_window(const napp_window_config* config)
     slot->window.pos_y = 10;
     slot->window.width = config->width > 0 ? config->width : 320;
     slot->window.height = config->height > 0 ? config->height : 240;
+    if (strcmp(loading_application, "terminal") == 0 && Gpu::fb != nullptr)
+    {
+        const int right_margin = 20;
+        const int bottom_margin = 20;
+        const int available_bottom = static_cast<int>(Gpu::fb->height) -
+            static_cast<int>(bar_h_scaled) - bottom_margin;
+        slot->window.pos_x = static_cast<int>(Gpu::fb->width) -
+            slot->window.width - right_margin;
+        slot->window.pos_y = available_bottom - slot->window.height;
+        if (slot->window.pos_x < 0)
+        {
+            slot->window.pos_x = 0;
+        }
+        if (slot->window.pos_y < 0)
+        {
+            slot->window.pos_y = 0;
+        }
+        Mouse::x = slot->window.pos_x + (slot->window.width * 3) / 4;
+        Mouse::y = slot->window.pos_y + WINDOW_TITLEBAR_HEIGHT +
+            (slot->window.height - WINDOW_TITLEBAR_HEIGHT) / 2;
+        if (Mouse::x >= static_cast<int32_t>(Gpu::fb->width) - CURSOR_W)
+        {
+            Mouse::x = static_cast<int32_t>(Gpu::fb->width) - CURSOR_W - 1;
+        }
+        if (Mouse::y >= static_cast<int32_t>(Gpu::fb->height) - CURSOR_H)
+        {
+            Mouse::y = static_cast<int32_t>(Gpu::fb->height) - CURSOR_H - 1;
+        }
+    }
     slot->window.resizable = config->resizable;
     slot->window.can_maximize = config->can_maximize;
     slot->window.userdata = slot;
