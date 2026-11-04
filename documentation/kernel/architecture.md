@@ -110,6 +110,16 @@ g++ -std=c++20 -DSCHEDULER_TEST -Ikernel_64bit/src -Iresources \
 /tmp/nasua-scheduler-test
 ```
 
+### CPU Privilege Rings
+
+The x86_64 GDT now defines kernel code/data selectors, user code/data selectors,
+and a 64-bit TSS. The IDT targets the kernel code selector, and the scheduler
+updates the TSS kernel-stack pointer when selecting a task with its own stack.
+This is the descriptor-table groundwork only: NAPP applications still execute
+in ring 0 until user address spaces, validated system calls, and user-mode
+callback dispatch are implemented. Embedded drivers remain in ring 0; x86-64
+page permissions do not distinguish rings 0, 1, and 2 from one another.
+
 ### System Functions
 
 | Component       | File                        | Description                    |

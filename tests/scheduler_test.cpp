@@ -1,4 +1,5 @@
 #include "system/scheduler/scheduler.hpp"
+#include "system/interrupts/functions/gdt.hpp"
 #include "system/interrupts/functions/isr.hpp"
 #include "system/sysfunc/logger/logger.hpp"
 
@@ -39,6 +40,13 @@ namespace Timer
     }
 }
 
+namespace Gdt
+{
+    void set_kernel_stack(uint64_t)
+    {
+    }
+}
+
 static void empty_task(void*)
 {
 }
@@ -66,7 +74,7 @@ int main()
     Registers* first_context = Scheduler::on_interrupt(&kernel_frame);
     assert(first_context != &kernel_frame);
     assert(first_context->rip != 0);
-    assert(first_context->cs == 0x28);
+    assert(first_context->cs == Gdt::KERNEL_CODE_SELECTOR);
     assert((first_context->rflags & 0x2) != 0);
     assert(Scheduler::current_task_id() == first);
     assert(Scheduler::on_interrupt(&first_frame) != &first_frame);

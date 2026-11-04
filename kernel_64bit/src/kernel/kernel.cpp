@@ -4,6 +4,7 @@
 
 #include "system/drivers/drivers.hpp"
 #include "system/interrupts/interrupts.hpp"
+#include "system/interrupts/functions/gdt.hpp"
 #include "system/filesystem/filesystem.hpp"
 #include "system/authentication/authentication.hpp"
 
@@ -94,6 +95,7 @@ void iqu_init()
     Memory::vmm::init();
     Memory::heap::init();
     Apic::controller_init();
+    Gdt::init();
     idt_init();
     Timer::pit_init();
     Scheduler::init();

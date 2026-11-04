@@ -1,11 +1,13 @@
 #include "../scheduler.hpp"
 
 #include "../pr_map/pr_map.hpp"
+#include "system/interrupts/functions/gdt.hpp"
 #include "system/interrupts/functions/isr.hpp"
 #include "system/sysfunc/logger/logger.hpp"
 #include "drivers/timer/driver.hpp"
 
 #include <stddef.h>
+#include <stdint.h>
 
 namespace Memory::heap
 {
@@ -98,8 +100,7 @@ namespace Scheduler
         for (uint32_t index = 1; index < MAX_TASKS; ++index)
         {
             Task& task = tasks[index];
-            if (task.state == TaskState::Sleeping &&
-                tick_deadline_reached(now, task.wake_tick))
+            if (task.state == TaskState::Sleeping && tick_deadline_reached(now, task.wake_tick))
             {
                 task.state = TaskState::Ready;
             }
@@ -215,7 +216,7 @@ namespace Scheduler
         }
         frame->rdi = reinterpret_cast<uint64_t>(slot);
         frame->rip = reinterpret_cast<uint64_t>(task_trampoline);
-        frame->cs = 0x28;
+        frame->cs = Gdt::KERNEL_CODE_SELECTOR;
         frame->rflags = 0x202;
         slot->context = frame;
 
@@ -308,6 +309,12 @@ namespace Scheduler
 
         running_task_id = next->id;
         next->state = TaskState::Running;
+        if (next->stack != nullptr)
+        {
+            const uintptr_t stack_top =
+                reinterpret_cast<uintptr_t>(next->stack) + TASK_STACK_SIZE;
+            Gdt::set_kernel_stack(stack_top);
+        }
         return next->context != nullptr ? next->context : frame;
     }
 

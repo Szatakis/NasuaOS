@@ -1,5 +1,6 @@
 #include "idt.hpp"
 
+#include "gdt.hpp"
 #include "isr.hpp"
 #include "drivers/uart/driver.hpp"
 
@@ -32,7 +33,7 @@ static void set_gate(uint8_t vector, void* handler)
     uint64_t addr = (uint64_t)handler;
 
     idt[vector].offset_low = addr & 0xFFFF;
-    idt[vector].selector = 0x28;
+    idt[vector].selector = Gdt::KERNEL_CODE_SELECTOR;
     idt[vector].ist = 0;
     idt[vector].type_attr = 0x8E;
     idt[vector].offset_mid = (addr >> 16) & 0xFFFF;
