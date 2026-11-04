@@ -136,7 +136,7 @@ The macro expands to:
 struct napp_header
 {
     uint32_t magic;                    // 0x5050414E ("NPPA")
-    uint32_t abi_version;              // NAPP_ABI_VERSION (8)
+    uint32_t abi_version;              // NAPP_ABI_VERSION (10)
     uint32_t header_size;              // Aligned size of the NAPP header
     uint32_t entry_offset;             // Offset to _start function
     char     name[NAPP_NAME_LENGTH];   // 32 bytes

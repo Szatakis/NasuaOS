@@ -9,17 +9,17 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 | Offset | Size | Field              | Description                                             |
 |--------|------|--------------------|---------------------------------------------------------|
 | 0x00   | 4    | magic              | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NAPP")             |
-| 0x04   | 4    | abi_version        | `8` (current ABI version)                               |
-| 0x08   | 4    | header_size        | Aligned header size (384 bytes in ABI 8)                |
+| 0x04   | 4    | abi_version        | `10` (current ABI version)                              |
+| 0x08   | 4    | header_size        | Aligned header size (384 bytes in ABI 8 and later)      |
 | 0x0C   | 4    | entry_offset       | Offset from start of file to `_start` function          |
 | 0x10   | 32   | name               | Null-terminated application name                        |
 | 0x30   | 48   | description        | Null-terminated short description (shown in `help`)     |
 | 0x60   | 1    | show_in_start_menu | Whether the app appears in the Start Menu               |
 | 0x61   | 256  | help_text          | Optional command usage and argument details             |
 
-The unaligned ABI 8 header is 353 bytes; `header_size` and `entry_offset` are
-rounded up to the next 64-byte boundary. Older ABI 6/7 binaries remain
-supported and do not contain `help_text`.
+The unaligned ABI 8-and-later header is 353 bytes; `header_size` and
+`entry_offset` are rounded up to the next 64-byte boundary. Older ABI 6/7
+binaries remain supported and do not contain `help_text`.
 
 ```cpp
 #define NAPP_NAME_LENGTH 32
@@ -31,7 +31,7 @@ struct napp_header
 {
     uint32_t magic;                    // 0x5050414E
     uint32_t abi_version;              // 4
-    uint32_t header_size;              // Aligned size of the header (384 in ABI 8)
+    uint32_t header_size;              // Aligned size of the header (384 in ABI 8+)
     uint32_t entry_offset;
     char     name[NAPP_NAME_LENGTH];   // 32
     char     description[NAPP_DESCRIPTION_LENGTH];  // 48
@@ -76,12 +76,13 @@ The loader checks this magic value to verify the file is a valid NAPP binary. If
 ## ABI Version
 
 ```cpp
-#define NAPP_ABI_VERSION 8
+#define NAPP_ABI_VERSION 10
 ```
 
-The current NAPP ABI version is 8. The loader validates this field and rejects
-binaries with an incompatible version. ABI version 8 added optional command
-help text to the header. ABI version 7 added the Start Menu visibility field.
+The current NAPP ABI version is 10. The loader supports ABI versions 6 through
+10. ABI version 10 adds process snapshots and system information to the
+application API; ABI version 9 added username lookup; ABI version 8 added
+optional command help text to the header. ABI version 7 added the Start Menu visibility field.
 ABI version 4 added the `http_get`
 service for plain HTTP requests over the kernel's DNS and TCP network stack.
 ABI version 5 added complete-file ClawFS read and write services. ABI version 6

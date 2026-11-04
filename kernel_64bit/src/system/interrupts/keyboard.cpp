@@ -4,8 +4,6 @@
 #include "applications/shell/shell.hpp"
 #include "system/sysfunc/command_history/history.hpp"
 
-#include "applications/applications.hpp"
-
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
 #include "system/gui/gui.hpp"

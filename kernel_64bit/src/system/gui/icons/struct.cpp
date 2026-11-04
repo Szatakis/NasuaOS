@@ -58,20 +58,10 @@ void draw_start_menu_system_icons(int x, int y, int p, int w, int h)
     icons_start_x = x;
     icons_start_y = y + 5;
 
-    draw_icon<32, 32>(terminal_icon, icons_start_x + 50, icons_start_y);
-    Gpu::print_at8("Terminal", icons_start_x + 85, icons_start_y + 12, COLOR_WHITE);
-
-    draw_icon<32, 32>(settings_icon, icons_start_x + 50, icons_start_y + icons_offset);
-    Gpu::print_at8("Settings", icons_start_x + 85, icons_start_y + 12 + icons_offset, COLOR_WHITE);
-
-    draw_icon<32, 32>(task_manager_icon, icons_start_x + 50, icons_start_y + icons_offset * 2);
-    Gpu::print_at8("Task Manager", icons_start_x + 85, icons_start_y + 12 + icons_offset * 2, COLOR_WHITE);
-
     draw_start_menu_napp_icons();
 }
 
-// Applications installed as .napp packages in the rootfs, listed below the
-// kernel applications and refreshed every time the start menu is drawn.
+// Applications installed as .napp packages in the rootfs.
 char start_menu_napps[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
 int start_menu_napp_count = 0;
 
@@ -95,10 +85,24 @@ void draw_start_menu_napp_icons()
 
     for (int i = 0; i < start_menu_napp_count; i++)
     {
-        int row = kernel_app_count + i;
-        const int y = icons_start_y + row * icons_offset;
-
-        const uint32_t* icon = strcmp(start_menu_napps[i], "calculator") == 0 ? calculator_icon : suaedit_icon;
+        const int y = icons_start_y + i * icons_offset;
+        const uint32_t* icon = suaedit_icon;
+        if (strcmp(start_menu_napps[i], "terminal") == 0)
+        {
+            icon = terminal_icon;
+        }
+        else if (strcmp(start_menu_napps[i], "settings") == 0)
+        {
+            icon = settings_icon;
+        }
+        else if (strcmp(start_menu_napps[i], "task_manager") == 0)
+        {
+            icon = task_manager_icon;
+        }
+        else if (strcmp(start_menu_napps[i], "calculator") == 0)
+        {
+            icon = calculator_icon;
+        }
 
         draw_icon<32, 32>(icon, icons_start_x + 50, y);
         Gpu::print_at8(start_menu_napps[i], icons_start_x + 85, y + 12, COLOR_WHITE);

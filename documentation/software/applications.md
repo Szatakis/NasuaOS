@@ -1,64 +1,44 @@
 # Software - Applications
 
-NasuaOS ships with several applications, both built-in (compiled into the kernel) and dynamically loaded (from `/bin`).
+NasuaOS applications are dynamically loaded from `/bin` as NAPP packages.
 
-## Built-in Applications
+## System Applications
 
-These applications are compiled into the kernel image and launched via `bootapp --app <name>`:
+These GUI applications are built from `utilities/applications/` and use the NAPP
+window and system APIs. They can be opened from Start or launched with
+`bootapp --app <name>`.
 
 ### settings
 
-A GUI settings application.
+Displays system information, framebuffer resolution, appearance notes, and
+NasuaOS version details. System information is obtained through the NAPP API.
 
-|   Property  | Value                                                   |
-|-------------|---------------------------------------------------------|
-| Type        | GUI window                                              |
-| Entry       | `settings_main()` in `kernel_64bit/src/applications/`   |
-| API         | Uses `napp_gui` and `napp_window`                       |
-| Description | Provides a graphical interface for system configuration |
-
-```
-user@nasua-os:/home> bootapp --app settings
-```
+Source: `utilities/applications/settings/src/settings.cpp`.
 
 ### terminal
 
-A terminal emulator window.
+An in-window shell terminal. It runs commands via `execute_command` and captures
+their output with `set_print_redirect`. Use Up/Down to scroll and F5 to clear.
 
-|   Property  | Value                                                   |
-|-------------|---------------------------------------------------------|
-| Type        | GUI window                                              |
-| Entry       | `terminal_main()`                                       |
-| API         | Uses `napp_gui` for drawing                             |
-| Description | Opens a terminal window within the GUI environment      |
-
-```
-user@nasua-os:/home> bootapp --app terminal
-```
+Source: `utilities/applications/terminal/src/terminal.cpp`.
 
 ### task_manager
 
-A process/task manager.
-
-|   Property  | Value                                                   |
-|-------------|---------------------------------------------------------|
-| Type        | GUI window                                              |
-| Entry       | `draw_task_manager()`                                   |
-| API         | Kernel process registry and GPU drawing services       |
-| Description | Lists system services, GUI apps, and shell commands with PID, type, and state |
+Lists system services, GUI applications, and shell commands using the
+NAPP process snapshot API.
 
 Use `j`/`s` or `k`/`w` to scroll the process list. System components are shown
 as logical processes; applications and commands are tracked as they start and
-exit. The list refreshes automatically. NasuaOS does not yet have a scheduler,
-so this list does not imply preemptive multitasking or process isolation.
+exit. The list refreshes automatically. The x86_64 kernel has a round-robin
+scheduler for kernel tasks, but this list remains process bookkeeping and does
+not imply that applications are separately scheduled or isolated.
 
-```
-user@nasua-os:/home> bootapp --app task_manager
-```
+Source: `utilities/applications/task_manager/src/task_manager.cpp`.
 
 ## /bin NAPP Applications
 
-These are dynamically loaded flat binaries from `/bin/<app>` (the rootfs `/bin` directory):
+These are dynamically loaded NAPP packages from
+`/bin/<app>/<app>.napp` in the rootfs:
 
 ### file_explorer
 
@@ -163,7 +143,7 @@ A text editor with an integrated terminal panel.
 The terminal panel is toggled via the **Terminal** menu item. When visible, command output from
 `execute_command` is redirected into the panel instead of the main shell buffer.
 The input prompt (`$ `) is rendered on the same visual row as the last line of
-output, matching the behaviour of the kernel built-in terminal.
+output, matching the behaviour of the graphical terminal NAPP.
 
 SuaEdit can run typed `.sua` scripts; see [SuaScript](suascript.md) for the
 language syntax and examples.

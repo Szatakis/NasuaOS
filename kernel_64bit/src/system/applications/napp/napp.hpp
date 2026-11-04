@@ -39,6 +39,8 @@ bool napp_exists_path(const char* path);
 // Loads /bin/<name>/<name>.napp and runs it. Returns false when it cannot be started.
 bool napp_run(const char* name, int* exit_code);
 
+extern void (*napp_print_redirect_cb)(char);
+
 // Lists flat-binary commands found in the rootfs /sbin folder.
 // Fills descriptions[] and help_texts[] from each command's NAPP header.
 // Older binaries without help text receive an empty help_texts[] entry.

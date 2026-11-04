@@ -33,9 +33,6 @@ kernel_64bit/
 │   │       └── kernel_panic.hpp
 │   ├── applications/
 │   │   ├── shell/              # Shell: commands.cpp, terminal.cpp, etc.
-│   │   ├── settings/
-│   │   ├── terminal/
-│   │   └── task_manager/
 │   ├── system/
 │   │   ├── drivers/
 │   │   │   ├── gpu/            # Graphics, text, windows, framebuffer
@@ -106,6 +103,9 @@ utilities/
 │   ├── napp.lds              # NAPP linker script
 │   ├── include/
 │   │   └── napp.h            # NAPP public API header
+│   ├── settings/             # NAPP system settings application
+│   ├── task_manager/         # NAPP process viewer
+│   ├── terminal/             # NAPP graphical shell terminal
 │   ├── bootcheck/
 │   │   ├── src/
 │   │   │   └── bootcheck.cpp
@@ -234,11 +234,11 @@ documentation/
 | `limine.conf.template`              | Boot menu template                                                    |
 | `config_generator/generate_conf.py` | Config-to-boot-config generator                                       |
 
-## Built-in Application Sources
+## Application Sources
 
 | Application  | Source                                        |
 |--------------|-----------------------------------------------|
 | Shell        | `kernel_64bit/src/applications/shell/`        |
-| Settings     | `kernel_64bit/src/applications/settings/`     |
-| Terminal     | `kernel_64bit/src/applications/terminal/`     |
-| Task Manager | `kernel_64bit/src/applications/task_manager/` |
+| Settings     | `utilities/applications/settings/`            |
+| Terminal     | `utilities/applications/terminal/`            |
+| Task Manager | `utilities/applications/task_manager/`        |

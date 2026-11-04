@@ -17,12 +17,6 @@ namespace Gpu::Window_Manager
     #define MAX_WINDOWS 13
     #define MAX_TASKBAR_WINDOWS 5
 
-    window_struct* apps[] = {
-        &terminal,
-        &settings,
-        &task_manager
-    };
-
     window_struct* active_window = nullptr;
 
     static window_struct* window_list[MAX_WINDOWS];

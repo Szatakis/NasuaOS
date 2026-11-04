@@ -69,6 +69,7 @@ void idt_init()
     extern void irq0();
 
     set_gate(32, (void*)irq0);
+    set_gate(0x81, (void*)isr_yield);
 
     Uart::puts("[IDT] IRQ0 installed\n");
     log(INFO,"IDT","IRQ0 installed");

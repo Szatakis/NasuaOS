@@ -11,6 +11,7 @@
 
 #include "system/applications/napp/napp.hpp"
 #include "system/process/process.hpp"
+#include "system/scheduler/scheduler.hpp"
 
 #include "system/gui/vars/colors.hpp"
 #include "system/gui/icons/icons.hpp"
@@ -95,6 +96,7 @@ void iqu_init()
     Apic::controller_init();
     idt_init();
     Timer::pit_init();
+    Scheduler::init();
 
     asm volatile("sti");
 

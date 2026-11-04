@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 9
+#define NAPP_ABI_VERSION 10
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
@@ -63,6 +63,41 @@ struct napp_header
 #define NAPP_HTTPS_ERROR_CERTIFICATE -8
 #define NAPP_HTTPS_ERROR_CLOCK -9
 #define NAPP_HTTPS_ERROR_ENTROPY -10
+#define NAPP_PROCESS_NAME_LENGTH 32
+#define NAPP_MAX_PROCESSES 32
+
+enum napp_process_type
+{
+    NAPP_PROCESS_SYSTEM,
+    NAPP_PROCESS_APPLICATION,
+    NAPP_PROCESS_COMMAND
+};
+
+enum napp_process_state
+{
+    NAPP_PROCESS_RUNNING,
+    NAPP_PROCESS_EXITED
+};
+
+struct napp_process_info
+{
+    uint32_t pid;
+    uint32_t type;
+    uint32_t state;
+    int32_t exit_code;
+    uint32_t open_windows;
+    uint64_t start_tick;
+    char name[NAPP_PROCESS_NAME_LENGTH];
+};
+
+struct napp_system_info
+{
+    uint64_t memory_total_bytes;
+    uint64_t storage_total_bytes;
+    uint64_t framebuffer_width;
+    uint64_t framebuffer_height;
+    char architecture[32];
+};
 
 // A window owned by an application. The kernel keeps the geometry up to date
 // before every callback; the application only reads it.
@@ -198,6 +233,10 @@ struct napp_api
 
     // ABI 9 addition.
     const char* (*get_username)(void);
+
+    // ABI 10 additions.
+    uint32_t (*get_processes)(struct napp_process_info* output, uint32_t capacity);
+    bool (*get_system_info)(struct napp_system_info* output);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);

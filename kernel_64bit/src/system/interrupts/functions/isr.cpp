@@ -4,6 +4,7 @@
 #include "page_fault.hpp"
 #include "drivers/uart/driver.hpp"
 #include "drivers/timer/driver.hpp"
+#include "system/scheduler/scheduler.hpp"
 
 #include "kernel/kernel_panic/kernel_panic.hpp"
 
@@ -37,26 +38,31 @@ static const char* exception_names[] = {
 };
 
 extern "C"
-void isr_handler(Registers* regs)
+Registers* isr_handler(Registers* regs)
 {
     // Spurious LAPIC interrupt — ignore
     if (regs->vector == 0xFF)
     {
-        return;
+        return regs;
     }
 
     // PIT timer tick
     if (regs->vector == 32)
     {
         Timer::pit_handler();
-        return;
+        return Scheduler::on_interrupt(regs);
+    }
+
+    if (regs->vector == 0x81)
+    {
+        return Scheduler::on_interrupt(regs);
     }
 
     // Page fault — attempt demand paging; fatal cases handled inside
     if (regs->vector == 14)
     {
         page_fault_handler(regs);
-        return;
+        return regs;
     }
 
     // All other CPU exceptions — trigger kernel panic
@@ -81,7 +87,7 @@ void isr_handler(Registers* regs)
         Uart::puts("\n");
 
         kernel_panic(name, err_buf, rip_buf, rsp_buf);
-        return;
+        return regs;
     }
 
     // Unknown / hardware IRQ with no handler

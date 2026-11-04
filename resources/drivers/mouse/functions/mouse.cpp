@@ -6,7 +6,6 @@
 #include "system/sysfunc/command_history/history.hpp"
 #include "drivers/gpu/functions/windows_manager/window.hpp"
 
-#include "applications/applications.hpp"
 #include "system/applications/napp/napp.hpp"
 #include "system/gui/icons/icons.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
@@ -548,27 +547,10 @@ namespace Mouse
         // START MENU
         if (menu_start_open)
         {
-            // Kernel applications
-            for (int i = 0; i < kernel_app_count; i++)
-            {
-                if (is_mouse_over_icon(x, y, icons_start_x + 50, icons_start_y + i * icons_offset, 250, 32))
-                {
-                    Gpu::Window_Manager::apps[i]->visible = true;
-                    Gpu::Window_Manager::apps[i]->id = current_id++;
-
-                    Gpu::Window_Manager::register_window(Gpu::Window_Manager::apps[i]);
-
-                    return;
-                }
-            }
-
-
-            // Applications shipped as .napp packages in the rootfs
+            // Applications shipped as .napp packages in the rootfs.
             for (int i = 0; i < start_menu_napp_count; i++)
             {
-                int row = kernel_app_count + i;
-
-                if (is_mouse_over_icon(x, y, icons_start_x + 50, icons_start_y + row * icons_offset, 250, 32))
+                if (is_mouse_over_icon(x, y, icons_start_x + 50, icons_start_y + i * icons_offset, 250, 32))
                 {
                     napp_run(start_menu_napps[i], nullptr);
 

@@ -15,12 +15,10 @@ bootapp --app <app_name>
 
 ```
 user@nasua-os:/home> bootapp --list
-Built-in applications:
+/bin applications:
  - settings
  - terminal
  - task_manager
-
-/bin applications:
  - bootcheck
  - calculator
  - minesweeper
@@ -28,10 +26,7 @@ Built-in applications:
  - suaedit
 ```
 
-The `--list` option queries two sources:
-
-1. **Built-in applications**: compiled into the kernel image
-2. **`/bin` applications**: NAPP binaries found in `/bin/` (flat files)
+The `--list` option queries NAPP binaries found in the rootfs `/bin` directory.
 
 ### Launching Applications
 
@@ -41,11 +36,10 @@ bootapp --app <app_name>
 
 This executes the named application. The loader:
 
-1. Checks if the app is a built-in (settings, terminal, task_manager)
-2. If not built-in, checks `/bin/<app_name>`
-3. Validates the NAPP header (magic, ABI version)
-4. Loads sections into memory
-5. Calls `_start` with the `napp_api` pointer
+1. Locates `/bin/<app_name>/<app_name>.napp`
+2. Validates the NAPP header (magic, ABI version)
+3. Loads the application image into memory
+4. Calls `_start` with the `napp_api` pointer
 
 ## Loading Process
 
@@ -81,24 +75,15 @@ When a `/sbin` command is requested via the shell:
 
 ## Application Types
 
-### Built-in Applications
-
-These are compiled into the kernel and launched directly:
-
-| Application    | Description              |
-|----------------|--------------------------|
-| `settings`     | System settings GUI      |
-| `terminal`     | Terminal emulator window |
-| `task_manager` | Process/task manager     |
-
-Built-in apps do not go through the NAPP loader — they have direct function calls in `commands.cpp`.
-
 ### NAPP Applications (/bin)
 
 These are loaded from `/bin/` (flat binary files, one per application):
 
 | Application  | Type    | Description                           |
 |--------------|---------|---------------------------------------|
+| `settings`   | GUI     | System information and settings pages |
+| `terminal`   | GUI     | Shell terminal with redirected output |
+| `task_manager` | GUI   | Process list using the NAPP system API |
 | `bootcheck`  | Console | Tests NAPP API functions              |
 | `calculator` | GUI     | Graphical calculator with callbacks   |
 | `minesweeper`| GUI     | Classic Minesweeper game              |

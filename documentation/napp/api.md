@@ -40,10 +40,36 @@ struct napp_api
                          char* response, uint32_t response_capacity, uint32_t timeout_ms);
     bool (*clawfs_read_file)(const char* path, void* buffer, uint32_t capacity, uint32_t* length);
     bool (*clawfs_write_file)(const char* path, const void* buffer, uint32_t length);
+    uint32_t (*get_processes)(struct napp_process_info* output, uint32_t capacity);
+    bool (*get_system_info)(struct napp_system_info* output);
 };
 ```
 
 The full structure is defined in `utilities/applications/include/napp.h`.
+ABI 10 adds the process snapshot and system information services at the end of
+the structure; earlier ABI layouts retain their existing field offsets.
+
+```cpp
+struct napp_process_info
+{
+    uint32_t pid;
+    uint32_t type;          // NAPP_PROCESS_SYSTEM/APPLICATION/COMMAND
+    uint32_t state;         // NAPP_PROCESS_RUNNING/EXITED
+    int32_t exit_code;
+    uint32_t open_windows;
+    uint64_t start_tick;
+    char name[NAPP_PROCESS_NAME_LENGTH];
+};
+
+struct napp_system_info
+{
+    uint64_t memory_total_bytes;
+    uint64_t storage_total_bytes;
+    uint64_t framebuffer_width;
+    uint64_t framebuffer_height;
+    char architecture[32];
+};
+```
 
 ## Function Pointer Fields
 
@@ -51,7 +77,7 @@ The full structure is defined in `utilities/applications/include/napp.h`.
 
 | Field        | Signature                | Description                                      |
 |--------------|--------------------------|--------------------------------------------------|
-| `abi_version`| `uint32_t`               | NAPP ABI version (currently 6)                   |
+| `abi_version`| `uint32_t`               | NAPP ABI version (currently 10)                  |
 | `argc`       | `int`                    | Number of command-line arguments                 |
 | `argv`       | `char**`                 | Array of argument strings (`argv[0]` = app name) |
 | `print`      | `void (*)(const char*)`  | Print a string to the terminal/log               |
@@ -118,6 +144,18 @@ struct napp_gui
 | `set_print_redirect` | `void (*)(void (*)(char))` | Redirect kernel print output to an in-app callback; pass `nullptr` to restore normal output |
 | `http_get` | `int32_t (*)(const char*, uint16_t, const char*, char*, uint32_t, uint32_t)` | Fetch a plain HTTP response over DNS/TCP |
 | `https_get` | `int32_t (*)(const char*, uint16_t, const char*, char*, uint32_t, uint32_t)` | Fetch an HTTPS response over DNS/TCP with TLS 1.2 and certificate verification |
+
+### System Information (ABI 10)
+
+`get_processes(output, capacity)` copies up to `capacity` entries and returns
+the number copied. Each `napp_process_info` includes the PID, process type and
+state, exit code, open-window count, start tick, and name. Process entries are
+the kernel's logical process registry; they do not represent isolated or
+independently scheduled applications.
+
+`get_system_info(output)` fills a `napp_system_info` with total memory and
+storage sizes, framebuffer dimensions, and the CPU architecture string. It
+returns false when passed a null output pointer.
 
 ### HTTP networking
 

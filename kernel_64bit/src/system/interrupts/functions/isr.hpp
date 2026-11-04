@@ -33,7 +33,7 @@ struct Registers
 };
 
 
-extern "C" void isr_handler(Registers* regs);
+extern "C" Registers* isr_handler(Registers* regs);
 
 extern "C" void isr_default();
 extern "C" void isr_divide_error();
@@ -49,3 +49,4 @@ extern "C" void isr_segment_not_present();
 extern "C" void isr_alignment_check();
 extern "C" void isr_spurious();
 extern "C" void irq0();
+extern "C" void isr_yield();

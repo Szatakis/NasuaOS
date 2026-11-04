@@ -14,6 +14,7 @@ global isr_segment_not_present
 global isr_alignment_check
 global isr_spurious
 global irq0
+global isr_yield
 extern isr_handler
 
 section .text
@@ -170,6 +171,14 @@ irq0:
 
     jmp isr_common
 
+; Software interrupt used by the scheduler's cooperative yield.
+
+isr_yield:
+    push 0
+    push 0x81
+
+    jmp isr_common
+
 ; LAPIC SPURIOUS INTERRUPT (vector 0xFF)
 
 isr_spurious:
@@ -186,10 +195,9 @@ isr_common:
     PUSH_REGS
 
     mov rdi,rsp
-
-    sub rsp,8
+    and rsp,-16
     call isr_handler
-    add rsp,8
+    mov rsp,rax
 
     POP_REGS
 

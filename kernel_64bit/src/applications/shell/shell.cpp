@@ -12,8 +12,8 @@
 #include "system/sysfunc/logger/logger.hpp"
 #include "system/sysfunc/rand/rand.hpp"
 
-#include "applications/applications.hpp"
 #include "drivers/gpu/driver.hpp"
+#include "system/gui/vars/colors.hpp"
 #include "functions/functions.hpp"
 
 #include "system/vars/info_vars/info_vars.hpp"
@@ -311,14 +311,7 @@ void execute_command(const char *cmd)
     // 2. Command: clear
     else if (cmd_name_len == 5 && Memory::memcmp(cmd, "clear", 5) == 0)
     {
-        if (active_terminal_redirect)
-        {
-            terminal_clear_output();
-        }
-        else
-        {
-            Gpu::init_text_buffer();
-        }
+        Gpu::init_text_buffer();
         return;
     }
 
@@ -846,54 +839,20 @@ void execute_command(const char *cmd)
             }
             app_name_buf[i] = '\0';
 
-            // Check for built-in kernel applications first
-            bool app_launched = false;
-
-            if (strcmp(app_name_buf, "settings") == 0)
+            int exit_code = 0;
+            if (napp_run(app_name_buf, &exit_code))
             {
-                Gpu::Window_Manager::register_window(&settings);
-                app_launched = true;
-            }
-            else if (strcmp(app_name_buf, "terminal") == 0)
-            {
-                Gpu::Window_Manager::register_window(&terminal);
-                app_launched = true;
-            }
-            else if (strcmp(app_name_buf, "task_manager") == 0)
-            {
-                Gpu::Window_Manager::register_window(&task_manager);
-                app_launched = true;
-            }
-            
-            if (app_launched)
-            {
-                Gpu::print_info("Built-in application launched: ");
-                Gpu::print(app_name_buf);
+                Gpu::print_info("Application exited with code: ");
+                Gpu::print_num8(exit_code);
                 Gpu::print("\n");
             }
             else
             {
-                // Fall back to /bin applications
-                int exit_code = 0;
-                if (napp_run(app_name_buf, &exit_code))
-                {
-                    Gpu::print_info("Application exited with code: ");
-                    Gpu::print_num8(exit_code);
-                    Gpu::print("\n");
-                }
-                else
-                {
-                    Gpu::print_error("Failed to run application\n");
-                }
+                Gpu::print_error("Failed to run application\n");
             }
         }
         else if (list_flag)
         {
-            Gpu::print_info("Built-in applications:\n");
-            Gpu::print(" - settings\n");
-            Gpu::print(" - terminal\n");
-            Gpu::print(" - task_manager\n");
-            
             Gpu::print_info("/bin applications:\n");
             static char app_names[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
             uint32_t count = napp_list(app_names, NAPP_MAX_APPLICATIONS);

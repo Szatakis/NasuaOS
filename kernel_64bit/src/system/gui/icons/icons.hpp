@@ -6,9 +6,6 @@
 #include "drivers/gpu/driver.hpp"
 #include "../vars/colors.hpp"
 
-// Applications built into the kernel, shown at the top of the start menu.
-inline constexpr int kernel_app_count = 3;
-
 // Taskbar Icons
 extern const uint32_t start_icon[1024];
 extern const uint32_t start_icon_hover[1024];

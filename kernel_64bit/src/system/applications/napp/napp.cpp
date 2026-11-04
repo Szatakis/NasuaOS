@@ -1,6 +1,7 @@
 #include "napp.hpp"
 
 #include "drivers/gpu/driver.hpp"
+#include "drivers/cpu/driver.hpp"
 #include "drivers/disk/ata/driver.hpp"
 #include "drivers/memory/driver.hpp"
 #include "drivers/timer/driver.hpp"
@@ -16,7 +17,6 @@
 #include "system/process/process.hpp"
 
 #include "applications/shell/shell.hpp"
-#include "applications/terminal/terminal.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -42,6 +42,7 @@ static uint32_t napp_entry_offset(const napp_header* header)
 
 fat_volume rootfs_volume;
 bool rootfs_mounted = false;
+void (*napp_print_redirect_cb)(char) = nullptr;
 
 // Current working directory exposed to napp programs
 static char napp_current_path[256] = "/home";
@@ -659,6 +660,68 @@ static const char* napp_api_get_username()
     return user_name;
 }
 
+static uint32_t napp_api_get_processes(napp_process_info* output, uint32_t capacity)
+{
+    if (output == nullptr || capacity == 0)
+    {
+        return 0;
+    }
+
+    Process::Info processes[Process::MAX_PROCESSES];
+    const uint32_t count = Process::snapshot(processes, Process::MAX_PROCESSES);
+    const uint32_t copied = count < capacity ? count : capacity;
+    for (uint32_t index = 0; index < copied; ++index)
+    {
+        output[index].pid = processes[index].pid;
+        output[index].type = static_cast<uint32_t>(processes[index].type);
+        output[index].state = static_cast<uint32_t>(processes[index].state);
+        output[index].exit_code = processes[index].exit_code;
+        output[index].open_windows = processes[index].open_windows;
+        output[index].start_tick = processes[index].start_tick;
+        for (uint32_t character = 0; character < NAPP_PROCESS_NAME_LENGTH; ++character)
+        {
+            output[index].name[character] = '\0';
+        }
+        for (uint32_t character = 0; character + 1 < NAPP_PROCESS_NAME_LENGTH; ++character)
+        {
+            output[index].name[character] = processes[index].name[character];
+            if (processes[index].name[character] == '\0')
+            {
+                break;
+            }
+        }
+        output[index].name[NAPP_PROCESS_NAME_LENGTH - 1] = '\0';
+    }
+    return copied;
+}
+
+static bool napp_api_get_system_info(napp_system_info* output)
+{
+    if (output == nullptr)
+    {
+        return false;
+    }
+
+    output->memory_total_bytes = Memory::total_bytes();
+    output->storage_total_bytes = Disk::total();
+    output->framebuffer_width = Gpu::fb != nullptr ? Gpu::fb->width : 0;
+    output->framebuffer_height = Gpu::fb != nullptr ? Gpu::fb->height : 0;
+
+    for (uint32_t index = 0; index < sizeof(output->architecture); ++index)
+    {
+        output->architecture[index] = '\0';
+    }
+    const char* architecture = Cpu::get_architecture();
+    uint32_t index = 0;
+    while (architecture != nullptr && architecture[index] != '\0' && index < sizeof(output->architecture) - 1)
+    {
+        output->architecture[index] = architecture[index];
+        ++index;
+    }
+    output->architecture[index] = '\0';
+    return true;
+}
+
 static int32_t napp_api_http_get(const char* hostname, uint16_t port, const char* path, char* response, uint32_t response_capacity, uint32_t timeout_ms)
 {
     return Network::http_get(hostname, port, path, response, response_capacity, timeout_ms);
@@ -707,7 +770,9 @@ static napp_api kernel_napp_api =
     napp_api_clawfs_get_file_size,
     napp_api_clawfs_read_file_range,
     napp_api_enable_fpu,
-    napp_api_get_username
+    napp_api_get_username,
+    napp_api_get_processes,
+    napp_api_get_system_info
 };
 
 static bool remember_image(const char* name, uint32_t process_id, void* image)

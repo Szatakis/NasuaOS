@@ -301,7 +301,7 @@ Log added successfully
 
 ## bootapp
 
-Application manager. Launches built-in kernel applications or NAPP binaries from `/bin`.
+Application manager. Lists and launches NAPP applications from `/bin`.
 
 ```
 bootapp --list
@@ -311,18 +311,14 @@ bootapp --app <application_name>
 | Flag     | Description                                                             |
 |----------|-------------------------------------------------------------------------|
 | `--list` | List all available applications                                         |
-| `--app`  | Launch a specific application (checks built-in apps first, then `/bin`) |
-
-Built-in applications: `settings`, `terminal`, `task_manager`.
+| `--app`  | Launch a specific application from `/bin`                              |
 
 ```
 user@nasua-os:/home> bootapp --list
-Built-in applications:
+/bin applications:
  - settings
  - terminal
  - task_manager
-
-/bin applications:
  - bootcheck
  - calculator
  - minesweeper

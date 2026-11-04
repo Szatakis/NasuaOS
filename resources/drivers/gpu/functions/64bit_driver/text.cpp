@@ -7,7 +7,7 @@
 #include "system/gui/vars/colors.hpp"
 
 #include "applications/shell/shell.hpp"
-#include "applications/terminal/terminal.hpp"
+#include "system/applications/napp/napp.hpp"
 
 #include "libs/libc/libc.hpp"
 #include "system/vars/info_vars/info_vars.hpp"
@@ -110,12 +110,6 @@ namespace Gpu
         if (napp_print_redirect_cb != nullptr)
         {
             napp_print_redirect_cb(c);
-            return;
-        }
-
-        if (active_terminal_redirect)
-        {
-            terminal_write_char(c);
             return;
         }
 
