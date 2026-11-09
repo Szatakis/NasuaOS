@@ -647,22 +647,24 @@ bool napp_api_open_window(const napp_window_config* config)
     {
         const int right_margin = 20;
         const int bottom_margin = 20;
+        const int top_margin = 30;
+        const int left_margin = 30;
         const int available_bottom = static_cast<int>(Gpu::fb->height) -
             static_cast<int>(bar_h_scaled) - bottom_margin;
         slot->window.pos_x = static_cast<int>(Gpu::fb->width) -
             slot->window.width - right_margin;
         slot->window.pos_y = available_bottom - slot->window.height;
-        if (slot->window.pos_x < 0)
+        if (slot->window.pos_x < left_margin)
         {
-            slot->window.pos_x = 0;
+            slot->window.pos_x = left_margin;
         }
-        if (slot->window.pos_y < 0)
+        if (slot->window.pos_y < top_margin)
         {
-            slot->window.pos_y = 0;
+            slot->window.pos_y = top_margin;
         }
-        Mouse::x = slot->window.pos_x + (slot->window.width * 3) / 4;
-        Mouse::y = slot->window.pos_y + WINDOW_TITLEBAR_HEIGHT +
-            (slot->window.height - WINDOW_TITLEBAR_HEIGHT) / 2;
+
+        Mouse::x = slot->window.pos_x + 24;
+        Mouse::y = slot->window.pos_y + 30;
         if (Mouse::x >= static_cast<int32_t>(Gpu::fb->width) - CURSOR_W)
         {
             Mouse::x = static_cast<int32_t>(Gpu::fb->width) - CURSOR_W - 1;
@@ -687,6 +689,11 @@ bool napp_api_open_window(const napp_window_config* config)
     slot->used = true;
 
     show_window(slot);
+    if (strcmp(loading_application, "terminal") == 0)
+    {
+        Gpu::Window_Manager::active_window = &slot->window;
+        slot->window.focused = true;
+    }
 
     loading_window_count++;
 
@@ -905,7 +912,8 @@ static bool napp_launch_user_image(const void* image, uint32_t image_size,
 
     const uint64_t stack_address = address_space.base + USER_STACK_OFFSET;
     if (!Memory::vmm::map_user_page(&address_space, stack_address, stack_page,
-                                    Memory::vmm::PAGE_USER | Memory::vmm::PAGE_WRITE))
+                                    Memory::vmm::PAGE_USER | Memory::vmm::PAGE_WRITE |
+                                    Memory::vmm::PAGE_NX))
     {
         Memory::pmm::free_page(stack_page);
         Memory::vmm::destroy_user_address_space(&address_space);

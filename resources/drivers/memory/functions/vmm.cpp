@@ -5,11 +5,25 @@ namespace Memory
     namespace vmm 
     {
         static constexpr uint64_t PAGE_ADDRESS_MASK = 0x000FFFFFFFFFF000ULL;
+        static constexpr uint64_t PAGE_LARGE = 1ULL << 7;
         static uint64_t* pml4 = nullptr;
+
+        static bool is_canonical(uint64_t address)
+        {
+            const uint64_t upper = address >> 48;
+            return ((address >> 47) & 1) ? upper == 0xFFFF : upper == 0;
+        }
 
         static uint64_t* phys_to_virt(uint64_t phys)
         {
             return (uint64_t*)(phys + Memory::paging::get_hhdm_offset());
+        }
+
+        static void release_table(uint64_t* table)
+        {
+            const uint64_t physical = reinterpret_cast<uint64_t>(table) -
+                Memory::paging::get_hhdm_offset();
+            Memory::pmm::free_page(physical);
         }
 
         static uint64_t* create_table()
@@ -154,66 +168,119 @@ namespace Memory
 
         bool map_page(uint64_t virt, uint64_t phys, uint64_t flags)
         {
+            constexpr uint64_t allowed_flags = PAGE_WRITE | PAGE_NX;
+            if (pml4 == nullptr || !is_canonical(virt) ||
+                (virt & (Memory::PAGE_SIZE - 1)) != 0 ||
+                phys == 0 || (phys & (Memory::PAGE_SIZE - 1)) != 0 ||
+                (phys & ~PAGE_ADDRESS_MASK) != 0 || (flags & ~allowed_flags) != 0)
+            {
+                return false;
+            }
+
             uint64_t pml4_i = (virt >> 39) & 0x1FF;
             uint64_t pdpt_i = (virt >> 30) & 0x1FF;
             uint64_t pd_i   = (virt >> 21) & 0x1FF;
             uint64_t pt_i   = (virt >> 12) & 0x1FF;
 
-            uint64_t* pdpt;
+            uint64_t* pdpt = nullptr;
+            uint64_t* pd = nullptr;
+            uint64_t* pt = nullptr;
+            bool created_pdpt = false;
+            bool created_pd = false;
+            bool created_pt = false;
 
-            if(!(pml4[pml4_i] & PAGE_PRESENT))
+            auto rollback_tables = [&]()
+            {
+                if (created_pt)
+                {
+                    pd[pd_i] = 0;
+                    release_table(pt);
+                }
+                if (created_pd)
+                {
+                    pdpt[pdpt_i] = 0;
+                    release_table(pd);
+                }
+                if (created_pdpt)
+                {
+                    pml4[pml4_i] = 0;
+                    release_table(pdpt);
+                }
+            };
+
+            if (!(pml4[pml4_i] & PAGE_PRESENT))
             {
                 pdpt = create_table();
-                if(!pdpt)
+                if (pdpt == nullptr)
                 {
                     return false;
                 }
-
-                pml4[pml4_i] = ((uint64_t)pdpt - Memory::paging::get_hhdm_offset()) | PAGE_PRESENT | PAGE_WRITE;
+                created_pdpt = true;
+                pml4[pml4_i] = (reinterpret_cast<uint64_t>(pdpt) -
+                                Memory::paging::get_hhdm_offset()) |
+                               PAGE_PRESENT | PAGE_WRITE;
             }
             else
             {
                 pdpt = phys_to_virt(pml4[pml4_i] & ~0xFFF);
             }
 
-            uint64_t* pd;
-
-            if(!(pdpt[pdpt_i] & PAGE_PRESENT))
+            if (!(pdpt[pdpt_i] & PAGE_PRESENT))
             {
                 pd = create_table();
-                if(!pd)
+                if (pd == nullptr)
                 {
+                    rollback_tables();
                     return false;
                 }
-
-                pdpt[pdpt_i] = ((uint64_t)pd - Memory::paging::get_hhdm_offset()) | PAGE_PRESENT | Memory::vmm::PAGE_WRITE;
+                created_pd = true;
+                pdpt[pdpt_i] = (reinterpret_cast<uint64_t>(pd) -
+                                Memory::paging::get_hhdm_offset()) |
+                               PAGE_PRESENT | PAGE_WRITE;
             }
             else
             {
+                if (pdpt[pdpt_i] & PAGE_LARGE)
+                {
+                    rollback_tables();
+                    return false;
+                }
                 pd = phys_to_virt(pdpt[pdpt_i] & ~0xFFF);
             }
 
-            uint64_t* pt;
-
-            if(!(pd[pd_i] & PAGE_PRESENT))
+            if (!(pd[pd_i] & PAGE_PRESENT))
             {
                 pt = create_table();
-                if(!pt)
+                if (pt == nullptr)
                 {
+                    rollback_tables();
                     return false;
                 }
-
-                pd[pd_i] = ((uint64_t)pt - Memory::paging::get_hhdm_offset()) | PAGE_PRESENT | PAGE_WRITE;
+                created_pt = true;
+                pd[pd_i] = (reinterpret_cast<uint64_t>(pt) -
+                            Memory::paging::get_hhdm_offset()) |
+                           PAGE_PRESENT | PAGE_WRITE;
             }
             else
             {
+                if (pd[pd_i] & PAGE_LARGE)
+                {
+                    rollback_tables();
+                    return false;
+                }
                 pt = phys_to_virt(pd[pd_i] & ~0xFFF);
             }
 
-            pt[pt_i] = (phys & ~0xFFF) | flags | PAGE_PRESENT;
+            if (pt[pt_i] & PAGE_PRESENT)
+            {
+                Uart::puts("[VMM] Refusing to replace existing mapping at ");
+                Uart::puthex(virt);
+                Uart::puts("\n");
+                rollback_tables();
+                return false;
+            }
 
-            // Clear NX bit → allow execution (needed for flat binaries)
-            pt[pt_i] &= ~(1ULL << 63);
+            pt[pt_i] = phys | flags | PAGE_PRESENT;
 
             asm volatile("invlpg (%0)" : : "r"(virt) : "memory");
 
@@ -222,6 +289,12 @@ namespace Memory
 
         bool unmap_page(uint64_t virt)
         {
+            if (pml4 == nullptr || !is_canonical(virt) ||
+                (virt & (Memory::PAGE_SIZE - 1)) != 0)
+            {
+                return false;
+            }
+
             uint64_t pml4_i = (virt >> 39) & 0x1FF;
             uint64_t pdpt_i = (virt >> 30) & 0x1FF;
             uint64_t pd_i   = (virt >> 21) & 0x1FF;
@@ -233,13 +306,13 @@ namespace Memory
             }
 
             uint64_t* pdpt = phys_to_virt(pml4[pml4_i] & ~0xFFF);
-            if(!(pdpt[pdpt_i] & PAGE_PRESENT))
+            if(!(pdpt[pdpt_i] & PAGE_PRESENT) || (pdpt[pdpt_i] & PAGE_LARGE))
             {
                 return false;
             }
 
             uint64_t* pd = phys_to_virt(pdpt[pdpt_i] & ~0xFFF);
-            if(!(pd[pd_i] & PAGE_PRESENT))
+            if(!(pd[pd_i] & PAGE_PRESENT) || (pd[pd_i] & PAGE_LARGE))
             {
                 return false;
             }
@@ -259,6 +332,11 @@ namespace Memory
 
         uint64_t translate(uint64_t virt)
         {
+            if (pml4 == nullptr || !is_canonical(virt))
+            {
+                return 0;
+            }
+
             uint64_t pml4_i = (virt >> 39) & 0x1FF;
             uint64_t pdpt_i = (virt >> 30) & 0x1FF;
             uint64_t pd_i   = (virt >> 21) & 0x1FF;
@@ -277,7 +355,7 @@ namespace Memory
                 return 0;
             }
 
-            if(pdpt[pdpt_i] & (1ULL << 7))
+            if(pdpt[pdpt_i] & PAGE_LARGE)
             {
                 return ((pdpt[pdpt_i] & LARGE_PAGE_1G_MASK) | (virt & 0x3FFFFFFFULL)) & PAGE_ADDRESS_MASK;
             }
@@ -288,7 +366,7 @@ namespace Memory
                 return 0;
             }
 
-            if(pd[pd_i] & (1ULL << 7))
+            if(pd[pd_i] & PAGE_LARGE)
             {
                 return ((pd[pd_i] & LARGE_PAGE_2M_MASK) | (virt & 0x1FFFFFULL)) & PAGE_ADDRESS_MASK;
             }
@@ -345,9 +423,10 @@ namespace Memory
 
         bool map_user_page(UserAddressSpace* space, uint64_t virt, uint64_t phys, uint64_t flags)
         {
+            constexpr uint64_t allowed_flags = PAGE_USER | PAGE_WRITE | PAGE_NX;
             if ((virt & 0xFFF) != 0 || (phys & 0xFFF) != 0 ||
                 (phys & ~PAGE_ADDRESS_MASK) != 0 || phys == 0 ||
-                !(flags & PAGE_USER))
+                (flags & ~allowed_flags) != 0 || !(flags & PAGE_USER))
             {
                 return false;
             }

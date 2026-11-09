@@ -100,12 +100,14 @@ or building a bootable image:
 make test-host
 ```
 
-The scheduler regression test covers initialization, invalid user-task
+The host regression tests cover scheduler initialization, invalid user-task
 contexts, allocation failures, user address-space activation and cleanup,
-round-robin switching, sleeping and wake-up deadlines, tick wraparound, and
-the task-table limit. The `Host Regression Tests` job runs this command for
-pull requests and pushes handled by `.github/workflows/checks.yml`, using both
-GCC and Clang.
+round-robin switching, sleeping and wake-up deadlines, tick wraparound, and the
+task-table limit. Memory tests cover PMM initialization and bounds, heap reuse,
+invalid and duplicate frees, virtual and physical exhaustion, and rollback
+after mapping or physical-page allocation failures. The `Host Regression Tests`
+job runs this command for pull requests and pushes handled by
+`.github/workflows/checks.yml`, using both GCC and Clang.
 
 ## Serial Output Verification
 

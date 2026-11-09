@@ -148,7 +148,15 @@ void page_fault_handler(Registers* regs)
         Uart::puts("\n");
     }
 
-    Memory::vmm::map_page(virtual_page, page, Memory::vmm::PAGE_WRITE);
+    if (!Memory::vmm::map_page(virtual_page, page,
+                               Memory::vmm::PAGE_WRITE | Memory::vmm::PAGE_NX))
+    {
+        Memory::pmm::free_page(page);
+        Uart::puts("[PAGE FAULT] Unable to map allocated page\n");
+        log(ERROR, "PAGE FAULT", "Unable to map allocated page");
+        kernel_panic("Page Fault - Mapping Failure", err_buf, rip_buf, rsp_buf, addr_buf);
+        return;
+    }
 
     // Only log if debug mode is enabled
     if (debug_mode)

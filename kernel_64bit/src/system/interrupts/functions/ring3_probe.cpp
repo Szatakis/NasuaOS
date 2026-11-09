@@ -46,7 +46,8 @@ namespace Ring3
         if (code_size > PAGE_SIZE ||
             !Memory::vmm::map_user_page(&address_space, code_address, code_phys, Memory::vmm::PAGE_USER) ||
             !Memory::vmm::map_user_page(&address_space, stack_address, stack_phys,
-                                         Memory::vmm::PAGE_USER | Memory::vmm::PAGE_WRITE))
+                                         Memory::vmm::PAGE_USER | Memory::vmm::PAGE_WRITE |
+                                         Memory::vmm::PAGE_NX))
         {
             if (code_size > PAGE_SIZE ||
                 !Memory::vmm::is_user_range(&address_space, code_address, 1, false))
