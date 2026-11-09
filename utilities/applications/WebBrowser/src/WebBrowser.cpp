@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("WebBrowser", "HTML and CSS web browser", true);
+NAPP_APPLICATION("WebBrowser", "HTML and CSS web browser", true, {}, false, "Utilities");
 
 #define BROWSER_ADDRESS_MAX 256
 #define BROWSER_RESPONSE_CAPACITY (1024 * 1024 + 1)

@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("settings", "System settings and information", true);
+NAPP_APPLICATION("settings", "System settings and information", true, {}, false, "System");
 
 static const napp_api* settings_api = nullptr;
 static int settings_page = 0;

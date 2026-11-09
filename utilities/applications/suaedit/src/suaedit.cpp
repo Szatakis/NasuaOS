@@ -2,7 +2,7 @@
 
 #include "suascript.hpp"
 
-NAPP_APPLICATION("suaedit", "Text editor", true);
+NAPP_APPLICATION("suaedit", "Text editor", true, {}, false, "Utilities");
 
 static const napp_gui* gui = nullptr;
 static const napp_api* api = nullptr;

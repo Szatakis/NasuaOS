@@ -9,22 +9,24 @@ Every NAPP binary begins with a header defined in `utilities/applications/includ
 | Offset | Size | Field              | Description                                             |
 |--------|------|--------------------|---------------------------------------------------------|
 | 0x00   | 4    | magic              | `NAPP_MAGIC` = `0x5050414E` (ASCII: "NAPP")             |
-| 0x04   | 4    | abi_version        | `11` (current ABI version)                              |
-| 0x08   | 4    | header_size        | Aligned header size (384 bytes in ABI 8 and later)      |
+| 0x04   | 4    | abi_version        | `13` (current ABI version)                              |
+| 0x08   | 4    | header_size        | Aligned header size (448 bytes in ABI 13)               |
 | 0x0C   | 4    | entry_offset       | Offset from start of file to `_start` function          |
 | 0x10   | 32   | name               | Null-terminated application name                        |
 | 0x30   | 48   | description        | Null-terminated short description (shown in `help`)     |
-| 0x60   | 1    | show_in_start_menu | Whether the app appears in the Start Menu               |
+| 0x60   | 1    | show_in_start_menu | Pins the app in ABI 13; visibility in older ABIs         |
 | 0x61   | 256  | help_text          | Optional command usage and argument details             |
+| 0x161  | 1    | user_mode          | ABI 12: whether the app runs in user mode                |
+| 0x162  | 32   | category           | ABI 13: optional Start Menu category                     |
 
-The unaligned ABI 8-and-later header is 353 bytes; `header_size` and
-`entry_offset` are rounded up to the next 64-byte boundary. Older ABI 6/7
-binaries remain supported and do not contain `help_text`.
+The ABI 13 header is 386 bytes; `header_size` and `entry_offset` are rounded
+up to the next 64-byte boundary. Older ABI 6-12 binaries remain supported.
 
 ```cpp
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
 #define NAPP_HELP_TEXT_LENGTH 256
+#define NAPP_CATEGORY_LENGTH 32
 #define NAPP_HEADER_SIZE 96  // Legacy minimum (without show_in_start_menu)
 
 struct napp_header
@@ -35,21 +37,23 @@ struct napp_header
     uint32_t entry_offset;
     char     name[NAPP_NAME_LENGTH];   // 32
     char     description[NAPP_DESCRIPTION_LENGTH];  // 48
-    bool     show_in_start_menu;       // 1 byte, present when header_size > 96
-    char     help_text[NAPP_HELP_TEXT_LENGTH]; // ABI 8 optional help details
+    bool     show_in_start_menu;       // ABI 13: pin in Start Menu
+    char     help_text[NAPP_HELP_TEXT_LENGTH]; // Optional command help
+    bool     user_mode;                // ABI 12
+    char     category[NAPP_CATEGORY_LENGTH]; // ABI 13
 } __attribute__((packed));
 ```
 
-### Show In Start Menu Field
+### Start Menu Pin and Category
 
-The `show_in_start_menu` field controls whether an application appears in the
-Start Menu.  When `true`, the application icon and name are shown in the Start
-Menu.  When `false`, the application can still be launched via `bootapp --app
-<name>` but will not appear in the Start Menu.
+For ABI 13, `show_in_start_menu` is the pin flag: pinned apps appear in the
+Start Menu's Pinned view. Any app with a non-empty `category` also appears
+under that category (for example, `Games` or `Utilities`). Apps with neither
+a pin nor a category are omitted.
 
-This field was added in ABI 7 and is only present when `header_size > NAPP_HEADER_SIZE` (96). Older
-binaries compiled without this field default to `true`, so they remain visible
-in the Start Menu.
+Before ABI 13 this field controlled visibility, so old binaries retain their
+original Start Menu behavior. Older headers without the field default to
+pinned.
 
 ## NAPP vs Flat Binary
 
@@ -76,14 +80,15 @@ The loader checks this magic value to verify the file is a valid NAPP binary. If
 ## ABI Version
 
 ```cpp
-#define NAPP_ABI_VERSION 11
+#define NAPP_ABI_VERSION 13
 ```
 
-The current NAPP ABI version is 11. The loader supports ABI versions 6 through
-11. ABI version 11 adds colored output redirection; ABI version 10 adds process
-snapshots and system information; ABI version 9 added username lookup; ABI
-version 8 added optional command help text to the header. ABI version 7 added
-the Start Menu visibility field.
+The current NAPP ABI version is 13. The loader supports ABI versions 6 through
+13. ABI version 13 adds Start Menu categories; ABI version 12 adds user-mode
+applications; ABI version 11 adds colored output redirection; ABI version 10
+adds process snapshots and system information; ABI version 9 adds username
+lookup; ABI version 8 adds optional command help text to the header. ABI
+version 7 adds the Start Menu visibility field.
 ABI version 4 added the `http_get`
 service for plain HTTP requests over the kernel's DNS and TCP network stack.
 ABI version 5 added complete-file ClawFS read and write services. ABI version 6

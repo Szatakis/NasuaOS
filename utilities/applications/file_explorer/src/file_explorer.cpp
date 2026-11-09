@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("file explorer", "Graphical file explorer", true);
+NAPP_APPLICATION("file explorer", "Graphical file explorer", true, {}, false, "Utilities");
 
 static constexpr uint32_t FILES_BACKGROUND = 0xFF11151D;
 static constexpr uint32_t FILES_SURFACE = 0xFF1B222D;

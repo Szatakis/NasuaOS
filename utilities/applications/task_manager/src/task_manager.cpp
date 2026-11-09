@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("task_manager", "View running system processes", true);
+NAPP_APPLICATION("task_manager", "View running system processes", true, {}, false, "System");
 
 static const napp_api* task_api = nullptr;
 static uint32_t process_scroll = 0;
@@ -158,11 +158,13 @@ static void draw_task_manager(napp_window* window)
 
 static void task_manager_key(napp_window*, char key)
 {
-    if ((key == 'j' || key == 's' || key == NAPP_KEY_DOWN) && process_scroll + visible_rows < NAPP_MAX_PROCESSES)
+    if ((key == 'j' || key == 's' || key == NAPP_KEY_DOWN || key == 0x0C) &&
+        process_scroll + visible_rows < NAPP_MAX_PROCESSES)
     {
         ++process_scroll;
     }
-    else if ((key == 'k' || key == 'w' || key == NAPP_KEY_UP) && process_scroll > 0)
+    else if ((key == 'k' || key == 'w' || key == NAPP_KEY_UP || key == 0x0B) &&
+             process_scroll > 0)
     {
         --process_scroll;
     }
@@ -170,11 +172,6 @@ static void task_manager_key(napp_window*, char key)
     {
         process_scroll = 0;
     }
-}
-
-static void task_manager_mouse(napp_window*, int, int)
-{
-    process_scroll = 0;
 }
 
 int _start(const napp_api* api)
@@ -189,7 +186,7 @@ int _start(const napp_api* api)
     const napp_window_config config =
     {
         "Task Manager", 560, 370, true, true, nullptr,
-        draw_task_manager, task_manager_key, task_manager_mouse, nullptr,
+        draw_task_manager, task_manager_key, nullptr, nullptr,
         nullptr, 0, nullptr, nullptr
     };
     return api->gui->open_window(&config) ? 0 : 1;

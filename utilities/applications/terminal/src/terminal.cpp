@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("terminal", "Graphical shell terminal", true);
+NAPP_APPLICATION("terminal", "Graphical shell terminal", true, {}, false, "Utilities");
 
 static const napp_api* terminal_api = nullptr;
 static constexpr uint32_t MAX_OUTPUT_LINES = 64;

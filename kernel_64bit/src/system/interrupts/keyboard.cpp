@@ -238,6 +238,17 @@ namespace Keyboard
 
             if (scancode == 0x48 || scancode == 0x50 || scancode == 0x4B || scancode == 0x4D)
             {
+                if (menu_start_open)
+                {
+                    const int speed = 5;
+                    const int dx = scancode == 0x4B ? -speed :
+                                   scancode == 0x4D ? speed : 0;
+                    const int dy = scancode == 0x48 ? speed :
+                                   scancode == 0x50 ? -speed : 0;
+                    Mouse::update_position(dx, dy);
+                    return;
+                }
+
                 if (alt_pressed)
                 {
                     if (Gpu::Window_Manager::active_window &&
@@ -273,6 +284,17 @@ namespace Keyboard
                     Mouse::update_position(dx, dy);
                     return;
                 }
+                if (menu_start_open)
+                {
+                    const int speed = 5;
+                    const int dx = scancode == 0x4B ? -speed :
+                                   scancode == 0x4D ? speed : 0;
+                    const int dy = scancode == 0x48 ? speed :
+                                   scancode == 0x50 ? -speed : 0;
+                    Mouse::update_position(dx, dy);
+                    return;
+                }
+
                 const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP : scancode == 0x50 ? NAPP_KEY_DOWN : scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
                 if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr && Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
                 {
@@ -383,6 +405,11 @@ namespace Keyboard
 
         if (scancode == 0x0E)
         {
+            if (menu_start_open && handle_start_menu_key('\b'))
+            {
+                return;
+            }
+
             if(Gpu::Window_Manager::active_window)
             {
                 if(Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))
@@ -404,6 +431,12 @@ namespace Keyboard
 
         if (scancode == 0x1C)
         {
+            if (menu_start_open)
+            {
+                Mouse::left_click(true);
+                return;
+            }
+
             Mouse::left_click(true);
 
             if(Gpu::Window_Manager::active_window)
@@ -431,6 +464,11 @@ namespace Keyboard
 
         if (scancode == 0x01)
         {
+            if (menu_start_open && handle_start_menu_key(NAPP_KEY_ESCAPE))
+            {
+                return;
+            }
+
             if (Gpu::Window_Manager::active_window && Gpu::Window_Manager::active_window->key_event != nullptr)
             {
                 send_napp_key_event(scancode, NAPP_KEY_ESCAPE, true);
@@ -451,7 +489,11 @@ namespace Keyboard
 
         if (scancode == 0x2B)
         {
-            if (shift_pressed && alt_pressed)
+            if (menu_start_open)
+            {
+                c = shift_pressed ? '|' : '\\';
+            }
+            else if (shift_pressed && alt_pressed)
             {
                 c = '|';
             }
@@ -472,6 +514,11 @@ namespace Keyboard
 
         if(c)
         {
+            if (menu_start_open && handle_start_menu_key(c))
+            {
+                return;
+            }
+
             if(Gpu::Window_Manager::active_window)
             {
                 if(Gpu::Window_Manager::is_mouse_over_any_window(Mouse::x, Mouse::y))

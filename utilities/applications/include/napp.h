@@ -10,11 +10,12 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 12
+#define NAPP_ABI_VERSION 13
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
 #define NAPP_HELP_TEXT_LENGTH 256
+#define NAPP_CATEGORY_LENGTH 32
 #define NAPP_HEADER_SIZE 96
 #define NAPP_ALIGNED_HEADER_SIZE ((sizeof(napp_header) + 63U) & ~63U)
 
@@ -28,7 +29,8 @@ struct napp_header
     char name[NAPP_NAME_LENGTH];
     char description[NAPP_DESCRIPTION_LENGTH];
 
-    // When false, the application does not appear in the Start Menu.
+    // ABI 13: true pins the application in the Start Menu.
+    // Older ABIs use this field as Start Menu visibility.
     // Present only when header_size > NAPP_HEADER_SIZE; older binaries
     // default to true.
     bool show_in_start_menu;
@@ -38,6 +40,9 @@ struct napp_header
 
     // ABI 12: user-mode images receive no kernel API pointers and use syscalls.
     bool user_mode = false;
+
+    // ABI 13: applications may also appear under this Start Menu category.
+    char category[NAPP_CATEGORY_LENGTH] = {};
 } __attribute__((packed));
 
 // Colors of the system theme, usable by graphical applications.
@@ -249,10 +254,10 @@ struct napp_api
 typedef int (*napp_entry)(const struct napp_api* api);
 
 // The linker aligns the header section to 64 bytes before placing the entry.
-// The third parameter controls whether the application appears in the
-// Start Menu. Use false for utility/console apps and games that should
-// only be launched on demand.
-#define NAPP_APPLICATION(app_name, app_description, app_show_in_menu, ...)  \
+// The third parameter pins the application in the Start Menu. Applications
+// can also be listed under a category supplied in the optional trailing
+// header initializers.
+#define NAPP_APPLICATION(app_name, app_description, app_pin_in_menu, ...)   \
     extern "C" __attribute__((section(".napp_entry"), used))                \
     int _start(const napp_api* api);                                        \
                                                                             \
@@ -265,10 +270,10 @@ typedef int (*napp_entry)(const struct napp_api* api);
         NAPP_ALIGNED_HEADER_SIZE,                                           \
         app_name,                                                           \
         app_description,                                                    \
-        app_show_in_menu __VA_OPT__(,) __VA_ARGS__                          \
+        app_pin_in_menu __VA_OPT__(,) __VA_ARGS__                           \
     }
 
-#define NAPP_USER_APPLICATION(app_name, app_description, app_show_in_menu)   \
+#define NAPP_USER_APPLICATION(app_name, app_description, app_pin_in_menu, ...) \
     extern "C" __attribute__((section(".napp_entry"), used))                \
     int _start(void);                                                       \
                                                                             \
@@ -281,7 +286,7 @@ typedef int (*napp_entry)(const struct napp_api* api);
         NAPP_ALIGNED_HEADER_SIZE,                                           \
         app_name,                                                           \
         app_description,                                                    \
-        app_show_in_menu,                                                   \
+        app_pin_in_menu,                                                    \
         {},                                                                 \
-        true                                                                \
+        true __VA_OPT__(,) __VA_ARGS__                                      \
     }

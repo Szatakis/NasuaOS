@@ -25,21 +25,26 @@ extern const uint32_t suaedit_icon[1024];
 extern const uint32_t task_manager_icon[1024];
 
 
-extern int icons_start_x;
-extern int icons_start_y;
-extern int icons_offset;
-
 extern bool menu_start_open;
 extern bool start_hover;
 
 void draw_start_button(size_t x, size_t y);
 bool is_mouse_over_start(int mouse_x, int mouse_y);
 
-void draw_start_menu_system_icons(int x, int y, int p, int w, int h);
-void draw_start_menu_napp_icons();
+void draw_start_menu_contents(int x, int y, int w, int h);
+void reset_start_menu_navigation();
 
-extern char start_menu_napps[NAPP_MAX_APPLICATIONS][NAPP_MAX_NAME];
-extern int start_menu_napp_count;
+enum start_menu_click_result
+{
+    START_MENU_CLICK_NONE,
+    START_MENU_CLICK_HANDLED,
+    START_MENU_CLICK_SHUTDOWN,
+    START_MENU_CLICK_REBOOT
+};
+
+start_menu_click_result handle_start_menu_click(int mouse_x, int mouse_y);
+void scroll_start_menu(int direction, bool categories);
+bool handle_start_menu_key(char key);
 
 bool is_mouse_over_icon(int mx, int my, int x, int y, int w, int h);
 

@@ -10,11 +10,12 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 8
+#define NAPP_ABI_VERSION 13
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
 #define NAPP_HELP_TEXT_LENGTH 256
+#define NAPP_CATEGORY_LENGTH 32
 #define NAPP_HEADER_SIZE 96
 #define NAPP_ALIGNED_HEADER_SIZE ((sizeof(napp_header) + 63U) & ~63U)
 
@@ -35,6 +36,10 @@ struct napp_header
 
     // Optional command usage and argument details, used by shell help.
     char help_text[NAPP_HELP_TEXT_LENGTH] = {};
+
+    // ABI 12 user-mode marker and ABI 13 Start Menu category.
+    bool user_mode = false;
+    char category[NAPP_CATEGORY_LENGTH] = {};
 } __attribute__((packed));
 
 // Colors of the system theme, usable by graphical applications.
@@ -202,10 +207,10 @@ struct napp_api
 typedef int (*napp_entry)(const struct napp_api* api);
 
 // The linker aligns the header section to 64 bytes before placing the entry.
-// The third parameter controls whether the application appears in the
-// Start Menu. Use false for utility/console apps and games that should
-// only be launched on demand.
-#define NAPP_APPLICATION(app_name, app_description, app_show_in_menu, ...)  \
+// The third parameter pins the application in the Start Menu. Non-pinned
+// applications can be listed under a category supplied in the optional
+// trailing header initializers.
+#define NAPP_APPLICATION(app_name, app_description, app_pin_in_menu, ...)   \
     extern "C" __attribute__((section(".napp_entry"), used))                \
     int _start(const napp_api* api);                                        \
                                                                             \
@@ -218,5 +223,5 @@ typedef int (*napp_entry)(const struct napp_api* api);
         NAPP_ALIGNED_HEADER_SIZE,                                           \
         app_name,                                                           \
         app_description,                                                    \
-        app_show_in_menu __VA_OPT__(,) __VA_ARGS__                          \
+        app_pin_in_menu __VA_OPT__(,) __VA_ARGS__                           \
     }

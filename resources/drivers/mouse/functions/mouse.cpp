@@ -359,10 +359,29 @@ namespace Mouse
 
         uint8_t flags = mouse_packet[0];
 
+        const bool x_sign_matches = ((flags & 0x10) != 0) == ((mouse_packet[1] & 0x80) != 0);
+        const bool y_sign_matches = ((flags & 0x20) != 0) == ((mouse_packet[2] & 0x80) != 0);
 
-        // Overflow
-        if (flags & 0x40 || flags & 0x80)
+        // A bad frame can otherwise make wheel data look like cursor movement.
+        if ((flags & 0xC0) != 0 || !x_sign_matches || !y_sign_matches)
         {
+            for (uint8_t offset = 1; offset < packet_size; ++offset)
+            {
+                const uint8_t candidate = mouse_packet[offset];
+                if ((candidate & 0x08) == 0 || (candidate & 0xC0) != 0)
+                {
+                    continue;
+                }
+
+                const uint8_t retained = packet_size - offset;
+                for (uint8_t i = 0; i < retained; ++i)
+                {
+                    mouse_packet[i] = mouse_packet[offset + i];
+                }
+                mouse_packet_index = retained;
+                return;
+            }
+
             return;
         }
 
@@ -523,6 +542,21 @@ namespace Mouse
             {
                 close_start_menu();
             }
+            else
+            {
+                const start_menu_click_result result = handle_start_menu_click(x, y);
+                if (result == START_MENU_CLICK_SHUTDOWN)
+                {
+                    Acpi::shutdown();
+                    return;
+                }
+                if (result == START_MENU_CLICK_REBOOT)
+                {
+                    Acpi::reboot();
+                    return;
+                }
+                return;
+            }
         }
 
 
@@ -541,40 +575,6 @@ namespace Mouse
             Gpu::Window_Manager::handle_window_mouse_click(x, y, 0);
 
             return;
-        }
-
-
-        // START MENU
-        if (menu_start_open)
-        {
-            // Applications shipped as .napp packages in the rootfs.
-            for (int i = 0; i < start_menu_napp_count; i++)
-            {
-                if (is_mouse_over_icon(x, y, icons_start_x + 50, icons_start_y + i * icons_offset, 250, 32))
-                {
-                    napp_run(start_menu_napps[i], nullptr);
-
-                    return;
-                }
-            }
-
-
-            // SHUTDOWN
-            if (is_mouse_over_icon(x, y, icons_start_x, menu_y + menu_h - 80, 32, 32))
-            {
-                Acpi::shutdown();
-
-                return;
-            }
-
-
-            // REBOOT
-            if (is_mouse_over_icon(x, y, icons_start_x, menu_y + menu_h - 40, 32, 32))
-            {
-                Acpi::reboot();
-
-                return;
-            }
         }
 
 
@@ -634,23 +634,43 @@ namespace Mouse
     // Mouse scroll up
     void scroll_up()
     {
+        if (menu_start_open && x >= static_cast<int32_t>(menu_x) &&
+            x < static_cast<int32_t>(menu_x + menu_w) &&
+            y >= static_cast<int32_t>(menu_y) &&
+            y < static_cast<int32_t>(menu_y + menu_h))
+        {
+            scroll_start_menu(-1, x < static_cast<int32_t>(menu_x) + panel_width);
+            return;
+        }
+
         Gpu::Window_Manager::window_struct* win = Gpu::Window_Manager::get_window_at(x, y);
         if (win == nullptr)
         {
             return;
         }
-        Gpu::Window_Manager::send_key_to_window(win, 0x0B);
+        Gpu::Window_Manager::send_key_event_to_window(win, 0x0B, true);
+        Gpu::Window_Manager::send_key_event_to_window(win, 0x0B, false);
     }
 
     // Mouse scroll down
     void scroll_down()
     {
+        if (menu_start_open && x >= static_cast<int32_t>(menu_x) &&
+            x < static_cast<int32_t>(menu_x + menu_w) &&
+            y >= static_cast<int32_t>(menu_y) &&
+            y < static_cast<int32_t>(menu_y + menu_h))
+        {
+            scroll_start_menu(1, x < static_cast<int32_t>(menu_x) + panel_width);
+            return;
+        }
+
         Gpu::Window_Manager::window_struct* win = Gpu::Window_Manager::get_window_at(x, y);
         if (win == nullptr)
         {
             return;
         }
-        Gpu::Window_Manager::send_key_to_window(win, 0x0C);
+        Gpu::Window_Manager::send_key_event_to_window(win, 0x0C, true);
+        Gpu::Window_Manager::send_key_event_to_window(win, 0x0C, false);
     }
 
 

@@ -1055,12 +1055,20 @@ uint32_t napp_list(char names[][NAPP_MAX_NAME], uint32_t max_names)
     return found;
 }
 
-// Reads the NAPP header of the named /bin application and returns the value of
-// its show_in_start_menu field.  Applications compiled with an older header
-// format (header_size <= NAPP_HEADER_SIZE) default to true so they remain
-// visible in the Start Menu.
-bool napp_should_show_in_start_menu(const char* name)
+// Reads Start Menu metadata while preserving the visibility behavior of
+// binaries built before category metadata was introduced.
+bool napp_get_start_menu_info(const char* name, bool* pinned,
+                              char* category, uint32_t category_capacity)
 {
+    if (pinned != nullptr)
+    {
+        *pinned = true;
+    }
+    if (category != nullptr && category_capacity > 0)
+    {
+        category[0] = '\0';
+    }
+
     if (!rootfs_mounted || name == nullptr || *name == '\0')
     {
         return false;
@@ -1106,23 +1114,64 @@ bool napp_should_show_in_start_menu(const char* name)
 
     const napp_header* header = (const napp_header*)header_buf;
 
-    bool result = true;
+    bool visible = true;
 
     if (header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version))
     {
-        // If the header carries the show_in_start_menu field, honour it.
-        // The field lives at offset NAPP_HEADER_SIZE (96); headers whose
-        // header_size <= NAPP_HEADER_SIZE lack it, so we default to true
-        // (backward compat).
-        if (header->header_size > NAPP_HEADER_SIZE)
+        bool is_pinned = true;
+        if (header->header_size > NAPP_HEADER_SIZE && read_size > NAPP_HEADER_SIZE)
         {
-            result = header->show_in_start_menu;
+            is_pinned = header->show_in_start_menu;
+        }
+
+        if (header->abi_version >= 13 &&
+            header->header_size >= __builtin_offsetof(napp_header, category) + NAPP_CATEGORY_LENGTH &&
+            read_size >= __builtin_offsetof(napp_header, category) + NAPP_CATEGORY_LENGTH)
+        {
+            const char* source_category = header->category;
+            uint32_t category_length = 0;
+            while (category_length < NAPP_CATEGORY_LENGTH && source_category[category_length] != '\0')
+            {
+                category_length++;
+            }
+
+            if (category != nullptr && category_capacity > 0)
+            {
+                const uint32_t copy_length = category_length < category_capacity - 1
+                    ? category_length
+                    : category_capacity - 1;
+                for (uint32_t i = 0; i < copy_length; ++i)
+                {
+                    category[i] = source_category[i];
+                }
+                category[copy_length] = '\0';
+            }
+
+            const bool has_category = category_length != 0;
+            visible = is_pinned || has_category;
+            if (pinned != nullptr)
+            {
+                *pinned = is_pinned;
+            }
+        }
+        else
+        {
+            visible = is_pinned;
+            if (pinned != nullptr)
+            {
+                *pinned = is_pinned;
+            }
         }
     }
 
     Memory::heap::kfree(header_buf);
 
-    return result;
+    return visible;
+}
+
+bool napp_should_show_in_start_menu(const char* name)
+{
+    return napp_get_start_menu_info(name, nullptr, nullptr, 0);
 }
 
 // Iterates all registered NAPP window slots and invokes the tick callback

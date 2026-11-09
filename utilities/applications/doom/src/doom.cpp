@@ -22,7 +22,7 @@ __attribute__((visibility("hidden"))) void doom_relocate_image(
     void* image_base, const uint32_t* relocations, const void* image_end);
 }
 
-NAPP_APPLICATION("doom", "Doom using the Freedoom game data", false);
+NAPP_APPLICATION("doom", "Doom using the Freedoom game data", false, {}, false, "Games");
 
 static const napp_api* doom_api;
 static const napp_gui* doom_gui;

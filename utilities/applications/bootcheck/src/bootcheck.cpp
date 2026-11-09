@@ -1,7 +1,7 @@
 #include <napp.h>
 #include <nasua_syscall.h>
 
-NAPP_USER_APPLICATION("bootcheck", "Ring-3 syscall smoke test", true);
+NAPP_USER_APPLICATION("bootcheck", "Ring-3 syscall smoke test", true, "System");
 
 int _start(void)
 {

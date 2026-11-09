@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("minesweeper", "Classic Minesweeper game", false);
+NAPP_APPLICATION("minesweeper", "Classic Minesweeper game", false, {}, false, "Games");
 
 static const napp_gui* gui = nullptr;
 static const napp_api* ms_api = nullptr;

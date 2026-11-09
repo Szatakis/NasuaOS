@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("calculator", "Graphical calculator", true);
+NAPP_APPLICATION("calculator", "Graphical calculator", false, {}, false, "Utilities");
 
 /*
     ┌─────────────────────────┐

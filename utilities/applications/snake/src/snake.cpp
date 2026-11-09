@@ -1,6 +1,6 @@
 #include <napp.h>
 
-NAPP_APPLICATION("snake", "Classic Snake game", false);
+NAPP_APPLICATION("snake", "Classic Snake game", false, {}, false, "Games");
 
 static const napp_gui* gui = nullptr;
 

@@ -9,20 +9,43 @@
 
 bool last_start_hover = false;
 
-const int panel_width = 45;
-const uint32_t menu_w = 300;
-const uint32_t menu_h = 400;
+const int panel_width = 156;
+static constexpr uint32_t START_MENU_MAX_WIDTH = 620;
+static constexpr uint32_t START_MENU_MAX_HEIGHT = 400;
+uint32_t menu_w = START_MENU_MAX_WIDTH;
+uint32_t menu_h = START_MENU_MAX_HEIGHT;
 uint32_t menu_x = 0;
 uint32_t menu_y = 0;
 
 extern bool start_hover;
 
-void draw_start_menu_f(int x, int y, int w, int h) 
+static uint32_t start_menu_width()
+{
+    const uint32_t responsive_width = Gpu::fb->width / 2;
+    return responsive_width < START_MENU_MAX_WIDTH
+        ? responsive_width
+        : START_MENU_MAX_WIDTH;
+}
+
+static void update_start_menu_size()
+{
+    menu_w = start_menu_width();
+    const uint32_t available_height = Gpu::fb->height > bar_h_scaled
+        ? Gpu::fb->height - bar_h_scaled
+        : 0;
+    menu_h = available_height < START_MENU_MAX_HEIGHT
+        ? available_height
+        : START_MENU_MAX_HEIGHT;
+    menu_x = 0;
+    menu_y = available_height - menu_h;
+}
+
+void draw_start_menu_f(int x, int y, int w, int h)
 {
     Gpu::draw_rect(x, y, x + w, y + h, COLOR_NASUA_START_MENU);
     Gpu::draw_rect(x, y, x + panel_width, y + h, COLOR_NASUA_START_MENU_P);
 
-    draw_start_menu_system_icons(x, y, panel_width, w, h);
+    draw_start_menu_contents(x, y, w, h);
 }
 
 void draw_start_menu() 
@@ -32,8 +55,7 @@ void draw_start_menu()
         return;
     }
 
-    menu_x = 0;
-    menu_y = Gpu::fb->height - bar_h_scaled - menu_h;
+    update_start_menu_size();
 
     draw_start_menu_f(menu_x, menu_y, menu_w, menu_h);
 }
@@ -45,7 +67,9 @@ void open_start_menu()
         return;
     }
 
+    update_start_menu_size();
     menu_start_open = true;
+    reset_start_menu_navigation();
 }
 
 void close_start_menu() 

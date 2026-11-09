@@ -141,12 +141,24 @@ struct napp_header
     uint32_t entry_offset;             // Offset to _start function
     char     name[NAPP_NAME_LENGTH];   // 32 bytes
     char     description[NAPP_DESCRIPTION_LENGTH]; // 48 bytes
-    bool     show_in_start_menu;       // 1 byte, present when header_size > NAPP_HEADER_SIZE
+    bool     show_in_start_menu;       // ABI 13: pin in the Start Menu
     char     help_text[NAPP_HELP_TEXT_LENGTH]; // Optional shell help details
 } __attribute__((packed));
 ```
 
-The `show_in_start_menu` field (added in ABI version 7) controls whether the application appears in the Start Menu. Use `true` for GUI apps that should be visible, and `false` for console/utility apps and games that should only be launched on demand.
+For ABI 13, the third `NAPP_APPLICATION` argument pins the app in the Start
+Menu. An app can also appear under a category by supplying its category in the
+optional trailing header initializers, for example:
+
+```cpp
+NAPP_APPLICATION("snake", "Classic Snake game", false, {}, false, "Games");
+```
+
+`NAPP_USER_APPLICATION` also accepts an optional category as its fourth
+argument.
+
+For applications built with an older ABI, this field retains its original
+visibility meaning.
 
 System commands can include option descriptions in the optional fourth argument
 to `NAPP_APPLICATION`; the `help` command reads this text from each `/sbin`
