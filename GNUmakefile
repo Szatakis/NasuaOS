@@ -274,7 +274,6 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 
 	cp -v utilities/rootfs/rootfs.img iso_root/system
 	cp -v .config/limine.conf iso_root/boot/limine/
-
 	cp -v documentation/images/background.png iso_root/system/assets/images/
 	cp -v documentation/images/background_dark.png iso_root/system/assets/images/
 

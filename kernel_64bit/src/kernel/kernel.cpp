@@ -112,10 +112,9 @@ void iqu_init()
 
     Mouse::init();
 
-    image_init();
-
     Process::init();
     napp_init(rootfs_module_address, rootfs_module_size);
+    image_init();
     auth_init();
 
     if(safe_mode) 

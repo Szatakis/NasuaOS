@@ -6,6 +6,10 @@ NasuaOS organizes files across two layers: the **ISO rootfs** (FAT filesystem, r
 
 The ISO rootfs is a FAT16 filesystem image (`rootfs.img`) built from `utilities/rootfs/dir/`. It contains the base system files that are always available.
 
+The rootfs includes `background.png` and `background_dark.png` in
+`/home/user/images`. The desktop decodes `background_dark.png` from the rootfs
+with the shared C++ PNG library.
+
 ```
 /
 ├── .clawfs                  # Marker file (empty)

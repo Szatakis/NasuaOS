@@ -14,10 +14,6 @@ extern bool menu_start_open;
 extern size_t bar_h;
 extern size_t bar_h_scaled;
 
-extern const uint32_t background_width;
-extern const uint32_t background_height;
-extern const uint32_t background_data[];
-
 void update_gui_state(int mouse_x, int mouse_y);
 
 void open_start_menu();

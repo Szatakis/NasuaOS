@@ -35,6 +35,7 @@ NasuaOS includes its own kernel, memory manager, drivers, graphical user interfa
 - [Kernel Architecture](kernel/architecture.md)
 - [Driver Overview](kernel/drivers.md)
 - [Memory Management](kernel/memory.md)
+- [PNG Library](kernel/png-library.md)
 - [GUI Development](gui/development.md)
 - [Project Structure](development/project_structure.md)
 - [Build System](development/build_system.md)

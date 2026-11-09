@@ -1,4 +1,5 @@
 *.img
+*.png
 
 dir/bin/**
 !dir/bin/.clawfs
