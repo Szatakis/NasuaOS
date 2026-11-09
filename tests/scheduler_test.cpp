@@ -9,15 +9,31 @@
 namespace Memory::heap
 {
     static bool fail_allocation = false;
+    static size_t allocations = 0;
+    static size_t frees = 0;
 
     void* kmalloc(size_t size)
     {
-        return fail_allocation ? nullptr : std::malloc(size);
+        if (fail_allocation)
+        {
+            return nullptr;
+        }
+
+        void* allocation = std::malloc(size);
+        if (allocation != nullptr)
+        {
+            ++allocations;
+        }
+        return allocation;
     }
 
     void kfree(void* ptr)
     {
-        std::free(ptr);
+        if (ptr != nullptr)
+        {
+            ++frees;
+            std::free(ptr);
+        }
     }
 }
 
@@ -61,16 +77,25 @@ namespace Gdt
 
 namespace Memory::vmm
 {
+    static bool fail_activation = false;
+    static size_t destroyed_spaces = 0;
+
     bool is_user_range(const UserAddressSpace* space, uint64_t address, uint64_t length,
                        bool, bool)
     {
-        return space != nullptr && space->valid && length != 0 &&
-            address >= space->base && address < space->base + 0x40000;
+        constexpr uint64_t USER_REGION_SIZE = 0x40000;
+        if (space == nullptr || !space->valid || length == 0 || address < space->base)
+        {
+            return false;
+        }
+
+        const uint64_t offset = address - space->base;
+        return offset < USER_REGION_SIZE && length <= USER_REGION_SIZE - offset;
     }
 
     bool activate_address_space(UserAddressSpace* space)
     {
-        return space != nullptr && space->valid;
+        return !fail_activation && space != nullptr && space->valid;
     }
 
     bool sync_kernel_mappings(UserAddressSpace* space)
@@ -88,6 +113,7 @@ namespace Memory::vmm
         {
             return false;
         }
+        ++destroyed_spaces;
         *space = {};
         return true;
     }
@@ -99,10 +125,40 @@ static void empty_task(void*)
 
 int main()
 {
+    assert(Scheduler::create_task(empty_task) == 0);
     Scheduler::init();
     assert(Scheduler::current_task_id() == 1);
     assert(Scheduler::task_count() == 1);
+    assert(Scheduler::on_interrupt(nullptr) == nullptr);
+    Scheduler::sleep_ticks(0);
+    assert(Scheduler::current_task_id() == 1);
     assert(Scheduler::create_task(nullptr) == 0);
+
+    assert(Scheduler::create_user_task(nullptr, 0x8000001000ULL,
+                                       0x8000003000ULL, 41) == 0);
+    Memory::vmm::UserAddressSpace invalid_space{1, 0x8000000000ULL, 1, false};
+    assert(Scheduler::create_user_task(&invalid_space, 0x8000001000ULL,
+                                       0x8000003000ULL, 41) == 0);
+
+    Memory::vmm::UserAddressSpace rejected_space{1, 0x8000000000ULL, 1, true};
+    assert(Scheduler::create_user_task(&rejected_space, rejected_space.base - 1,
+                                       rejected_space.base + 0x3000, 41) == 0);
+    assert(Scheduler::create_user_task(&rejected_space, rejected_space.base + 0x1000,
+                                       0, 41) == 0);
+    assert(Scheduler::create_user_task(&rejected_space, rejected_space.base + 0x1000,
+                                       rejected_space.base + 0x40008, 41) == 0);
+    assert(rejected_space.valid);
+    assert(Scheduler::task_count() == 1);
+
+    const size_t allocation_count_before_failure = Memory::heap::allocations;
+    Memory::heap::fail_allocation = true;
+    assert(Scheduler::create_user_task(&rejected_space, rejected_space.base + 0x1000,
+                                       rejected_space.base + 0x3000, 41) == 0);
+    assert(Scheduler::create_task(empty_task) == 0);
+    Memory::heap::fail_allocation = false;
+    assert(rejected_space.valid);
+    assert(Memory::heap::allocations == allocation_count_before_failure);
+    assert(Scheduler::task_count() == 1);
 
     Memory::vmm::UserAddressSpace user_space{1, 0x8000000000ULL, 1, true};
     const uint32_t user_task = Scheduler::create_user_task(
@@ -124,11 +180,34 @@ int main()
     assert(Process::finished_pid == 42);
     assert(Process::finished_exit_code == 7);
     Registers user_frame{};
+    const size_t frees_before_user_reap = Memory::heap::frees;
     assert(Scheduler::on_interrupt(&user_frame) == &kernel_frame);
     assert(Scheduler::current_task_id() == 1);
     assert(Scheduler::on_interrupt(&kernel_frame) == &kernel_frame);
     assert(Scheduler::task_count() == 1);
     assert(Scheduler::current_user_address_space() == nullptr);
+    assert(Memory::vmm::destroyed_spaces == 1);
+    assert(Memory::heap::frees == frees_before_user_reap + 1);
+
+    Memory::vmm::UserAddressSpace failed_activation_space{
+        2, 0x9000000000ULL, 2, true
+    };
+    const uint32_t failed_activation_task = Scheduler::create_user_task(
+        &failed_activation_space, failed_activation_space.base + 0x1000,
+        failed_activation_space.base + 0x3000, 99);
+    assert(failed_activation_task != 0);
+    assert(!failed_activation_space.valid);
+    Memory::vmm::fail_activation = true;
+    assert(Scheduler::on_interrupt(&kernel_frame) == &kernel_frame);
+    assert(Scheduler::current_task_id() == failed_activation_task);
+    assert(Process::finished_pid == 99);
+    assert(Process::finished_exit_code == -1);
+    Memory::vmm::fail_activation = false;
+    assert(Scheduler::on_interrupt(&kernel_frame) == &kernel_frame);
+    assert(Scheduler::current_task_id() == 1);
+    assert(Scheduler::on_interrupt(&kernel_frame) == &kernel_frame);
+    assert(Scheduler::task_count() == 1);
+    assert(Memory::vmm::destroyed_spaces == 2);
 
     Memory::heap::fail_allocation = true;
     assert(Scheduler::create_task(empty_task) == 0);

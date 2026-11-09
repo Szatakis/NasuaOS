@@ -49,6 +49,10 @@ $(GENERATED_LIMINE): $(DEFAULTS_CONFIG) $(LIMINE_TEMPLATE) $(LIMINE_GENERATOR)
 .PHONY: all
 all: $(IMAGE_NAME).iso
 
+.PHONY: test-host
+test-host:
+	@bash ./tests/run_host_tests.sh
+
 .PHONY: all-hdd
 all-hdd: $(IMAGE_NAME).hdd
 

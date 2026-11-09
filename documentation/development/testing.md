@@ -91,6 +91,22 @@ When developing or testing changes:
 6. **Serial test** — Check for errors in `serial.log`
 7. **Panic test** — Does `panic` render the panic screen correctly?
 
+## Host Regression Tests
+
+Run the deterministic host-side kernel tests without downloading the bootloader
+or building a bootable image:
+
+```bash
+make test-host
+```
+
+The scheduler regression test covers initialization, invalid user-task
+contexts, allocation failures, user address-space activation and cleanup,
+round-robin switching, sleeping and wake-up deadlines, tick wraparound, and
+the task-table limit. The `Host Regression Tests` job runs this command for
+pull requests and pushes handled by `.github/workflows/checks.yml`, using both
+GCC and Clang.
+
 ## Serial Output Verification
 
 After running, check `serial.log` for:
