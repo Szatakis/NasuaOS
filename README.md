@@ -4,13 +4,13 @@
 
 Modern hobby operating system primarily targeting **x86_64** computers, written from scratch in **C++**.
 
-Experimental support is planned for **AArch64**, **LoongArch64**, and **RISC-V**. The architecture is designed to be portable, but these targets are currently untested.
+Experimental support is planned for **AArch64**, and **RISC-V**. The architecture is designed to be portable, but these targets are currently untested.
 
 NasuaOS is an experimental operating system focused on learning, low-level programming, kernel development, and building a complete system from the ground up.
 
 ## Community & Links
 
-[![Discord](https://img.shields.io/badge/Discord-Profile-5865F2?logo=discord&logoColor=white)](https://discord.com/users/1285981257498624062)
+[![Discord](https://img.shields.io/badge/Discord-@szatakis-5865F2?logo=discord&logoColor=white)](https://discord.com/users/1285981257498624062)
 &nbsp;&nbsp;
 [![YouTube](https://img.shields.io/badge/YouTube-@szatakis-FF0000?logo=youtube&logoColor=white&logoWidth=20)](https://www.youtube.com/@szatakis)
 &nbsp;&nbsp;
