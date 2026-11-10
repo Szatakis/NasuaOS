@@ -16,6 +16,8 @@ static constexpr int START_MENU_CATEGORY_ROW_HEIGHT = 30;
 static constexpr int START_MENU_SEARCH_CAPACITY = 64;
 static constexpr int START_MENU_POWER_BUTTON_WIDTH = 132;
 static constexpr int START_MENU_POWER_BUTTON_GAP = 8;
+static constexpr int START_MENU_SCROLLBAR_WIDTH = 8;
+static constexpr int START_MENU_SCROLLBAR_GUTTER = 12;
 
 static int start_menu_grid_row_height()
 {
@@ -160,38 +162,26 @@ static const char* start_menu_action_label(int index)
     return start_menu_categories[index - 2];
 }
 
-static int start_menu_power_button_width(int menu_width, int action)
+static int start_menu_power_button_width(int menu_width)
 {
-    if (menu_width < 560)
-    {
-        const int gap = menu_width >= 240 ? START_MENU_POWER_BUTTON_GAP : 4;
-        return (menu_width - 16 - gap) / 2;
-    }
-
-    return action == START_MENU_CLICK_REBOOT
-        ? START_MENU_POWER_BUTTON_WIDTH
-        : menu_width - menu_width * 3 / 4;
+    const int gap = menu_width >= 240 ? START_MENU_POWER_BUTTON_GAP : 4;
+    const int available_width = menu_width - 16 - gap;
+    const int button_width = available_width / 2;
+    return button_width < START_MENU_POWER_BUTTON_WIDTH
+        ? button_width
+        : START_MENU_POWER_BUTTON_WIDTH;
 }
 
 static int start_menu_power_button_x(int menu_x, int menu_width, int action)
 {
-    if (menu_width < 560)
-    {
-        const int button_width = start_menu_power_button_width(menu_width, action);
-        const int gap = menu_width >= 240 ? START_MENU_POWER_BUTTON_GAP : 4;
-        if (action == START_MENU_CLICK_REBOOT)
-        {
-            return menu_x + menu_width - 8 - 2 * button_width - gap;
-        }
-        return menu_x + menu_width - 8 - button_width;
-    }
-
+    const int button_width = start_menu_power_button_width(menu_width);
+    const int gap = menu_width >= 240 ? START_MENU_POWER_BUTTON_GAP : 4;
+    const int right_edge = menu_x + menu_width - 8;
     if (action == START_MENU_CLICK_REBOOT)
     {
-        const int shutdown_x = menu_x + menu_width * 3 / 4;
-        return shutdown_x - START_MENU_POWER_BUTTON_WIDTH - START_MENU_POWER_BUTTON_GAP;
+        return right_edge - 2 * button_width - gap;
     }
-    return menu_x + menu_width * 3 / 4;
+    return right_edge - button_width;
 }
 
 static void load_start_menu_apps()
@@ -262,6 +252,51 @@ static int get_visible_apps(int app_indices[NAPP_MAX_APPLICATIONS])
         }
     }
     return count;
+}
+
+struct StartMenuAppLayout
+{
+    int list_top;
+    int list_bottom;
+    int grid_left;
+    int grid_right;
+    int scrollbar_left;
+    int columns;
+    int visible_rows;
+    int capacity;
+    int max_scroll;
+};
+
+static StartMenuAppLayout start_menu_app_layout(int x, int y, int w, int h,
+                                                 int visible_app_count)
+{
+    const int list_top = y + START_MENU_HEADER_HEIGHT + 32;
+    const int list_bottom = y + h - START_MENU_FOOTER_HEIGHT;
+    const int grid_left = x + START_MENU_NAV_WIDTH;
+    const int grid_right = x + w - START_MENU_SCROLLBAR_GUTTER;
+    const int grid_width = grid_right - grid_left;
+    const int columns = grid_width / START_MENU_GRID_CELL_WIDTH > 0
+        ? grid_width / START_MENU_GRID_CELL_WIDTH
+        : 1;
+    const int grid_row_height = start_menu_grid_row_height();
+    const int list_height = list_bottom - list_top;
+    const int visible_rows = list_height > 0 ? list_height / grid_row_height : 0;
+    const int capacity = visible_rows * columns;
+    const int max_scroll = visible_app_count > capacity
+        ? visible_app_count - capacity
+        : 0;
+
+    return {
+        list_top,
+        list_bottom,
+        grid_left,
+        grid_right,
+        x + w - START_MENU_SCROLLBAR_GUTTER + 2,
+        columns,
+        visible_rows,
+        capacity,
+        max_scroll
+    };
 }
 
 static void draw_app_icon(const char* name, int x, int y)
@@ -346,39 +381,29 @@ void draw_start_menu_contents(int x, int y, int w, int h)
                                nav_x + 10, nav_right - 6);
     }
 
-    const int list_top = y + START_MENU_HEADER_HEIGHT + 32;
-    const int list_bottom = y + h - START_MENU_FOOTER_HEIGHT;
-    const int grid_width = w - START_MENU_NAV_WIDTH;
-    const int columns = grid_width / START_MENU_GRID_CELL_WIDTH > 0
-        ? grid_width / START_MENU_GRID_CELL_WIDTH
-        : 1;
-    const int grid_row_height = start_menu_grid_row_height();
-    const int list_height = list_bottom - list_top;
-    const int visible_rows = list_height > 0 ? list_height / grid_row_height : 0;
     int app_indices[NAPP_MAX_APPLICATIONS];
     const int visible_app_count = get_visible_apps(app_indices);
-    const int visible_app_capacity = visible_rows * columns;
-    const int max_scroll = visible_app_count > visible_app_capacity
-        ? visible_app_count - visible_app_capacity
-        : 0;
-    if (start_menu_app_scroll > max_scroll)
+    const StartMenuAppLayout app_layout =
+        start_menu_app_layout(x, y, w, h, visible_app_count);
+    const int grid_row_height = start_menu_grid_row_height();
+    if (start_menu_app_scroll > app_layout.max_scroll)
     {
-        start_menu_app_scroll = max_scroll;
+        start_menu_app_scroll = app_layout.max_scroll;
     }
 
-    for (int row = 0; row < visible_rows; ++row)
+    for (int row = 0; row < app_layout.visible_rows; ++row)
     {
-        for (int column = 0; column < columns; ++column)
+        for (int column = 0; column < app_layout.columns; ++column)
         {
-            const int item_index = start_menu_app_scroll + row * columns + column;
+            const int item_index = start_menu_app_scroll + row * app_layout.columns + column;
             if (item_index >= visible_app_count)
             {
                 break;
             }
-            const int cell_x = x + START_MENU_NAV_WIDTH + column * START_MENU_GRID_CELL_WIDTH;
-            const int cell_y = list_top + row * grid_row_height;
-            const int cell_width = column == columns - 1
-                ? x + w - cell_x
+            const int cell_x = app_layout.grid_left + column * START_MENU_GRID_CELL_WIDTH;
+            const int cell_y = app_layout.list_top + row * grid_row_height;
+            const int cell_width = column == app_layout.columns - 1
+                ? app_layout.grid_right - cell_x
                 : START_MENU_GRID_CELL_WIDTH;
             if (Mouse::x >= cell_x && Mouse::x < cell_x + cell_width &&
                 Mouse::y >= cell_y && Mouse::y < cell_y + grid_row_height)
@@ -394,12 +419,29 @@ void draw_start_menu_contents(int x, int y, int w, int h)
         }
     }
 
+    const int track_height = app_layout.list_bottom - app_layout.list_top;
+    if (track_height > 0 && app_layout.max_scroll > 0)
+    {
+        const int scrollbar_right = app_layout.scrollbar_left + START_MENU_SCROLLBAR_WIDTH;
+        Gpu::draw_rect(app_layout.scrollbar_left, app_layout.list_top,
+                       scrollbar_right, app_layout.list_bottom, COLOR_NASUA_DARKER);
+        const int thumb_height = (track_height * app_layout.capacity) / visible_app_count;
+        const int clamped_thumb_height = thumb_height < 20
+            ? (track_height < 20 ? track_height : 20)
+            : thumb_height;
+        const int thumb_travel = track_height - clamped_thumb_height;
+        const int thumb_top = app_layout.list_top +
+            thumb_travel * start_menu_app_scroll / app_layout.max_scroll;
+        Gpu::draw_rect(app_layout.scrollbar_left, thumb_top, scrollbar_right,
+                       thumb_top + clamped_thumb_height, COLOR_BLUE);
+    }
+
     const int footer_y = y + h - START_MENU_FOOTER_HEIGHT;
     Gpu::draw_rect(x, footer_y, x + w, y + h, COLOR_NASUA_DARK);
     for (int action = START_MENU_CLICK_SHUTDOWN; action <= START_MENU_CLICK_REBOOT; ++action)
     {
         const int action_x = start_menu_power_button_x(x, w, action);
-        const int action_right = action_x + start_menu_power_button_width(w, action);
+        const int action_right = action_x + start_menu_power_button_width(w);
         if (Mouse::x >= action_x && Mouse::x < action_right &&
             Mouse::y >= footer_y && Mouse::y < y + h)
         {
@@ -453,17 +495,11 @@ void scroll_start_menu(int direction, bool categories)
         return;
     }
 
-    const int list_height = static_cast<int>(menu_h) - START_MENU_HEADER_HEIGHT - 32 -
-                            START_MENU_FOOTER_HEIGHT;
-    const int visible_rows = list_height > 0
-        ? list_height / start_menu_grid_row_height()
-        : 1;
-    const int columns =
-        (static_cast<int>(menu_w) - START_MENU_NAV_WIDTH) / START_MENU_GRID_CELL_WIDTH;
     int app_indices[NAPP_MAX_APPLICATIONS];
     const int app_count = get_visible_apps(app_indices);
-    const int capacity = visible_rows * (columns > 0 ? columns : 1);
-    const int max_scroll = app_count > capacity ? app_count - capacity : 0;
+    const StartMenuAppLayout app_layout = start_menu_app_layout(
+        menu_x, menu_y, menu_w, menu_h, app_count);
+    const int max_scroll = app_layout.max_scroll;
     start_menu_app_scroll += direction;
     if (start_menu_app_scroll < 0)
     {
@@ -483,13 +519,13 @@ start_menu_click_result handle_start_menu_click(int mouse_x, int mouse_y)
     {
         const int restart_x = start_menu_power_button_x(menu_x, menu_w, START_MENU_CLICK_REBOOT);
         if (mouse_x >= restart_x &&
-            mouse_x < restart_x + start_menu_power_button_width(menu_w, START_MENU_CLICK_REBOOT))
+            mouse_x < restart_x + start_menu_power_button_width(menu_w))
         {
             return START_MENU_CLICK_REBOOT;
         }
         const int shutdown_x = start_menu_power_button_x(menu_x, menu_w, START_MENU_CLICK_SHUTDOWN);
         if (mouse_x >= shutdown_x &&
-            mouse_x < shutdown_x + start_menu_power_button_width(menu_w, START_MENU_CLICK_SHUTDOWN))
+            mouse_x < shutdown_x + start_menu_power_button_width(menu_w))
         {
             return START_MENU_CLICK_SHUTDOWN;
         }
@@ -525,23 +561,37 @@ start_menu_click_result handle_start_menu_click(int mouse_x, int mouse_y)
         return START_MENU_CLICK_HANDLED;
     }
 
-    const int list_top = static_cast<int>(menu_y) + START_MENU_HEADER_HEIGHT + 32;
     const int list_bottom = footer_y;
-    if (list_top < list_bottom &&
-        mouse_x >= static_cast<int>(menu_x) + START_MENU_NAV_WIDTH &&
-        mouse_x < static_cast<int>(menu_x) + static_cast<int>(menu_w) &&
-        mouse_y >= list_top && mouse_y < list_bottom)
+    int app_indices[NAPP_MAX_APPLICATIONS];
+    const int app_count = get_visible_apps(app_indices);
+    const StartMenuAppLayout app_layout = start_menu_app_layout(
+        menu_x, menu_y, menu_w, menu_h, app_count);
+    if (mouse_x >= app_layout.scrollbar_left &&
+        mouse_x < app_layout.scrollbar_left + START_MENU_SCROLLBAR_WIDTH &&
+        mouse_y >= app_layout.list_top && mouse_y < app_layout.list_bottom &&
+        app_layout.max_scroll > 0)
     {
-        const int columns = (static_cast<int>(menu_w) - START_MENU_NAV_WIDTH) /
-                            START_MENU_GRID_CELL_WIDTH;
+        const int track_height = app_layout.list_bottom - app_layout.list_top;
+        const int track_position = mouse_y - app_layout.list_top;
+        start_menu_app_scroll = track_height > 1
+            ? track_position * app_layout.max_scroll / (track_height - 1)
+            : 0;
+        return START_MENU_CLICK_HANDLED;
+    }
+
+    if (app_layout.list_top < list_bottom &&
+        mouse_x >= static_cast<int>(menu_x) + START_MENU_NAV_WIDTH &&
+        mouse_x < app_layout.grid_right &&
+        mouse_y >= app_layout.list_top && mouse_y < list_bottom)
+    {
         const int column_offset = mouse_x - static_cast<int>(menu_x) - START_MENU_NAV_WIDTH;
         const int raw_column = column_offset / START_MENU_GRID_CELL_WIDTH;
-        const int column = raw_column < columns ? raw_column : columns - 1;
-        const int row = (mouse_y - list_top) / start_menu_grid_row_height();
-        int app_indices[NAPP_MAX_APPLICATIONS];
-        const int app_count = get_visible_apps(app_indices);
-        const int app_index = start_menu_app_scroll + row * columns + column;
-        if (row >= 0 && column >= 0 && column < columns && app_index < app_count)
+        const int column = raw_column < app_layout.columns
+            ? raw_column
+            : app_layout.columns - 1;
+        const int row = (mouse_y - app_layout.list_top) / start_menu_grid_row_height();
+        const int app_index = start_menu_app_scroll + row * app_layout.columns + column;
+        if (row >= 0 && column >= 0 && column < app_layout.columns && app_index < app_count)
         {
             napp_run(start_menu_napps[app_indices[app_index]], nullptr);
         }

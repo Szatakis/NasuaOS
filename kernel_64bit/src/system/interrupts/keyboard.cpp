@@ -243,6 +243,10 @@ namespace Keyboard
 
             if (scancode == 0x48 || scancode == 0x50 || scancode == 0x4B || scancode == 0x4D)
             {
+                const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP :
+                    scancode == 0x50 ? NAPP_KEY_DOWN :
+                    scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
+
                 if (menu_start_open)
                 {
                     const int speed = 5;
@@ -256,58 +260,20 @@ namespace Keyboard
 
                 if (alt_pressed)
                 {
-                    if (Gpu::Window_Manager::active_window &&
-                        Gpu::Window_Manager::active_window->key_event != nullptr &&
-                        has_keyboard_focus())
+                    if (has_keyboard_focus())
                     {
-                        const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP :
-                            scancode == 0x50 ? NAPP_KEY_DOWN :
-                            scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
                         send_napp_key_event((uint8_t)(0x80 | scancode), arrow_key, true);
-                        return;
                     }
-
-                    const int speed = 12;
-                    int dx = 0;
-                    int dy = 0;
-                    if (scancode == 0x48)
-                    {
-                        dy = speed;
-                    }
-                    else if (scancode == 0x50)
-                    {
-                        dy = -speed;
-                    }
-                    else if (scancode == 0x4B)
-                    {
-                        dx = -speed;
-                    }
-                    else
-                    {
-                        dx = speed;
-                    }
-                    Mouse::update_position(dx, dy);
-                    return;
-                }
-                if (menu_start_open)
-                {
-                    const int speed = 5;
-                    const int dx = scancode == 0x4B ? -speed :
-                                   scancode == 0x4D ? speed : 0;
-                    const int dy = scancode == 0x48 ? speed :
-                                   scancode == 0x50 ? -speed : 0;
-                    Mouse::update_position(dx, dy);
                     return;
                 }
 
-                const char arrow_key = scancode == 0x48 ? NAPP_KEY_UP : scancode == 0x50 ? NAPP_KEY_DOWN : scancode == 0x4B ? NAPP_KEY_LEFT : NAPP_KEY_RIGHT;
-                if (has_keyboard_focus() && Gpu::Window_Manager::active_window->key_event != nullptr)
+                if (shift_pressed)
                 {
-                    send_napp_key_event((uint8_t)(0x80 | scancode), arrow_key, true);
-                }
-                else if (shift_pressed)
-                {
-                    if (scancode == 0x48)
+                    if (has_keyboard_focus())
+                    {
+                        send_napp_key_event((uint8_t)(0x80 | scancode), arrow_key, true);
+                    }
+                    else if (scancode == 0x48)
                     {
                         const char* cmd = history_navigate_up();
                         if (cmd != nullptr)
@@ -326,24 +292,12 @@ namespace Keyboard
                 }
                 else
                 {
-                    int speed = 5;
-
-                    if (scancode == 0x48 && Mouse::y >= speed)
-                    {
-                        Mouse::y -= speed;
-                    }
-                    else if (scancode == 0x50 && Mouse::y + 5 < (int)Gpu::fb->height)
-                    {
-                        Mouse::y += speed;
-                    }
-                    else if (scancode == 0x4B && Mouse::x >= speed)
-                    {
-                        Mouse::x -= speed;
-                    }
-                    else if (scancode == 0x4D && Mouse::x + 4 < (int)Gpu::fb->width)
-                    {
-                        Mouse::x += speed;
-                    }
+                    const int speed = 5;
+                    const int dx = scancode == 0x4B ? -speed :
+                                   scancode == 0x4D ? speed : 0;
+                    const int dy = scancode == 0x48 ? speed :
+                                   scancode == 0x50 ? -speed : 0;
+                    Mouse::update_position(dx, dy);
                 }
                 return;
             }

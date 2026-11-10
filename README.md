@@ -20,7 +20,7 @@ NasuaOS is an experimental operating system focused on learning, low-level progr
 
 [![GitHub last commit](https://img.shields.io/github/last-commit/Szatakis/NasuaOS)](https://github.com/Szatakis/NasuaOS)
 [![Language](https://img.shields.io/badge/Language-C%2B%2B-00599C?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
-[![Architecture](https://img.shields.io/badge/Architecture-x86__64%20%7C%20ARM64%20%7C%20RISC--V%20%7C%20LoongArch64-FF8C00)](https://github.com/limine-bootloader/limine-cxx-template)
+![Architecture](https://img.shields.io/badge/Architecture-x86%20%7C%20ARM64%20%7C%20RISC--V%20-FF8C00)
 [![License](https://img.shields.io/github/license/Szatakis/NasuaOS)](LICENSE.md)
 
 ## Share NasuaOS
@@ -60,11 +60,10 @@ The long-term goal is to create a modern, lightweight operating system capable o
 - ACPI support
 - PCI device enumeration
 - ATA PIO storage driver
-- SATA storage driver (in plans)
 - PS/2 keyboard
 - USB keyboard (in plans)
 - Framebuffer graphics
-- Desktop environment (minimal)
+- Desktop environment
 - Built-in shell
 - Bitmap font renderer
 - Hardware interrupt handling
