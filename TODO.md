@@ -11,8 +11,8 @@
 * [x]    Kernel Logger
 * [x]    Kernel Panic Screen 
 * [x]    Safe Mode
-* [ ]    System usług (Services)
-* [ ]    BootManager
+* [x]    System usług (Services)
+* [x]    BootManager
 
 2. GUI i pulpit
 * [ ]    System powiadomień
