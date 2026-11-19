@@ -17,6 +17,7 @@ Install the following tools before building:
 - NASM
 - Mtools
 - Python 3
+- UnZip
 - QEMU *(optional, recommended for testing (best 10.2.50))*
 
 ## Clone the Repository
@@ -51,7 +52,7 @@ Install the required packages:
 ```bash
 sudo apt update
 
-sudo apt install git curl gcc g++ cmake xorriso clang lld nasm mtools python3 qemu-system-x86
+sudo apt install git curl gcc g++ cmake xorriso clang lld nasm mtools python3 qemu-system-x86 unzip
 ```
 
 Clone the repository:
