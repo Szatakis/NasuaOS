@@ -5,6 +5,7 @@
 #include "drivers/memory/driver.hpp"
 
 #include "shell/shell.hpp"
+#include "system/authentication/authentication.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -391,6 +392,12 @@ void clawfs_mkdir(const char* parent_path, const char* dir_name)
         return;
     }
 
+    if (!auth_check_path_permission(parent_path, true))
+    {
+        Gpu::print_error("Permission denied.\n");
+        return;
+    }
+
     uint32_t parent_sector = get_sector_by_path(parent_path);
 
     if (parent_sector == 0)
@@ -438,6 +445,12 @@ void clawfs_create_file_in(const char* path, const char* name)
     {
         Gpu::print_error("Invalid path or file name!\n");
 
+        return;
+    }
+
+    if (!auth_check_path_permission(path, true))
+    {
+        Gpu::print_error("Permission denied.\n");
         return;
     }
 
@@ -507,6 +520,12 @@ void clawfs_dir(const char* path)
     {
         Gpu::print_error("Invalid path!\n");
 
+        return;
+    }
+
+    if (!auth_check_path_permission(path, false))
+    {
+        Gpu::print_error("Permission denied.\n");
         return;
     }
 
@@ -667,6 +686,10 @@ bool clawfs_read_file(const char* path, void* buffer, uint32_t capacity, uint32_
     {
         return false;
     }
+    if (!auth_check_path_permission(path, false))
+    {
+        return false;
+    }
 
     char parent_path[128];
     uint32_t parent_sector = 0;
@@ -728,6 +751,10 @@ bool clawfs_get_file_size(const char* path, uint32_t* size)
     {
         return false;
     }
+    if (!auth_check_path_permission(path, false))
+    {
+        return false;
+    }
 
     char parent_path[128];
     uint32_t parent_sector = 0;
@@ -744,6 +771,11 @@ bool clawfs_get_file_size(const char* path, uint32_t* size)
 
 bool clawfs_read_file_range(const char* path, uint32_t offset, void* buffer, uint32_t length)
 {
+    if (!auth_check_path_permission(path, false))
+    {
+        return false;
+    }
+
     char parent_path[128];
     uint32_t parent_sector = 0;
     uint8_t directory_buffer[512];
@@ -779,6 +811,10 @@ bool clawfs_read_file_range(const char* path, uint32_t offset, void* buffer, uin
 bool clawfs_write_file(const char* path, const void* buffer, uint32_t length)
 {
     if ((buffer == nullptr && length != 0) || length > CLAWFS_MAX_FILE_SIZE)
+    {
+        return false;
+    }
+    if (!auth_check_path_permission(path, true))
     {
         return false;
     }
@@ -869,6 +905,85 @@ bool clawfs_write_file(const char* path, const void* buffer, uint32_t length)
     return false;
 }
 
+static bool find_sector_path_permission(uint32_t dir_sector, const char* dir_path,
+                                        uint32_t target_sector, bool write,
+                                        uint32_t depth)
+{
+    if (depth >= 32 || dir_sector == 0)
+    {
+        return false;
+    }
+    if (dir_sector == target_sector)
+    {
+        return auth_check_path_permission(dir_path, write);
+    }
+
+    uint8_t buffer[512];
+    if (!Disk::read_sector(dir_sector, buffer))
+    {
+        return false;
+    }
+
+    CLAWFSEntry* entries = (CLAWFSEntry*)buffer;
+    for (uint32_t i = 0; i < 12; ++i)
+    {
+        if (entries[i].name[0] == '\0' || entries[i].data_sector == 0)
+        {
+            continue;
+        }
+
+        char entry_path[128];
+        const size_t path_length = strlen(dir_path);
+        const size_t name_length = strlen(entries[i].name);
+        const bool root = strcmp(dir_path, "/") == 0;
+        const size_t separator_length = root ? 0 : 1;
+        if (path_length + separator_length + name_length >= sizeof(entry_path))
+        {
+            continue;
+        }
+        strcpy(entry_path, dir_path);
+        if (!root)
+        {
+            strcat(entry_path, "/");
+        }
+        strcat(entry_path, entries[i].name);
+
+        if (entries[i].type == CLAWFS_DIRECTORY)
+        {
+            if (find_sector_path_permission(entries[i].data_sector, entry_path,
+                                            target_sector, write, depth + 1))
+            {
+                return true;
+            }
+            continue;
+        }
+        if (entries[i].type != CLAWFS_FILE)
+        {
+            continue;
+        }
+
+        const uint32_t sectors = entries[i].entry_count == 0 ? 1 :
+            (entries[i].entry_count + 511) / 512;
+        if (entries[i].entry_count <= CLAWFS_MAX_FILE_SIZE &&
+            target_sector >= entries[i].data_sector &&
+            target_sector - entries[i].data_sector < sectors)
+        {
+            return auth_check_path_permission(entry_path, write);
+        }
+    }
+    return false;
+}
+
+bool clawfs_check_sector_permission(uint32_t sector, bool write)
+{
+    if (!clawfs_exists())
+    {
+        return false;
+    }
+    return find_sector_path_permission(CLAWFS_ROOT_SECTOR, "/",
+                                       sector, write, 0);
+}
+
 
 // Remove file/directory
 void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
@@ -877,6 +992,12 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
     {
         Gpu::print_error("Invalid path or name!\n");
 
+        return;
+    }
+
+    if (!auth_check_path_permission(parent_path, true))
+    {
+        Gpu::print_error("Permission denied.\n");
         return;
     }
 

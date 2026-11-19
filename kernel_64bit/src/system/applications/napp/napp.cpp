@@ -12,6 +12,7 @@
 #include "system/filesystem/fat/fat.hpp"
 #include "system/filesystem/clawfs/clawfs.hpp"
 #include "system/filesystem/file_resolver/file_resolver.hpp"
+#include "system/authentication/authentication.hpp"
 
 #include "system/gui/gui.hpp"
 #include "system/sysfunc/logger/logger.hpp"
@@ -235,19 +236,31 @@ static void napp_api_set_cwd(const char* path)
 }
 
 // ClawFS wrappers (give userspace flat binaries access to the disk FS)
+static bool napp_api_clawfs_build_file_path(const char* path, char* absolute_path);
+
 static uint32_t napp_api_clawfs_get_sector(const char* path)
 {
-    return get_sector_by_path(path);
+    char absolute_path[256];
+    if (!napp_api_clawfs_build_file_path(path, absolute_path) ||
+        !auth_check_path_permission(absolute_path, false))
+    {
+        return 0;
+    }
+    return get_sector_by_path(absolute_path);
 }
 
 static bool napp_api_clawfs_read_sector(uint32_t sector, void* buffer)
 {
-    return Disk::read_sector(sector, (uint8_t*)buffer);
+    return buffer != nullptr &&
+        clawfs_check_sector_permission(sector, false) &&
+        Disk::read_sector(sector, (uint8_t*)buffer);
 }
 
 static bool napp_api_clawfs_write_sector(uint32_t sector, const void* buffer)
 {
-    return Disk::write_sector(sector, (uint8_t*)buffer);
+    return buffer != nullptr &&
+        clawfs_check_sector_permission(sector, true) &&
+        Disk::write_sector(sector, (uint8_t*)buffer);
 }
 
 static bool napp_api_clawfs_build_file_path(const char* path, char* absolute_path)
@@ -323,6 +336,10 @@ static bool napp_api_clawfs_get_file_size(const char* path, uint32_t* size)
     {
         return false;
     }
+    if (!auth_check_path_permission(absolute_path, false))
+    {
+        return false;
+    }
     if (clawfs_get_file_size(absolute_path, size))
     {
         return true;
@@ -340,7 +357,8 @@ static bool napp_api_clawfs_get_file_size(const char* path, uint32_t* size)
 static bool napp_api_clawfs_read_file_range(const char* path, uint32_t offset, void* buffer, uint32_t length)
 {
     char absolute_path[256];
-    if (!napp_api_clawfs_build_file_path(path, absolute_path))
+    if (!napp_api_clawfs_build_file_path(path, absolute_path) ||
+        !auth_check_path_permission(absolute_path, false))
     {
         return false;
     }
@@ -405,6 +423,11 @@ static void napp_api_clawfs_dir(const char* path)
 
 static int napp_api_clawfs_get_entry_type(const char* parent_path, const char* name)
 {
+    if (!auth_check_path_permission(parent_path, false))
+    {
+        return -1;
+    }
+
     // Walk to parent sector
     uint32_t parent_sector = get_sector_by_path(parent_path);
     if (parent_sector == 0)

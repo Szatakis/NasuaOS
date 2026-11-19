@@ -27,6 +27,9 @@ namespace
     constexpr uint32_t PASSWORD_HASH_ITERATIONS = 100000;
     constexpr uint32_t DATABASE_CAPACITY = 4096;
     constexpr char DATABASE_PATH[] = "/etc/accounts.db";
+    constexpr char PERMISSIONS_PATH[] = "/etc/permissions.db";
+    constexpr uint32_t MAX_PATH_PERMISSIONS = 32;
+    constexpr uint32_t PATH_CAPACITY = 128;
 
     struct account_t
     {
@@ -36,13 +39,21 @@ namespace
         bool administrator;
     };
 
+    struct path_permission_t
+    {
+        char path[PATH_CAPACITY];
+        char owner[USERNAME_CAPACITY];
+        uint16_t mode;
+    };
+
     enum screen_mode_t
     {
         SCREEN_HIDDEN,
         SCREEN_LOGIN_USERNAME,
         SCREEN_LOGIN_PASSWORD,
         SCREEN_NEW_PASSWORD,
-        SCREEN_CONFIRM_PASSWORD
+        SCREEN_CONFIRM_PASSWORD,
+        SCREEN_DATABASE_RECOVERY
     };
 
     enum password_action_t
@@ -67,7 +78,11 @@ namespace
     password_action_t password_action = PASSWORD_ACTION_NONE;
     bool switching_user = false;
     bool current_user_valid = false;
+    bool recovery_armed = false;
     int active_account_index = -1;
+    path_permission_t path_permissions[MAX_PATH_PERMISSIONS];
+    uint32_t path_permission_count = 0;
+    bool internal_auth_storage_access = false;
 
     void clear_secret(char* secret, size_t length)
     {
@@ -143,6 +158,183 @@ namespace
         }
         return -1;
     }
+
+    bool path_is_within(const char* path, const char* parent)
+    {
+        const size_t parent_length = strlen(parent);
+        return strncmp(path, parent, parent_length) == 0 &&
+            (path[parent_length] == '\0' || path[parent_length] == '/');
+    }
+
+    bool valid_permission_path(const char* path)
+    {
+        if (path == nullptr || path[0] != '/' ||
+            strlen(path) >= PATH_CAPACITY)
+        {
+            return false;
+        }
+        if (path[1] == '\0')
+        {
+            return true;
+        }
+
+        size_t component_start = 1;
+        for (size_t i = 1; path[i] != '\0'; ++i)
+        {
+            if (path[i] == '|' || path[i] == '\n' || path[i] == '\r')
+            {
+                return false;
+            }
+            if (path[i] == '/')
+            {
+                const size_t component_length = i - component_start;
+                if (component_length == 0 ||
+                    (component_length == 1 && path[component_start] == '.') ||
+                    (component_length == 2 && path[component_start] == '.' && path[component_start + 1] == '.'))
+                {
+                    return false;
+                }
+                component_start = i + 1;
+            }
+        }
+
+        const size_t final_length = strlen(path) - component_start;
+        return final_length != 0 &&
+            !(final_length == 1 && path[component_start] == '.') &&
+            !(final_length == 2 && path[component_start] == '.' && path[component_start + 1] == '.');
+    }
+
+    bool resolve_permission_path(const char* input_path, char output[PATH_CAPACITY])
+    {
+        if (input_path == nullptr || input_path[0] == '\0')
+        {
+            return false;
+        }
+
+        size_t length = 0;
+        if (input_path[0] == '/')
+        {
+            while (input_path[length] != '\0' && length < PATH_CAPACITY)
+            {
+                output[length] = input_path[length];
+                ++length;
+            }
+        }
+        else
+        {
+            const size_t cwd_length = strlen(current_path);
+            if (cwd_length + 1 >= PATH_CAPACITY)
+            {
+                return false;
+            }
+            for (size_t i = 0; i < cwd_length; ++i)
+            {
+                output[length++] = current_path[i];
+            }
+            if (length == 0 || output[length - 1] != '/')
+            {
+                output[length++] = '/';
+            }
+            size_t source_index = 0;
+            while (input_path[source_index] != '\0')
+            {
+                if (length >= PATH_CAPACITY)
+                {
+                    return false;
+                }
+                output[length++] = input_path[source_index];
+                ++source_index;
+            }
+        }
+
+        if (length >= PATH_CAPACITY)
+        {
+            return false;
+        }
+        output[length] = '\0';
+        while (length > 1 && output[length - 1] == '/')
+        {
+            output[--length] = '\0';
+        }
+        return valid_permission_path(output);
+    }
+
+    int find_exact_path_permission(const char* path)
+    {
+        for (uint32_t i = 0; i < path_permission_count; ++i)
+        {
+            if (strcmp(path_permissions[i].path, path) == 0)
+            {
+                return static_cast<int>(i);
+            }
+        }
+        return -1;
+    }
+
+    const char* home_directory_owner(const char* path)
+    {
+        if (!path_is_within(path, "/home") || strcmp(path, "/home") == 0)
+        {
+            return nullptr;
+        }
+
+        const char* owner = path + 6;
+        size_t owner_length = 0;
+        while (owner[owner_length] != '\0' && owner[owner_length] != '/')
+        {
+            ++owner_length;
+        }
+        if (owner_length == 0 || owner_length >= USERNAME_CAPACITY)
+        {
+            return nullptr;
+        }
+
+        static char owner_name[USERNAME_CAPACITY];
+        for (size_t i = 0; i < owner_length; ++i)
+        {
+            owner_name[i] = owner[i];
+        }
+        owner_name[owner_length] = '\0';
+        return find_account(owner_name) >= 0 ? owner_name : nullptr;
+    }
+
+    int find_path_permission(const char* path)
+    {
+        int best_match = -1;
+        size_t best_length = 0;
+        for (uint32_t i = 0; i < path_permission_count; ++i)
+        {
+            const size_t candidate_length = strlen(path_permissions[i].path);
+            if (candidate_length > best_length &&
+                path_is_within(path, path_permissions[i].path))
+            {
+                best_match = static_cast<int>(i);
+                best_length = candidate_length;
+            }
+        }
+        return best_match;
+    }
+
+    bool auth_storage_path_allowed(const char* path, bool write)
+    {
+        return (strcmp(path, DATABASE_PATH) == 0 ||
+                strcmp(path, PERMISSIONS_PATH) == 0 ||
+                (write && (strcmp(path, "/etc") == 0 ||
+                           strcmp(path, "/") == 0)));
+    }
+
+    struct auth_storage_access_guard_t
+    {
+        bool previous;
+        auth_storage_access_guard_t() : previous(internal_auth_storage_access)
+        {
+            internal_auth_storage_access = true;
+        }
+        ~auth_storage_access_guard_t()
+        {
+            internal_auth_storage_access = previous;
+        }
+    };
 
     int current_account()
     {
@@ -318,6 +510,7 @@ namespace
             return false;
         }
 
+        auth_storage_access_guard_t access_guard;
         uint32_t etc_sector = get_sector_by_path("/etc");
         if (etc_sector == 0)
         {
@@ -355,6 +548,7 @@ namespace
 
     bool parse_line(const char* data, uint32_t size, uint32_t* offset, char* line, uint32_t capacity)
     {
+        const uint32_t start = *offset;
         uint32_t length = 0;
         while (*offset < size && data[*offset] != '\n')
         {
@@ -364,13 +558,16 @@ namespace
             }
             line[length++] = data[(*offset)++];
         }
-        if (*offset >= size)
+        if (*offset < size)
         {
-            return false;
+            ++*offset;
         }
-        ++*offset;
+        if (length > 0 && line[length - 1] == '\r')
+        {
+            --length;
+        }
         line[length] = '\0';
-        return true;
+        return *offset > start;
     }
 
     bool decode_hex(const char* text, uint8_t* output, uint32_t output_size)
@@ -472,6 +669,208 @@ namespace
         return false;
     }
 
+    bool parse_permission_mode(const char* text, uint16_t* mode)
+    {
+        if (text == nullptr || mode == nullptr ||
+            strlen(text) != 3 ||
+            text[0] < '0' || text[0] > '7' ||
+            text[1] < '0' || text[1] > '7' ||
+            text[2] < '0' || text[2] > '7')
+        {
+            return false;
+        }
+
+        *mode = static_cast<uint16_t>(
+            (text[0] - '0') * 64 + (text[1] - '0') * 8 + (text[2] - '0'));
+        return true;
+    }
+
+    bool load_path_permissions()
+    {
+        path_permission_count = 0;
+        uint32_t size = 0;
+        bool file_exists = false;
+        {
+            auth_storage_access_guard_t access_guard;
+            if (!clawfs_get_file_size(PERMISSIONS_PATH, &size))
+            {
+                file_exists = get_sector_by_path(PERMISSIONS_PATH) != 0;
+            }
+            else
+            {
+                file_exists = true;
+            }
+        }
+        if (!file_exists)
+        {
+            return true;
+        }
+        if (size == 0 || size >= DATABASE_CAPACITY)
+        {
+            return false;
+        }
+
+        char database[DATABASE_CAPACITY];
+        uint32_t read_size = 0;
+        bool read_ok = false;
+        {
+            auth_storage_access_guard_t access_guard;
+            read_ok = clawfs_read_file(PERMISSIONS_PATH, database,
+                                       sizeof(database), &read_size);
+        }
+        if (!read_ok || read_size != size)
+        {
+            clear_secret(database, sizeof(database));
+            return false;
+        }
+
+        uint32_t offset = 0;
+        char line[PATH_CAPACITY + USERNAME_CAPACITY + 8];
+        bool valid = parse_line(database, read_size, &offset, line, sizeof(line)) &&
+            strcmp(line, "NASUACL1") == 0;
+
+        while (valid && offset < read_size)
+        {
+            if (!parse_line(database, read_size, &offset, line, sizeof(line)))
+            {
+                valid = false;
+                break;
+            }
+            if (line[0] == '\0')
+            {
+                continue;
+            }
+            if (path_permission_count >= MAX_PATH_PERMISSIONS)
+            {
+                valid = false;
+                break;
+            }
+
+            char* owner = find_character(line, '|');
+            if (owner == nullptr)
+            {
+                valid = false;
+                break;
+            }
+            *owner++ = '\0';
+            char* mode_text = find_character(owner, '|');
+            if (mode_text == nullptr)
+            {
+                valid = false;
+                break;
+            }
+            *mode_text++ = '\0';
+
+            path_permission_t& permission = path_permissions[path_permission_count];
+            if (!valid_username(line) || find_account(line) < 0 ||
+                !parse_permission_mode(owner, &permission.mode) ||
+                !valid_permission_path(mode_text))
+            {
+                valid = false;
+                break;
+            }
+            for (uint32_t i = 0; i < path_permission_count; ++i)
+            {
+                if (strcmp(path_permissions[i].path, mode_text) == 0)
+                {
+                    valid = false;
+                    break;
+                }
+            }
+            if (!valid)
+            {
+                break;
+            }
+            strcpy(permission.owner, line);
+            strcpy(permission.path, mode_text);
+            ++path_permission_count;
+        }
+
+        clear_secret(database, sizeof(database));
+        if (!valid || offset != read_size)
+        {
+            path_permission_count = 0;
+            return false;
+        }
+        return true;
+    }
+
+    bool persist_path_permissions()
+    {
+        if (!storage_available)
+        {
+            return false;
+        }
+
+        char database[DATABASE_CAPACITY];
+        uint32_t length = 0;
+        if (!append_text(database, sizeof(database), &length, "NASUACL1\n"))
+        {
+            return false;
+        }
+        for (uint32_t i = 0; i < path_permission_count; ++i)
+        {
+            const path_permission_t& permission = path_permissions[i];
+            const char mode[4] = {
+                static_cast<char>('0' + ((permission.mode >> 6) & 7)),
+                static_cast<char>('0' + ((permission.mode >> 3) & 7)),
+                static_cast<char>('0' + (permission.mode & 7)),
+                '\0'
+            };
+            if (!append_text(database, sizeof(database), &length, permission.owner) ||
+                !append_char(database, sizeof(database), &length, '|') ||
+                !append_text(database, sizeof(database), &length, mode) ||
+                !append_char(database, sizeof(database), &length, '|') ||
+                !append_text(database, sizeof(database), &length, permission.path) ||
+                !append_char(database, sizeof(database), &length, '\n'))
+            {
+                return false;
+            }
+        }
+
+        bool saved = false;
+        {
+            auth_storage_access_guard_t access_guard;
+            saved = clawfs_write_file(PERMISSIONS_PATH, database, length);
+        }
+        clear_secret(database, sizeof(database));
+        return saved;
+    }
+
+    bool set_path_permission(const char* path, const char* owner, uint16_t mode)
+    {
+        int index = find_exact_path_permission(path);
+        const bool added = index < 0;
+        if (added)
+        {
+            if (path_permission_count >= MAX_PATH_PERMISSIONS)
+            {
+                return false;
+            }
+            index = static_cast<int>(path_permission_count++);
+            path_permissions[index] = {};
+        }
+
+        const path_permission_t previous = path_permissions[index];
+        strcpy(path_permissions[index].path, path);
+        strcpy(path_permissions[index].owner, owner);
+        path_permissions[index].mode = mode;
+        if (persist_path_permissions())
+        {
+            return true;
+        }
+
+        if (added)
+        {
+            --path_permission_count;
+        }
+        else
+        {
+            path_permissions[index] = previous;
+        }
+        return false;
+    }
+
     void seed_account(const char* name, const char* password, bool administrator)
     {
         account_t& account = accounts[account_count++];
@@ -488,6 +887,39 @@ namespace
         seed_account("user", "user", false);
         login_enabled = false;
         strcpy(automatic_login, "user");
+    }
+
+    void apply_account_session(uint32_t index, bool reset_shell);
+
+    bool reset_invalid_account_database()
+    {
+        storage_available = !Disk::storage_is_ram() && clawfs_exists();
+        if (!storage_available)
+        {
+            set_status(Disk::storage_is_ram()
+                ? "Recovery requires persistent ClawFS storage."
+                : "Recovery requires formatted ClawFS storage.");
+            return false;
+        }
+
+        path_permission_count = 0;
+        if (!persist_path_permissions())
+        {
+            set_status("Could not clear stale filesystem permissions.");
+            return false;
+        }
+
+        seed_defaults();
+        if (!persist_database())
+        {
+            set_status("Could not save the new account database.");
+            return false;
+        }
+
+        database_valid = true;
+        recovery_armed = false;
+        apply_account_session(static_cast<uint32_t>(find_account("user")), true);
+        return true;
     }
 
     void apply_account_session(uint32_t index, bool reset_shell)
@@ -731,10 +1163,12 @@ bool auth_init()
     active_account_index = -1;
     switching_user = false;
     password_action = PASSWORD_ACTION_NONE;
+    recovery_armed = false;
 
     if (clawfs_available)
     {
         uint32_t size = 0;
+        auth_storage_access_guard_t access_guard;
         if (clawfs_get_file_size(DATABASE_PATH, &size))
         {
             char database[DATABASE_CAPACITY];
@@ -744,8 +1178,9 @@ bool auth_init()
             clear_secret(database, sizeof(database));
             if (!database_valid)
             {
-                set_status("Account database invalid; login is blocked.");
-                screen_mode = SCREEN_LOGIN_USERNAME;
+                set_status("Account DB invalid. Press R for account recovery.");
+                screen_mode = SCREEN_DATABASE_RECOVERY;
+                input[0] = '\0';
                 return false;
             }
             if (needs_migration && !persist_database())
@@ -759,8 +1194,9 @@ bool auth_init()
         else if (get_sector_by_path(DATABASE_PATH) != 0)
         {
             database_valid = false;
-            set_status("Account database invalid; login is blocked.");
-            screen_mode = SCREEN_LOGIN_USERNAME;
+            set_status("Account DB invalid. Press R for account recovery.");
+            screen_mode = SCREEN_DATABASE_RECOVERY;
+            input[0] = '\0';
             return false;
         }
         else
@@ -776,6 +1212,12 @@ bool auth_init()
             {
                 set_status(Disk::storage_is_ram() ? "Only a RAM disk is available; settings will not survive reboot." : "ClawFS is not formatted; settings will not survive reboot.");
             }
+        }
+
+        if (!load_path_permissions())
+        {
+            path_permission_count = 0;
+            Gpu::print_warn("Permission database invalid; default filesystem permissions remain active.\n");
         }
     }
     else
@@ -796,7 +1238,8 @@ bool auth_init()
     {
         database_valid = false;
         set_status("Automatic login account does not exist.");
-        screen_mode = SCREEN_LOGIN_USERNAME;
+        screen_mode = SCREEN_DATABASE_RECOVERY;
+        input[0] = '\0';
         return false;
     }
     apply_account_session(static_cast<uint32_t>(automatic_index), true);
@@ -812,6 +1255,50 @@ void auth_handle_key(char key)
 {
     if (!database_valid)
     {
+        if (screen_mode != SCREEN_DATABASE_RECOVERY)
+        {
+            return;
+        }
+        if (!recovery_armed)
+        {
+            if (key == 'r' || key == 'R')
+            {
+                recovery_armed = true;
+                input[0] = '\0';
+                set_status("Type RESET and press Enter. Accounts will be recreated.");
+            }
+            return;
+        }
+
+        if (key == '\b')
+        {
+            const size_t length = strlen(input);
+            if (length > 0)
+            {
+                input[length - 1] = '\0';
+            }
+            return;
+        }
+        if (key == '\n')
+        {
+            if (strcmp(input, "RESET") != 0)
+            {
+                input[0] = '\0';
+                set_status("Confirmation did not match. Type RESET or reboot.");
+                return;
+            }
+            reset_invalid_account_database();
+            return;
+        }
+        if (key >= 32 && key <= 126)
+        {
+            const size_t length = strlen(input);
+            if (length + 1 < sizeof(input))
+            {
+                input[length] = key;
+                input[length + 1] = '\0';
+            }
+        }
         return;
     }
 
@@ -1015,6 +1502,15 @@ void auth_draw_screen()
             subtitle = "Signing in as a different user.";
         }
     }
+    else if (screen_mode == SCREEN_DATABASE_RECOVERY)
+    {
+        title = "Account recovery";
+        subtitle = recovery_armed
+            ? "This recreates the default accounts."
+            : "Invalid database. Press R to begin recovery.";
+        field_label = "TYPE RESET";
+        button_label = "RESET ACCOUNTS";
+    }
     const int label_y = top + (compact ? 112 : 151);
     const int field_y = top + (compact ? 128 : 169);
     const int field_height = compact ? 32 : 38;
@@ -1044,6 +1540,10 @@ void auth_draw_screen()
     draw_outline(form_left, field_y, form_width, field_height, 0xFFCBD4E0);
 
     if (screen_mode == SCREEN_LOGIN_USERNAME)
+    {
+        Gpu::print_at8_clipped(input, form_left + 12, field_y + (compact ? 12 : 15), 0xFF243247, form_left + 12, form_right - 8);
+    }
+    else if (screen_mode == SCREEN_DATABASE_RECOVERY)
     {
         Gpu::print_at8_clipped(input, form_left + 12, field_y + (compact ? 12 : 15), 0xFF243247, form_left + 12, form_right - 8);
     }
@@ -1077,6 +1577,166 @@ void auth_draw_screen()
 
 bool auth_execute_command(const char* command, const char* args)
 {
+    if (strcmp(command, "chmod") == 0)
+    {
+        char mode_text[4];
+        char requested_path[PATH_CAPACITY];
+        char path[PATH_CAPACITY];
+        uint16_t mode = 0;
+        if (!parse_arguments(args, mode_text, sizeof(mode_text),
+                             requested_path, sizeof(requested_path)) ||
+            !parse_permission_mode(mode_text, &mode) ||
+            !resolve_permission_path(requested_path, path))
+        {
+            print_usage("chmod <000-777> <path>");
+            return true;
+        }
+
+        const char* owner = nullptr;
+        const int existing = find_path_permission(path);
+        if (existing >= 0)
+        {
+            owner = path_permissions[existing].owner;
+        }
+        else
+        {
+            owner = home_directory_owner(path);
+        }
+
+        const int current = current_account();
+        if (current < 0 ||
+            (!is_administrator(current) &&
+             (owner == nullptr || strcmp(owner, user_name) != 0)))
+        {
+            Gpu::print_error("chmod: administrator or directory owner required.\n");
+            return true;
+        }
+        if (get_sector_by_path(path) == 0)
+        {
+            Gpu::print_error("chmod: path not found.\n");
+            return true;
+        }
+        if (owner == nullptr)
+        {
+            owner = user_name;
+        }
+
+        char owner_copy[USERNAME_CAPACITY];
+        strcpy(owner_copy, owner);
+        if (!set_path_permission(path, owner_copy, mode))
+        {
+            Gpu::print_error("chmod: could not save permissions.\n");
+            return true;
+        }
+        Gpu::print_info("Permissions updated.\n");
+        return true;
+    }
+
+    if (strcmp(command, "chown") == 0)
+    {
+        char owner[USERNAME_CAPACITY];
+        char requested_path[PATH_CAPACITY];
+        char path[PATH_CAPACITY];
+        if (!parse_arguments(args, owner, sizeof(owner), requested_path,
+                             sizeof(requested_path)) ||
+            !valid_username(owner) ||
+            !resolve_permission_path(requested_path, path))
+        {
+            print_usage("chown <user> <path>");
+            return true;
+        }
+        if (!require_admin())
+        {
+            return true;
+        }
+        if (find_account(owner) < 0)
+        {
+            Gpu::print_error("chown: unknown user.\n");
+            return true;
+        }
+        if (get_sector_by_path(path) == 0)
+        {
+            Gpu::print_error("chown: path not found.\n");
+            return true;
+        }
+
+        uint16_t mode = 0700;
+        const int existing = find_path_permission(path);
+        if (existing >= 0)
+        {
+            mode = path_permissions[existing].mode;
+        }
+        else if (home_directory_owner(path) == nullptr)
+        {
+            mode = 0755;
+        }
+        if (!set_path_permission(path, owner, mode))
+        {
+            Gpu::print_error("chown: could not save permissions.\n");
+            return true;
+        }
+        Gpu::print_info("Owner updated.\n");
+        return true;
+    }
+
+    if (strcmp(command, "permissions") == 0)
+    {
+        char requested_path[PATH_CAPACITY];
+        char path[PATH_CAPACITY];
+        char extra[2];
+        if (!parse_arguments(args, requested_path, sizeof(requested_path),
+                             extra, sizeof(extra)) ||
+            extra[0] != '\0')
+        {
+            print_usage("permissions [path]");
+            return true;
+        }
+        if (requested_path[0] == '\0')
+        {
+            strcpy(requested_path, current_path);
+        }
+        if (!resolve_permission_path(requested_path, path))
+        {
+            Gpu::print_error("permissions: invalid path.\n");
+            return true;
+        }
+        if (current_account() < 0)
+        {
+            Gpu::print_error("No authenticated user.\n");
+            return true;
+        }
+        if (!auth_check_path_permission(path, false))
+        {
+            Gpu::print_error("Permission denied.\n");
+            return true;
+        }
+        if (get_sector_by_path(path) == 0)
+        {
+            Gpu::print_error("permissions: path not found.\n");
+            return true;
+        }
+
+        const int effective_permission = find_path_permission(path);
+        const char* owner = effective_permission >= 0
+            ? path_permissions[effective_permission].owner
+            : home_directory_owner(path);
+        const uint16_t mode = effective_permission >= 0
+            ? path_permissions[effective_permission].mode
+            : static_cast<uint16_t>(owner != nullptr ? 0700 :
+                (path_is_within(path, "/tmp") ||
+                 path_is_within(path, "/mnt") ||
+                 path_is_within(path, "/dev") ? 0777 : 0755));
+        Gpu::print(path);
+        Gpu::print(" owner=");
+        Gpu::print(owner != nullptr ? owner : "root");
+        Gpu::print(" mode=");
+        Gpu::print_num8((mode >> 6) & 7);
+        Gpu::print_num8((mode >> 3) & 7);
+        Gpu::print_num8(mode & 7);
+        Gpu::print("\n");
+        return true;
+    }
+
     if (strcmp(command, "users") == 0)
     {
         while (*args == ' ')
@@ -1384,4 +2044,86 @@ bool auth_execute_command(const char* command, const char* args)
     }
 
     return false;
+}
+
+const char* auth_current_username()
+{
+    return current_account() >= 0 ? user_name : nullptr;
+}
+
+bool auth_current_user_is_administrator()
+{
+    return is_administrator(current_account());
+}
+
+bool auth_check_path_permission(const char* path, bool write)
+{
+    if (!valid_permission_path(path))
+    {
+        return false;
+    }
+
+    if (internal_auth_storage_access &&
+        auth_storage_path_allowed(path, write))
+    {
+        return true;
+    }
+
+    const int account_index = current_account();
+    if (account_index < 0)
+    {
+        return false;
+    }
+    if (auth_current_user_is_administrator())
+    {
+        return true;
+    }
+
+    const int permission_index = find_path_permission(path);
+    for (uint32_t i = 0; i < path_permission_count; ++i)
+    {
+        const path_permission_t& ancestor = path_permissions[i];
+        if (strcmp(path, ancestor.path) == 0 ||
+            !path_is_within(path, ancestor.path))
+        {
+            continue;
+        }
+        const uint16_t ancestor_bits = strcmp(ancestor.owner, user_name) == 0
+            ? static_cast<uint16_t>((ancestor.mode >> 6) & 7)
+            : static_cast<uint16_t>(ancestor.mode & 7);
+        if ((ancestor_bits & 1) == 0)
+        {
+            return false;
+        }
+    }
+
+    if (permission_index >= 0)
+    {
+        const path_permission_t& permission = path_permissions[permission_index];
+        const uint16_t access_bits = strcmp(permission.owner, user_name) == 0
+            ? static_cast<uint16_t>((permission.mode >> 6) & 7)
+            : static_cast<uint16_t>(permission.mode & 7);
+        return (access_bits & (write ? 2 : 4)) != 0;
+    }
+
+    if (path_is_within(path, "/home") && strcmp(path, "/home") != 0)
+    {
+        const char* owner = path + 6;
+        size_t owner_length = 0;
+        while (owner[owner_length] != '\0' && owner[owner_length] != '/')
+        {
+            ++owner_length;
+        }
+        return owner_length == strlen(user_name) &&
+            strncmp(owner, user_name, owner_length) == 0;
+    }
+
+    if (write)
+    {
+        return path_is_within(path, "/tmp") ||
+            path_is_within(path, "/mnt") ||
+            path_is_within(path, "/dev");
+    }
+
+    return !path_is_within(path, "/etc");
 }

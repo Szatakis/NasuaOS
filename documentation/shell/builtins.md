@@ -206,8 +206,13 @@ updated to the new format and default to login disabled once.
 The login switch cannot be saved when the OS is running from a RAM-only disk.
 Formatting ClawFS initializes the storage area and can replace existing ClawFS
 data, so back up anything important before formatting.
-Accounts currently provide login identity and account-command checks; they do
-not yet isolate files or restrict other shell commands by user.
+When the account database cannot be read or validated, automatic login is
+deliberately blocked: the system cannot safely assume that login was disabled.
+The recovery screen offers an explicit reset: press `R`, type `RESET`, and
+press Enter. This resets account settings and filesystem permission rules to
+defaults but leaves other files intact. It recreates `root`/`admin` and
+`user`/`user` and selects automatic login as `user`; change the initial
+passwords afterward.
 
 ```
 passwd [username]
@@ -218,6 +223,9 @@ su <username>
 login
 login --on
 login --off
+chmod <mode> <path>
+chown <user> <path>
+permissions [path]
 ```
 
 `passwd` changes your password, or an administrator can name another account.
@@ -240,6 +248,29 @@ users
 If ClawFS has not been formatted, the default accounts still work for the
 current boot, but account changes cannot be saved. Format ClawFS before
 changing accounts if you need those changes to survive a reboot.
+
+## Filesystem permissions
+
+ClawFS permissions are stored in `/etc/permissions.db`. Each path rule applies
+to that path and its descendants; the most specific rule wins. Modes use three
+octal digits for owner, group, and other. NasuaOS does not yet have groups, so
+the group digit is currently ignored. Read (`4`) and write (`2`) bits are
+enforced, and execute (`1`) is required to traverse an explicitly protected
+parent path. Owners may change their path's mode; administrators may change any
+mode or owner. Without an explicit rule, users can access their own
+`/home/<user>` tree; system paths are read-only to non-administrators.
+
+```
+permissions /home/user/projects
+chmod 750 /home/user/projects
+chmod 777 /home/user/shared
+chown user /home/user/shared
+```
+
+Use `su root` before `chown`; the command is administrator-only. Changing
+permissions requires writable, formatted ClawFS storage. The account
+database and permission database are separate; an account reset clears custom
+path rules.
 
 ## debug
 

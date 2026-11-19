@@ -46,7 +46,7 @@
 
 8. Bezpieczeństwo
 
-* [ ]    System uprawnień
+* [x]    System uprawnień
 * [x]    Izolacja procesów (oddzielne przestrzenie adresowe dla procesów ring 3)
 * [x]    Ochrona pamięci procesów (prawa stron user/kernel oraz NX)
 * [x]    System ringów x86_64: ring 0 dla kernela, ring 3 dla wybranych aplikacji; ringi 1–2 nieużywane

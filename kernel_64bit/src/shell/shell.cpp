@@ -116,6 +116,12 @@ static const HelpCommand HELP_COMMANDS[] =
      "   <username>                        - Authenticate as the selected account\n"},
     {"login", "Enable, disable, or open the login screen",
      "   --on | --off                      - Require or skip login on the next boot\n"},
+    {"chmod", "Set path permissions",
+     "   <mode> <path>                     - Set owner/other bits (for example 750)\n"},
+    {"chown", "Change a path's owner (administrator only)",
+     "   <user> <path>                     - Assign an existing account as owner\n"},
+    {"permissions", "Show effective path owner and permissions",
+     "   [path]                            - Defaults to the current directory\n"},
 };
 
 static constexpr uint32_t HELP_COMMAND_COUNT = sizeof(HELP_COMMANDS) / sizeof(HELP_COMMANDS[0]);

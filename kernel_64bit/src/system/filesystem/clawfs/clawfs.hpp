@@ -41,3 +41,4 @@ bool clawfs_read_file(const char* path, void* buffer, uint32_t capacity, uint32_
 bool clawfs_get_file_size(const char* path, uint32_t* size);
 bool clawfs_read_file_range(const char* path, uint32_t offset, void* buffer, uint32_t length);
 bool clawfs_write_file(const char* path, const void* buffer, uint32_t length);
+bool clawfs_check_sector_permission(uint32_t sector, bool write);
