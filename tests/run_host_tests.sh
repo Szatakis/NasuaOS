@@ -5,7 +5,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 scheduler_binary="$(mktemp "${TMPDIR:-/tmp}/nasua-scheduler-test.XXXXXX")"
 memory_binary="$(mktemp "${TMPDIR:-/tmp}/nasua-memory-test.XXXXXX")"
 png_binary="$(mktemp "${TMPDIR:-/tmp}/nasua-png-test.XXXXXX")"
-trap 'rm -f "$scheduler_binary" "$memory_binary" "$png_binary"' EXIT
+logger_binary="$(mktemp "${TMPDIR:-/tmp}/nasua-logger-test.XXXXXX")"
+trap 'rm -f "$scheduler_binary" "$memory_binary" "$png_binary" "$logger_binary"' EXIT
 
 printf '[host-tests] compiling scheduler regression tests with %s\n' "${CXX:-c++}"
 "${CXX:-c++}" \
@@ -59,3 +60,19 @@ printf '[host-tests] compiling PNG decoder tests with %s\n' "${CXX:-c++}"
 
 "$png_binary" "$repo_root/documentation/images/background_dark.png"
 printf '[host-tests] PNG decoder tests passed\n'
+
+printf '[host-tests] compiling logger regression tests with %s\n' "${CXX:-c++}"
+"${CXX:-c++}" \
+    -std=gnu++20 \
+    -O2 \
+    -Wall \
+    -Wextra \
+    -Werror \
+    -I"$repo_root/kernel_64bit/src" \
+    -I"$repo_root/resources" \
+    "$repo_root/tests/logger_test.cpp" \
+    "$repo_root/kernel_64bit/src/system/sysfunc/logger/logger.cpp" \
+    -o "$logger_binary"
+
+"$logger_binary"
+printf '[host-tests] logger regression tests passed\n'

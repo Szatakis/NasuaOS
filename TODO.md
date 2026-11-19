@@ -8,9 +8,9 @@
 * [ ]    Obsługa procesów i priorytetów
 * [ ]    System przerwań
 * [ ]    SMP – obsługa wielu rdzeni CPU
-* [ ]    Kernel Logger
-* [ ]    Kernel Panic Screen 
-* [ ]    Safe Mode
+* [x]    Kernel Logger
+* [x]    Kernel Panic Screen 
+* [x]    Safe Mode
 * [ ]    System usług (Services)
 * [ ]    BootManager
 

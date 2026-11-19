@@ -88,6 +88,7 @@ namespace {
 void iqu_init()
 {
     Uart::init();
+    logger_init();
 
     Cpu::init_cores();
     Memory::init();

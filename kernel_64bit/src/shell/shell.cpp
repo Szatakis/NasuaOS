@@ -578,14 +578,22 @@ void execute_command(const char *cmd)
     // 9. Command: mount
     else if(cmd_name_len == 5 && Memory::memcmp(cmd, "mount", 5) == 0)
     {
-        if (clawfs_exists())
+        if (safe_mode)
         {
-            file_resolver_mount(true);
+            file_resolver_mount(false);
+            Gpu::print_error("Safe mode: ClawFS overlay is disabled.\n");
         }
         else
         {
-            Gpu::print_error("Disk is not formatted as CLAWFS.\n");
-            Gpu::print_info("Run 'format' first to create the filesystem.\n");
+            if (clawfs_exists())
+            {
+                file_resolver_mount(true);
+            }
+            else
+            {
+                Gpu::print_error("Disk is not formatted as CLAWFS.\n");
+                Gpu::print_info("Run 'format' first to create the filesystem.\n");
+            }
         }
     }
 
@@ -1279,6 +1287,9 @@ void execute_command(const char *cmd)
     {
         Gpu::print_info("Safe mode ON\n");
         safe_mode = true;
+        file_resolver_mount(false);
+        Uart::puts("[SAFE MODE] ClawFS overlay disabled\n");
+        log(WARN, "SAFE MODE", "ClawFS overlay disabled");
     }
 
     // 27. Command: uart

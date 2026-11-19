@@ -10,3 +10,4 @@ void print_logs();
 void print_logs_level(LogLevel level);
 void print_logs_subsystem(const char* subsystem);
 void clear_logs();
+uint32_t get_log_count();

@@ -3,6 +3,7 @@
 
 #include "drivers/gpu/driver.hpp"
 #include "drivers/rtc/driver.hpp"
+#include "drivers/uart/driver.hpp"
 
 #include "libs/libc/libc.hpp"
 
@@ -59,6 +60,16 @@ void logger_init()
 
 void log(LogLevel level, const char* subsystem, const char* message)
 {
+    if (subsystem == nullptr)
+    {
+        subsystem = "UNKNOWN";
+    }
+
+    if (message == nullptr)
+    {
+        message = "";
+    }
+
     uint32_t id = log_index % LOG_BUFFER_SIZE;
 
     logs[id].time = Rtc::get_time();
@@ -88,6 +99,36 @@ void log(LogLevel level, const char* subsystem, const char* message)
     {
         log_count++;
     }
+
+    Uart::putc('[');
+    Uart::putdec(logs[id].time.hour);
+    Uart::putc(':');
+    Uart::putdec(logs[id].time.minute);
+    Uart::putc(':');
+    Uart::putdec(logs[id].time.second);
+    Uart::puts("][");
+
+    switch(level)
+    {
+        case INFO:
+            Uart::puts("INFO");
+            break;
+        case WARN:
+            Uart::puts("WARN");
+            break;
+        case ERROR:
+            Uart::puts("ERROR");
+            break;
+        case DEBUG:
+            Uart::puts("DEBUG");
+            break;
+    }
+
+    Uart::puts("] ");
+    Uart::puts(logs[id].subsystem);
+    Uart::puts(": ");
+    Uart::puts(logs[id].message);
+    Uart::putc('\n');
 }
 
 static void print_time(Rtc::RtcTime time) 
@@ -227,6 +268,11 @@ void clear_logs()
         logs[i].message[0] = 0;
         logs[i].subsystem[0] = 0;
     }
+}
+
+uint32_t get_log_count()
+{
+    return log_count;
 }
 
 void print_logs() 
