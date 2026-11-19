@@ -20,6 +20,13 @@ namespace Process
         Exited
     };
 
+    enum class Priority : uint8_t
+    {
+        Low,
+        Normal,
+        High
+    };
+
     struct Info
     {
         uint32_t pid;
@@ -29,6 +36,7 @@ namespace Process
         uint32_t open_windows;
         uint64_t start_tick;
         char name[PROCESS_NAME_LENGTH];
+        Priority priority;
     };
 
     void init();
@@ -40,4 +48,6 @@ namespace Process
     uint32_t window_count(uint32_t pid);
     uint32_t snapshot(Info* output, uint32_t capacity);
     uint64_t uptime_ticks();
+    bool set_priority(uint32_t pid, Priority priority);
+    Priority get_priority(uint32_t pid);
 }

@@ -84,6 +84,7 @@ namespace Process
         slot->open_windows = 0;
         slot->start_tick = Timer::pit_get_ticks();
         copy_name(slot->name, name);
+        slot->priority = Priority::Normal;
         return slot->pid;
     }
 
@@ -181,5 +182,22 @@ namespace Process
     uint64_t uptime_ticks()
     {
         return Timer::pit_get_ticks();
+    }
+
+    bool set_priority(uint32_t pid, Priority priority)
+    {
+        Info* process = find(pid);
+        if (process == nullptr)
+        {
+            return false;
+        }
+        process->priority = priority;
+        return true;
+    }
+
+    Priority get_priority(uint32_t pid)
+    {
+        Info* process = find(pid);
+        return process != nullptr ? process->priority : Priority::Normal;
     }
 }

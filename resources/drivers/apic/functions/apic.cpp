@@ -18,6 +18,8 @@
 #define LAPIC_REG_TPR       0x80
 #define LAPIC_REG_EOI       0xB0
 #define LAPIC_REG_SVR       0xF0
+#define LAPIC_REG_ICR_LOW   0x300
+#define LAPIC_REG_ICR_HIGH  0x310
 
 #define LAPIC_SVR_ENABLE    0x100
 
@@ -213,6 +215,17 @@ void Apic::send_eoi()
 uint32_t Apic::get_id()
 {
     return (*lapic_reg(LAPIC_REG_ID)) >> 24;
+}
+
+void Apic::send_ipi_all_excluding(uint8_t vector)
+{
+    if (!g_apic_active)
+    {
+        return;
+    }
+    *lapic_reg(LAPIC_REG_ICR_HIGH) = 0;
+    *lapic_reg(LAPIC_REG_ICR_LOW) =
+        (0x3U << 18) | (1U << 14) | vector;
 }
 
 

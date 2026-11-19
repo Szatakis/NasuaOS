@@ -8,8 +8,10 @@ class Cpu
 {
 public:
     static void init_cores();          // Check if mp is available
+    static void start_application_cores();
     static void get_brand(char* brand); // Return CPU name
     static const char* get_architecture();    // Returns CPU architecture
+    static uint64_t core_count();
 };
 
 #endif

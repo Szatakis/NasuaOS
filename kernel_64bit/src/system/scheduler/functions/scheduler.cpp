@@ -45,6 +45,7 @@ namespace Scheduler
     static uint32_t running_task_id = 0;
     static uint32_t next_task_id = 2;
     static bool initialized = false;
+    static volatile uint8_t scheduler_lock = 0;
 
     static uint64_t disable_interrupts()
     {
@@ -64,6 +65,19 @@ namespace Scheduler
 #else
         (void)flags;
 #endif
+    }
+
+    static void lock_scheduler()
+    {
+        while (__atomic_test_and_set(&scheduler_lock, __ATOMIC_ACQUIRE))
+        {
+            asm volatile("pause");
+        }
+    }
+
+    static void unlock_scheduler()
+    {
+        __atomic_clear(&scheduler_lock, __ATOMIC_RELEASE);
     }
 
     static Task* find_task(uint32_t id)
@@ -122,16 +136,29 @@ namespace Scheduler
     {
         const uint32_t count = PrMap::size();
         uint32_t candidate_id = current_id;
+        uint8_t selected_rank = 0;
+        Task* selected = nullptr;
         for (uint32_t index = 0; index < count; ++index)
         {
             candidate_id = PrMap::next(candidate_id);
             Task* candidate = find_task(candidate_id);
-            if (candidate != nullptr && candidate->state == TaskState::Ready)
+            if (candidate == nullptr || candidate->state != TaskState::Ready)
             {
-                return candidate;
+                continue;
+            }
+
+            const Process::Priority priority =
+                candidate->process_id == 0
+                    ? Process::Priority::Normal
+                    : Process::get_priority(candidate->process_id);
+            const uint8_t rank = static_cast<uint8_t>(priority);
+            if (selected == nullptr || rank > selected_rank)
+            {
+                selected = candidate;
+                selected_rank = rank;
             }
         }
-        return nullptr;
+        return selected;
     }
 
     static void task_trampoline(Task* task)
@@ -243,6 +270,27 @@ namespace Scheduler
         restore_interrupts(flags);
         return id;
     }
+
+    uint32_t create_thread(TaskEntry entry, void* argument)
+    {
+        return create_task(entry, argument);
+    }
+
+    uint32_t thread_count()
+    {
+        uint32_t count = 0;
+        for (uint32_t index = 0; index < MAX_TASKS; ++index)
+        {
+            if (tasks[index].id != 0 &&
+                tasks[index].state != TaskState::Empty &&
+                !tasks[index].user_mode)
+            {
+                ++count;
+            }
+        }
+        return count;
+    }
+
 
     uint32_t create_user_task(Memory::vmm::UserAddressSpace* address_space,
                               uint64_t entry, uint64_t user_stack_pointer,
@@ -392,6 +440,8 @@ namespace Scheduler
             return frame;
         }
 
+        lock_scheduler();
+
         Task* current = find_task(running_task_id);
         if (current != nullptr && current->state == TaskState::Running)
         {
@@ -413,6 +463,7 @@ namespace Scheduler
         Task* next = next_ready_task(running_task_id);
         if (next == nullptr)
         {
+            unlock_scheduler();
             return frame;
         }
 
@@ -430,6 +481,7 @@ namespace Scheduler
                 next->state = TaskState::Dead;
                 PrMap::remove(next->id);
                 Memory::vmm::activate_kernel_address_space();
+                unlock_scheduler();
                 return frame;
             }
         }
@@ -443,6 +495,7 @@ namespace Scheduler
                 reinterpret_cast<uintptr_t>(next->stack) + TASK_STACK_SIZE;
             Gdt::set_kernel_stack(stack_top);
         }
+        unlock_scheduler();
         return next->context != nullptr ? next->context : frame;
     }
 

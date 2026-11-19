@@ -101,6 +101,7 @@ void iqu_init()
     idt_init();
     Timer::pit_init();
     Scheduler::init();
+    Cpu::start_application_cores();
     Ring3::launch_probe();
 
     asm volatile("sti");

@@ -4,6 +4,7 @@
 #include "page_fault.hpp"
 #include "drivers/uart/driver.hpp"
 #include "drivers/timer/driver.hpp"
+#include "drivers/apic/driver.hpp"
 #include "drivers/memory/driver.hpp"
 #include "system/applications/napp/napp.hpp"
 #include "system/scheduler/scheduler.hpp"
@@ -53,6 +54,7 @@ Registers* isr_handler(Registers* regs)
     if (regs->vector == 32)
     {
         Timer::pit_handler();
+        Apic::send_ipi_all_excluding(0x81);
         return Scheduler::on_interrupt(regs);
     }
 

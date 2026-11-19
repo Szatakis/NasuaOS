@@ -14,6 +14,8 @@ namespace Scheduler
 
     void init();
     uint32_t create_task(TaskEntry entry, void* argument = nullptr);
+    uint32_t create_thread(TaskEntry entry, void* argument = nullptr);
+    uint32_t thread_count();
     uint32_t create_user_task(Memory::vmm::UserAddressSpace* address_space,
                               uint64_t entry, uint64_t user_stack_pointer,
                               uint32_t process_id = 0);

@@ -5,8 +5,24 @@
 #include "drivers/uart/driver.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
+#include "drivers/apic/driver.hpp"
 
 extern volatile limine_mp_request mp_request;
+
+static uint64_t detected_core_count = 1;
+static volatile uint64_t started_application_core_count = 0;
+
+extern "C" void limine_ap_entry(limine_mp_info* info)
+{
+    (void)info;
+    __sync_add_and_fetch(&started_application_core_count, 1);
+    Apic::init();
+    asm volatile("sti");
+    for (;;)
+    {
+        asm volatile("hlt");
+    }
+}
 
 static inline void cpuid(uint32_t leaf, uint32_t subleaf, uint32_t& eax, uint32_t& ebx, uint32_t& ecx, uint32_t& edx)
 {
@@ -16,9 +32,48 @@ static inline void cpuid(uint32_t leaf, uint32_t subleaf, uint32_t& eax, uint32_
 void Cpu::init_cores() {
     if(mp_request.response)
     {
+        detected_core_count = mp_request.response->cpu_count;
         Uart::puts("[CPU] MP available\n");
         log(INFO,"CPU","MP available");
+#if defined(__x86_64__)
+        for (uint64_t index = 0; index < mp_request.response->cpu_count; ++index)
+        {
+            limine_mp_info* cpu = mp_request.response->cpus[index];
+            if (cpu == nullptr ||
+                cpu->lapic_id == mp_request.response->bsp_lapic_id)
+            {
+                continue;
+            }
+            cpu->goto_address = nullptr;
+        }
+#endif
     }
+}
+
+void Cpu::start_application_cores()
+{
+    if (!mp_request.response)
+    {
+        return;
+    }
+
+#if defined(__x86_64__)
+    for (uint64_t index = 0; index < mp_request.response->cpu_count; ++index)
+    {
+        limine_mp_info* cpu = mp_request.response->cpus[index];
+        if (cpu == nullptr ||
+            cpu->lapic_id == mp_request.response->bsp_lapic_id)
+        {
+            continue;
+        }
+        cpu->goto_address = limine_ap_entry;
+    }
+#endif
+}
+
+uint64_t Cpu::core_count()
+{
+    return detected_core_count;
 }
 
 void Cpu::get_brand(char* brand)

@@ -20,6 +20,7 @@ public:
     static void init();       // wlacza LAPIC (Spurious Vector Register) i zeruje TPR
     static void send_eoi();   // wysyla EOI do Local APIC
     static uint32_t get_id();
+    static void send_ipi_all_excluding(uint8_t vector);
 
     // Controller state & choice
     static bool is_active();

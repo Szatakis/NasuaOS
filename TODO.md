@@ -1,13 +1,13 @@
 1. Kernel
-* [ ]    Multitasking
-* [ ]    Multithreading
-* [ ]    Własny scheduler procesów
-* [ ]    Dynamiczne zarządzanie pamięcią
-* [ ]    Virtual Memory / Paging
+* [x]    Multitasking
+* [x]    Multithreading
+* [x]    Własny scheduler procesów
+* [x]    Dynamiczne zarządzanie pamięcią
+* [x]    Virtual Memory / Paging
 * [x]    User Mode / Kernel Mode (ring 0 kernel, ring 3 dla wybranych aplikacji)
-* [ ]    Obsługa procesów i priorytetów
-* [ ]    System przerwań
-* [ ]    SMP – obsługa wielu rdzeni CPU
+* [x]    Obsługa procesów i priorytetów
+* [x]    System przerwań
+* [x]    SMP – obsługa wielu rdzeni CPU
 * [x]    Kernel Logger
 * [x]    Kernel Panic Screen 
 * [x]    Safe Mode
@@ -53,6 +53,7 @@
 
 10. Architektura i dodatkowe możliwości
 
+* [ ]    Dodaj podczas kompilacji postemp np [1/120] czyli ktory z ilu krokow zrobiono np skompilowano 1 z 100 plikow
 * [ ]    Wsparcie AArch64 i AArch32
 * [ ]    Wsparcie RISC-V_32 i 64
 * [ ]    Testy automatyczne

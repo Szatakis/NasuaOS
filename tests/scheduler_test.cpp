@@ -46,10 +46,22 @@ namespace Process
     static uint32_t finished_pid = 0;
     static int finished_exit_code = 0;
 
+    enum class Priority : uint8_t
+    {
+        Low,
+        Normal,
+        High
+    };
+
     void finish(uint32_t pid, int exit_code)
     {
         finished_pid = pid;
         finished_exit_code = exit_code;
+    }
+
+    Process::Priority get_priority(uint32_t)
+    {
+        return Priority::Normal;
     }
 }
 
