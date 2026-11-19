@@ -11,6 +11,7 @@ APPS_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))../applications)
 .PHONY: all
 all:
 	@for cmd in $(CMDS); do \
+		printf '[%d/%d] Building %s\n' 1 1 "$$cmd"; \
 		$(MAKE) -C $$cmd -f $(APPS_DIR)/app.mk APP=$$cmd \
 			SHARED_DIR=$(APPS_DIR) || exit 1; \
 		mkdir -p $(APPS_DIR)/../rootfs/dir/sbin; \

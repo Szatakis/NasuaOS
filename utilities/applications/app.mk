@@ -66,14 +66,17 @@ $(TARGET): $(OBJ_DIR)/$(ELF)
 	$(OBJCOPY) -O binary $< $@
 
 $(OBJ_DIR)/$(ELF): $(OBJECTS) $(LINKER_SCRIPT)
+	@printf '[%d/%d] Linking %s.napp\n' "$(words $(OBJECTS))" "$(words $(OBJECTS))" "$(APP)"
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
 # Pattern rule to compile .cpp files into obj/
 $(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
+	@index=0; for obj in $(OBJECTS); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJECTS))" "$<"
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Support for optional src/ subfolder source files
 $(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
+	@index=0; for obj in $(OBJECTS); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJECTS))" "$<"
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Remove object files and the final executable.

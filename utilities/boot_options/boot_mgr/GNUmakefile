@@ -54,6 +54,7 @@ ifeq ($(filter $(ARCH),aarch32 loongarch32 riscv32 x86_32),)
 endif
 
 $(TARGET): $(OBJ) linker.lds
+	@printf '[%d/%d] Linking boot_mgr\n' "$(words $(OBJ))" "$(words $(OBJ))"
 	@mkdir -p $(BIN_DIR)
 	$(LD) $(LDFLAGS) \
 		-T linker.lds \
@@ -61,6 +62,7 @@ $(TARGET): $(OBJ) linker.lds
 		$(OBJ)
 
 $(OBJ_DIR)/%.o: %.cpp
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 

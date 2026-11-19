@@ -73,6 +73,7 @@ ifeq ($(filter $(ARCH),aarch32 loongarch32 riscv32 x86_32),)
 endif
 
 $(TARGET): $(OBJ) linker-scripts/$(ARCH).lds
+	@index=$(words $(OBJ)); printf '[%d/%d] Linking kernel_32bit\n' $$index "$(words $(OBJ))"
 	@mkdir -p $(BIN_DIR)
 	$(LD) $(LDFLAGS) \
 		-T linker-scripts/$(ARCH).lds \
@@ -81,21 +82,25 @@ $(TARGET): $(OBJ) linker-scripts/$(ARCH).lds
 
 # C++
 $(OBJ_DIR)/%.o: %.cpp
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # C
 $(OBJ_DIR)/%.o: %.c
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ASM
 $(OBJ_DIR)/%.o: %.asm
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	@mkdir -p $(dir $@)
 	$(AS) -f elf32 $< -o $@
 
 # Shared resources
 $(OBJ_DIR)/resources/%.o: $(RESOURCES_DIR)/%.cpp
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 

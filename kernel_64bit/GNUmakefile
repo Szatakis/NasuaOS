@@ -256,37 +256,44 @@ all: bin-$(ARCH)/$(OUTPUT)
 
 # Link rules for the final executable.
 bin-$(ARCH)/$(OUTPUT): GNUmakefile linker-scripts/$(ARCH).lds $(OBJ)
+	@printf '[%d/%d] Linking $(OUTPUT)\n' "$(words $(OBJ))" "$(words $(OBJ))"
 	mkdir -p "$(dir $@)"
 	$(LD) $(LDFLAGS) $(OBJ) -o $@
 
 # Compilation rules for *.c files.
 obj-$(ARCH)/%.c.o: %.c GNUmakefile
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	mkdir -p "$(dir $@)"
 	$(CC) $(CFLAGS) $(CPPFLAGS_C) -c $< -o $@
 
 # Compilation rules for *.cpp files.
 obj-$(ARCH)/%.cpp.o: %.cpp GNUmakefile
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	mkdir -p "$(dir $@)"
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS_CXX) -c $< -o $@
 
 # Compilation rules for *.S files.
 obj-$(ARCH)/%.S.o: %.S GNUmakefile
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	mkdir -p "$(dir $@)"
 	$(CC) $(CFLAGS) $(CPPFLAGS_C) -c $< -o $@
 
 # Compilation rules for shared resources *.cpp files.
 obj-$(ARCH)/resources/%.cpp.o: $(RESOURCES_DIR)/%.cpp GNUmakefile
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	mkdir -p "$(dir $@)"
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS_CXX) -c $< -o $@
 
 # Compilation rules for shared resources *.c files.
 obj-$(ARCH)/resources/%.c.o: $(RESOURCES_DIR)/%.c GNUmakefile
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	mkdir -p "$(dir $@)"
 	$(CC) $(CFLAGS) $(CPPFLAGS_C) -c $< -o $@
 
 ifeq ($(ARCH),x86_64)
 # Compilation rules for *.asm (nasm) files.
 obj-$(ARCH)/%.asm.o: %.asm GNUmakefile
+	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	mkdir -p "$(dir $@)"
 	nasm $(NASMFLAGS) $< -o $@
 endif
