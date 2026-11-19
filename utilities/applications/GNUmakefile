@@ -5,6 +5,7 @@
 APPS := $(wildcard */)
 APPS := $(patsubst %/,%,$(APPS))
 APPS := $(filter-out include,$(APPS))
+APPS := $(filter-out obj bin,$(APPS))
 APP_BIN_DIR := ../rootfs/dir/bin
 APP_BINARIES := $(addprefix $(APP_BIN_DIR)/,$(APPS))
 OBSOLETE_APP_BINARIES := $(filter-out $(APP_BINARIES),$(wildcard $(APP_BIN_DIR)/*))
