@@ -23,6 +23,7 @@ namespace Scheduler
     void sleep_ticks(uint64_t ticks);
     [[noreturn]] void exit_current();
     uint32_t current_task_id();
+    uint32_t current_user_process_id();
     uint32_t task_count();
     Registers* on_interrupt(Registers* frame);
 }

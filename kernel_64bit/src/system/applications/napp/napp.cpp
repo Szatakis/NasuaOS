@@ -23,10 +23,15 @@
 
 #include "libs/libc/libc.hpp"
 
+#include <nasua_user_gui.h>
+
 #define NAPP_DIRECTORY "/bin"
 #define NAPP_SBIN_DIRECTORY "/sbin"
 #define NAPP_EXTENSION ".napp"
 #define NAPP_MAX_IMAGE_SIZE (1024 * 1024)
+#define NAPP_USER_GUI_EVENT_CAPACITY 16
+#define NAPP_USER_GUI_COMMAND_CAPACITY 64
+#define NAPP_USER_GUI_TEXT_LENGTH 64
 
 static bool napp_abi_supported(uint32_t version)
 {
@@ -81,6 +86,7 @@ static char napp_current_path[256] = "/home";
 struct napp_window_slot
 {
     bool used;
+    bool user_mode;
 
     char owner[NAPP_MAX_NAME];
     char title[NAPP_MAX_NAME];
@@ -98,6 +104,33 @@ struct napp_window_slot
     napp_window_tick tick;
     int tick_interval_ms;
     uint64_t last_tick;
+
+    uint32_t user_task_id;
+    nasua_user_gui_event user_events[NAPP_USER_GUI_EVENT_CAPACITY];
+    uint32_t user_event_head;
+    uint32_t user_event_count;
+    bool user_draw_event_queued;
+    bool user_tick_event_queued;
+    bool user_has_draw_geometry;
+    int user_draw_pos_x;
+    int user_draw_pos_y;
+    int user_draw_width;
+    int user_draw_height;
+
+    struct UserGuiCommand
+    {
+        uint32_t type;
+        int32_t x;
+        int32_t y;
+        int32_t width;
+        int32_t height;
+        uint32_t color;
+        char text[NAPP_USER_GUI_TEXT_LENGTH];
+    } user_commands[2][NAPP_USER_GUI_COMMAND_CAPACITY];
+    uint32_t user_active_frame;
+    uint32_t user_active_command_count;
+    uint32_t user_build_command_count;
+    bool user_frame_building;
 };
 
 struct napp_resident_image
@@ -481,11 +514,131 @@ static napp_window_slot* sync_slot(Gpu::Window_Manager::window_struct* window)
     return slot;
 }
 
+static bool napp_user_gui_queue_event(napp_window_slot* slot,
+                                      uint32_t type, char key = 0,
+                                      bool pressed = false, int mouse_x = 0,
+                                      int mouse_y = 0, int button = 0)
+{
+    if (slot == nullptr || !slot->used || !slot->user_mode)
+    {
+        return false;
+    }
+
+    if (type == NASUA_USER_GUI_EVENT_TICK && slot->user_tick_event_queued)
+    {
+        return true;
+    }
+
+    if (type == NASUA_USER_GUI_EVENT_DRAW && slot->user_draw_event_queued)
+    {
+        for (uint32_t offset = 0; offset < slot->user_event_count; ++offset)
+        {
+            const uint32_t queued =
+                (slot->user_event_head + offset) % NAPP_USER_GUI_EVENT_CAPACITY;
+            nasua_user_gui_event& event = slot->user_events[queued];
+            if (event.type == NASUA_USER_GUI_EVENT_DRAW)
+            {
+                event.pos_x = slot->window.pos_x;
+                event.pos_y = slot->window.pos_y;
+                event.width = slot->window.width;
+                event.height = slot->window.height;
+                event.title_height = window_title_height(&slot->window);
+                return true;
+            }
+        }
+        slot->user_draw_event_queued = false;
+    }
+
+    if (slot->user_event_count == NAPP_USER_GUI_EVENT_CAPACITY)
+    {
+        if (type != NASUA_USER_GUI_EVENT_CLOSE)
+        {
+            return false;
+        }
+        slot->user_event_head =
+            (slot->user_event_head + 1) % NAPP_USER_GUI_EVENT_CAPACITY;
+        --slot->user_event_count;
+    }
+
+    const uint32_t tail =
+        (slot->user_event_head + slot->user_event_count) %
+        NAPP_USER_GUI_EVENT_CAPACITY;
+    nasua_user_gui_event& event = slot->user_events[tail];
+    event = {};
+    event.type = type;
+    event.pos_x = slot->window.pos_x;
+    event.pos_y = slot->window.pos_y;
+    event.width = slot->window.width;
+    event.height = slot->window.height;
+    event.title_height = window_title_height(&slot->window);
+    event.mouse_x = mouse_x;
+    event.mouse_y = mouse_y;
+    event.key = key;
+    event.button = static_cast<uint8_t>(button);
+    event.pressed = pressed ? 1 : 0;
+    ++slot->user_event_count;
+
+    if (type == NASUA_USER_GUI_EVENT_DRAW)
+    {
+        slot->user_draw_event_queued = true;
+    }
+    else if (type == NASUA_USER_GUI_EVENT_TICK)
+    {
+        slot->user_tick_event_queued = true;
+    }
+    return true;
+}
+
+static void napp_user_gui_render(napp_window_slot* slot)
+{
+    for (uint32_t index = 0; index < slot->user_active_command_count; ++index)
+    {
+        const napp_window_slot::UserGuiCommand& command =
+            slot->user_commands[slot->user_active_frame][index];
+        if (command.type == NASUA_SYSCALL_GUI_FILL_BLOCK)
+        {
+            Gpu::fill_block(static_cast<size_t>(command.x),
+                            static_cast<size_t>(command.y), command.color,
+                            static_cast<size_t>(command.width),
+                            static_cast<size_t>(command.height));
+        }
+        else if (command.type == NASUA_SYSCALL_GUI_DRAW_TEXT)
+        {
+            Gpu::print_at8(command.text, static_cast<size_t>(command.x),
+                           static_cast<size_t>(command.y), command.color);
+        }
+    }
+}
+
 static void napp_window_draw_trampoline(Gpu::Window_Manager::window_struct* window)
 {
     napp_window_slot* slot = sync_slot(window);
 
-    if (slot != nullptr && slot->draw != nullptr)
+    if (slot == nullptr)
+    {
+        return;
+    }
+
+    if (slot->user_mode)
+    {
+        if (!slot->user_has_draw_geometry ||
+            slot->user_draw_pos_x != window->pos_x ||
+            slot->user_draw_pos_y != window->pos_y ||
+            slot->user_draw_width != window->width ||
+            slot->user_draw_height != window->height)
+        {
+            if (napp_user_gui_queue_event(slot, NASUA_USER_GUI_EVENT_DRAW))
+            {
+                slot->user_has_draw_geometry = true;
+                slot->user_draw_pos_x = window->pos_x;
+                slot->user_draw_pos_y = window->pos_y;
+                slot->user_draw_width = window->width;
+                slot->user_draw_height = window->height;
+            }
+        }
+        napp_user_gui_render(slot);
+    }
+    else if (slot->draw != nullptr)
     {
         slot->draw(&slot->view);
     }
@@ -495,7 +648,14 @@ static void napp_window_key_trampoline(Gpu::Window_Manager::window_struct* windo
 {
     napp_window_slot* slot = sync_slot(window);
 
-    if (slot != nullptr && slot->key != nullptr)
+    if (slot != nullptr && slot->user_mode)
+    {
+        if (!napp_user_gui_queue_event(slot, NASUA_USER_GUI_EVENT_KEY, key, true))
+        {
+            log(WARN, "NAPP", "User GUI event queue full; key input dropped");
+        }
+    }
+    else if (slot != nullptr && slot->key != nullptr)
     {
         slot->key(&slot->view, key);
     }
@@ -505,7 +665,14 @@ static void napp_window_key_event_trampoline(Gpu::Window_Manager::window_struct*
 {
     napp_window_slot* slot = sync_slot(window);
 
-    if (slot != nullptr && slot->key_event != nullptr)
+    if (slot != nullptr && slot->user_mode)
+    {
+        if (!napp_user_gui_queue_event(slot, NASUA_USER_GUI_EVENT_KEY, key, pressed))
+        {
+            log(WARN, "NAPP", "User GUI event queue full; key event dropped");
+        }
+    }
+    else if (slot != nullptr && slot->key_event != nullptr)
     {
         slot->key_event(&slot->view, key, pressed);
     }
@@ -515,7 +682,11 @@ static void napp_window_close_trampoline(Gpu::Window_Manager::window_struct* win
 {
     napp_window_slot* slot = sync_slot(window);
 
-    if (slot != nullptr && slot->close != nullptr)
+    if (slot != nullptr && slot->user_mode)
+    {
+        napp_user_gui_queue_event(slot, NASUA_USER_GUI_EVENT_CLOSE);
+    }
+    else if (slot != nullptr && slot->close != nullptr)
     {
         slot->close(&slot->view);
     }
@@ -525,7 +696,15 @@ static void napp_window_mouse_trampoline(Gpu::Window_Manager::window_struct* win
 {
     napp_window_slot* slot = sync_slot(window);
 
-    if (slot != nullptr && slot->mouse != nullptr)
+    if (slot != nullptr && slot->user_mode)
+    {
+        if (!napp_user_gui_queue_event(slot, NASUA_USER_GUI_EVENT_MOUSE, 0,
+                                       false, mouse_x, mouse_y, 0))
+        {
+            log(WARN, "NAPP", "User GUI event queue full; mouse input dropped");
+        }
+    }
+    else if (slot != nullptr && slot->mouse != nullptr)
     {
         slot->mouse(&slot->view, mouse_x, mouse_y);
     }
@@ -535,7 +714,15 @@ static void napp_window_mouse_button_trampoline(Gpu::Window_Manager::window_stru
 {
     napp_window_slot* slot = sync_slot(window);
 
-    if (slot != nullptr && slot->mouse_button != nullptr)
+    if (slot != nullptr && slot->user_mode)
+    {
+        if (!napp_user_gui_queue_event(slot, NASUA_USER_GUI_EVENT_MOUSE, 0,
+                                       false, mouse_x, mouse_y, button))
+        {
+            log(WARN, "NAPP", "User GUI event queue full; mouse event dropped");
+        }
+    }
+    else if (slot != nullptr && slot->mouse_button != nullptr)
     {
         slot->mouse_button(&slot->view, mouse_x, mouse_y, button);
     }
@@ -707,6 +894,287 @@ static const napp_gui kernel_napp_gui =
     napp_api_draw_text,
     napp_api_resize_window
 };
+
+static napp_window_slot* napp_user_gui_slot(uint32_t task_id)
+{
+    for (uint32_t index = 0; index < NAPP_MAX_WINDOWS; ++index)
+    {
+        napp_window_slot* slot = &window_slots[index];
+        if (slot->used && slot->user_mode && slot->user_task_id == task_id)
+        {
+            return slot;
+        }
+    }
+    return nullptr;
+}
+
+static bool napp_user_gui_open_window(uint64_t title_address,
+                                      uint64_t title_length,
+                                      uint64_t width, uint64_t height,
+                                      uint64_t flags)
+{
+    const uint32_t task_id = Scheduler::current_task_id();
+    const uint32_t process_id = Scheduler::current_user_process_id();
+    const auto* address_space = Scheduler::current_user_address_space();
+    if (task_id == 0 || process_id == 0 ||
+        napp_user_gui_slot(task_id) != nullptr ||
+        title_length == 0 || title_length >= NAPP_NAME_LENGTH ||
+        (flags & ~3ULL) != 0 || Gpu::fb == nullptr ||
+        width < WINDOW_MIN_WIDTH || height < WINDOW_MIN_HEIGHT ||
+        width > Gpu::fb->width || height > Gpu::fb->height ||
+        !Memory::vmm::is_user_range(address_space, title_address,
+                                    title_length, false))
+    {
+        return false;
+    }
+
+    napp_window_slot* slot = nullptr;
+    for (uint32_t index = 0; index < NAPP_MAX_WINDOWS; ++index)
+    {
+        if (!window_slots[index].used)
+        {
+            slot = &window_slots[index];
+            break;
+        }
+    }
+    if (slot == nullptr)
+    {
+        return false;
+    }
+
+    Process::Info processes[Process::MAX_PROCESSES];
+    const uint32_t process_count =
+        Process::snapshot(processes, Process::MAX_PROCESSES);
+    const Process::Info* process = nullptr;
+    for (uint32_t index = 0; index < process_count; ++index)
+    {
+        if (processes[index].pid == process_id)
+        {
+            process = &processes[index];
+            break;
+        }
+    }
+    if (process == nullptr)
+    {
+        return false;
+    }
+
+    Memory::memset(slot, 0, sizeof(napp_window_slot));
+    for (uint64_t index = 0; index < title_length; ++index)
+    {
+        const char character =
+            reinterpret_cast<const char*>(title_address)[index];
+        if (character == '\0')
+        {
+            *slot = {};
+            return false;
+        }
+        slot->title[index] = character;
+    }
+    slot->title[title_length] = '\0';
+    strcpy(slot->owner, process->name);
+
+    slot->used = true;
+    slot->user_mode = true;
+    slot->user_task_id = task_id;
+    slot->window.name = slot->title;
+    slot->window.process_id = process_id;
+    slot->window.pos_x = 10;
+    slot->window.pos_y = 10;
+    slot->window.width = static_cast<int>(width);
+    slot->window.height = static_cast<int>(height);
+    slot->window.resizable = (flags & 1) != 0;
+    slot->window.can_maximize = (flags & 2) != 0;
+    slot->window.userdata = slot;
+    slot->window.draw_content = napp_window_draw_trampoline;
+    slot->window.key_press = napp_window_key_trampoline;
+    slot->window.close = napp_window_close_trampoline;
+    slot->window.mouse_click = napp_window_mouse_trampoline;
+    slot->window.mouse_button = napp_window_mouse_button_trampoline;
+
+    show_window(slot);
+    return true;
+}
+
+int64_t napp_user_gui_syscall(uint64_t number, uint64_t arg0, uint64_t arg1,
+                              uint64_t arg2, uint64_t arg3, uint64_t arg4)
+{
+    const uint32_t task_id = Scheduler::current_task_id();
+    const auto* address_space = Scheduler::current_user_address_space();
+    if (address_space == nullptr)
+    {
+        return -1;
+    }
+
+    if (number == NASUA_SYSCALL_GUI_OPEN_WINDOW)
+    {
+        return napp_user_gui_open_window(arg0, arg1, arg2, arg3, arg4) ? 0 : -1;
+    }
+
+    napp_window_slot* slot = napp_user_gui_slot(task_id);
+    if (slot == nullptr)
+    {
+        return -1;
+    }
+
+    switch (number)
+    {
+        case NASUA_SYSCALL_GUI_SET_TICK_INTERVAL:
+            if (arg0 > static_cast<uint64_t>(NASUA_USER_GUI_MAX_TICK_INTERVAL_MS) ||
+                (arg0 != 0 &&
+                 arg0 < static_cast<uint64_t>(NASUA_USER_GUI_MIN_TICK_INTERVAL_MS)))
+            {
+                return -1;
+            }
+            slot->tick_interval_ms = static_cast<int>(arg0);
+            slot->last_tick = Timer::pit_get_ticks();
+            slot->user_tick_event_queued = false;
+            return 0;
+        case NASUA_SYSCALL_GUI_NEXT_EVENT:
+        {
+            if (!Memory::vmm::is_user_range(address_space, arg0,
+                                            sizeof(nasua_user_gui_event), true))
+            {
+                return -1;
+            }
+            while (slot->user_event_count == 0 && slot->window.visible)
+            {
+                Scheduler::sleep_ticks(1);
+                slot = napp_user_gui_slot(task_id);
+                if (slot == nullptr)
+                {
+                    return -1;
+                }
+            }
+            if (slot->user_event_count == 0)
+            {
+                return -1;
+            }
+
+            const nasua_user_gui_event event =
+                slot->user_events[slot->user_event_head];
+            slot->user_event_head =
+                (slot->user_event_head + 1) % NAPP_USER_GUI_EVENT_CAPACITY;
+            --slot->user_event_count;
+            if (event.type == NASUA_USER_GUI_EVENT_DRAW)
+            {
+                slot->user_draw_event_queued = false;
+            }
+            else if (event.type == NASUA_USER_GUI_EVENT_TICK)
+            {
+                slot->user_tick_event_queued = false;
+            }
+            *reinterpret_cast<nasua_user_gui_event*>(arg0) = event;
+            return 1;
+        }
+        case NASUA_SYSCALL_GUI_BEGIN_FRAME:
+            if (slot->user_frame_building)
+            {
+                return -1;
+            }
+            slot->user_build_command_count = 0;
+            slot->user_frame_building = true;
+            return 0;
+        case NASUA_SYSCALL_GUI_FILL_BLOCK:
+        {
+            const int64_t x = static_cast<int64_t>(arg0);
+            const int64_t y = static_cast<int64_t>(arg1);
+            const int64_t width = static_cast<int64_t>(arg3);
+            const int64_t height = static_cast<int64_t>(arg4);
+            if (!slot->user_frame_building || Gpu::fb == nullptr ||
+                arg2 > UINT32_MAX ||
+                x < slot->window.pos_x ||
+                y < slot->window.pos_y + window_title_height(&slot->window) ||
+                width <= 0 || height <= 0 ||
+                width > static_cast<int64_t>(Gpu::fb->width) ||
+                height > static_cast<int64_t>(Gpu::fb->height) ||
+                x > slot->window.pos_x + slot->window.width - width ||
+                y > slot->window.pos_y + slot->window.height - height ||
+                slot->user_build_command_count >= NAPP_USER_GUI_COMMAND_CAPACITY)
+            {
+                return -1;
+            }
+
+            napp_window_slot::UserGuiCommand& command =
+                slot->user_commands[1 - slot->user_active_frame]
+                                   [slot->user_build_command_count++];
+            command = {};
+            command.type = NASUA_SYSCALL_GUI_FILL_BLOCK;
+            command.x = static_cast<int32_t>(x);
+            command.y = static_cast<int32_t>(y);
+            command.width = static_cast<int32_t>(width);
+            command.height = static_cast<int32_t>(height);
+            command.color = static_cast<uint32_t>(arg2);
+            return 0;
+        }
+        case NASUA_SYSCALL_GUI_DRAW_TEXT:
+        {
+            const int64_t x = static_cast<int64_t>(arg1);
+            const int64_t y = static_cast<int64_t>(arg2);
+            if (!slot->user_frame_building || arg3 > UINT32_MAX ||
+                arg4 >= NAPP_USER_GUI_TEXT_LENGTH ||
+                x < slot->window.pos_x ||
+                y < slot->window.pos_y + window_title_height(&slot->window) ||
+                x >= slot->window.pos_x + slot->window.width ||
+                y >= slot->window.pos_y + slot->window.height ||
+                (arg4 != 0 &&
+                 !Memory::vmm::is_user_range(address_space, arg0, arg4, false)) ||
+                slot->user_build_command_count >= NAPP_USER_GUI_COMMAND_CAPACITY)
+            {
+                return -1;
+            }
+
+            const auto* text = reinterpret_cast<const char*>(arg0);
+            for (uint64_t index = 0; index < arg4; ++index)
+            {
+                if (text[index] == '\0')
+                {
+                    return -1;
+                }
+            }
+
+            napp_window_slot::UserGuiCommand& command =
+                slot->user_commands[1 - slot->user_active_frame]
+                                   [slot->user_build_command_count++];
+            command = {};
+            command.type = NASUA_SYSCALL_GUI_DRAW_TEXT;
+            command.x = static_cast<int32_t>(x);
+            command.y = static_cast<int32_t>(y);
+            command.color = static_cast<uint32_t>(arg3);
+            for (uint64_t index = 0; index < arg4; ++index)
+            {
+                command.text[index] = text[index];
+            }
+            return 0;
+        }
+        case NASUA_SYSCALL_GUI_END_FRAME:
+            if (!slot->user_frame_building)
+            {
+                return -1;
+            }
+            slot->user_active_frame = 1 - slot->user_active_frame;
+            slot->user_active_command_count = slot->user_build_command_count;
+            slot->user_frame_building = false;
+            return 0;
+        default:
+            return -38;
+    }
+}
+
+void napp_user_gui_task_exit(uint32_t task_id)
+{
+    napp_window_slot* slot = napp_user_gui_slot(task_id);
+    if (slot == nullptr)
+    {
+        return;
+    }
+
+    if (slot->window.visible)
+    {
+        Gpu::Window_Manager::unregister_window(&slot->window);
+    }
+    *slot = {};
+}
 
 // Updated at the start of each napp_run_path call so the binary sees the
 // shell's current working directory.
@@ -961,6 +1429,17 @@ void napp_process_window_closed(uint32_t process_id)
         return;
     }
 
+    for (uint32_t slot_index = 0; slot_index < NAPP_MAX_WINDOWS; ++slot_index)
+    {
+        napp_window_slot* slot = &window_slots[slot_index];
+        if (slot->used && slot->user_mode &&
+            slot->window.process_id == process_id)
+        {
+            Process::set_running(process_id);
+            return;
+        }
+    }
+
     for (uint32_t index = 0; index < NAPP_MAX_WINDOWS; ++index)
     {
         if (!resident_images[index].used || resident_images[index].process_id != process_id)
@@ -1193,7 +1672,8 @@ void napp_update_ticks()
     {
         napp_window_slot* slot = &window_slots[i];
 
-        if (!slot->used || !slot->window.visible || slot->tick == nullptr || slot->tick_interval_ms <= 0)
+        if (!slot->used || !slot->window.visible || slot->tick_interval_ms <= 0 ||
+            (!slot->user_mode && slot->tick == nullptr))
         {
             continue;
         }
@@ -1207,7 +1687,17 @@ void napp_update_ticks()
         if (current_ticks - slot->last_tick >= ticks_per_interval)
         {
             slot->last_tick = current_ticks;
-            napp_window_tick_trampoline(&slot->window);
+            if (slot->user_mode)
+            {
+                if (!napp_user_gui_queue_event(slot, NASUA_USER_GUI_EVENT_TICK))
+                {
+                    log(WARN, "NAPP", "User GUI event queue full; timer event dropped");
+                }
+            }
+            else
+            {
+                napp_window_tick_trampoline(&slot->window);
+            }
         }
     }
 }

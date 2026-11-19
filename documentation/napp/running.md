@@ -69,7 +69,9 @@ When a `/sbin` command is requested via the shell:
    a. If ClawFS mounted: check ClawFS /sbin/ls
    b. If not found: check FAT ISO /sbin/ls
 5. Binary loaded via napp_run_sbin()
-6. _start() called with napp_api pointer + argc/argv
+6. Legacy NAPPs run `_start()` in ring 0 with an `napp_api` pointer and
+   arguments; ABI 12 user-mode NAPPs are scheduled in ring 3 without that
+   kernel function table
 7. Application runs, returns exit code
 ```
 
@@ -84,7 +86,7 @@ These are loaded from `/bin/` (flat binary files, one per application):
 | `settings`   | GUI     | System information and settings pages |
 | `terminal`   | GUI     | Shell terminal with redirected output |
 | `task_manager` | GUI   | Process list using the NAPP system API |
-| `bootcheck`  | Console | Tests NAPP API functions              |
+| `bootcheck`  | GUI     | Tests ring-3 syscall and timer events  |
 | `calculator` | GUI     | Graphical calculator with callbacks   |
 | `minesweeper`| GUI     | Classic Minesweeper game              |
 | `snake`      | GUI     | Classic Snake game with tick callback |

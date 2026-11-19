@@ -5,7 +5,9 @@
 #include "drivers/uart/driver.hpp"
 #include "drivers/timer/driver.hpp"
 #include "drivers/memory/driver.hpp"
+#include "system/applications/napp/napp.hpp"
 #include "system/scheduler/scheduler.hpp"
+#include <nasua_syscall.h>
 
 #include "kernel/kernel_panic/kernel_panic.hpp"
 
@@ -93,8 +95,20 @@ Registers* isr_handler(Registers* regs)
                 return regs;
             }
             case 2:
+                napp_user_gui_task_exit(Scheduler::current_task_id());
                 Scheduler::terminate_current_user_task(static_cast<int32_t>(regs->rdi));
                 return Scheduler::on_interrupt(regs);
+            case NASUA_SYSCALL_GUI_OPEN_WINDOW:
+            case NASUA_SYSCALL_GUI_NEXT_EVENT:
+            case NASUA_SYSCALL_GUI_BEGIN_FRAME:
+            case NASUA_SYSCALL_GUI_FILL_BLOCK:
+            case NASUA_SYSCALL_GUI_DRAW_TEXT:
+            case NASUA_SYSCALL_GUI_END_FRAME:
+            case NASUA_SYSCALL_GUI_SET_TICK_INTERVAL:
+                regs->rax = static_cast<uint64_t>(
+                    napp_user_gui_syscall(regs->rax, regs->rdi, regs->rsi,
+                                          regs->rdx, regs->rcx, regs->r8));
+                return regs;
             default:
                 regs->rax = static_cast<uint64_t>(-38);
                 return regs;
@@ -104,6 +118,7 @@ Registers* isr_handler(Registers* regs)
     if ((regs->cs & 3) == 3 && regs->vector < 22)
     {
         Uart::puts("[USER] Exception in user task, terminating it\n");
+        napp_user_gui_task_exit(Scheduler::current_task_id());
         Scheduler::terminate_current_user_task(-1);
         return Scheduler::on_interrupt(regs);
     }

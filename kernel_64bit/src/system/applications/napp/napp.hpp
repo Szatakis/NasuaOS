@@ -31,6 +31,9 @@ void napp_update_ticks();
 // Releases an application's resident image and window slots when its last
 // window is closed by the window manager.
 void napp_process_window_closed(uint32_t process_id);
+int64_t napp_user_gui_syscall(uint64_t number, uint64_t arg0, uint64_t arg1,
+                              uint64_t arg2, uint64_t arg3, uint64_t arg4);
+void napp_user_gui_task_exit(uint32_t task_id);
 
 bool napp_exists(const char* name);
 

@@ -131,7 +131,8 @@ typedef void (*napp_window_mouse)(struct napp_window* window, int mouse_x, int m
 // when mouse_button is set; otherwise mouse (left-click only) is used.
 typedef void (*napp_window_mouse_button)(struct napp_window* window, int mouse_x, int mouse_y, int button);
 
-// Periodic callback invoked by the kernel at tick_interval_ms intervals.
+// Periodic callback. Legacy ring-0 NAPPs invoke it from the kernel; ring-3
+// NAPPs receive a timer event and invoke it in user mode.
 // Only called while the window is visible and the game/application is active.
 typedef void (*napp_window_tick)(struct napp_window* window);
 

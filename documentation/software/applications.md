@@ -182,28 +182,13 @@ user@nasua-os:/home> bootapp --app calculator
 
 |  Property   | Value                                                                     |
 |-------------|---------------------------------------------------------------------------|
-| Type        | Console (terminal output)                                                 |
+| Type        | Ring-3 GUI timer smoke test                                               |
 | Source      | `utilities/applications/bootcheck/src/bootcheck.cpp`                      |
-| API         | `api->print_info`, `api->print_line`, `api->print_dec`, `api->serial_log` |
-| Description | Tests the NAPP API and confirms successful loading                        |
+| API         | Bounded GUI and serial-write syscalls                                     |
+| Description | Confirms ring-3 GUI timer events and syscall delivery                     |
 
-```cpp
-int _start(const napp_api* api)
-{
-    api->print_info("NAPP API check passed");
-    api->print_line("Version: ");
-    api->print_dec(NAPP_ABI_VERSION);
-    api->serial_log("[bootcheck] Running successfully\n");
-    return 0;
-}
-```
-
-```
-user@nasua-os:/home> bootapp --app bootcheck
-[bootcheck] Running successfully
-NAPP API check passed
-Version: 3
-```
+Run `bootapp --app bootcheck`; after the timer event is delivered, serial output
+includes `[BOOTCHECK] Ring-3 GUI timer event delivered`.
 
 ### minesweeper
 
@@ -228,10 +213,10 @@ A classic Snake game.
 
 |  Property  | Value                                                                                 |
 |------------|---------------------------------------------------------------------------------------|
-| Type       | GUI window (with tick callback)                                                       |
+| Type       | Ring-3 GUI window with timer events                                                   |
 | Source     | `utilities/applications/snake/src/snake.cpp`                                          |
-| API        | `napp_gui` (fill_block, draw_text, open_window), `api->get_ticks`                     |
-| Description| Classic Snake game with WASD controls and periodic tick callback for game loop timing |
+| API        | Bounded ring-3 GUI, timer, and serial-write syscalls                                  |
+| Description| Classic Snake game with WASD controls; its game loop runs on 200 ms timer events in ring 3 |
 
 Games do not appear in the Start Menu by default; launch via `bootapp`.
 

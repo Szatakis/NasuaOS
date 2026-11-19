@@ -1,6 +1,7 @@
 #include <napp.h>
+#include <nasua_user_gui.h>
 
-NAPP_APPLICATION("calculator", "Graphical calculator", false, {}, false, "Utilities");
+NAPP_USER_APPLICATION("calculator", "Graphical calculator", false, "Utilities");
 
 /*
     ┌─────────────────────────┐
@@ -19,9 +20,6 @@ NAPP_APPLICATION("calculator", "Graphical calculator", false, {}, false, "Utilit
     │  0   │ +/-  │ sqrt │ =  │
     └──────┴──────┴──────┴────┘
 */
-
-static const napp_gui* gui = nullptr;
-
 
 static int calc_strlen(const char* text)
 {
@@ -124,20 +122,6 @@ struct calculator_state
 
     bool entering_second;
     bool result_shown;
-};
-
-
-static calculator_state calc_data =
-{
-    .display = "0",
-
-    .value1 = 0,
-    .value2 = 0,
-
-    .operation = 0,
-
-    .entering_second = false,
-    .result_shown = false
 };
 
 
@@ -455,8 +439,8 @@ static void calculator_key(napp_window* win, char key)
 // BUTTON
 static void draw_button(int x, int y, const char* text)
 {
-    gui->fill_block(x, y, NAPP_COLOR_TITLEBAR, 55, 35);
-    gui->draw_text(text, x + 8, y + 11, NAPP_COLOR_WHITE);
+    nasua_user_gui_fill_block(x, y, NAPP_COLOR_TITLEBAR, 55, 35);
+    nasua_user_gui_draw_text(text, x + 8, y + 11, NAPP_COLOR_WHITE);
 }
 
 
@@ -467,8 +451,8 @@ static void draw_calculator(napp_window* win)
 
 
     // DISPLAY
-    gui->fill_block(win->pos_x + 12, win->pos_y + win->title_height + 10, NAPP_COLOR_BLACK, win->width - 24, 42);
-    gui->draw_text(calc->display, win->pos_x + 22, win->pos_y + win->title_height + 26, NAPP_COLOR_GREEN);
+    nasua_user_gui_fill_block(win->pos_x + 12, win->pos_y + win->title_height + 10, NAPP_COLOR_BLACK, win->width - 24, 42);
+    nasua_user_gui_draw_text(calc->display, win->pos_x + 22, win->pos_y + win->title_height + 26, NAPP_COLOR_GREEN);
 
 
     // BUTTON GRID
@@ -609,14 +593,17 @@ static void calculator_mouse(napp_window* win, int mx, int my)
 }
 
 
-int _start(const napp_api* api)
+int _start(void)
 {
-    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr)
+    calculator_state calc_data =
     {
-        return 1;
-    }
-
-    gui = api->gui;
+        .display = "0",
+        .value1 = 0,
+        .value2 = 0,
+        .operation = 0,
+        .entering_second = false,
+        .result_shown = false
+    };
 
     napp_window_config config = {};
 
@@ -634,14 +621,10 @@ int _start(const napp_api* api)
     config.key = calculator_key;
     config.mouse = calculator_mouse;
 
-    if (!gui->open_window(&config))
+    if (!nasua_user_gui_run(&config))
     {
-        api->serial_log("[CALCULATOR] Failed to open window\n");
-
-        return 1;
+        nasua_user_exit(1);
     }
 
-    api->serial_log("[CALCULATOR] Window opened\n");
-
-    return 0;
+    nasua_user_exit(0);
 }

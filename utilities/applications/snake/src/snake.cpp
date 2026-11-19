@@ -1,8 +1,7 @@
 #include <napp.h>
+#include <nasua_user_gui.h>
 
-NAPP_APPLICATION("snake", "Classic Snake game", false, {}, false, "Games");
-
-static const napp_gui* gui = nullptr;
+NAPP_USER_APPLICATION("snake", "Classic Snake game", false, "Games");
 
 
 // CONFIGURATION
@@ -22,8 +21,8 @@ static const napp_gui* gui = nullptr;
 // TYPES
 struct snake_point
 {
-    int x;
-    int y;
+    int16_t x;
+    int16_t y;
 };
 
 enum snake_direction
@@ -49,29 +48,26 @@ struct snake_state
 
     bool game_over;
     bool started;
+    bool timer_event_logged;
+    uint32_t random_state;
 };
 
-static snake_state snake_data;
-
-
 // RANDOM
-static uint32_t snake_random_state = 0x12345678;
-
-static uint32_t snake_random()
+static uint32_t snake_random(snake_state* state)
 {
-    snake_random_state ^= snake_random_state << 13;
-    snake_random_state ^= snake_random_state >> 17;
-    snake_random_state ^= snake_random_state << 5;
+    state->random_state ^= state->random_state << 13;
+    state->random_state ^= state->random_state >> 17;
+    state->random_state ^= state->random_state << 5;
 
-    return snake_random_state;
+    return state->random_state;
 }
 
 // FOOD
-static bool snake_is_body(int x, int y)
+static bool snake_is_body(const snake_state* state, int x, int y)
 {
-    for (int i = 0; i < snake_data.length; i++)
+    for (int i = 0; i < state->length; i++)
     {
-        if (snake_data.body[i].x == x && snake_data.body[i].y == y)
+        if (state->body[i].x == x && state->body[i].y == y)
         {
             return true;
         }
@@ -80,65 +76,67 @@ static bool snake_is_body(int x, int y)
     return false;
 }
 
-static void snake_spawn_food()
+static void snake_spawn_food(snake_state* state)
 {
     for (int attempts = 0; attempts < 1000; attempts++)
     {
-        int x = snake_random() % SNAKE_GRID_SIZE;
-        int y = snake_random() % SNAKE_GRID_SIZE;
+        int x = snake_random(state) % SNAKE_GRID_SIZE;
+        int y = snake_random(state) % SNAKE_GRID_SIZE;
 
-        if (!snake_is_body(x, y))
+        if (!snake_is_body(state, x, y))
         {
-            snake_data.food.x = x;
-            snake_data.food.y = y;
+            state->food.x = x;
+            state->food.y = y;
             return;
         }
     }
 
-    snake_data.food.x = 0;
-    snake_data.food.y = 0;
+    state->food.x = 0;
+    state->food.y = 0;
 }
 
 
 // RESET
-static void snake_reset()
+static void snake_reset(snake_state* state)
 {
-    snake_data.length = 3;
+    state->length = 3;
 
-    snake_data.body[0].x = 10;
-    snake_data.body[0].y = 10;
+    state->body[0].x = 10;
+    state->body[0].y = 10;
 
-    snake_data.body[1].x = 9;
-    snake_data.body[1].y = 10;
+    state->body[1].x = 9;
+    state->body[1].y = 10;
 
-    snake_data.body[2].x = 8;
-    snake_data.body[2].y = 10;
+    state->body[2].x = 8;
+    state->body[2].y = 10;
 
-    snake_data.direction = SNAKE_RIGHT;
-    snake_data.next_direction = SNAKE_RIGHT;
+    state->direction = SNAKE_RIGHT;
+    state->next_direction = SNAKE_RIGHT;
 
-    snake_data.score = 0;
+    state->score = 0;
 
-    snake_data.game_over = false;
-    snake_data.started = false;
+    state->game_over = false;
+    state->started = false;
+    state->timer_event_logged = false;
+    state->random_state = 0x12345678;
 
-    snake_spawn_food();
+    snake_spawn_food(state);
 }
 
 
 // MOVE
-static void snake_move()
+static void snake_move(snake_state* state)
 {
-    if (snake_data.game_over)
+    if (state->game_over)
     {
         return;
     }
 
-    snake_data.direction = snake_data.next_direction;
+    state->direction = state->next_direction;
 
-    snake_point new_head = snake_data.body[0];
+    snake_point new_head = state->body[0];
 
-    switch (snake_data.direction)
+    switch (state->direction)
     {
         case SNAKE_UP:
         {
@@ -169,48 +167,48 @@ static void snake_move()
     // Wall collision
     if (new_head.x < 0 || new_head.x >= SNAKE_GRID_SIZE || new_head.y < 0 || new_head.y >= SNAKE_GRID_SIZE)
     {
-        snake_data.game_over = true;
+        state->game_over = true;
         return;
     }
 
 
     // Self collision
-    for (int i = 0; i < snake_data.length; i++)
+    for (int i = 0; i < state->length; i++)
     {
-        if (snake_data.body[i].x == new_head.x && snake_data.body[i].y == new_head.y)
+        if (state->body[i].x == new_head.x && state->body[i].y == new_head.y)
         {
-            snake_data.game_over = true;
+            state->game_over = true;
             return;
         }
     }
 
 
-    bool ate_food = new_head.x == snake_data.food.x && new_head.y == snake_data.food.y;
+    bool ate_food = new_head.x == state->food.x && new_head.y == state->food.y;
 
 
-    if (ate_food && snake_data.length < SNAKE_MAX_LENGTH)
+    if (ate_food && state->length < SNAKE_MAX_LENGTH)
     {
-        snake_data.length++;
+        state->length++;
     }
 
 
-    for (int i = snake_data.length - 1; i > 0; i--)
+    for (int i = state->length - 1; i > 0; i--)
     {
-        snake_data.body[i] = snake_data.body[i - 1];
+        state->body[i] = state->body[i - 1];
     }
 
-    snake_data.body[0] = new_head;
+    state->body[0] = new_head;
 
     if (ate_food)
     {
-        snake_data.score++;
-        snake_spawn_food();
+        state->score++;
+        snake_spawn_food(state);
     }
 }
 
 
 // SCORE
-static void draw_score(int x, int y)
+static void draw_score(const snake_state* state, int x, int y)
 {
     char buffer[32];
 
@@ -223,7 +221,7 @@ static void draw_score(int x, int y)
     buffer[6] = ' ';
 
     int index = 7;
-    int score = snake_data.score;
+    int score = state->score;
 
     if (score == 0)
     {
@@ -248,46 +246,47 @@ static void draw_score(int x, int y)
 
     buffer[index] = '\0';
 
-    gui->draw_text(buffer, x, y, NAPP_COLOR_WHITE);
+    nasua_user_gui_draw_text(buffer, x, y, NAPP_COLOR_WHITE);
 }
 
 
 // DRAW
 static void draw_snake(napp_window* win)
 {
+    const snake_state* state = static_cast<const snake_state*>(win->userdata);
     int board_x = win->pos_x + SNAKE_PADDING;
     int board_y = win->pos_y + win->title_height + SNAKE_PADDING;
 
 
     // Black board
-    gui->fill_block(board_x, board_y, NAPP_COLOR_BLACK, SNAKE_BOARD_SIZE, SNAKE_BOARD_SIZE);
+    nasua_user_gui_fill_block(board_x, board_y, NAPP_COLOR_BLACK, SNAKE_BOARD_SIZE, SNAKE_BOARD_SIZE);
 
     // Score
-    draw_score( board_x + 5, board_y + 5);
+    draw_score(state, board_x + 5, board_y + 5);
 
     // Food
-    gui->fill_block(board_x + snake_data.food.x * SNAKE_CELL_SIZE, board_y + snake_data.food.y * SNAKE_CELL_SIZE, NAPP_COLOR_GREEN, SNAKE_CELL_SIZE - 1, SNAKE_CELL_SIZE - 1);
+    nasua_user_gui_fill_block(board_x + state->food.x * SNAKE_CELL_SIZE, board_y + state->food.y * SNAKE_CELL_SIZE, NAPP_COLOR_GREEN, SNAKE_CELL_SIZE - 1, SNAKE_CELL_SIZE - 1);
 
 
     // Snake
-    for (int i = 0; i < snake_data.length; i++)
+    for (int i = 0; i < state->length; i++)
     {
         uint32_t color = (i == 0) ? NAPP_COLOR_WHITE : NAPP_COLOR_GRAY;
 
-        gui->fill_block(board_x + snake_data.body[i].x * SNAKE_CELL_SIZE, board_y + snake_data.body[i].y * SNAKE_CELL_SIZE, color, SNAKE_CELL_SIZE - 1, SNAKE_CELL_SIZE - 1);
+        nasua_user_gui_fill_block(board_x + state->body[i].x * SNAKE_CELL_SIZE, board_y + state->body[i].y * SNAKE_CELL_SIZE, color, SNAKE_CELL_SIZE - 1, SNAKE_CELL_SIZE - 1);
     }
 
 
     // Game over
-    if (snake_data.game_over)
+    if (state->game_over)
     {
-        gui->draw_text("GAME OVER", board_x + 95, board_y + 125, NAPP_COLOR_GREEN);
-        gui->draw_text("Press R", board_x + 105, board_y + 145, NAPP_COLOR_WHITE);
+        nasua_user_gui_draw_text("GAME OVER", board_x + 95, board_y + 125, NAPP_COLOR_GREEN);
+        nasua_user_gui_draw_text("Press R", board_x + 105, board_y + 145, NAPP_COLOR_WHITE);
     }
-    else if (!snake_data.started)
+    else if (!state->started)
     {
-        gui->draw_text("SNAKE", board_x + 115, board_y + 125, NAPP_COLOR_GREEN);
-        gui->draw_text( "WASD to move", board_x + 85, board_y + 145, NAPP_COLOR_WHITE);
+        nasua_user_gui_draw_text("SNAKE", board_x + 115, board_y + 125, NAPP_COLOR_GREEN);
+        nasua_user_gui_draw_text("WASD to move", board_x + 85, board_y + 145, NAPP_COLOR_WHITE);
     }
 }
 
@@ -295,32 +294,45 @@ static void draw_snake(napp_window* win)
 // TICK -- called periodically by the kernel via the NAPP timer.  The snake moves forward automatically once the game has started and stops when the player loses.
 static void snake_tick(napp_window* win)
 {
-    (void)win;
+    snake_state* state = static_cast<snake_state*>(win->userdata);
 
-    if (!snake_data.started || snake_data.game_over)
+    if (!state->timer_event_logged)
+    {
+        static constexpr char message[] =
+            "[SNAKE] Ring-3 timer event delivered\n";
+        constexpr uint64_t message_length = sizeof(message) - 1;
+        if (nasua_user_write(message, message_length) !=
+            static_cast<int64_t>(message_length))
+        {
+            nasua_user_exit(1);
+        }
+        state->timer_event_logged = true;
+    }
+
+    if (!state->started || state->game_over)
     {
         return;
     }
 
-    snake_move();
+    snake_move(state);
 }
 
 
 // KEYBOARD
 static void snake_key(napp_window* win, char key)
 {
-    (void)win;
+    snake_state* state = static_cast<snake_state*>(win->userdata);
 
 
     // RESET
     if (key == 'r' || key == 'R')
     {
-        snake_reset();
+        snake_reset(state);
         return;
     }
 
 
-    if (snake_data.game_over)
+    if (state->game_over)
     {
         return;
     }
@@ -329,10 +341,10 @@ static void snake_key(napp_window* win, char key)
     // W
     if (key == 'w' || key == 'W')
     {
-        if (!snake_data.started || snake_data.direction != SNAKE_DOWN)
+        if (!state->started || state->direction != SNAKE_DOWN)
         {
-            snake_data.next_direction = SNAKE_UP;
-            snake_data.started = true;
+            state->next_direction = SNAKE_UP;
+            state->started = true;
         }
 
         return;
@@ -342,10 +354,10 @@ static void snake_key(napp_window* win, char key)
     // S
     if (key == 's' || key == 'S')
     {
-        if (!snake_data.started || snake_data.direction != SNAKE_UP)
+        if (!state->started || state->direction != SNAKE_UP)
         {
-            snake_data.next_direction = SNAKE_DOWN;
-            snake_data.started = true;
+            state->next_direction = SNAKE_DOWN;
+            state->started = true;
         }
 
         return;
@@ -355,10 +367,10 @@ static void snake_key(napp_window* win, char key)
     // A
     if (key == 'a' || key == 'A')
     {
-        if (!snake_data.started || snake_data.direction != SNAKE_RIGHT)
+        if (!state->started || state->direction != SNAKE_RIGHT)
         {
-            snake_data.next_direction = SNAKE_LEFT;
-            snake_data.started = true;
+            state->next_direction = SNAKE_LEFT;
+            state->started = true;
         }
 
         return;
@@ -368,10 +380,10 @@ static void snake_key(napp_window* win, char key)
     // D
     if (key == 'd' || key == 'D')
     {
-        if (!snake_data.started || snake_data.direction != SNAKE_LEFT)
+        if (!state->started || state->direction != SNAKE_LEFT)
         {
-            snake_data.next_direction = SNAKE_RIGHT;
-            snake_data.started = true;
+            state->next_direction = SNAKE_RIGHT;
+            state->started = true;
         }
 
         return;
@@ -380,16 +392,10 @@ static void snake_key(napp_window* win, char key)
 
 
 // ENTRY POINT
-int _start(const napp_api* api)
+int _start(void)
 {
-    if (api == nullptr || api->abi_version != NAPP_ABI_VERSION || api->gui == nullptr)
-    {
-        return 1;
-    }
-
-    gui = api->gui;
-
-    snake_reset();
+    snake_state snake_data = {};
+    snake_reset(&snake_data);
 
     napp_window_config config = {};
 
@@ -412,13 +418,19 @@ int _start(const napp_api* api)
     config.tick_interval_ms = 200;
 
 
-    if (!gui->open_window(&config))
+    static constexpr char startup_message[] =
+        "[SNAKE] Running in ring 3\n";
+    constexpr uint64_t startup_message_length = sizeof(startup_message) - 1;
+    if (nasua_user_write(startup_message, startup_message_length) !=
+        static_cast<int64_t>(startup_message_length))
     {
-        api->serial_log("[SNAKE] Failed to open window\n");
-        return 1;
+        nasua_user_exit(1);
     }
 
-    api->serial_log("[SNAKE] Window opened\n");
+    if (!nasua_user_gui_run(&config))
+    {
+        nasua_user_exit(1);
+    }
 
-    return 0;
+    nasua_user_exit(0);
 }

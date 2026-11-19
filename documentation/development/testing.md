@@ -197,7 +197,7 @@ rm --name testdir --type dir
 
 ```
 bootapp --list            # List all apps
-bootapp --app bootcheck   # Console app (prints to log)
+bootapp --app bootcheck   # Ring-3 GUI timer/syscall smoke test
 bootapp --app calculator  # GUI app (opens calculator window)
 bootapp --app settings    # GUI app
 ```

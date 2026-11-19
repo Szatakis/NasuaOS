@@ -1,6 +1,9 @@
 # NAPP API Reference
 
-The `napp_api` structure provides NAPP applications with access to all kernel services. It is passed as a pointer to the application's `_start` function.
+The `napp_api` structure provides legacy ring-0 NAPP applications with access
+to kernel services. It is passed as a pointer to the application's `_start`
+function. Ring-3 applications do not receive this kernel function table; they
+use the bounded syscall interfaces described below.
 
 ## The napp_api Structure
 
@@ -47,9 +50,9 @@ struct napp_api
 ```
 
 The full structure is defined in `utilities/applications/include/napp.h`.
-ABI 11 adds colored output redirection at the end of the structure. ABI 10
-added process snapshots and system information; earlier ABI layouts retain
-their existing field offsets.
+ABI 13 is the current NAPP format. ABI 11 added colored output redirection at
+the end of the structure. ABI 10 added process snapshots and system
+information; earlier ABI layouts retain their existing field offsets.
 
 ```cpp
 struct napp_process_info
@@ -79,7 +82,7 @@ struct napp_system_info
 
 | Field        | Signature                | Description                                      |
 |--------------|--------------------------|--------------------------------------------------|
-| `abi_version`| `uint32_t`               | NAPP ABI version (currently 11)                  |
+| `abi_version`| `uint32_t`               | NAPP ABI version (currently 13)                  |
 | `argc`       | `int`                    | Number of command-line arguments                 |
 | `argv`       | `char**`                 | Array of argument strings (`argv[0]` = app name) |
 | `print`      | `void (*)(const char*)`  | Print a string to the terminal/log               |
@@ -112,6 +115,20 @@ struct napp_gui
 | `fill_block`  | `void (*)(int x, int y, uint32_t color, int width, int height)` | Fill a rectangular area with color |
 | `draw_text`   | `void (*)(const char* text, int x, int y, uint32_t color)`  | Draw text at coordinates               |
 | `resize_window`| `void (*)(int width, int height)`              | Resize the current window                          |
+
+These function pointers are for legacy ring-0 applications only. Ring-3 NAPPs
+must not call kernel callbacks or hand callback pointers to the kernel. Include
+`nasua_user_gui.h` and call `nasua_user_gui_run()` with a `napp_window_config`.
+The helper dispatches drawing, key, mouse, and close events in the application's
+own ring-3 context. Periodic callbacks use timer events with intervals from
+10 ms to 60,000 ms; the kernel queues events but never invokes a user callback.
+The kernel accepts only bounded window metadata and copied draw commands.
+
+The initial ring-3 GUI ABI supports one window per task, bounded text and
+rectangle drawing, and a bounded input-event queue. Invalid pointers,
+out-of-window drawing, oversized text, or a full command frame are rejected.
+`calculator` is the first graphical NAPP using this interface. `bootcheck`
+verifies that a timer callback is delivered in ring 3.
 
 ### Filesystem Functions
 
@@ -285,9 +302,11 @@ typedef void (*napp_window_tick)(struct napp_window* window);
 
 ### Tick Callback
 
-The `tick` callback is invoked by the kernel at `tick_interval_ms` intervals while
-the window is visible. When `tick` is `nullptr` or `tick_interval_ms <= 0`, no
-periodic callback is registered. This is useful for games and animations.
+For legacy ring-0 NAPPs, the kernel invokes `tick` at `tick_interval_ms`
+intervals while the window is visible. For ring-3 NAPPs, the kernel queues
+bounded timer events and `nasua_user_gui_run()` invokes `tick` in user mode.
+Ring-3 intervals must be 10–60,000 ms; a null callback or non-positive interval
+disables timer events. This is useful for games and animations.
 
 ### Mouse Button Callback
 

@@ -245,7 +245,8 @@ int main()
     assert(Scheduler::on_interrupt(&second_frame) == &kernel_frame);
     assert(Scheduler::current_task_id() == 1);
     Timer::ticks++;
-    assert(Scheduler::on_interrupt(&kernel_frame) != &kernel_frame);
+    Registers* resumed_first = Scheduler::on_interrupt(&kernel_frame);
+    assert(resumed_first == &first_frame);
     assert(Scheduler::current_task_id() == first);
 
     Timer::ticks = UINT64_MAX - 1;

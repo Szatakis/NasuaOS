@@ -398,6 +398,10 @@ namespace Scheduler
             current->context = frame;
             current->state = TaskState::Ready;
         }
+        else if (current != nullptr && current->state == TaskState::Sleeping)
+        {
+            current->context = frame;
+        }
         else if (current != nullptr && current->state == TaskState::Dead && current->user_mode)
         {
             Memory::vmm::activate_kernel_address_space();
@@ -445,6 +449,12 @@ namespace Scheduler
     uint32_t current_task_id()
     {
         return running_task_id;
+    }
+
+    uint32_t current_user_process_id()
+    {
+        Task* current = find_task(running_task_id);
+        return current != nullptr && current->user_mode ? current->process_id : 0;
     }
 
     uint32_t task_count()
