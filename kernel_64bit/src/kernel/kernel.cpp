@@ -234,11 +234,13 @@ extern "C" void kmain()
             Gpu::clear_screen(COLOR_NASUA_BG);
 
             draw_background();
+            draw_desktop_icons();
 
             Gpu::update_gui();
             update_windows_gui();
 
             draw_start_menu();
+            draw_desktop_overlay();
 
             napp_update_ticks();
 

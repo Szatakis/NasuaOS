@@ -35,6 +35,8 @@ void clawfs_mkdir(const char* parent_path, const char* dir_name);
 void clawfs_create_file_in(const char* path, const char* name);
 uint32_t get_sector_by_path(const char* path);
 void clawfs_rm(const char* parent_path, const char* name, uint32_t type);
+bool clawfs_rename(const char* parent_path, const char* old_name,
+                   const char* new_name, uint32_t type);
 uint32_t find_entry_in_dir(uint32_t dir_sector, const char* name, CLAWFSEntry* out_entry);
 uint32_t get_next_free_sector();
 bool clawfs_read_file(const char* path, void* buffer, uint32_t capacity, uint32_t* length);

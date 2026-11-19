@@ -191,6 +191,55 @@ namespace Keyboard
             return;
         }
 
+        if (desktop_has_keyboard_focus())
+        {
+            if (scancode == 0xE0)
+            {
+                extended_scancode = true;
+                return;
+            }
+            if (extended_scancode)
+            {
+                extended_scancode = false;
+                return;
+            }
+            if (scancode & 0x80)
+            {
+                const uint8_t released = scancode & 0x7F;
+                if (released == 0x2A || released == 0x36)
+                {
+                    shift_pressed = false;
+                }
+                return;
+            }
+            if (scancode == 0x2A || scancode == 0x36)
+            {
+                shift_pressed = true;
+                return;
+            }
+            if (scancode == 0x1C)
+            {
+                desktop_handle_key('\n');
+            }
+            else if (scancode == 0x0E)
+            {
+                desktop_handle_key('\b');
+            }
+            else if (scancode == 0x01)
+            {
+                desktop_handle_key(NAPP_KEY_ESCAPE);
+            }
+            else
+            {
+                const char key = translate_scancode(scancode);
+                if (key != 0)
+                {
+                    desktop_handle_key(key);
+                }
+            }
+            return;
+        }
+
         if (scancode == 0xE0)
         {
             extended_scancode = true;

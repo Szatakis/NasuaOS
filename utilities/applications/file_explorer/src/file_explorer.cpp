@@ -325,7 +325,11 @@ static void files_draw(napp_window* window)
 
 static void files_key(napp_window*, char key)
 {
-    if (key == NAPP_KEY_F5)
+    if (key == NAPP_KEY_OPEN_DIRECTORY)
+    {
+        files_load_directory(files_api->current_path);
+    }
+    else if (key == NAPP_KEY_F5)
     {
         files_load_directory(state.path);
     }
@@ -453,7 +457,10 @@ int _start(const napp_api* api)
     state = {};
     state.selected = -1;
     state.previous_click = -1;
-    files_load_directory("/home/user");
+    const char* startup_path = api->argc > 1 && api->argv != nullptr
+        ? api->argv[1]
+        : "/home/user";
+    files_load_directory(startup_path);
 
     napp_window_config config = {};
     config.title = "Files";

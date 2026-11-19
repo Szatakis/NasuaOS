@@ -1748,7 +1748,14 @@ bool napp_exists(const char* name)
 
 bool napp_run(const char* name, int* exit_code)
 {
-    if (!rootfs_mounted || name == nullptr || *name == '\0')
+    return napp_run_with_args(name, 0, nullptr, exit_code);
+}
+
+bool napp_run_with_args(const char* name, int argc, const char* const* argv,
+                        int* exit_code)
+{
+    if (!rootfs_mounted || name == nullptr || *name == '\0' ||
+        argc < 0 || (argc > 0 && argv == nullptr))
     {
         return false;
     }
@@ -1872,6 +1879,10 @@ bool napp_run(const char* name, int* exit_code)
     loading_process_id = process_id;
     loading_napp_abi_version = header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version) ? header->abi_version : NAPP_ABI_VERSION;
     kernel_napp_api.abi_version = loading_napp_abi_version;
+    const int previous_argc = kernel_napp_api.argc;
+    const char* const* previous_argv = kernel_napp_api.argv;
+    kernel_napp_api.argc = argc;
+    kernel_napp_api.argv = argv;
 
     int result = 0;
 
@@ -1896,6 +1907,8 @@ bool napp_run(const char* name, int* exit_code)
     loading_process_id = 0;
     loading_napp_abi_version = NAPP_ABI_VERSION;
     kernel_napp_api.abi_version = NAPP_ABI_VERSION;
+    kernel_napp_api.argc = previous_argc;
+    kernel_napp_api.argv = previous_argv;
 
     if (exit_code != nullptr)
     {
@@ -1924,6 +1937,182 @@ bool napp_run(const char* name, int* exit_code)
     log(INFO, "NAPP", "Application finished");
 
     return true;
+}
+
+bool napp_print_to_terminal(const char* text)
+{
+    if (text == nullptr || !napp_run("terminal", nullptr))
+    {
+        return false;
+    }
+
+    if (napp_print_redirect_colored_cb != nullptr)
+    {
+        while (*text != '\0')
+        {
+            napp_print_redirect_colored_cb(*text++, 0xFFFF6464);
+        }
+        return true;
+    }
+    if (napp_print_redirect_cb != nullptr)
+    {
+        while (*text != '\0')
+        {
+            napp_print_redirect_cb(*text++);
+        }
+        return true;
+    }
+    return false;
+}
+
+static bool napp_split_absolute_path(const char* path, char* parent, char* name)
+{
+    if (path == nullptr || path[0] != '/' || parent == nullptr || name == nullptr)
+    {
+        return false;
+    }
+
+    const size_t path_length = strlen(path);
+    if (path_length < 2 || path_length >= 256)
+    {
+        return false;
+    }
+    size_t separator = path_length;
+    while (separator > 0 && path[separator - 1] != '/')
+    {
+        --separator;
+    }
+    if (separator == 0 || separator == path_length)
+    {
+        return false;
+    }
+
+    const size_t name_length = path_length - separator;
+    if (name_length == 0 || name_length >= 28)
+    {
+        return false;
+    }
+    if (separator == 1)
+    {
+        strcpy(parent, "/");
+    }
+    else
+    {
+        for (size_t index = 0; index < separator - 1; ++index)
+        {
+            parent[index] = path[index];
+        }
+        parent[separator - 1] = '\0';
+    }
+    for (size_t index = 0; index < name_length; ++index)
+    {
+        name[index] = path[separator + index];
+    }
+    name[name_length] = '\0';
+    return true;
+}
+
+bool napp_open_file_in_suaedit(const char* path)
+{
+    char parent[256];
+    char name[28];
+    if (!napp_split_absolute_path(path, parent, name) ||
+        !auth_check_path_permission(path, false))
+    {
+        return false;
+    }
+    const uint32_t parent_sector = get_sector_by_path(parent);
+    CLAWFSEntry entry;
+    if (parent_sector == 0 ||
+        find_entry_in_dir(parent_sector, name, &entry) == 0 ||
+        entry.type != CLAWFS_FILE)
+    {
+        return false;
+    }
+
+    const char* previous_path = napp_get_current_path();
+    char restore_path[256];
+    strcpy(restore_path, previous_path != nullptr ? previous_path : "/home");
+    napp_set_current_path(parent);
+
+    napp_window_slot* existing = find_window_of("suaedit");
+    if (existing != nullptr)
+    {
+        if (existing->window.process_id == 0)
+        {
+            existing->window.process_id = Process::start("suaedit", Process::Type::Application);
+        }
+        if (existing->window.process_id == 0)
+        {
+            napp_set_current_path(restore_path);
+            return false;
+        }
+
+        Process::set_running(existing->window.process_id);
+        show_window(existing);
+        Gpu::Window_Manager::send_key_to_window(&existing->window, NAPP_KEY_OPEN_FILE);
+        for (size_t index = 0; name[index] != '\0'; ++index)
+        {
+            Gpu::Window_Manager::send_key_to_window(&existing->window, name[index]);
+        }
+        Gpu::Window_Manager::send_key_to_window(&existing->window, '\n');
+        napp_set_current_path(restore_path);
+        return true;
+    }
+
+    const char* arguments[] = { "suaedit", path };
+    const bool started = napp_run_with_args("suaedit", 2, arguments, nullptr);
+    napp_set_current_path(restore_path);
+    return started;
+}
+
+bool napp_open_directory_in_file_explorer(const char* path)
+{
+    char parent[256];
+    char name[28];
+    if (!napp_split_absolute_path(path, parent, name) ||
+        !auth_check_path_permission(path, false))
+    {
+        return false;
+    }
+    const uint32_t parent_sector = get_sector_by_path(parent);
+    CLAWFSEntry entry;
+    if (parent_sector == 0 ||
+        find_entry_in_dir(parent_sector, name, &entry) == 0 ||
+        entry.type != CLAWFS_DIRECTORY)
+    {
+        return false;
+    }
+
+    const char* previous_path = napp_get_current_path();
+    char restore_path[256];
+    strcpy(restore_path, previous_path != nullptr ? previous_path : "/home");
+    napp_set_current_path(path);
+
+    napp_window_slot* existing = find_window_of("file_explorer");
+    if (existing != nullptr)
+    {
+        if (existing->window.process_id == 0)
+        {
+            existing->window.process_id = Process::start("file_explorer", Process::Type::Application);
+        }
+        if (existing->window.process_id == 0)
+        {
+            napp_set_current_path(restore_path);
+            return false;
+        }
+
+        Process::set_running(existing->window.process_id);
+        show_window(existing);
+        Gpu::Window_Manager::send_key_to_window(&existing->window, NAPP_KEY_OPEN_DIRECTORY);
+        napp_set_current_path(restore_path);
+        return true;
+    }
+
+    const char* arguments[] = { "file_explorer", path };
+    const bool started = napp_run_with_args("file_explorer", 2, arguments, nullptr);
+    napp_set_current_path(restore_path);
+    return started;
 }
 
 // Path-based flat-binary loader (for /bin/<name> and /sbin/<name>)

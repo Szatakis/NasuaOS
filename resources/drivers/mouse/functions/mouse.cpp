@@ -519,6 +519,7 @@ namespace Mouse
         // START MENU BUTTON
         if (is_mouse_over_start(x, y))
         {
+            desktop_dismiss_overlays();
             if (!menu_start_open)
             {
                 open_start_menu();
@@ -563,6 +564,7 @@ namespace Mouse
         // TASKBAR
         if (Gpu::Window_Manager::is_mouse_over_taskbar(x, y))
         {
+            desktop_dismiss_overlays();
             Gpu::Window_Manager::handle_window_mouse_click(x, y, 0);
 
             return;
@@ -572,11 +574,16 @@ namespace Mouse
         // WINDOW
         if (Gpu::Window_Manager::is_mouse_over_any_window(x, y))
         {
+            desktop_dismiss_overlays();
             Gpu::Window_Manager::handle_window_mouse_click(x, y, 0);
 
             return;
         }
 
+        if (desktop_handle_mouse_click(x, y))
+        {
+            return;
+        }
 
         // SHELL ENTER
         else if (Keyboard::shell_input_enabled && cmd_enter)
@@ -616,11 +623,19 @@ namespace Mouse
         }
 
         // Forward right-click to window under cursor
+        if (Gpu::Window_Manager::is_mouse_over_taskbar(x, y))
+        {
+            desktop_dismiss_overlays();
+            return;
+        }
         if (Gpu::Window_Manager::is_mouse_over_any_window(x, y))
         {
+            desktop_dismiss_overlays();
             Gpu::Window_Manager::handle_window_mouse_click(x, y, 1);
             return;
         }
+
+        desktop_handle_right_click(x, y);
     }
 
 

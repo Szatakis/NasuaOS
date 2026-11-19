@@ -29,7 +29,7 @@ The 64-bit kernel provides a graphical desktop with:
   - System tray icons (speaker, notifications)
   - Clock and date
 - **Start Menu** — Shows built-in applications and NAPP apps
-- **Desktop** — Background image, supports open windows
+- **Desktop** — Shows files and folders from `/home/<user>/desktop` in directory order, starting below the desktop heading. Double-click a file to open it in SuaEdit or a folder in Files. Right-click an item for Open, Open with, New, Rename, Delete, and Properties; Delete asks for confirmation. New files and folders are created in the desktop directory.
 
 ### Built-in Applications
 

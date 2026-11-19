@@ -1,4 +1,5 @@
 #include <napp.h>
+#include <stddef.h>
 
 #include "suascript.hpp"
 
@@ -8,7 +9,7 @@ static const napp_gui* gui = nullptr;
 static const napp_api* api = nullptr;
 
 static char editor_buffer[65536];
-static char editor_filename[28];
+static char editor_filename[256];
 static char filename_prompt[28];
 static char explorer_files[12][28];
 static int explorer_file_count = 0;
@@ -21,6 +22,27 @@ static bool editor_dirty = false;
 static const char* editor_status = "Ready";
 
 static void refresh_explorer();
+
+static size_t suaedit_string_length(const char* text)
+{
+    size_t length = 0;
+    while (text != nullptr && text[length] != '\0')
+    {
+        ++length;
+    }
+    return length;
+}
+
+static void suaedit_copy_string(char* output, const char* input)
+{
+    size_t index = 0;
+    while (input[index] != '\0')
+    {
+        output[index] = input[index];
+        ++index;
+    }
+    output[index] = '\0';
+}
 
 static const char DEFAULT_INFO[] =
     "SuaEdit - Text Editor\n"
@@ -84,8 +106,41 @@ static bool load_file(const char* filename)
         return false;
     }
 
+    char absolute_path[256];
+    if (filename[0] == '/')
+    {
+        if (suaedit_string_length(filename) >= sizeof(absolute_path))
+        {
+            editor_status = "File path is too long";
+            return false;
+        }
+        suaedit_copy_string(absolute_path, filename);
+    }
+    else
+    {
+        const size_t base_length = suaedit_string_length(api->current_path);
+        const size_t file_length = suaedit_string_length(filename);
+        const bool separator = base_length > 0 && api->current_path[base_length - 1] != '/';
+        if (base_length + (separator ? 1 : 0) + file_length >= sizeof(absolute_path))
+        {
+            editor_status = "File path is too long";
+            return false;
+        }
+        suaedit_copy_string(absolute_path, api->current_path);
+        size_t position = base_length;
+        if (separator)
+        {
+            absolute_path[position++] = '/';
+        }
+        for (size_t index = 0; index < file_length; ++index)
+        {
+            absolute_path[position++] = filename[index];
+        }
+        absolute_path[position] = '\0';
+    }
+
     uint32_t loaded_length = 0;
-    if (!api->clawfs_read_file(filename, editor_buffer, sizeof(editor_buffer) - 1, &loaded_length))
+    if (!api->clawfs_read_file(absolute_path, editor_buffer, sizeof(editor_buffer) - 1, &loaded_length))
     {
         editor_status = loaded_length > sizeof(editor_buffer) - 1 ? "File exceeds editor limit" : "Could not read file";
         return false;
@@ -94,11 +149,7 @@ static bool load_file(const char* filename)
     editor_length = static_cast<uint16_t>(loaded_length);
     editor_buffer[editor_length] = '\0';
     editor_cursor = editor_length;
-    for (uint8_t index = 0; index < sizeof(editor_filename) - 1 && filename[index] != '\0'; ++index)
-    {
-        editor_filename[index] = filename[index];
-        editor_filename[index + 1] = '\0';
-    }
+    suaedit_copy_string(editor_filename, absolute_path);
     editor_dirty = false;
     editor_status = "File opened";
     return true;
@@ -628,18 +679,60 @@ static void draw_suaedit(napp_window* win)
                 gui->fill_block(editor_x, middle_y, COLOR_EDITOR_BG, active_tab_w, tab_h);
                 gui->fill_block(editor_x, middle_y, COLOR_HIGHLIGHT, active_tab_w, 1);
                 char tab_label[40];
-                int label_index = 0;
-                while (editor_filename[label_index] != '\0' && label_index < 27)
+                const char* tab_name = editor_filename;
+                for (const char* character = editor_filename; *character != '\0'; ++character)
                 {
-                    tab_label[label_index] = editor_filename[label_index];
-                    ++label_index;
+                    if (*character == '/')
+                    {
+                        tab_name = character + 1;
+                    }
                 }
-                if (editor_dirty && label_index < 37)
+
+                int max_label_characters = (active_tab_w - 20) / 9;
+                if (max_label_characters < 0)
+                {
+                    max_label_characters = 0;
+                }
+                int name_capacity = max_label_characters - (editor_dirty ? 1 : 0);
+                if (name_capacity < 0)
+                {
+                    name_capacity = 0;
+                }
+                int name_length = 0;
+                while (tab_name[name_length] != '\0')
+                {
+                    ++name_length;
+                }
+
+                int label_index = 0;
+                if (name_capacity >= 4 && name_length > name_capacity)
+                {
+                    tab_label[label_index++] = '.';
+                    tab_label[label_index++] = '.';
+                    tab_label[label_index++] = '.';
+                    const int suffix_length = name_capacity - 3;
+                    for (int index = name_length - suffix_length; index < name_length; ++index)
+                    {
+                        tab_label[label_index++] = tab_name[index];
+                    }
+                }
+                else
+                {
+                    const int copy_length = name_length < name_capacity ? name_length : name_capacity;
+                    for (int index = 0; index < copy_length; ++index)
+                    {
+                        tab_label[label_index++] = tab_name[index];
+                    }
+                }
+                if (editor_dirty && label_index < max_label_characters)
                 {
                     tab_label[label_index++] = '*';
                 }
                 tab_label[label_index] = '\0';
-                gui->draw_text(tab_label, editor_x + 12, middle_y + 12, COLOR_TEXT_WHITE);
+                if (label_index > 0)
+                {
+                    gui->draw_text(tab_label, editor_x + 12, middle_y + 12, COLOR_TEXT_WHITE);
+                }
             }
 
             const int status_h = 18;
@@ -1065,6 +1158,20 @@ static void suaedit_key(napp_window* win, char key)
 {
     (void)win; // Unused parameter
 
+    if (key == NAPP_KEY_OPEN_FILE)
+    {
+        terminal_panel_visible = false;
+        terminal_input[0] = '\0';
+        terminal_cursor = 0;
+        if (editor_dirty && !save_file())
+        {
+            file_prompt_mode = 3;
+            return;
+        }
+        begin_filename_prompt(2);
+        return;
+    }
+
     if (key == NAPP_KEY_F5)
     {
         run_current_script();
@@ -1075,6 +1182,14 @@ static void suaedit_key(napp_window* win, char key)
     {
         if (file_prompt_mode != 0)
         {
+            if (file_prompt_mode == 3)
+            {
+                if (key == '\n')
+                {
+                    file_prompt_mode = 0;
+                }
+                return;
+            }
             if (key == '\n')
             {
                 finish_filename_prompt();
@@ -1494,10 +1609,22 @@ int _start(const napp_api* api_param)
     file_prompt_mode = 0;
     editor_status = "Ready";
     clear_editor_buffer();
-    ensure_info_file();
-    if (api->clawfs_get_sector && api->clawfs_get_sector("/") != 0 && !load_file("info.txt"))
+    const bool launched_with_file = api->argc > 1 && api->argv != nullptr &&
+        api->argv[1] != nullptr && api->argv[1][0] != '\0';
+    if (launched_with_file)
     {
-        editor_status = "Could not open info.txt";
+        if (!load_file(api->argv[1]))
+        {
+            editor_status = "Could not open requested file";
+        }
+    }
+    else
+    {
+        ensure_info_file();
+        if (api->clawfs_get_sector && api->clawfs_get_sector("/") != 0 && !load_file("info.txt"))
+        {
+            editor_status = "Could not open info.txt";
+        }
     }
     refresh_explorer();
 

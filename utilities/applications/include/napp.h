@@ -61,6 +61,8 @@ struct napp_header
 #define NAPP_KEY_CTRL         ((char)0xF6)
 #define NAPP_KEY_SHIFT        ((char)0xF7)
 #define NAPP_KEY_ALT          ((char)0xF8)
+#define NAPP_KEY_OPEN_FILE    ((char)0xF9)
+#define NAPP_KEY_OPEN_DIRECTORY ((char)0xFA)
 #define NAPP_HTTP_ERROR_NETWORK  -1
 #define NAPP_HTTP_ERROR_DNS      -2
 #define NAPP_HTTP_ERROR_CONNECT -3

@@ -1087,3 +1087,79 @@ void clawfs_rm(const char* parent_path, const char* name, uint32_t type)
         Gpu::print_error("Directory not found!\n");
     }
 }
+
+bool clawfs_rename(const char* parent_path, const char* old_name,
+                   const char* new_name, uint32_t type)
+{
+    if (parent_path == nullptr || old_name == nullptr || new_name == nullptr ||
+        old_name[0] == '\0' || new_name[0] == '\0' ||
+        strlen(old_name) >= sizeof(CLAWFSEntry::name) ||
+        strlen(new_name) >= sizeof(CLAWFSEntry::name) ||
+        strcmp(new_name, ".") == 0 || strcmp(new_name, "..") == 0)
+    {
+        Gpu::print_error("Invalid name.\n");
+        return false;
+    }
+
+    for (size_t index = 0; new_name[index] != '\0'; ++index)
+    {
+        if (new_name[index] == '/' || new_name[index] == '\\')
+        {
+            Gpu::print_error("Invalid name.\n");
+            return false;
+        }
+    }
+
+    if (!auth_check_path_permission(parent_path, true))
+    {
+        Gpu::print_error("Permission denied.\n");
+        return false;
+    }
+
+    const uint32_t parent_sector = get_sector_by_path(parent_path);
+    uint8_t buffer[512];
+    if (parent_sector == 0 || !Disk::read_sector(parent_sector, buffer))
+    {
+        Gpu::print_error("Parent directory not found.\n");
+        return false;
+    }
+
+    CLAWFSEntry* entries = reinterpret_cast<CLAWFSEntry*>(buffer);
+    int source_index = -1;
+    for (int index = 0; index < 12; ++index)
+    {
+        if (entries[index].name[0] == '\0')
+        {
+            continue;
+        }
+        if (strcmp(entries[index].name, old_name) == 0 && entries[index].type == type)
+        {
+            source_index = index;
+        }
+        else if (strcmp(entries[index].name, new_name) == 0)
+        {
+            Gpu::print_error("An item with that name already exists.\n");
+            return false;
+        }
+    }
+
+    if (source_index < 0)
+    {
+        Gpu::print_error("Item not found.\n");
+        return false;
+    }
+    if (strcmp(old_name, new_name) == 0)
+    {
+        return true;
+    }
+
+    memclear(entries[source_index].name, sizeof(entries[source_index].name));
+    strcpy(entries[source_index].name, new_name);
+    if (!Disk::write_sector(parent_sector, buffer))
+    {
+        Gpu::print_error("Failed to update parent directory.\n");
+        return false;
+    }
+
+    return true;
+}

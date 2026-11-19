@@ -16,7 +16,7 @@
 
 2. GUI i pulpit
 * [ ]    System powiadomień
-* [ ]    Ikony pulpitu jeśli coś jest w folderze desktop danego użytkownika pojawia się na desktop i jeśli kliknę w plik odpala się w suaedit a jeśli folder to w file explorer a prawym klikiem menu typu delete new rename open open with properties 
+* [x]    Ikony pulpitu z `/home/<użytkownik>/desktop`, otwieranie plików w SuaEdit i folderów w File Explorer oraz menu kontekstowe: delete, new, rename, open, open with, properties
 3. Wbudowane aplikacje
 * [x]    Kalkulator w ring 3 przez ograniczone API GUI
 * [x]    Zdarzenia timerów GUI dla aplikacji ring 3

@@ -44,6 +44,11 @@ bool napp_exists_path(const char* path);
 
 // Loads /bin/<name>/<name>.napp and runs it. Returns false when it cannot be started.
 bool napp_run(const char* name, int* exit_code);
+bool napp_run_with_args(const char* name, int argc, const char* const* argv,
+                        int* exit_code);
+bool napp_open_file_in_suaedit(const char* path);
+bool napp_open_directory_in_file_explorer(const char* path);
+bool napp_print_to_terminal(const char* text);
 
 extern void (*napp_print_redirect_cb)(char);
 extern void (*napp_print_redirect_colored_cb)(char, uint32_t);
