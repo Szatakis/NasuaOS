@@ -175,6 +175,53 @@ static void clear_output()
     terminal.scroll_offset = 0;
 }
 
+static uint32_t append_prompt_text(char* output, uint32_t capacity)
+{
+    if (output == nullptr || capacity == 0)
+    {
+        return 0;
+    }
+
+    const char* username =
+        terminal_api != nullptr && terminal_api->get_username != nullptr
+            ? terminal_api->get_username()
+            : "user";
+    if (username == nullptr || username[0] == '\0')
+    {
+        username = "user";
+    }
+
+    const char* path =
+        terminal_api != nullptr && terminal_api->current_path != nullptr
+            ? terminal_api->current_path
+            : "/home";
+    if (path == nullptr || path[0] == '\0')
+    {
+        path = "/home";
+    }
+
+    uint32_t length = 0;
+    for (uint32_t index = 0; username[index] != '\0' && length + 1 < capacity; ++index)
+    {
+        output[length++] = username[index];
+    }
+    if (length + 1 < capacity) output[length++] = '@';
+    const char pc_name[] = "nasua-pc";
+    for (uint32_t index = 0; pc_name[index] != '\0' && length + 1 < capacity; ++index)
+    {
+        output[length++] = pc_name[index];
+    }
+    if (length + 1 < capacity) output[length++] = ':';
+    for (uint32_t index = 0; path[index] != '\0' && length + 1 < capacity; ++index)
+    {
+        output[length++] = path[index];
+    }
+    if (length + 1 < capacity) output[length++] = '>';
+    if (length + 1 < capacity) output[length++] = ' ';
+    output[length] = '\0';
+    return length;
+}
+
 static void terminal_write_char_colored(char character, uint32_t color)
 {
     if (terminal.output_count == 0)
@@ -269,10 +316,9 @@ static void draw_terminal(napp_window* window)
     }
 
     terminal_api->gui->draw_text("NasuaOS Terminal", left, content_y + 8, COLOR_ACCENT);
-    char prompt[MAX_COMMAND_LENGTH + 4] = "> ";
-    prompt[0] = '>';
-    prompt[1] = ' ';
-    uint32_t prompt_length = 2;
+    char prompt[MAX_COMMAND_LENGTH + 96];
+    uint32_t prompt_length = append_prompt_text(prompt, sizeof(prompt));
+    const uint32_t prompt_prefix_length = prompt_length;
     for (uint32_t index = 0; index < terminal.input_length &&
          prompt_length + 1 < sizeof(prompt); ++index)
     {
@@ -280,7 +326,7 @@ static void draw_terminal(napp_window* window)
     }
     prompt[prompt_length] = '\0';
 
-    const uint32_t cursor_offset = 2 + terminal.input_cursor;
+    const uint32_t cursor_offset = prompt_prefix_length + terminal.input_cursor;
     const uint32_t prompt_lines = (prompt_length + terminal.characters_per_line - 1) /
             terminal.characters_per_line > cursor_offset / terminal.characters_per_line
         ? (prompt_length + terminal.characters_per_line - 1) / terminal.characters_per_line
@@ -396,7 +442,9 @@ static void terminal_key(napp_window*, char key)
     if (key == '\n')
     {
         remember_command(terminal.input);
-        terminal_write_string("> ");
+        char entered_prompt[MAX_COMMAND_LENGTH + 96];
+        append_prompt_text(entered_prompt, sizeof(entered_prompt));
+        terminal_write_string(entered_prompt);
         terminal_write_string(terminal.input);
         terminal_write_char('\n');
         if (is_clear_command())
