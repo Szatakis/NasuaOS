@@ -61,6 +61,7 @@ static const uint32_t COLOR_BLACK = 0x00101820;
 static const uint32_t COLOR_WHITE = 0x00FFFFFF;
 static const uint32_t COLOR_GREEN = 0x0000FF00;
 static const uint32_t COLOR_RED   = 0x00FF0000;
+static const uint32_t COLOR_SEA   = 0x0063C7B7;
 
 
 static void put_pixel(uint32_t x, uint32_t y, uint32_t color)
@@ -199,58 +200,16 @@ static bool find_framebuffer(uint32_t mb_info)
 }
 
 
-static bool cpu_has_cpuid()
-{
-    uint32_t eflags1;
-    uint32_t eflags2;
-
-
-    asm volatile("pushfl\n" "popl %0\n" : "=r"(eflags1)
-    );
-
-
-    uint32_t modified = eflags1 ^ (1 << 21);
-
-
-    asm volatile("pushl %0\n" "popfl\n" : : "r"(modified));
-    asm volatile("pushfl\n" "popl %0\n" : "=r"(eflags2));
-    asm volatile("pushl %0\n" "popfl\n" : : "r"(eflags1));
-
-    return ((eflags1 ^ eflags2) & (1 << 21)) != 0;
-}
-
-
-static bool cpu_has_long_mode()
-{
-    if (!cpu_has_cpuid())
-    {
-        return false;
-    }
-
-
-    uint32_t eax;
-    uint32_t ebx;
-    uint32_t ecx;
-    uint32_t edx;
-
-
-    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000000));
-
-    if (eax < 0x80000001)
-    {
-        return false;
-    }
-
-
-    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000001));
-
-
-    return (edx & (1 << 29)) != 0;
-}
-
 
 static mb2_tag_module* modules[8];
 static uint32_t module_count = 0;
+
+static uint8_t inb(uint16_t port)
+{
+    uint8_t value;
+    asm volatile("inb %1, %0" : "=a"(value) : "Nd"(port));
+    return value;
+}
 
 
 static bool find_modules(uint32_t mb_info)
@@ -287,16 +246,81 @@ static bool find_modules(uint32_t mb_info)
     return module_count >= 2;
 }
 
-void start_kernel32bit()
+void start_kernel32bit(uint32_t mb_info)
 {
-
+    (void)mb_info;
+    clear_screen(COLOR_BLACK);
+    cursor_x = 20;
+    cursor_y = 40;
+    print("32-bit boot cannot be launched from inside this tool.\n", COLOR_RED);
+    print("Restart and select NasuaOS 32-bit from the Limine menu.\n", COLOR_WHITE);
+    for (;;)
+    {
+        asm volatile("hlt");
+    }
+    for (;;)
+    {
+        asm volatile("hlt");
+    }
 }
 
-void start_kernel64bit()
+static uint8_t read_keyboard_scancode()
 {
-    
+    while ((inb(0x64) & 1) == 0)
+    {
+        asm volatile("pause");
+    }
+    return inb(0x60);
 }
 
+static int choose_boot_target()
+{
+    int selected = 0;
+    bool redraw = true;
+    for (;;)
+    {
+        if (redraw)
+        {
+            clear_screen(COLOR_BLACK);
+            cursor_x = 20;
+            cursor_y = 40;
+            print("NasuaOS Boot Manager\n", COLOR_SEA);
+            print("--------------------\n\n", COLOR_WHITE);
+            print(selected == 0 ? "> 1. NasuaOS 32-bit\n" : "  1. NasuaOS 32-bit\n",
+                  selected == 0 ? COLOR_SEA : COLOR_WHITE);
+            print(selected == 1 ? "> 2. NasuaOS 64-bit\n" :
+                  "  2. NasuaOS 64-bit (requires Limine)\n",
+                  selected == 1 ? COLOR_SEA : COLOR_WHITE);
+            print("\nUse arrows or 1/2, Enter to start.\n", COLOR_WHITE);
+            redraw = false;
+        }
+
+        uint8_t scancode = read_keyboard_scancode();
+        if (scancode & 0x80)
+        {
+            continue;
+        }
+        if (scancode == 0x48 || scancode == 0x50)
+        {
+            selected = 1 - selected;
+            redraw = true;
+        }
+        else if (scancode == 0x02)
+        {
+            selected = 0;
+            redraw = true;
+        }
+        else if (scancode == 0x03)
+        {
+            selected = 1;
+            redraw = true;
+        }
+        else if (scancode == 0x1C)
+        {
+            return selected;
+        }
+    }
+}
 
 extern "C" void kmain(uint32_t magic, uint32_t mb_info)
 {
@@ -311,18 +335,6 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
 
     find_framebuffer(mb_info);
 
-    if (framebuffer)
-    {
-        clear_screen(COLOR_BLACK);
-
-        cursor_x = 0;
-        cursor_y = 10;
-
-        print("NasuaOS Boot Manager\n", COLOR_WHITE);
-        print("--------------------\n\n", COLOR_WHITE);
-    }
-
-
     if (!find_modules(mb_info))
     {
         print("ERROR: kernel modules not found\n", COLOR_RED);
@@ -334,19 +346,6 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     }
 
 
-    print("CPU: ", COLOR_WHITE);
-
-
-    if (cpu_has_long_mode())
-    {
-        print("x86-64\n", COLOR_GREEN);
-    }
-    else
-    {
-        print("IA-32\n", COLOR_WHITE);
-    }
-
-
     print("kernel_32bit: ", COLOR_WHITE);
     print_hex32(modules[0]->mod_start);
     print("\n", COLOR_WHITE);
@@ -355,24 +354,20 @@ extern "C" void kmain(uint32_t magic, uint32_t mb_info)
     print("\n\n", COLOR_WHITE);
 
 
-    if (cpu_has_long_mode())
+    const int target = choose_boot_target();
+    if (target == 0)
     {
-        print("Selected: kernel_64bit\n", COLOR_GREEN);
-        start_kernel64bit();
-
-        for (;;)
-        {
-            asm volatile("hlt");
-        }
+        print("\nLoading 32-bit kernel...\n", COLOR_GREEN);
+        start_kernel32bit(mb_info);
     }
-    else
-    {
-        print("Selected: kernel_32bit\n", COLOR_GREEN);
-        start_kernel32bit();
 
-        for (;;)
-        {
-            asm volatile("hlt");
-        }
+    clear_screen(COLOR_BLACK);
+    cursor_x = 20;
+    cursor_y = 40;
+    print("64-bit kernel requires the Limine boot manager.\n", COLOR_RED);
+    print("Restart and select NasuaOS 64-bit from the Limine menu.\n", COLOR_WHITE);
+    for (;;)
+    {
+        asm volatile("hlt");
     }
 }

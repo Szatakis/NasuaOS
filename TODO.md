@@ -58,4 +58,3 @@
 * [ ]    Testy automatyczne
 * [ ]    System debugowania
 * [ ]    Recovery Mode
-* [ ]    BootMgr
