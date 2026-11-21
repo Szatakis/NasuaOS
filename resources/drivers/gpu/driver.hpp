@@ -130,7 +130,6 @@ namespace Gpu {
             bool visible;
             bool minimized;
             bool focused;
-            bool capture_arrow_keys;
 
             bool resizable;
             bool can_maximize;
@@ -166,6 +165,9 @@ namespace Gpu {
             window_mouse_button_callback mouse_button;
             window_key_event_callback key_event;
             window_close_callback close;
+
+            // Keep extensions here so existing window member offsets remain stable.
+            bool capture_arrow_keys;
         } window_struct;
 
         extern window_struct* active_window;
