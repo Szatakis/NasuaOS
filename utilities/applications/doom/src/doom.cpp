@@ -61,7 +61,6 @@ static unsigned char doom_key(char key)
         case NAPP_KEY_DOWN: return KEY_DOWNARROW;
         case NAPP_KEY_CTRL: return KEY_FIRE;
         case NAPP_KEY_SHIFT: return KEY_RSHIFT;
-        case NAPP_KEY_ALT: return KEY_RALT;
         case NAPP_KEY_F5: return KEY_F5;
         case '\n': return KEY_ENTER;
         case '\b': return KEY_BACKSPACE;
@@ -153,6 +152,10 @@ static void doom_draw(napp_window* window)
 static void doom_key_event(napp_window* window, char key, bool pressed)
 {
     (void)window;
+    if (key == NAPP_KEY_ALT)
+    {
+        return;
+    }
     doom_nasua_key_event(doom_key(key), pressed ? 1 : 0);
 }
 
@@ -279,6 +282,7 @@ int _start(const napp_api* api)
     config.draw = doom_draw;
     config.key_event = doom_key_event;
     config.close = doom_close;
+    config.capture_arrow_keys = true;
     config.tick = doom_tick;
     config.tick_interval_ms = 10;
 

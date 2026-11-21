@@ -307,6 +307,25 @@ namespace Keyboard
                     return;
                 }
 
+                if (has_keyboard_focus() &&
+                    Gpu::Window_Manager::active_window->capture_arrow_keys)
+                {
+                    if (alt_pressed)
+                    {
+                        const int speed = 5;
+                        const int dx = scancode == 0x4B ? -speed :
+                                       scancode == 0x4D ? speed : 0;
+                        const int dy = scancode == 0x48 ? speed :
+                                       scancode == 0x50 ? -speed : 0;
+                        Mouse::update_position(dx, dy);
+                    }
+                    else
+                    {
+                        send_napp_key_event((uint8_t)(0x80 | scancode), arrow_key, true);
+                    }
+                    return;
+                }
+
                 if (alt_pressed)
                 {
                     if (has_keyboard_focus())

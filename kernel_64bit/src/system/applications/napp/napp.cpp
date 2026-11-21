@@ -838,6 +838,7 @@ bool napp_api_open_window(const napp_window_config* config)
         slot->key_event = config->key_event;
         slot->close = config->close;
     }
+    slot->window.capture_arrow_keys = loading_napp_abi_version >= 14 && config->capture_arrow_keys;
     slot->mouse = config->mouse;
     slot->mouse_button = config->mouse_button;
 

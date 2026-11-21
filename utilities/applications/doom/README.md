@@ -34,10 +34,10 @@ The OS build installs `data/freedoom1.wad` into the rootfs at
 installs the Doomgeneric GPLv2 license and Freedoom license and credits in
 `/share/licenses/doom/`. The main NasuaOS license is unchanged.
 
-The port requires NasuaOS NAPP ABI 7 and the matching kernel additions for
-key-up events, FPU access, and ClawFS range reads. These changes are outside
-this directory and must also be included in the OS when the app is integrated.
-The current port targets x86-64 only.
+The port requires NasuaOS NAPP ABI 14 and the matching kernel additions for
+key-up events, FPU access, ClawFS range reads, and arrow-key capture. These
+changes are outside this directory and must also be included in the OS when the
+app is integrated. The current port targets x86-64 only.
 
 ## Freedoom data
 
@@ -58,7 +58,7 @@ see [`third_party/freedoom/COPYING.txt`](third_party/freedoom/COPYING.txt).
 
 - Up / Down: move forward / backward
 - Left / Right: turn
-- Hold Alt and press Left / Right: strafe
+- Alt + arrow keys: move the system cursor; arrows otherwise control Doom
 - `/` or Ctrl: fire (`/` is recommended in VirtualBox)
 - Space: use/open doors
 - Shift: run

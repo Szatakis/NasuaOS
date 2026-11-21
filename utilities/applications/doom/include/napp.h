@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 13
+#define NAPP_ABI_VERSION 14
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
@@ -124,6 +124,8 @@ struct napp_window_config
     // When set, key receives both transitions instead of the legacy key callback.
     napp_window_key_event key_event;
     napp_window_close close;
+
+    bool capture_arrow_keys;
 };
 
 // Drawing and window services, only usable while a window callback runs or to

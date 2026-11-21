@@ -130,6 +130,7 @@ namespace Gpu {
             bool visible;
             bool minimized;
             bool focused;
+            bool capture_arrow_keys;
 
             bool resizable;
             bool can_maximize;
