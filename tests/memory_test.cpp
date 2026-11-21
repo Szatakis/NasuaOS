@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 
@@ -162,7 +163,10 @@ int main()
     void* after_existing_mapping = Memory::heap::kmalloc(5000);
     assert(after_existing_mapping ==
            reinterpret_cast<void*>(Memory::heap::test_heap_base() +
-                                   2 * Memory::PAGE_SIZE + 24));
+                                   2 * Memory::PAGE_SIZE + 32));
+    assert(reinterpret_cast<uintptr_t>(after_existing_mapping) %
+               alignof(std::max_align_t) ==
+           0);
     Memory::heap::kfree(after_existing_mapping);
     assert(active_mapping_count() == 1);
     assert(Memory::vmm::unmap_page(Memory::heap::test_heap_base() + Memory::PAGE_SIZE));
@@ -172,6 +176,9 @@ int main()
     void* second = Memory::heap::kmalloc(5000);
     void* third = Memory::heap::kmalloc(32);
     assert(first != nullptr && second != nullptr && third != nullptr);
+    assert(reinterpret_cast<uintptr_t>(first) % alignof(std::max_align_t) == 0);
+    assert(reinterpret_cast<uintptr_t>(second) % alignof(std::max_align_t) == 0);
+    assert(reinterpret_cast<uintptr_t>(third) % alignof(std::max_align_t) == 0);
     assert(active_mapping_count() == 4);
     std::memset(second, 0xA5, 5000);
     assert(static_cast<uint8_t*>(second)[4999] == 0xA5);

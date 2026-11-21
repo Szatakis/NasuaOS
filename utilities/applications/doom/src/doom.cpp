@@ -22,7 +22,7 @@ __attribute__((visibility("hidden"))) void doom_relocate_image(
     void* image_base, const uint32_t* relocations, const void* image_end);
 }
 
-NAPP_APPLICATION("doom", "Doom using the Freedoom game data", false, {}, false, "Games");
+NAPP_APPLICATION("doom", "Doom using Freedoom", false, {}, false, "Games");
 
 static const napp_api* doom_api;
 static const napp_gui* doom_gui;
@@ -31,11 +31,11 @@ static bool doom_quit_requested;
 static char doom_error[256];
 static const int doom_width = 320;
 static const int doom_height = 200;
-static const char* doom_default_iwad = "/home/freedoom2.wad";
+static const char* doom_default_iwad = "/home/freedoom1.wad";
 static char* doom_argv[] = {
     (char*)"doom",
     (char*)"-iwad",
-    (char*)"/home/freedoom2.wad"
+    (char*)"/home/freedoom1.wad"
 };
 
 static void doom_create_engine(void* context)

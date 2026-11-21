@@ -6,11 +6,6 @@ ENGINE_DIR := third_party/doomgeneric
 OBJ_DIR := obj
 LINKER_SCRIPT := napp.lds
 INCLUDE_DIR := include
-DATA_DIR := data
-FREEDOOM_VERSION := 0.13.0
-FREEDOOM_ZIP := /tmp/freedoom-$(FREEDOOM_VERSION).zip
-FREEDOOM_DIR := /tmp/freedoom-$(FREEDOOM_VERSION)
-WAD_FILE := $(DATA_DIR)/freedoom2.wad
 
 CXX := g++
 CC := gcc
@@ -77,17 +72,8 @@ LDFLAGS := \
     -Wl,--gc-sections \
     -Wl,--emit-relocs
 
-.PHONY: all clean distclean assets
-all: assets $(TARGET)
-
-assets: $(WAD_FILE)
-
-$(WAD_FILE):
-	mkdir -p $(DATA_DIR)
-	curl -fL https://github.com/freedoom/freedoom/releases/download/v$(FREEDOOM_VERSION)/freedoom-$(FREEDOOM_VERSION).zip -o $(FREEDOOM_ZIP)
-	unzip -q $(FREEDOOM_ZIP) -d /tmp
-	cp $(FREEDOOM_DIR)/freedoom2.wad $(WAD_FILE)
-	rm -rf $(FREEDOOM_ZIP) $(FREEDOOM_DIR)
+.PHONY: all clean distclean
+all: $(TARGET)
 
 $(OBJ_DIR)/engine/%.o: $(ENGINE_DIR)/%.c
 	mkdir -p $(@D)
@@ -110,4 +96,3 @@ clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
 
 distclean: clean
-	rm -rf $(DATA_DIR)

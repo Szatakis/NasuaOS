@@ -4,6 +4,7 @@
 *.hdd
 *.img
 *.wad
+!utilities/applications/doom/data/freedoom1.wad
 compile_commands.json
 
 /utilities/rootfs/dir/share/licenses/doom/

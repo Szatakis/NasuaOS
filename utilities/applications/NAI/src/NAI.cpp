@@ -211,7 +211,7 @@ static const char* answer_question(const char* question)
     }
     if (contains(question, "doom") || contains(question, "freedoom"))
     {
-        return "Aplikacja Doom wymaga pliku danych Freedoom (freedoom2.wad). NAI nie pobiera ani nie dolacza tego pliku; przed budowaniem trzeba przygotowac go osobno zgodnie z instrukcja projektu.";
+        return "Aplikacja Doom korzysta z dolaczonego Freedoom Phase 1 (freedoom1.wad, licencja BSD-3-Clause). Dane gry sa juz w systemie i nie trzeba ich pobierac.";
     }
     if (contains(question, "sztuczna inteligencja") ||
         contains(question, "model jezykowy") || contains(question, "co to ai") ||

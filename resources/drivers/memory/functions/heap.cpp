@@ -22,7 +22,7 @@ namespace Memory
         }
 #endif
 
-        struct heap_header
+        struct alignas(16) heap_header
         {
             uint64_t magic;
             uint64_t size;

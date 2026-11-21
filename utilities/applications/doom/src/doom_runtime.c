@@ -11,7 +11,7 @@ extern void doom_nasua_log(const char* text);
 extern void doom_nasua_game_quit(void);
 extern void doom_nasua_game_error(const char* message);
 
-typedef struct doom_allocation
+typedef struct __attribute__((aligned(16))) doom_allocation
 {
     size_t size;
     struct doom_allocation* previous;
