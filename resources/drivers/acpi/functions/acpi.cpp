@@ -664,20 +664,30 @@ void Acpi::shutdown()
     Gpu::print("ACPI: Sending S5 power-off request\n");
     asm volatile("cli");
 
-    if(write_pm1b && !write_control(PM1b_CNT, sleep_b_value))
+    bool pm1b_write_failed = write_pm1b && !write_control(PM1b_CNT, sleep_b_value);
+    bool pm1a_write_failed = !write_control(PM1a_CNT, sleep_value);
+    if(pm1a_write_failed || pm1b_write_failed)
     {
-        Gpu::print_error("ACPI: PM1b write failed\n");
+        asm volatile("sti");
+        if(pm1b_write_failed)
+        {
+            Gpu::print_error("ACPI: PM1b write failed\n");
+        }
+        if(pm1a_write_failed)
+        {
+            Gpu::print_error("ACPI: PM1a write failed\n");
+        }
+        Gpu::print_error("ACPI: Shutdown request failed; system remains running\n");
+        return;
     }
 
-    if(!write_control(PM1a_CNT, sleep_value))
+    for(uint64_t i = 0; i < 100000000; i++)
     {
-        Gpu::print_error("ACPI: PM1a write failed\n");
+        asm volatile("pause");
     }
 
-    for(;;)
-    {
-        asm volatile("hlt");
-    }
+    asm volatile("sti");
+    Gpu::print_error("ACPI: Shutdown request did not power off the system\n");
 }
 
 void Acpi::reboot()

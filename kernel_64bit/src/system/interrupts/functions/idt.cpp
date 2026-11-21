@@ -105,8 +105,13 @@ void idt_init()
     Uart::puthex(cs);
     Uart::puts("\n");
 
-    asm volatile("lidt %0" : : "m"(idtr));
+    idt_load();
 
     Uart::puts("[IDT] Loaded\n");
     log(INFO,"IDT","Loaded");
+}
+
+void idt_load()
+{
+    asm volatile("lidt %0" : : "m"(idtr));
 }

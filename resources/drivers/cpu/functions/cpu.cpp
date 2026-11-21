@@ -3,19 +3,20 @@
 #include "limine.h"
 
 #include "drivers/uart/driver.hpp"
+#include "drivers/apic/driver.hpp"
+#include "system/interrupts/functions/idt.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
-#include "drivers/apic/driver.hpp"
 
 extern volatile limine_mp_request mp_request;
 
 static uint64_t detected_core_count = 1;
-static volatile uint64_t started_application_core_count = 0;
 
 extern "C" void limine_ap_entry(limine_mp_info* info)
 {
     (void)info;
-    __sync_add_and_fetch(&started_application_core_count, 1);
+    asm volatile("cli");
+    idt_load();
     Apic::init();
     asm volatile("sti");
     for (;;)

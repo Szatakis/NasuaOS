@@ -90,6 +90,9 @@ void iqu_init()
     Uart::init();
     logger_init();
 
+    Gdt::init();
+    idt_init();
+
     Cpu::init_cores();
     Memory::init();
     Memory::paging::init();
@@ -97,8 +100,6 @@ void iqu_init()
     Memory::vmm::init();
     Memory::heap::init();
     Apic::controller_init();
-    Gdt::init();
-    idt_init();
     Timer::pit_init();
     Scheduler::init();
     Cpu::start_application_cores();
