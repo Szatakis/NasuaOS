@@ -8,6 +8,14 @@
 compile_commands.json
 
 /utilities/rootfs/dir/share/licenses/doom/
+/utilities/rootfs/dir/share/licenses/nai/
+/utilities/rootfs/dir/share/licenses/nai/LLAMA-CPP-MIT.txt
+/utilities/rootfs/dir/share/models/nai/LLAMA-CPP-MIT.txt
+/utilities/rootfs/dir/share/models/nai/*.gguf
+/utilities/rootfs/dir/share/models/nai/*.part
+/utilities/rootfs/dir/share/models/nai/LICENSE-2.0.txt
+/utilities/rootfs/dir/share/models/nai/NOTICE.md
+/utilities/applications/NAI/.host-reference/
 
 /limine-binary
 /edk2-bins

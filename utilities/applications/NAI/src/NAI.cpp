@@ -2,434 +2,610 @@
 
 NAPP_APPLICATION("NAI", "Offline NasuaOS assistant", true, {}, false, "System");
 
-static constexpr uint32_t MAX_INPUT_LENGTH = 160;
-static constexpr uint32_t MAX_TURNS = 10;
-static constexpr uint32_t MAX_ANSWER_LENGTH = 384;
-static constexpr uint32_t CHAR_WIDTH = 9;
-static constexpr uint32_t LINE_HEIGHT = 15;
-static constexpr uint32_t COLOR_BACKGROUND = 0xFF11151D;
-static constexpr uint32_t COLOR_PANEL = 0xFF1A1F2C;
-static constexpr uint32_t COLOR_TEXT = 0xFFE1E7EF;
-static constexpr uint32_t COLOR_MUTED = 0xFF9AA4B2;
-static constexpr uint32_t COLOR_ACCENT = 0xFF59E81B;
-static constexpr uint32_t COLOR_USER = 0xFF70C8FF;
-
-struct chat_turn
+namespace
 {
-    char question[MAX_INPUT_LENGTH];
-    char answer[MAX_ANSWER_LENGTH];
-};
+    constexpr char MODEL_PATH[] =
+        "/share/models/nai/SmolLM2-135M-Instruct-IQ4_XS.gguf";
+    constexpr uint32_t MODEL_SIZE = 90897760;
+    constexpr uint32_t COLOR_BACKGROUND = 0xFF11151D;
+    constexpr uint32_t COLOR_TEXT = 0xFFE1E7EF;
+    constexpr uint32_t COLOR_MUTED = 0xFF9AA4B2;
+    constexpr uint32_t COLOR_ACCENT = 0xFF59E81B;
+    constexpr uint32_t COLOR_ERROR = 0xFFFF7777;
+    constexpr uint32_t COLOR_PANEL = 0xFF1A202A;
+    constexpr uint32_t COLOR_CURSOR = 0xFF70C8FF;
+    constexpr uint32_t MAX_INPUT_LENGTH = 256;
+    constexpr uint32_t MAX_MESSAGES = 8;
+    constexpr uint32_t MAX_MESSAGE_LENGTH = 384;
+    constexpr uint32_t NAI_OUTPUT_LENGTH = 512;
 
-struct nai_state
-{
-    const napp_api* api;
-    char input[MAX_INPUT_LENGTH];
-    uint32_t input_length;
-    chat_turn turns[MAX_TURNS];
-    uint32_t turn_count;
-};
-
-static nai_state state{};
-
-static uint32_t text_length(const char* text)
-{
-    uint32_t length = 0;
-    while (text[length] != '\0')
+    enum class model_status
     {
-        ++length;
-    }
-    return length;
-}
+        api_unavailable,
+        not_installed,
+        unreadable,
+        invalid_size,
+        invalid_format,
+        installed
+    };
 
-static char lower_ascii(char character)
-{
-    return character >= 'A' && character <= 'Z'
-        ? static_cast<char>(character - 'A' + 'a')
-        : character;
-}
-
-static bool contains(const char* text, const char* phrase)
-{
-    if (text == nullptr || phrase == nullptr || phrase[0] == '\0')
+    struct nai_state
     {
-        return false;
-    }
+        const napp_api* api;
+        model_status status;
+        char input[MAX_INPUT_LENGTH];
+        uint32_t input_length;
+        uint32_t input_cursor;
+        char messages[MAX_MESSAGES][MAX_MESSAGE_LENGTH];
+        uint32_t message_count;
+        uint32_t message_head;
+        bool shift_pressed;
+        bool generating;
+        char output[NAI_OUTPUT_LENGTH];
+    };
 
-    for (uint32_t start = 0; text[start] != '\0'; ++start)
+    nai_state state{};
+
+    bool read_utf8_codepoint(const char* text, uint32_t* position,
+                             uint32_t* codepoint)
     {
-        uint32_t offset = 0;
-        while (phrase[offset] != '\0' &&
-               text[start + offset] != '\0' &&
-               lower_ascii(text[start + offset]) == lower_ascii(phrase[offset]))
+        const uint8_t first = static_cast<uint8_t>(text[*position]);
+        if (first < 0x80)
         {
-            ++offset;
-        }
-        if (phrase[offset] == '\0')
-        {
+            *codepoint = first;
+            ++*position;
             return true;
         }
-    }
-    return false;
-}
 
-static void copy_text(char* destination, uint32_t capacity, const char* source)
-{
-    if (capacity == 0)
-    {
-        return;
-    }
-    uint32_t index = 0;
-    while (index + 1 < capacity && source[index] != '\0')
-    {
-        destination[index] = source[index];
-        ++index;
-    }
-    destination[index] = '\0';
-}
-
-static void append_text(char* destination, uint32_t capacity, const char* source)
-{
-    const uint32_t start = text_length(destination);
-    uint32_t index = 0;
-    while (start + index + 1 < capacity && source[index] != '\0')
-    {
-        destination[start + index] = source[index];
-        ++index;
-    }
-    destination[start + index] = '\0';
-}
-
-static void append_number(char* destination, uint32_t capacity, uint64_t value)
-{
-    char digits[24];
-    uint32_t count = 0;
-    do
-    {
-        digits[count++] = static_cast<char>('0' + value % 10);
-        value /= 10;
-    }
-    while (value != 0 && count < sizeof(digits));
-
-    while (count > 0)
-    {
-        const char digit[2] = {digits[--count], '\0'};
-        append_text(destination, capacity, digit);
-    }
-}
-
-static const char* answer_question(const char* question)
-{
-    static char answer[MAX_ANSWER_LENGTH];
-    answer[0] = '\0';
-
-    if (question[0] == '\0')
-    {
-        return "Wpisz pytanie, a potem nacisnij Enter.";
-    }
-    if (contains(question, "czesc") || contains(question, "witaj") ||
-        contains(question, "hello") || contains(question, "hej"))
-    {
-        return "Czesc! Jestem NAI, offline'owym asystentem NasuaOS. Zapytaj mnie o system lub wpisz \"pomoc\".";
-    }
-    if (contains(question, "pomoc") || contains(question, "co potrafisz") ||
-        contains(question, "jakie pytania"))
-    {
-        return "Moge opowiedziec o NasuaOS, aplikacjach, terminalu i budowaniu systemu. Odpowiadam tez na kilka podstawowych pytan ogolnych. Nie korzystam z internetu ani z pobranego modelu.";
-    }
-    if (contains(question, "kim jestes") || contains(question, "twoje imie") ||
-        contains(question, "kto cie stworzyl"))
-    {
-        return "Jestem NAI (NasuaAI) - malym, lokalnym asystentem napisanym specjalnie dla NasuaOS. Moje odpowiedzi pochodza z regulek i wbudowanej wiedzy, a nie z wytrenowanego modelu jezykowego.";
-    }
-    if (contains(question, "pamiec") || contains(question, "ram"))
-    {
-        if (state.api != nullptr && state.api->abi_version >= 10 &&
-            state.api->get_system_info != nullptr)
+        uint32_t continuation_count;
+        uint32_t value;
+        if ((first & 0xE0) == 0xC0)
         {
-            napp_system_info info{};
-            if (state.api->get_system_info(&info))
+            continuation_count = 1;
+            value = first & 0x1F;
+        }
+        else if ((first & 0xF0) == 0xE0)
+        {
+            continuation_count = 2;
+            value = first & 0x0F;
+        }
+        else if ((first & 0xF8) == 0xF0)
+        {
+            continuation_count = 3;
+            value = first & 0x07;
+        }
+        else
+        {
+            ++*position;
+            return false;
+        }
+
+        for (uint32_t index = 1; index <= continuation_count; ++index)
+        {
+            const uint8_t next =
+                static_cast<uint8_t>(text[*position + index]);
+            if (next == '\0' || (next & 0xC0) != 0x80)
             {
-                append_text(answer, sizeof(answer), "Pamiec wykryta przez system: ");
-                append_number(answer, sizeof(answer), info.memory_total_bytes / (1024 * 1024));
-                append_text(answer, sizeof(answer), " MB.");
-                return answer;
+                ++*position;
+                return false;
+            }
+            value = (value << 6) | (next & 0x3F);
+        }
+        *position += continuation_count + 1;
+        *codepoint = value;
+        return true;
+    }
+
+    uint32_t display_ascii(uint32_t codepoint, char* output)
+    {
+        switch (codepoint)
+        {
+            case 0x00C0: case 0x00C1: case 0x00C2: case 0x00C3:
+            case 0x00C4: case 0x00C5: case 0x00E0: case 0x00E1:
+            case 0x00E2: case 0x00E3: case 0x00E4: case 0x00E5:
+            case 0x0104: case 0x0105:
+                output[0] = ((codepoint >= 0x00E0 && codepoint <= 0x00E5) ||
+                             codepoint == 0x0105)
+                                ? 'a' : 'A';
+                return 1;
+            case 0x00C7: case 0x00E7: case 0x0106: case 0x0107:
+                output[0] = (codepoint == 0x00E7 || codepoint == 0x0107)
+                                ? 'c' : 'C';
+                return 1;
+            case 0x00C8: case 0x00C9: case 0x00CA: case 0x00CB:
+            case 0x00E8: case 0x00E9: case 0x00EA: case 0x00EB:
+            case 0x0118: case 0x0119:
+                output[0] = ((codepoint >= 0x00E8 && codepoint <= 0x00EB) ||
+                             codepoint == 0x0119)
+                                ? 'e' : 'E';
+                return 1;
+            case 0x00CC: case 0x00CD: case 0x00CE: case 0x00CF:
+            case 0x00EC: case 0x00ED: case 0x00EE: case 0x00EF:
+                output[0] = codepoint >= 0x00E0 ? 'i' : 'I';
+                return 1;
+            case 0x00D1: case 0x00F1: case 0x0143: case 0x0144:
+                output[0] = (codepoint == 0x00F1 || codepoint == 0x0144)
+                                ? 'n' : 'N';
+                return 1;
+            case 0x00D2: case 0x00D3: case 0x00D4: case 0x00D5:
+            case 0x00D6: case 0x00D8: case 0x00F2: case 0x00F3:
+            case 0x00F4: case 0x00F5: case 0x00F6: case 0x00F8:
+                output[0] = codepoint >= 0x00F0 ? 'o' : 'O';
+                return 1;
+            case 0x00D9: case 0x00DA: case 0x00DB: case 0x00DC:
+            case 0x00F9: case 0x00FA: case 0x00FB: case 0x00FC:
+                output[0] = codepoint >= 0x00F0 ? 'u' : 'U';
+                return 1;
+            case 0x00DD: case 0x00FD: case 0x00FF:
+                output[0] = (codepoint == 0x00DD) ? 'Y' : 'y';
+                return 1;
+            case 0x00DF:
+                output[0] = 's';
+                output[1] = 's';
+                return 2;
+            case 0x0141: case 0x0142:
+                output[0] = codepoint == 0x0141 ? 'L' : 'l';
+                return 1;
+            case 0x015A: case 0x015B:
+                output[0] = codepoint == 0x015A ? 'S' : 's';
+                return 1;
+            case 0x0179: case 0x017A: case 0x017B: case 0x017C:
+                output[0] = (codepoint == 0x0179 || codepoint == 0x017B)
+                                ? 'Z' : 'z';
+                return 1;
+            default:
+                if (codepoint >= 0x0300 && codepoint <= 0x036F)
+                {
+                    return 0;
+                }
+                output[0] = '?';
+                return 1;
+        }
+    }
+
+    model_status inspect_model(const napp_api* api)
+    {
+        if (api == nullptr || api->abi_version < 7 ||
+            api->clawfs_get_file_size == nullptr ||
+            api->clawfs_read_file_range == nullptr)
+        {
+            return model_status::api_unavailable;
+        }
+
+        uint32_t size = 0;
+        if (!api->clawfs_get_file_size(MODEL_PATH, &size))
+        {
+            return model_status::not_installed;
+        }
+        if (size != MODEL_SIZE)
+        {
+            return model_status::invalid_size;
+        }
+
+        char magic[4];
+        if (!api->clawfs_read_file_range(MODEL_PATH, 0, magic, sizeof(magic)))
+        {
+            return model_status::unreadable;
+        }
+        if (magic[0] != 'G' || magic[1] != 'G' ||
+            magic[2] != 'U' || magic[3] != 'F')
+        {
+            return model_status::invalid_format;
+        }
+
+        return model_status::installed;
+    }
+
+    void add_message(const char* text)
+    {
+        if (text == nullptr)
+        {
+            return;
+        }
+
+        uint32_t index = 0;
+        uint32_t source = 0;
+        while (index + 1 < MAX_MESSAGE_LENGTH && text[source] != '\0')
+        {
+            if (static_cast<uint8_t>(text[source]) < 0x80)
+            {
+                state.messages[state.message_head][index++] = text[source++];
+                continue;
+            }
+
+            uint32_t codepoint = 0;
+            if (!read_utf8_codepoint(text, &source, &codepoint))
+            {
+                state.messages[state.message_head][index++] = '?';
+                continue;
+            }
+
+            char replacement[2];
+            const uint32_t replacement_length =
+                display_ascii(codepoint, replacement);
+            for (uint32_t character = 0;
+                 character < replacement_length &&
+                 index + 1 < MAX_MESSAGE_LENGTH;
+                 ++character)
+            {
+                state.messages[state.message_head][index++] =
+                    replacement[character];
             }
         }
-        return "Nie moge odczytac informacji o pamieci w tej wersji API NAPP.";
-    }
-    if (contains(question, "rozdzielczosc") || contains(question, "ekran"))
-    {
-        if (state.api != nullptr && state.api->abi_version >= 10 &&
-            state.api->get_system_info != nullptr)
+        state.messages[state.message_head][index] = '\0';
+        state.message_head = (state.message_head + 1) % MAX_MESSAGES;
+        if (state.message_count < MAX_MESSAGES)
         {
-            napp_system_info info{};
-            if (state.api->get_system_info(&info))
+            ++state.message_count;
+        }
+    }
+
+    void replace_input(const char* text)
+    {
+        if (text == nullptr)
+        {
+            return;
+        }
+
+        uint32_t index = 0;
+        while (index + 1 < MAX_INPUT_LENGTH && text[index] != '\0')
+        {
+            state.input[index] = text[index];
+            ++index;
+        }
+        state.input[index] = '\0';
+        state.input_length = index;
+        state.input_cursor = index;
+    }
+
+    bool next_wrapped_line(const char* text, uint32_t* position,
+                           char* line, uint32_t max_chars)
+    {
+        if (text[*position] == '\0')
+        {
+            return false;
+        }
+        if (text[*position] == '\n')
+        {
+            line[0] = '\0';
+            ++*position;
+            return true;
+        }
+
+        const uint32_t start = *position;
+        uint32_t length = 0;
+        uint32_t last_space = UINT32_MAX;
+        while (text[*position] != '\0' &&
+               text[*position] != '\n' &&
+               length < max_chars)
+        {
+            line[length] = text[*position];
+            if (text[*position] == ' ')
             {
-                append_text(answer, sizeof(answer), "Rozdzielczosc ekranu: ");
-                append_number(answer, sizeof(answer), info.framebuffer_width);
-                append_text(answer, sizeof(answer), " x ");
-                append_number(answer, sizeof(answer), info.framebuffer_height);
-                append_text(answer, sizeof(answer), ".");
-                return answer;
+                last_space = length;
+            }
+            ++length;
+            ++*position;
+        }
+
+        if (text[*position] == '\n')
+        {
+            ++*position;
+        }
+        else if (text[*position] != '\0' && last_space != UINT32_MAX)
+        {
+            length = last_space;
+            *position = start + last_space + 1;
+            while (text[*position] == ' ')
+            {
+                ++*position;
             }
         }
-        return "Nie moge odczytac rozdzielczosci w tej wersji API NAPP.";
-    }
-    if (contains(question, "architektura") || contains(question, "procesor"))
-    {
-        if (state.api != nullptr && state.api->abi_version >= 10 &&
-            state.api->get_system_info != nullptr)
+
+        while (length > 0 && line[length - 1] == ' ')
         {
-            napp_system_info info{};
-            if (state.api->get_system_info(&info))
-            {
-                append_text(answer, sizeof(answer), "Architektura systemu: ");
-                append_text(answer, sizeof(answer), info.architecture);
-                append_text(answer, sizeof(answer), ".");
-                return answer;
-            }
+            --length;
         }
-        return "NasuaOS jest rozwijany m.in. dla x86_64. Biezacej architektury nie moge teraz odczytac.";
-    }
-    if (contains(question, "zbudow") || contains(question, "kompil") ||
-        contains(question, "make all"))
-    {
-        return "Aby zbudowac NasuaOS w katalogu projektu, uruchom: make all. Do kompilacji potrzebne sa m.in. GCC/G++, Clang, LLD, NASM, Python 3, xorriso, mtools i unzip. Nie pobieram za Ciebie zadnych plikow.";
-    }
-    if (contains(question, "nasuaos") || contains(question, "jaki system") ||
-        contains(question, "system operacyjny") || contains(question, "kernel"))
-    {
-        return "NasuaOS to system operacyjny rozwijany w tym projekcie. Zawiera wlasne jadro, srodowisko graficzne, terminal oraz aplikacje NAPP uruchamiane przez system.";
-    }
-    if (contains(question, "terminal") || contains(question, "komendy"))
-    {
-        return "Terminal NasuaOS pozwala uruchamiac polecenia systemowe. Wpisz \"help\" w terminalu, aby zobaczyc dostepne polecenia. NAI sam nie wykonuje wpisanych polecen.";
-    }
-    if (contains(question, "aplikacj"))
-    {
-        return "NasuaOS uruchamia aplikacje NAPP. W systemie znajdziesz m.in. terminal, ustawienia, kalkulator, edytor tekstu i menedzer zadan.";
-    }
-    if (contains(question, "doom") || contains(question, "freedoom"))
-    {
-        return "Aplikacja Doom korzysta z dolaczonego Freedoom Phase 1 (freedoom1.wad, licencja BSD-3-Clause). Dane gry sa juz w systemie i nie trzeba ich pobierac.";
-    }
-    if (contains(question, "sztuczna inteligencja") ||
-        contains(question, "model jezykowy") || contains(question, "co to ai") ||
-        contains(question, "jestes ai"))
-    {
-        return "NAI jest prostym asystentem regulowym: rozpoznaje wybrane slowa i udziela przygotowanych odpowiedzi. Nie jest duzym modelem jezykowym, nie uczy sie i nie zna faktow spoza wbudowanej wiedzy.";
-    }
-    if (contains(question, "komputer") || contains(question, "cpu"))
-    {
-        return "Komputer wykonuje programy przy pomocy procesora (CPU), pamieci operacyjnej (RAM) oraz urzadzen wejscia i wyjscia. System operacyjny zarzadza sprzetem i udostepnia uslugi aplikacjom.";
-    }
-    if (contains(question, "programow") || contains(question, "kod") ||
-        contains(question, "c++"))
-    {
-        return "Program to zestaw instrukcji wykonywanych przez komputer. Jezyk C++ pozwala tworzyc m.in. aplikacje i systemy operacyjne; kod zrodlowy jest kompilowany do postaci wykonywalnej.";
-    }
-    if (contains(question, "co to jest internet") || contains(question, "co to internet"))
-    {
-        return "Internet to globalna siec polaczonych sieci komputerowych. Urzadzenia wymieniaja dane m.in. przy uzyciu protokolow IP, TCP i HTTP.";
-    }
-    if (contains(question, "slonce"))
-    {
-        return "Slonce jest gwiazda w centrum ukladu Slonecznego. Ziemia i pozostale planety kraza wokol niego.";
-    }
-    if (contains(question, "dziekuje") || contains(question, "dzieki"))
-    {
-        return "Nie ma za co! Jesli chcesz, zadaj kolejne pytanie.";
-    }
-    if (contains(question, "pogoda") || contains(question, "najnowsze") ||
-        contains(question, "dzisiaj") || contains(question, "aktualn"))
-    {
-        return "Nie mam dostepu do internetu ani aktualnych danych. Dzialam lokalnie i odpowiadam tylko na podstawie wbudowanych regulek.";
+        line[length] = '\0';
+        return true;
     }
 
-    return "Nie znam jeszcze odpowiedzi na to pytanie. Sprobuj zapytac o NasuaOS, terminal, budowanie systemu, pamiec, ekran lub wpisz \"pomoc\".";
-}
-
-static uint32_t wrapped_line_count(const char* text, uint32_t chars_per_line)
-{
-    const uint32_t length = text_length(text);
-    return length == 0 ? 1 : (length + chars_per_line - 1) / chars_per_line;
-}
-
-static void draw_wrapped(const char* text, int x, int& y, int bottom, uint32_t color,
-                         uint32_t chars_per_line, uint32_t skip_lines)
-{
-    uint32_t offset = 0;
-    uint32_t line = 0;
-    const uint32_t length = text_length(text);
-    do
+    uint32_t wrapped_line_count(const char* text, uint32_t max_chars)
     {
-        if (line >= skip_lines && y + static_cast<int>(LINE_HEIGHT) <= bottom)
+        uint32_t position = 0;
+        uint32_t lines = 0;
+        char line[MAX_MESSAGE_LENGTH];
+        while (next_wrapped_line(text, &position, line, max_chars))
         {
-            char clipped[96];
-            uint32_t count = 0;
-            while (count < chars_per_line && offset + count < length &&
-                   count + 1 < sizeof(clipped))
-            {
-                clipped[count] = text[offset + count];
-                ++count;
-            }
-            clipped[count] = '\0';
-            state.api->gui->draw_text(clipped, x, y, color);
-            y += static_cast<int>(LINE_HEIGHT);
+            ++lines;
         }
-        offset += chars_per_line;
-        ++line;
+        return lines;
     }
-    while (offset < length);
-}
 
-static void draw_nai(napp_window* window)
-{
-    const int left = window->pos_x + 16;
-    const int body_top = window->pos_y + window->title_height;
-    const int body_bottom = body_top + window->height;
-    const int input_y = body_bottom - 48;
-    const int chat_top = body_top + 42;
-    const int chat_bottom = input_y - 10;
-    const int available_width = window->width - 38;
-    const uint32_t chars_per_line = available_width > static_cast<int>(CHAR_WIDTH)
-        ? static_cast<uint32_t>(available_width / CHAR_WIDTH)
-        : 1;
-    const uint32_t visible_lines = chat_bottom > chat_top
-        ? static_cast<uint32_t>((chat_bottom - chat_top) / LINE_HEIGHT)
-        : 0;
-
-    state.api->gui->fill_block(window->pos_x, body_top, COLOR_BACKGROUND, window->width, window->height);
-    state.api->gui->draw_text("NasuaAI - offline assistant", left, body_top + 12, COLOR_ACCENT);
-    state.api->gui->draw_text("Wpisz pytanie i nacisnij Enter. Wpisz \"pomoc\", aby zobaczyc przyklady.",
-                              left, body_top + 27, COLOR_MUTED);
-
-    if (state.turn_count == 0)
+    void draw_nai(napp_window* window)
     {
-        state.api->gui->draw_text("Czesc! Jestem NAI. Zapytaj mnie o NasuaOS lub podstawy komputerow.",
-                                  left, chat_top, COLOR_TEXT);
-    }
-    else
-    {
+        const int x = window->pos_x + 18;
+        const int y = window->pos_y + window->title_height;
+        const int content_height = window->height - window->title_height;
+        if (content_height <= 0)
+        {
+            return;
+        }
+        state.api->gui->fill_block(window->pos_x, y, COLOR_BACKGROUND,
+                                   window->width, content_height);
+        state.api->gui->draw_text("NasuaAI - local model status", x, y + 18,
+                                  COLOR_ACCENT);
+
+        switch (state.status)
+        {
+            case model_status::api_unavailable:
+                state.api->gui->draw_text("This NAPP API cannot read model files.",
+                                          x, y + 58, COLOR_ERROR);
+                break;
+            case model_status::not_installed:
+                state.api->gui->draw_text("The SmolLM2 model is missing or the ISO drive is unavailable.",
+                                          x, y + 58, COLOR_ERROR);
+                state.api->gui->draw_text("Rebuild the ISO with the model and boot from that ISO.",
+                                          x, y + 82, COLOR_TEXT);
+                break;
+            case model_status::unreadable:
+                state.api->gui->draw_text("The model exists but cannot be read.",
+                                          x, y + 58, COLOR_ERROR);
+                break;
+            case model_status::invalid_size:
+                state.api->gui->draw_text("The model size does not match the pinned artifact.",
+                                          x, y + 58, COLOR_ERROR);
+                break;
+            case model_status::invalid_format:
+                state.api->gui->draw_text("The file is not a GGUF model.",
+                                          x, y + 58, COLOR_ERROR);
+                break;
+            case model_status::installed:
+                state.api->gui->draw_text(
+                    "SmolLM2 GGUF loaded; native local generation is enabled.",
+                    x, y + 58, COLOR_TEXT);
+                break;
+        }
+
+        state.api->gui->draw_text(
+            "Native transformer inference runs inside NasuaOS.",
+            x, y + 110, COLOR_TEXT);
+        state.api->gui->draw_text(
+            "NAI does not send prompts over a network or show canned answers.",
+            x, y + 134, COLOR_MUTED);
+
+        const int input_height = 42;
+        const int input_y = y + content_height - input_height - 12;
+        state.api->gui->fill_block(x - 4, input_y - 4, COLOR_PANEL,
+                                   window->width - 36, input_height);
+        state.api->gui->draw_text("Prompt:", x, input_y + 12, COLOR_ACCENT);
+
+        char input_view[MAX_INPUT_LENGTH];
+        uint32_t index = 0;
+        while (state.input[index] != '\0' &&
+               index + 1 < sizeof(input_view))
+        {
+            input_view[index] = state.input[index];
+            ++index;
+        }
+        input_view[index] = '\0';
+        state.api->gui->draw_text(index == 0 ? "Type a prompt..." : input_view,
+                                  x + 72, input_y + 12,
+                                  index == 0 ? COLOR_MUTED : COLOR_TEXT);
+
+        if (state.api->get_ticks == nullptr ||
+            ((state.api->get_ticks() / 50) % 2) == 0)
+        {
+            const int cursor_x = x + 72 + static_cast<int>(state.input_cursor * 9);
+            state.api->gui->fill_block(cursor_x, input_y + 8,
+                                       COLOR_CURSOR, 2, 16);
+        }
+
+        const uint32_t oldest = state.message_count == 0 ? 0 :
+            (state.message_head + MAX_MESSAGES - state.message_count) % MAX_MESSAGES;
+        const int chat_top = y + 160;
+        const int chat_bottom = input_y - 8;
+        const uint32_t line_height = 12;
+        const uint32_t max_lines = chat_bottom > chat_top
+            ? static_cast<uint32_t>(chat_bottom - chat_top) / line_height
+            : 0;
+        const uint32_t max_chars =
+            static_cast<uint32_t>(window->width - 36) / 9;
         uint32_t total_lines = 0;
-        for (uint32_t index = 0; index < state.turn_count; ++index)
+        for (uint32_t message = 0; message < state.message_count; ++message)
         {
-            total_lines += wrapped_line_count(state.turns[index].question, chars_per_line);
-            total_lines += wrapped_line_count(state.turns[index].answer, chars_per_line);
+            const uint32_t position =
+                (oldest + message) % MAX_MESSAGES;
+            total_lines += wrapped_line_count(
+                state.messages[position], max_chars);
         }
-        uint32_t skip_lines = total_lines > visible_lines ? total_lines - visible_lines : 0;
-        int y = chat_top;
-        for (uint32_t index = 0; index < state.turn_count; ++index)
+
+        uint32_t lines_to_skip = total_lines > max_lines
+            ? total_lines - max_lines
+            : 0;
+        int message_y = chat_top;
+        for (uint32_t message = 0; message < state.message_count; ++message)
         {
-            const uint32_t question_lines = wrapped_line_count(state.turns[index].question, chars_per_line);
-            if (skip_lines >= question_lines)
+            const uint32_t position =
+                (oldest + message) % MAX_MESSAGES;
+            uint32_t line_position = 0;
+            char line[MAX_MESSAGE_LENGTH];
+            while (next_wrapped_line(state.messages[position],
+                                     &line_position, line, max_chars))
             {
-                skip_lines -= question_lines;
-            }
-            else
-            {
-                draw_wrapped(state.turns[index].question, left, y, chat_bottom, COLOR_USER,
-                             chars_per_line, skip_lines);
-                skip_lines = 0;
-            }
-
-            const uint32_t answer_lines = wrapped_line_count(state.turns[index].answer, chars_per_line);
-            if (skip_lines >= answer_lines)
-            {
-                skip_lines -= answer_lines;
-            }
-            else
-            {
-                draw_wrapped(state.turns[index].answer, left, y, chat_bottom, COLOR_TEXT,
-                             chars_per_line, skip_lines);
-                skip_lines = 0;
+                if (lines_to_skip > 0)
+                {
+                    --lines_to_skip;
+                    continue;
+                }
+                if (message_y + 8 > chat_bottom)
+                {
+                    return;
+                }
+                state.api->gui->draw_text(line, x, message_y, COLOR_TEXT);
+                message_y += static_cast<int>(line_height);
             }
         }
     }
 
-    state.api->gui->fill_block(left, input_y, COLOR_PANEL, window->width - 32, 34);
-    char visible_input[68];
-    copy_text(visible_input, sizeof(visible_input), state.input[0] == '\0' ? "Wpisz pytanie..." : state.input);
-    state.api->gui->draw_text(visible_input, left + 8, input_y + 12,
-                              state.input[0] == '\0' ? COLOR_MUTED : COLOR_TEXT);
-    state.api->gui->fill_block(window->pos_x + window->width - 82, input_y + 3, COLOR_ACCENT, 62, 28);
-    state.api->gui->draw_text("Wyslij", window->pos_x + window->width - 72, input_y + 13, COLOR_BACKGROUND);
-}
-
-static void submit_question()
-{
-    if (state.turn_count == MAX_TURNS)
+    void nai_key_event(napp_window*, char key, bool pressed)
     {
-        for (uint32_t index = 1; index < MAX_TURNS; ++index)
+        if (key == NAPP_KEY_SHIFT)
         {
-            state.turns[index - 1] = state.turns[index];
+            state.shift_pressed = pressed;
+            return;
         }
-        --state.turn_count;
-    }
-
-    chat_turn& turn = state.turns[state.turn_count++];
-    copy_text(turn.question, sizeof(turn.question), "Ty: ");
-    append_text(turn.question, sizeof(turn.question), state.input);
-    copy_text(turn.answer, sizeof(turn.answer), "NAI: ");
-    append_text(turn.answer, sizeof(turn.answer), answer_question(state.input));
-    state.input[0] = '\0';
-    state.input_length = 0;
-}
-
-static void nai_key(napp_window*, char key)
-{
-    if (key == '\n')
-    {
-        submit_question();
-        return;
-    }
-    if (key == '\b')
-    {
-        if (state.input_length > 0)
+        if (!pressed)
         {
-            state.input[--state.input_length] = '\0';
+            return;
         }
-        return;
-    }
-    if (key == NAPP_KEY_ESCAPE)
-    {
-        state.input[0] = '\0';
-        state.input_length = 0;
-        return;
-    }
-    if (key >= 32 && key <= 126 && state.input_length + 1 < sizeof(state.input))
-    {
-        state.input[state.input_length++] = key;
-        state.input[state.input_length] = '\0';
-    }
-}
 
-static void nai_mouse(napp_window* window, int mouse_x, int mouse_y)
-{
-    const int button_x = window->pos_x + window->width - 82;
-    const int button_y = window->pos_y + window->title_height + window->height - 45;
-    if (mouse_x >= button_x && mouse_x < button_x + 62 &&
-        mouse_y >= button_y && mouse_y < button_y + 34)
-    {
-        submit_question();
+        if (key == '\n')
+        {
+            if (state.input_length == 0)
+            {
+                return;
+            }
+
+            char message[MAX_MESSAGE_LENGTH];
+            message[0] = 'Y';
+            message[1] = 'o';
+            message[2] = 'u';
+            message[3] = ':';
+            message[4] = ' ';
+            uint32_t length = 5;
+            while (length + 1 < sizeof(message) &&
+                   state.input[length - 5] != '\0')
+            {
+                message[length] = state.input[length - 5];
+                ++length;
+            }
+            message[length] = '\0';
+            add_message(message);
+            if (state.status == model_status::installed &&
+                state.api != nullptr &&
+                state.api->nai_generate != nullptr &&
+                !state.generating)
+            {
+                state.generating = true;
+                state.output[0] = '\0';
+                if (state.api->nai_generate(state.input,
+                                            state.output,
+                                            sizeof(state.output),
+                                            48))
+                {
+                    char reply[MAX_MESSAGE_LENGTH];
+                    reply[0] = 'A';
+                    reply[1] = 'I';
+                    reply[2] = ':';
+                    reply[3] = ' ';
+                    uint32_t length = 4;
+                    while (length + 1 < sizeof(reply) &&
+                           state.output[length - 4] != '\0')
+                    {
+                        reply[length] = state.output[length - 4];
+                        ++length;
+                    }
+                    reply[length] = '\0';
+                    add_message(reply);
+                }
+                else
+                {
+                    add_message("AI: Generation failed.");
+                }
+                state.generating = false;
+            }
+            replace_input("");
+            return;
+        }
+
+        if (key == '\b')
+        {
+            if (state.input_cursor > 0)
+            {
+                for (uint32_t index = state.input_cursor - 1;
+                     index < state.input_length; ++index)
+                {
+                    state.input[index] = state.input[index + 1];
+                }
+                --state.input_cursor;
+                --state.input_length;
+            }
+            return;
+        }
+
+        if (key == NAPP_KEY_LEFT)
+        {
+            if (state.input_cursor > 0)
+            {
+                --state.input_cursor;
+            }
+            return;
+        }
+        if (key == NAPP_KEY_RIGHT)
+        {
+            if (state.input_cursor < state.input_length)
+            {
+                ++state.input_cursor;
+            }
+            return;
+        }
+        if (key >= 0x20 && key < 0x7F)
+        {
+            if (state.input_length + 1 >= sizeof(state.input))
+            {
+                return;
+            }
+            char character = key;
+            if (state.shift_pressed &&
+                character >= 'a' && character <= 'z')
+            {
+                character = static_cast<char>(character - 'a' + 'A');
+            }
+            for (uint32_t index = state.input_length;
+                 index > state.input_cursor; --index)
+            {
+                state.input[index] = state.input[index - 1];
+            }
+            state.input[state.input_cursor++] = character;
+            ++state.input_length;
+            state.input[state.input_length] = '\0';
+        }
     }
 }
 
 int _start(const napp_api* api)
 {
     if (api == nullptr || api->gui == nullptr ||
-        api->gui->open_window == nullptr || api->gui->fill_block == nullptr ||
+        api->gui->open_window == nullptr ||
+        api->gui->fill_block == nullptr ||
         api->gui->draw_text == nullptr)
     {
         return 1;
     }
+    if (api->enable_fpu == nullptr || !api->enable_fpu())
+    {
+        return 1;
+    }
 
-    state = {};
     state.api = api;
+    state.status = inspect_model(api);
+    state.input_length = 0;
+    state.input_cursor = 0;
+    state.input[0] = '\0';
+    state.message_count = 0;
+    state.message_head = 0;
+    state.shift_pressed = false;
+    state.generating = false;
+    for (uint32_t index = 0; index < MAX_MESSAGES; ++index)
+    {
+        state.messages[index][0] = '\0';
+    }
+
     const napp_window_config config =
     {
-        "NasuaAI", 720, 500, true, true, nullptr,
-        draw_nai, nai_key, nai_mouse, nullptr, nullptr, 0, nullptr, nullptr
+        "NasuaAI", 720, 520, true, true, nullptr,
+        draw_nai, nullptr, nullptr, nullptr, nullptr, 0, nai_key_event, nullptr, true
     };
     return api->gui->open_window(&config) ? 0 : 1;
 }

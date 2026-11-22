@@ -267,6 +267,10 @@ obj-$(ARCH)/%.c.o: %.c GNUmakefile
 	$(CC) $(CFLAGS) $(CPPFLAGS_C) -c $< -o $@
 
 # Compilation rules for *.cpp files.
+obj-$(ARCH)/src/system/ai/nai.cpp.o: src/system/ai/nai.cpp GNUmakefile
+	@mkdir -p "$(dir $@)"
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS_CXX) -msse -msse2 -m80387 -c $< -o $@
+
 obj-$(ARCH)/%.cpp.o: %.cpp GNUmakefile
 	@index=0; for obj in $(OBJ); do index=$$((index+1)); if [ "$$obj" = "$@" ]; then break; fi; done; printf '[%d/%d] Compiling %s\n' $$index "$(words $(OBJ))" "$<"
 	mkdir -p "$(dir $@)"

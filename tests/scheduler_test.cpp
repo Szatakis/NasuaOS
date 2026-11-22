@@ -135,10 +135,24 @@ static void empty_task(void*)
 {
 }
 
+static uint32_t read_mxcsr()
+{
+    uint32_t value;
+    asm volatile("stmxcsr %0" : "=m"(value));
+    return value;
+}
+
+static void write_mxcsr(uint32_t value)
+{
+    asm volatile("ldmxcsr %0" : : "m"(value));
+}
+
 int main()
 {
+    uint32_t host_mxcsr = read_mxcsr();
     assert(Scheduler::create_task(empty_task) == 0);
     Scheduler::init();
+    assert(read_mxcsr() == 0x1F80);
     assert(Scheduler::current_task_id() == 1);
     assert(Scheduler::task_count() == 1);
     assert(Scheduler::on_interrupt(nullptr) == nullptr);
@@ -233,18 +247,40 @@ int main()
     Registers first_frame{};
     Registers second_frame{};
 
+    constexpr uint32_t kernel_mxcsr = 0x3F80;
+    constexpr uint32_t first_mxcsr = 0x5F80;
+    constexpr uint32_t second_mxcsr = 0x7F80;
+    write_mxcsr(kernel_mxcsr);
     Registers* first_context = Scheduler::on_interrupt(&kernel_frame);
     assert(first_context != &kernel_frame);
     assert(first_context->rip != 0);
     assert(first_context->cs == Gdt::KERNEL_CODE_SELECTOR);
     assert((first_context->rflags & 0x2) != 0);
     assert(Scheduler::current_task_id() == first);
+    assert(read_mxcsr() == 0x1F80);
+
+    write_mxcsr(first_mxcsr);
     assert(Scheduler::on_interrupt(&first_frame) != &first_frame);
     assert(Scheduler::current_task_id() == second);
+    assert(read_mxcsr() == 0x1F80);
+
+    write_mxcsr(second_mxcsr);
     assert(Scheduler::on_interrupt(&second_frame) == &kernel_frame);
     assert(Scheduler::current_task_id() == 1);
+    assert(read_mxcsr() == kernel_mxcsr);
+
     assert(Scheduler::on_interrupt(&kernel_frame) != &kernel_frame);
     assert(Scheduler::current_task_id() == first);
+    assert(read_mxcsr() == first_mxcsr);
+
+    assert(Scheduler::on_interrupt(&first_frame) != &first_frame);
+    assert(Scheduler::current_task_id() == second);
+    assert(read_mxcsr() == second_mxcsr);
+
+    assert(Scheduler::on_interrupt(&second_frame) == &kernel_frame);
+    assert(read_mxcsr() == kernel_mxcsr);
+    assert(Scheduler::on_interrupt(&kernel_frame) == &first_frame);
+    assert(read_mxcsr() == first_mxcsr);
 
     Scheduler::sleep_ticks(2);
     assert(Scheduler::on_interrupt(&first_frame) != &first_frame);
@@ -280,4 +316,5 @@ int main()
     }
     assert(Scheduler::task_count() == Scheduler::MAX_TASKS);
     assert(Scheduler::create_task(empty_task) == 0);
+    write_mxcsr(host_mxcsr);
 }

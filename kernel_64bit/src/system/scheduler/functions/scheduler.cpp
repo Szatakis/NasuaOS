@@ -39,13 +39,52 @@ namespace Scheduler
         bool user_mode;
         uint32_t process_id;
         Memory::vmm::UserAddressSpace address_space;
+        alignas(16) uint8_t fpu_state[512];
     };
 
     static Task tasks[MAX_TASKS];
+    alignas(16) static uint8_t initial_fpu_state[512];
     static uint32_t running_task_id = 0;
     static uint32_t next_task_id = 2;
     static bool initialized = false;
     static volatile uint8_t scheduler_lock = 0;
+
+    static void save_fpu_state(uint8_t* state)
+    {
+        asm volatile("fxsave64 (%0)" : : "r"(state) : "memory");
+    }
+
+    static void restore_fpu_state(const uint8_t* state)
+    {
+        asm volatile("fxrstor64 (%0)" : : "r"(state) : "memory");
+    }
+
+    static void reset_fpu_state(uint8_t* state)
+    {
+        for (uint32_t index = 0; index < sizeof(initial_fpu_state); ++index)
+        {
+            state[index] = initial_fpu_state[index];
+        }
+    }
+
+    static void initialize_fpu()
+    {
+#ifndef SCHEDULER_TEST
+        uint64_t cr0;
+        uint64_t cr4;
+        asm volatile("mov %%cr0, %0" : "=r"(cr0));
+        asm volatile("mov %%cr4, %0" : "=r"(cr4));
+        cr0 &= ~((1ULL << 2) | (1ULL << 3));
+        cr0 |= 1ULL << 1;
+        cr4 |= (1ULL << 9) | (1ULL << 10);
+        asm volatile("mov %0, %%cr0" : : "r"(cr0) : "memory");
+        asm volatile("mov %0, %%cr4" : : "r"(cr4) : "memory");
+#endif
+        asm volatile("fninit");
+        const uint32_t default_mxcsr = 0x1F80;
+        asm volatile("ldmxcsr %0" : : "m"(default_mxcsr));
+        save_fpu_state(initial_fpu_state);
+    }
 
     static uint64_t disable_interrupts()
     {
@@ -170,10 +209,12 @@ namespace Scheduler
     void init()
     {
         const uint64_t flags = disable_interrupts();
+        initialize_fpu();
         for (uint32_t index = 0; index < MAX_TASKS; ++index)
         {
             tasks[index] = {};
         }
+        reset_fpu_state(tasks[0].fpu_state);
         PrMap::init();
 
         tasks[0].id = 1;
@@ -243,6 +284,7 @@ namespace Scheduler
         slot->entry = entry;
         slot->argument = argument;
         slot->stack = stack;
+        reset_fpu_state(slot->fpu_state);
 
         uintptr_t stack_end = reinterpret_cast<uintptr_t>(stack) + TASK_STACK_SIZE;
         uintptr_t stack_top = (stack_end & ~static_cast<uintptr_t>(0xF)) - sizeof(uint64_t);
@@ -352,6 +394,7 @@ namespace Scheduler
         slot->user_mode = true;
         slot->process_id = process_id;
         slot->address_space = *address_space;
+        reset_fpu_state(slot->fpu_state);
 
         const uintptr_t stack_end = reinterpret_cast<uintptr_t>(stack) + TASK_STACK_SIZE;
         const uintptr_t frame_address =
@@ -443,6 +486,10 @@ namespace Scheduler
         lock_scheduler();
 
         Task* current = find_task(running_task_id);
+        if (current != nullptr)
+        {
+            save_fpu_state(current->fpu_state);
+        }
         if (current != nullptr && current->state == TaskState::Running)
         {
             current->context = frame;
@@ -494,6 +541,10 @@ namespace Scheduler
             const uintptr_t stack_top =
                 reinterpret_cast<uintptr_t>(next->stack) + TASK_STACK_SIZE;
             Gdt::set_kernel_stack(stack_top);
+        }
+        if (next != current)
+        {
+            restore_fpu_state(next->fpu_state);
         }
         unlock_scheduler();
         return next->context != nullptr ? next->context : frame;

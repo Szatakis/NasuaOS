@@ -9,6 +9,13 @@ LIMINE_TEMPLATE := .config/config_generator/limine.conf.template
 DEFAULTS_CONFIG := .config/defaults.txt
 LIMINE_GENERATOR := .config/config_generator/generate_conf.py
 GENERATED_LIMINE := .config/limine.conf
+NAI_MODEL := utilities/applications/NAI/model/SmolLM2-135M-Instruct-IQ4_XS.gguf
+NAI_MODEL_SIZE := 90897760
+NAI_MODEL_SHA256 := d766661c2e39c3da78d8eddf15287af263dce1eedc1c9c8093ed8e54eb067dbc
+NAI_MODEL_NOTICES := utilities/applications/NAI/model/LICENSE-2.0.txt \
+	utilities/applications/NAI/model/NOTICE.md \
+	utilities/applications/NAI/model/LLAMA-CPP-MIT.txt
+NAI_MODEL_ASSETS := $(wildcard $(NAI_MODEL) $(NAI_MODEL_NOTICES))
 
 # Target architecture to build for.
 ARCH ?= x86_64
@@ -247,7 +254,7 @@ utilities:
 fs_sys:
 	$(MAKE) -C utilities/rootfs
 
-$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys $(GENERATED_LIMINE)
+$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys $(GENERATED_LIMINE) $(NAI_MODEL_ASSETS)
 	rm -rf iso_root
 
 	mkdir -p iso_root/EFI/
@@ -260,6 +267,20 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	mkdir -p iso_root/system/assets
 	mkdir -p iso_root/system/assets/images
 	mkdir -p iso_root/system/assets/fonts
+	@if [ -f "$(NAI_MODEL)" ]; then \
+		actual_size=$$(wc -c < "$(NAI_MODEL)" | tr -d '[:space:]'); \
+		actual_sha256=$$(sha256sum "$(NAI_MODEL)" | cut -d ' ' -f 1); \
+		if [ "$$actual_size" != "$(NAI_MODEL_SIZE)" ] || \
+		   [ "$$actual_sha256" != "$(NAI_MODEL_SHA256)" ]; then \
+			printf '%s\n' "NAI model size or SHA-256 mismatch; refusing to package it." >&2; \
+			exit 1; \
+		fi; \
+		mkdir -p iso_root/system/NAI; \
+		cp -v "$(NAI_MODEL)" iso_root/system/NAI/SMOLLM2.GG; \
+		cp -v $(NAI_MODEL_NOTICES) iso_root/system/NAI/; \
+	else \
+		printf '%s\n' "NAI model is absent; the bootable ISO will omit NAI weights."; \
+	fi
 
 	cp -v kernel_64bit/bin-$(ARCH)/kernel_64bit iso_root/boot/
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/
@@ -322,7 +343,10 @@ endif
 
 $(IMAGE_NAME).hdd: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys $(GENERATED_LIMINE)
 	rm -f $(IMAGE_NAME).hdd
-	dd if=/dev/zero bs=1M count=0 seek=96 of=$(IMAGE_NAME).hdd
+	ROOTFS_SIZE_BYTES=$$(stat -c%s utilities/rootfs/rootfs.img); \
+	ROOTFS_SIZE_MB=$$(( (ROOTFS_SIZE_BYTES + 1048575) / 1048576 )); \
+	HDD_SIZE_MB=$$((ROOTFS_SIZE_MB + 56)); \
+	dd if=/dev/zero bs=1M count=0 seek=$$HDD_SIZE_MB of=$(IMAGE_NAME).hdd
 ifeq ($(ARCH),x86_64)
 	PATH=$$PATH:/usr/sbin:/sbin sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00 -m 1
 	./limine-binary/limine bios-install $(IMAGE_NAME).hdd

@@ -11,6 +11,7 @@
 
 #include "system/filesystem/fat/fat.hpp"
 #include "system/filesystem/clawfs/clawfs.hpp"
+#include "system/filesystem/iso9660/iso9660.hpp"
 #include "system/filesystem/file_resolver/file_resolver.hpp"
 #include "system/authentication/authentication.hpp"
 
@@ -19,6 +20,7 @@
 #include "system/vars/info_vars/info_vars.hpp"
 #include "system/process/process.hpp"
 #include "system/scheduler/scheduler.hpp"
+#include "system/ai/nai.hpp"
 
 #include "shell/shell.hpp"
 
@@ -81,6 +83,10 @@ void (*napp_print_redirect_colored_cb)(char, uint32_t) = nullptr;
 
 // Current working directory exposed to napp programs
 static char napp_current_path[256] = "/home";
+static constexpr char NAI_MODEL_PATH[] =
+    "/share/models/nai/SmolLM2-135M-Instruct-IQ4_XS.gguf";
+static constexpr char NAI_ISO_MODEL_PATH[] = "/system/NAI/SMOLLM2.GG";
+static bool iso_model_source_ready = false;
 
 // A graphical application keeps its image mapped for as long as its window
 // exists, because the window callbacks live inside that image.
@@ -238,6 +244,20 @@ static void napp_api_set_cwd(const char* path)
 // ClawFS wrappers (give userspace flat binaries access to the disk FS)
 static bool napp_api_clawfs_build_file_path(const char* path, char* absolute_path);
 
+static bool napp_api_iso_model_path(const char* path)
+{
+    return path != nullptr && strcmp(path, NAI_MODEL_PATH) == 0;
+}
+
+static bool napp_api_iso_model_ready()
+{
+    if (!iso_model_source_ready)
+    {
+        iso_model_source_ready = Iso9660::init();
+    }
+    return iso_model_source_ready;
+}
+
 static uint32_t napp_api_clawfs_get_sector(const char* path)
 {
     char absolute_path[256];
@@ -346,11 +366,19 @@ static bool napp_api_clawfs_get_file_size(const char* path, uint32_t* size)
     }
 
     fat_entry_info info;
-    if (!rootfs_mounted || !fat_stat(&rootfs_volume, absolute_path, &info) || info.directory)
+    if (rootfs_mounted && fat_stat(&rootfs_volume, absolute_path, &info) &&
+        !info.directory)
+    {
+        *size = info.size;
+        return true;
+    }
+
+    if (!napp_api_iso_model_path(absolute_path) ||
+        !napp_api_iso_model_ready() ||
+        !Iso9660::file_size(NAI_ISO_MODEL_PATH, size))
     {
         return false;
     }
-    *size = info.size;
     return true;
 }
 
@@ -369,7 +397,15 @@ static bool napp_api_clawfs_read_file_range(const char* path, uint32_t offset, v
         return clawfs_read_file_range(absolute_path, offset, buffer, length);
     }
 
-    return rootfs_mounted && fat_read_file_range(&rootfs_volume, absolute_path, offset, buffer, length);
+    if (rootfs_mounted &&
+        fat_read_file_range(&rootfs_volume, absolute_path, offset, buffer, length))
+    {
+        return true;
+    }
+
+    return napp_api_iso_model_path(absolute_path) &&
+        napp_api_iso_model_ready() &&
+        Iso9660::read_file_range(NAI_ISO_MODEL_PATH, offset, buffer, length);
 }
 
 static void* napp_api_allocate(uint32_t size)
@@ -380,6 +416,13 @@ static void* napp_api_allocate(uint32_t size)
 static void napp_api_deallocate(void* memory)
 {
     Memory::heap::kfree(memory);
+}
+
+static bool napp_api_nai_generate(const char* prompt, char* output,
+                                  uint32_t output_capacity,
+                                  uint32_t max_tokens)
+{
+    return NasuaAI::generate(prompt, output, output_capacity, max_tokens);
 }
 
 static bool napp_api_enable_fpu()
@@ -1337,7 +1380,8 @@ static napp_api kernel_napp_api =
     napp_api_get_username,
     napp_api_get_processes,
     napp_api_get_system_info,
-    napp_api_set_print_redirect_colored
+    napp_api_set_print_redirect_colored,
+    napp_api_nai_generate
 };
 
 static bool napp_launch_user_image(const void* image, uint32_t image_size,

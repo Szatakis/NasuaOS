@@ -42,10 +42,6 @@ CXXFLAGS := \
     -fvisibility=hidden \
     -m64 \
     -mno-red-zone \
-    -mno-mmx \
-    -mno-sse \
-    -mno-sse2 \
-    -mno-80387 \
     -mcmodel=small \
     -I $(INCLUDE_DIR)
 

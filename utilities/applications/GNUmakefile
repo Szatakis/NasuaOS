@@ -1,6 +1,7 @@
 # Builds every application folder into a .napp image and installs it into the
 # rootfs at /bin/<app>/<app>.napp. New applications are picked up automatically,
 # a folder with C++ sources is enough.
+.DEFAULT_GOAL := all
 
 APPS := $(wildcard */)
 APPS := $(patsubst %/,%,$(APPS))
