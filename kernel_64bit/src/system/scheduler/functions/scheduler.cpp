@@ -288,9 +288,9 @@ namespace Scheduler
 
         uintptr_t stack_end = reinterpret_cast<uintptr_t>(stack) + TASK_STACK_SIZE;
         uintptr_t stack_top = (stack_end & ~static_cast<uintptr_t>(0xF)) - sizeof(uint64_t);
-        uintptr_t frame_address = stack_top - offsetof(Registers, rsp);
+        uintptr_t frame_address = stack_top - sizeof(Registers);
         Registers* frame = reinterpret_cast<Registers*>(frame_address);
-        for (uint32_t index = 0; index < offsetof(Registers, rsp) / sizeof(uint64_t); ++index)
+        for (uint32_t index = 0; index < sizeof(Registers) / sizeof(uint64_t); ++index)
         {
             reinterpret_cast<uint64_t*>(frame)[index] = 0;
         }
@@ -298,6 +298,8 @@ namespace Scheduler
         frame->rip = reinterpret_cast<uint64_t>(task_trampoline);
         frame->cs = Gdt::KERNEL_CODE_SELECTOR;
         frame->rflags = 0x202;
+        frame->rsp = stack_top;
+        frame->ss = Gdt::KERNEL_DATA_SELECTOR;
         slot->context = frame;
 
         if (!PrMap::add(id))

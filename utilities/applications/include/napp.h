@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 15
+#define NAPP_ABI_VERSION 16
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
@@ -270,6 +270,17 @@ struct napp_api
     bool (*nai_generate)(const char* prompt, char* output,
                          uint32_t output_capacity,
                          uint32_t max_tokens);
+
+    // ABI 16 additions. Asynchronous NAI generation: nai_generate_start
+    // hands the prompt to a kernel worker task and returns a job id
+    // (0 on failure, e.g. another job is already running). Poll it with
+    // nai_generate_poll, which returns 0 while the job runs, 1 when it
+    // finished (the generated text is copied into output) and -1 on
+    // failure. Because the work happens on a separate scheduled task, the
+    // calling application and the rest of the system stay responsive.
+    uint32_t (*nai_generate_start)(const char* prompt, uint32_t max_tokens);
+    int32_t (*nai_generate_poll)(uint32_t job, char* output,
+                                 uint32_t output_capacity);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);

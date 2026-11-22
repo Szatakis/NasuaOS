@@ -425,6 +425,18 @@ static bool napp_api_nai_generate(const char* prompt, char* output,
     return NasuaAI::generate(prompt, output, output_capacity, max_tokens);
 }
 
+static uint32_t napp_api_nai_generate_start(const char* prompt,
+                                            uint32_t max_tokens)
+{
+    return NasuaAI::generate_start(prompt, max_tokens);
+}
+
+static int32_t napp_api_nai_generate_poll(uint32_t job, char* output,
+                                          uint32_t output_capacity)
+{
+    return NasuaAI::generate_poll(job, output, output_capacity);
+}
+
 static bool napp_api_enable_fpu()
 {
 #if defined(__x86_64__)
@@ -1381,7 +1393,9 @@ static napp_api kernel_napp_api =
     napp_api_get_processes,
     napp_api_get_system_info,
     napp_api_set_print_redirect_colored,
-    napp_api_nai_generate
+    napp_api_nai_generate,
+    napp_api_nai_generate_start,
+    napp_api_nai_generate_poll
 };
 
 // Rebases the absolute pointers stored inside a NAPP image. The image is

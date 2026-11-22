@@ -41,6 +41,8 @@ namespace
         uint32_t message_head;
         bool shift_pressed;
         bool generating;
+        uint32_t job_id;
+        uint32_t thinking_slot;
         char output[NAI_OUTPUT_LENGTH];
     };
 
@@ -196,9 +198,9 @@ namespace
         return model_status::installed;
     }
 
-    void add_message(const char* text)
+    void fill_message(uint32_t slot, const char* text)
     {
-        if (text == nullptr)
+        if (text == nullptr || slot >= MAX_MESSAGES)
         {
             return;
         }
@@ -209,14 +211,14 @@ namespace
         {
             if (static_cast<uint8_t>(text[source]) < 0x80)
             {
-                state.messages[state.message_head][index++] = text[source++];
+                state.messages[slot][index++] = text[source++];
                 continue;
             }
 
             uint32_t codepoint = 0;
             if (!read_utf8_codepoint(text, &source, &codepoint))
             {
-                state.messages[state.message_head][index++] = '?';
+                state.messages[slot][index++] = '?';
                 continue;
             }
 
@@ -228,15 +230,97 @@ namespace
                  index + 1 < MAX_MESSAGE_LENGTH;
                  ++character)
             {
-                state.messages[state.message_head][index++] =
+                state.messages[slot][index++] =
                     replacement[character];
             }
         }
-        state.messages[state.message_head][index] = '\0';
+        state.messages[slot][index] = '\0';
+    }
+
+    void add_message(const char* text)
+    {
+        if (text == nullptr)
+        {
+            return;
+        }
+
+        fill_message(state.message_head, text);
         state.message_head = (state.message_head + 1) % MAX_MESSAGES;
         if (state.message_count < MAX_MESSAGES)
         {
             ++state.message_count;
+        }
+    }
+
+    bool message_is_thinking(uint32_t slot)
+    {
+        static const char thinking[] = "AI is thinking";
+        if (slot >= MAX_MESSAGES)
+        {
+            return false;
+        }
+        for (uint32_t index = 0; thinking[index] != '\0'; ++index)
+        {
+            if (state.messages[slot][index] != thinking[index])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void finish_thinking_message(const char* text)
+    {
+        if (message_is_thinking(state.thinking_slot))
+        {
+            fill_message(state.thinking_slot, text);
+        }
+        else
+        {
+            add_message(text);
+        }
+    }
+
+    void nai_tick(napp_window*)
+    {
+        if (!state.generating || state.api == nullptr ||
+            state.api->nai_generate_poll == nullptr)
+        {
+            return;
+        }
+
+        const int32_t status = state.api->nai_generate_poll(
+            state.job_id, state.output, sizeof(state.output));
+        if (status == 0)
+        {
+            return;
+        }
+        state.generating = false;
+
+        if (status > 0)
+        {
+            char reply[MAX_MESSAGE_LENGTH];
+            uint32_t length = 0;
+            static const char prefix[] = "AI: ";
+            for (uint32_t index = 0;
+                 prefix[index] != '\0' && length + 1 < sizeof(reply);
+                 ++index)
+            {
+                reply[length++] = prefix[index];
+            }
+            for (uint32_t index = 0;
+                 state.output[index] != '\0' &&
+                 length + 1 < sizeof(reply);
+                 ++index)
+            {
+                reply[length++] = state.output[index];
+            }
+            reply[length] = '\0';
+            finish_thinking_message(reply);
+        }
+        else
+        {
+            finish_thinking_message("AI: Generation failed.");
         }
     }
 
@@ -484,36 +568,56 @@ namespace
             add_message(message);
             if (state.status == model_status::installed &&
                 state.api != nullptr &&
-                state.api->nai_generate != nullptr &&
                 !state.generating)
             {
-                state.generating = true;
-                state.output[0] = '\0';
-                if (state.api->nai_generate(state.input,
-                                            state.output,
-                                            sizeof(state.output),
-                                            48))
+                if (state.api->nai_generate_start != nullptr)
                 {
-                    char reply[MAX_MESSAGE_LENGTH];
-                    reply[0] = 'A';
-                    reply[1] = 'I';
-                    reply[2] = ':';
-                    reply[3] = ' ';
-                    uint32_t length = 4;
-                    while (length + 1 < sizeof(reply) &&
-                           state.output[length - 4] != '\0')
+                    const uint32_t job =
+                        state.api->nai_generate_start(state.input, 48);
+                    if (job != 0)
                     {
-                        reply[length] = state.output[length - 4];
-                        ++length;
+                        state.generating = true;
+                        state.job_id = job;
+                        add_message("AI is thinking");
+                        state.thinking_slot =
+                            (state.message_head + MAX_MESSAGES - 1) %
+                            MAX_MESSAGES;
                     }
-                    reply[length] = '\0';
-                    add_message(reply);
+                    else
+                    {
+                        add_message("AI: Generation failed to start.");
+                    }
                 }
-                else
+                else if (state.api->nai_generate != nullptr)
                 {
-                    add_message("AI: Generation failed.");
+                    state.generating = true;
+                    state.output[0] = '\0';
+                    if (state.api->nai_generate(state.input,
+                                                state.output,
+                                                sizeof(state.output),
+                                                48))
+                    {
+                        char reply[MAX_MESSAGE_LENGTH];
+                        reply[0] = 'A';
+                        reply[1] = 'I';
+                        reply[2] = ':';
+                        reply[3] = ' ';
+                        uint32_t length = 4;
+                        while (length + 1 < sizeof(reply) &&
+                               state.output[length - 4] != '\0')
+                        {
+                            reply[length] = state.output[length - 4];
+                            ++length;
+                        }
+                        reply[length] = '\0';
+                        add_message(reply);
+                    }
+                    else
+                    {
+                        add_message("AI: Generation failed.");
+                    }
+                    state.generating = false;
                 }
-                state.generating = false;
             }
             replace_input("");
             return;
@@ -597,6 +701,8 @@ int _start(const napp_api* api)
     state.message_head = 0;
     state.shift_pressed = false;
     state.generating = false;
+    state.job_id = 0;
+    state.thinking_slot = 0;
     for (uint32_t index = 0; index < MAX_MESSAGES; ++index)
     {
         state.messages[index][0] = '\0';
@@ -605,7 +711,7 @@ int _start(const napp_api* api)
     const napp_window_config config =
     {
         "NasuaAI", 720, 520, true, true, nullptr,
-        draw_nai, nullptr, nullptr, nullptr, nullptr, 0, nai_key_event, nullptr, true
+        draw_nai, nullptr, nullptr, nullptr, nai_tick, 100, nai_key_event, nullptr, true
     };
     return api->gui->open_window(&config) ? 0 : 1;
 }

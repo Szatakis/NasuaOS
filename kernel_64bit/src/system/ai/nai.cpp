@@ -1,6 +1,7 @@
 #include "nai.hpp"
 
 #include "system/filesystem/iso9660/iso9660.hpp"
+#include "system/scheduler/scheduler.hpp"
 #include "drivers/memory/driver.hpp"
 #include "drivers/uart/driver.hpp"
 
@@ -79,6 +80,30 @@ namespace NasuaAI
         static uint32_t pad_token = 2;
         static float* key_cache = nullptr;
         static float* value_cache = nullptr;
+
+        constexpr uint32_t JOB_RESULT_SIZE = 1024;
+        constexpr uint32_t JOB_PROMPT_SIZE = 512;
+
+        enum job_state : uint32_t
+        {
+            JOB_IDLE = 0,
+            JOB_RUNNING = 1,
+            JOB_DONE = 2,
+            JOB_FAILED = 3
+        };
+
+        struct generation_job
+        {
+            char prompt[JOB_PROMPT_SIZE];
+            char result[JOB_RESULT_SIZE];
+            uint32_t max_tokens;
+            uint32_t id;
+            volatile uint32_t state;
+        };
+
+        static generation_job current_job = {};
+        static volatile bool job_active = false;
+        static uint32_t next_job_id = 1;
 
         static bool fail(const char* stage)
         {
@@ -2099,11 +2124,86 @@ namespace NasuaAI
             log_exchange(prompt, output);
             return output_length != 0;
         }
+
+        static void generation_worker(void*)
+        {
+            const bool ok = generate_impl(current_job.prompt,
+                                          current_job.result,
+                                          sizeof(current_job.result),
+                                          current_job.max_tokens);
+            current_job.state = ok ? JOB_DONE : JOB_FAILED;
+            Scheduler::exit_current();
+        }
     }
 
     bool generate(const char* prompt, char* output,
                   uint32_t output_capacity, uint32_t max_tokens)
     {
         return generate_impl(prompt, output, output_capacity, max_tokens);
+    }
+
+    uint32_t generate_start(const char* prompt, uint32_t max_tokens)
+    {
+        if (prompt == nullptr || job_active)
+        {
+            return 0;
+        }
+
+        uint32_t length = 0;
+        while (prompt[length] != '\0' &&
+               length + 1 < sizeof(current_job.prompt))
+        {
+            ++length;
+        }
+        memcpy(current_job.prompt, prompt, length);
+        current_job.prompt[length] = '\0';
+        current_job.max_tokens = max_tokens == 0 ? 1 : max_tokens;
+        current_job.id = next_job_id++;
+        if (next_job_id == 0)
+        {
+            next_job_id = 1;
+        }
+        current_job.state = JOB_RUNNING;
+        job_active = true;
+
+        if (Scheduler::create_task(generation_worker, nullptr) == 0)
+        {
+            current_job.state = JOB_IDLE;
+            job_active = false;
+            return 0;
+        }
+        return current_job.id;
+    }
+
+    int32_t generate_poll(uint32_t job, char* output,
+                          uint32_t output_capacity)
+    {
+        if (!job_active || job != current_job.id ||
+            output == nullptr || output_capacity == 0)
+        {
+            return -1;
+        }
+        if (current_job.state == JOB_RUNNING)
+        {
+            return 0;
+        }
+
+        const uint32_t state = current_job.state;
+        job_active = false;
+        current_job.state = JOB_IDLE;
+        if (state != JOB_DONE)
+        {
+            return -1;
+        }
+
+        uint32_t length = 0;
+        while (length + 1 < output_capacity &&
+               current_job.result[length] != '\0')
+        {
+            output[length] = current_job.result[length];
+            ++length;
+        }
+        output[length] = '\0';
+        return 1;
     }
 }
