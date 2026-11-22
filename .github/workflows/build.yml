@@ -7,17 +7,19 @@ on:
     paths:
       - "kernel_32bit/**"
       - "kernel_64bit/**"
+      - "source/**"
       - "utilities/**"
       - ".config/**"
       - "GNUmakefile"
+      - ".github/workflows/**"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
@@ -38,48 +40,72 @@ jobs:
             mtools
 
       - name: Build ISO
-        run: |
-          make all
+        run: make all
 
       - name: Build HDD image
-        run: |
-          make all-hdd
+        run: make all-hdd
 
-      - name: Find images
+      - name: Find generated images
         run: |
-          echo "Generated files:"
-          find . \( -name "*.iso" -o -name "*.hdd" \) -type f
+          echo "Generated ISO files:"
+          find . -type f -name "*.iso"
+
+          echo "Generated HDD files:"
+          find . -type f -name "*.hdd"
 
       - name: Prepare release files
+        shell: bash
         run: |
-          mkdir release
+          set -e
 
-          cp $(find . -name "*.iso" | head -n 1) release/NasuaOS.iso
-          cp $(find . -name "*.hdd" | head -n 1) release/NasuaOS.hdd
+          mkdir -p release
+
+          ISO=$(find . -type f -name "*.iso" -not -path "./release/*" -print -quit)
+          HDD=$(find . -type f -name "*.hdd" -not -path "./release/*" -print -quit)
+
+          if [ -z "$ISO" ]; then
+            echo "ERROR: ISO image was not generated!"
+            exit 1
+          fi
+
+          if [ -z "$HDD" ]; then
+            echo "ERROR: HDD image was not generated!"
+            exit 1
+          fi
+
+          cp "$ISO" release/NasuaOS.iso
+          cp "$HDD" release/NasuaOS.hdd
 
           cd release
 
-          printf "![Logo](https://raw.githubusercontent.com/Szatakis/NasuaOS/main/documentation/images/logo.png)\n\n" > release_notes.md
-          printf "# NasuaOS Builds\n\n" >> release_notes.md
-          printf "Prebuilt images are available for testing in QEMU, VirtualBox, or on real hardware.\n\n" >> release_notes.md
+          cat > release_notes.md <<'EOF'
+          ![Logo](https://raw.githubusercontent.com/Szatakis/NasuaOS/main/documentation/images/logo.png)
 
-          printf "## Available Images\n\n" >> release_notes.md
-          printf "| Image | Description |\n" >> release_notes.md
-          printf "|-------|-------------|\n" >> release_notes.md
-          printf "| **NasuaOS.iso** | Bootable ISO image for CD/DVD or USB media. Compatible with QEMU, VirtualBox, and real hardware. |\n" >> release_notes.md
-          printf "| **NasuaOS.hdd** | Virtual hard disk image intended primarily for QEMU and other virtual machines. |\n\n" >> release_notes.md
+          # NasuaOS Builds
 
-          printf "## Running in QEMU\n\n" >> release_notes.md
-          printf "\`\`\`bash\n" >> release_notes.md
-          printf "qemu-system-x86_64 -hda NasuaOS.hdd\n" >> release_notes.md
-          printf "\`\`\`\n\n" >> release_notes.md
+          Prebuilt images are available for testing in QEMU, VirtualBox, or on real hardware.
 
-          printf "## Booting the ISO\n\n" >> release_notes.md
-          printf "\`\`\`bash\n" >> release_notes.md
-          printf "qemu-system-x86_64 -cdrom NasuaOS.iso -boot d\n" >> release_notes.md
-          printf "\`\`\`\n\n" >> release_notes.md
+          ## Available Images
 
-          printf "You can also write the ISO image to a USB flash drive and boot it on supported hardware.\n" >> release_notes.md
+          | Image | Description |
+          |-------|-------------|
+          | **NasuaOS.iso** | Bootable ISO image for CD/DVD or USB media. Compatible with QEMU, VirtualBox, and real hardware. |
+          | **NasuaOS.hdd** | Virtual hard disk image intended primarily for QEMU and other virtual machines. |
+
+          ## Running in QEMU
+
+          ```bash
+          qemu-system-x86_64 -hda NasuaOS.hdd
+          ```
+
+          ## Booting the ISO
+
+          ```bash
+          qemu-system-x86_64 -cdrom NasuaOS.iso -boot d
+          ```
+
+          You can also write the ISO image to a USB flash drive and boot it on supported hardware.
+          EOF
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -92,3 +118,5 @@ jobs:
           files: |
             release/NasuaOS.iso
             release/NasuaOS.hdd
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
