@@ -1,6 +1,6 @@
- <div align="center">
+<div align="center">
 
-# 🦝 NasuaOS
+# NasuaOS
 
 **A modern hobby operating system built from scratch.**
 
@@ -92,8 +92,6 @@ The long-term goal is to create a modern, lightweight operating system capable o
 <div align="center">
 
 ![NasuaOS Desktop](documentation/images/screenshots/desktop.png)
-
-*NasuaOS Desktop*
 
 </div>
 
