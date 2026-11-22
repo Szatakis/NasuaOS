@@ -1384,7 +1384,69 @@ static napp_api kernel_napp_api =
     napp_api_nai_generate
 };
 
-static bool napp_launch_user_image(const void* image, uint32_t image_size,
+// Rebases the absolute pointers stored inside a NAPP image. The image is
+// linked at address zero, so every pointer it contains is an image-relative
+// offset; the relocation table appended by the application packer lists the
+// offset of each 64-bit slot that must be shifted by the load address.
+static void napp_apply_relocations(uint8_t* image, uint32_t image_size,
+                                   uint64_t base)
+{
+    if (image == nullptr || image_size < NAPP_HEADER_SIZE)
+    {
+        return;
+    }
+
+    const napp_header* header = (const napp_header*)image;
+    if (header->magic != NAPP_MAGIC || !napp_abi_supported(header->abi_version))
+    {
+        return;
+    }
+
+    constexpr uint32_t RELOC_FIELDS_END =
+        __builtin_offsetof(napp_header, reloc_count) +
+        sizeof(napp_header::reloc_count);
+    if (header->header_size < RELOC_FIELDS_END || image_size < RELOC_FIELDS_END)
+    {
+        return;
+    }
+
+    const uint32_t table_offset = header->reloc_offset;
+    const uint32_t count = header->reloc_count;
+    if (table_offset == 0 || count == 0)
+    {
+        return;
+    }
+
+    const uint64_t table_size =
+        sizeof(uint32_t) + static_cast<uint64_t>(count) * sizeof(uint32_t);
+    if (table_offset > image_size || table_size > image_size - table_offset)
+    {
+        log(WARN, "NAPP", "Ignoring invalid relocation table");
+        return;
+    }
+
+    const uint32_t* table = reinterpret_cast<const uint32_t*>(image + table_offset);
+    if (table[0] != count)
+    {
+        log(WARN, "NAPP", "Ignoring mismatched relocation table");
+        return;
+    }
+
+    const uint32_t table_end =
+        table_offset + static_cast<uint32_t>(table_size);
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        const uint32_t offset = table[i + 1];
+        if (offset > image_size - sizeof(uint64_t) ||
+            (offset >= table_offset && offset < table_end))
+        {
+            continue;
+        }
+        *reinterpret_cast<uint64_t*>(image + offset) += base;
+    }
+}
+
+static bool napp_launch_user_image(void* image, uint32_t image_size,
                                    uint32_t entry_offset, uint32_t process_id)
 {
     constexpr uint64_t USER_IMAGE_OFFSET = 0x10000;
@@ -1405,6 +1467,7 @@ static bool napp_launch_user_image(const void* image, uint32_t image_size,
     }
 
     const uint64_t code_address = address_space.base + USER_IMAGE_OFFSET;
+    napp_apply_relocations(static_cast<uint8_t*>(image), image_size, code_address);
     const uint32_t page_count =
         static_cast<uint32_t>((image_size + PAGE_SIZE - 1) / PAGE_SIZE);
     for (uint32_t page_index = 0; page_index < page_count; ++page_index)
@@ -1934,6 +1997,8 @@ bool napp_run_with_args(const char* name, int argc, const char* const* argv,
     // Check for NAPP header (graphical applications)
     if (header->magic == NAPP_MAGIC && napp_abi_supported(header->abi_version))
     {
+        napp_apply_relocations(static_cast<uint8_t*>(image), info.size,
+                               reinterpret_cast<uint64_t>(image));
         napp_entry entry = (napp_entry)((uint8_t*)image + entry_offset);
         result = entry(&kernel_napp_api);
     }
@@ -2369,6 +2434,8 @@ bool napp_run_path(const char* path, int argc, const char* const* argv, int* exi
         kernel_napp_api.argv = argv;
         loading_napp_abi_version = header->abi_version;
         kernel_napp_api.abi_version = header->abi_version;
+        napp_apply_relocations(static_cast<uint8_t*>(image), image_size,
+                               reinterpret_cast<uint64_t>(image));
         napp_entry entry = (napp_entry)((uint8_t*)image + entry_offset);
         
         Uart::puts("[NAPP] NAPP entry point: ");

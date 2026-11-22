@@ -9,13 +9,10 @@ LIMINE_TEMPLATE := .config/config_generator/limine.conf.template
 DEFAULTS_CONFIG := .config/defaults.txt
 LIMINE_GENERATOR := .config/config_generator/generate_conf.py
 GENERATED_LIMINE := .config/limine.conf
-NAI_MODEL := utilities/applications/NAI/model/SmolLM2-135M-Instruct-IQ4_XS.gguf
-NAI_MODEL_SIZE := 90897760
-NAI_MODEL_SHA256 := d766661c2e39c3da78d8eddf15287af263dce1eedc1c9c8093ed8e54eb067dbc
-NAI_MODEL_NOTICES := utilities/applications/NAI/model/LICENSE-2.0.txt \
-	utilities/applications/NAI/model/NOTICE.md \
-	utilities/applications/NAI/model/LLAMA-CPP-MIT.txt
-NAI_MODEL_ASSETS := $(wildcard $(NAI_MODEL) $(NAI_MODEL_NOTICES))
+
+# Application modules may provide an iso/ payload directory whose contents
+# mirror the iso_root layout (see utilities/applications/GNUmakefile).
+APP_ISO_PAYLOADS := $(wildcard utilities/applications/*/iso)
 
 # Target architecture to build for.
 ARCH ?= x86_64
@@ -254,7 +251,7 @@ utilities:
 fs_sys:
 	$(MAKE) -C utilities/rootfs
 
-$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys $(GENERATED_LIMINE) $(NAI_MODEL_ASSETS)
+$(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_sys $(GENERATED_LIMINE)
 	rm -rf iso_root
 
 	mkdir -p iso_root/EFI/
@@ -267,20 +264,9 @@ $(IMAGE_NAME).iso: limine-binary/limine kernel_64bit kernel_32bit utilities fs_s
 	mkdir -p iso_root/system/assets
 	mkdir -p iso_root/system/assets/images
 	mkdir -p iso_root/system/assets/fonts
-	@if [ -f "$(NAI_MODEL)" ]; then \
-		actual_size=$$(wc -c < "$(NAI_MODEL)" | tr -d '[:space:]'); \
-		actual_sha256=$$(sha256sum "$(NAI_MODEL)" | cut -d ' ' -f 1); \
-		if [ "$$actual_size" != "$(NAI_MODEL_SIZE)" ] || \
-		   [ "$$actual_sha256" != "$(NAI_MODEL_SHA256)" ]; then \
-			printf '%s\n' "NAI model size or SHA-256 mismatch; refusing to package it." >&2; \
-			exit 1; \
-		fi; \
-		mkdir -p iso_root/system/NAI; \
-		cp -v "$(NAI_MODEL)" iso_root/system/NAI/SMOLLM2.GG; \
-		cp -v $(NAI_MODEL_NOTICES) iso_root/system/NAI/; \
-	else \
-		printf '%s\n' "NAI model is absent; the bootable ISO will omit NAI weights."; \
-	fi
+	@for payload in $(APP_ISO_PAYLOADS); do \
+		utilities/applications/install_payload.sh $$payload iso_root || exit 1; \
+	done
 
 	cp -v kernel_64bit/bin-$(ARCH)/kernel_64bit iso_root/boot/
 	cp -v kernel_32bit/bin-$(SUB_ARCH)/kernel_32bit iso_root/boot/

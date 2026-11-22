@@ -50,7 +50,10 @@ LDFLAGS := \
     -static \
     -nostdlib \
     --no-dynamic-linker \
+    --emit-relocs \
     -T $(LINKER_SCRIPT)
+
+RELOCATOR := $(SHARED_DIR)/tools/pack_relocations.py
 
 .PHONY: all
 all: $(OBJ_DIR) $(TARGET)
@@ -58,8 +61,9 @@ all: $(OBJ_DIR) $(TARGET)
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-$(TARGET): $(OBJ_DIR)/$(ELF)
+$(TARGET): $(OBJ_DIR)/$(ELF) $(RELOCATOR)
 	$(OBJCOPY) -O binary $< $@
+	python3 $(RELOCATOR) $(OBJ_DIR)/$(ELF) $@
 
 $(OBJ_DIR)/$(ELF): $(OBJECTS) $(LINKER_SCRIPT)
 	@printf '[%d/%d] Linking %s.napp\n' "$(words $(OBJECTS))" "$(words $(OBJECTS))" "$(APP)"

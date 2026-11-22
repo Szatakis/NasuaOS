@@ -5,16 +5,12 @@
 *.img
 *.wad
 !utilities/applications/doom/data/freedoom1.wad
+!utilities/applications/doom/payload/home/freedoom1.wad
 compile_commands.json
 
-/utilities/rootfs/dir/share/licenses/doom/
-/utilities/rootfs/dir/share/licenses/nai/
-/utilities/rootfs/dir/share/licenses/nai/LLAMA-CPP-MIT.txt
-/utilities/rootfs/dir/share/models/nai/LLAMA-CPP-MIT.txt
-/utilities/rootfs/dir/share/models/nai/*.gguf
-/utilities/rootfs/dir/share/models/nai/*.part
-/utilities/rootfs/dir/share/models/nai/LICENSE-2.0.txt
-/utilities/rootfs/dir/share/models/nai/NOTICE.md
+# Generated application payload data inside the rootfs template
+/utilities/rootfs/dir/share/licenses/
+/utilities/rootfs/dir/share/models/
 /utilities/applications/NAI/.host-reference/
 
 /limine-binary

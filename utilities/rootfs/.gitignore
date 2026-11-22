@@ -1,5 +1,6 @@
 *.img
 *.png
+.app-payload-manifest
 
 dir/bin/**
 !dir/bin/.clawfs

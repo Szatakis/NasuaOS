@@ -101,6 +101,13 @@ def pack_relocations(elf_path, image_path):
     table += struct.pack(f"<{len(offsets)}I", *offsets) if offsets else b""
     start = relocation_start
     image[start : start + len(table)] = table
+
+    # Record the table in the napp_header so the kernel loader can find and
+    # apply it. These are the byte offsets of reloc_offset/reloc_count in the
+    # packed header (they follow category[NAPP_CATEGORY_LENGTH]).
+    struct.pack_into("<I", image, 386, relocation_start)
+    struct.pack_into("<I", image, 390, len(offsets))
+
     image_path.write_bytes(image)
     print(f"Packed {len(offsets)} absolute relocations into {image_path}")
 

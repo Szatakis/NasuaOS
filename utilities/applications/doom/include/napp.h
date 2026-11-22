@@ -40,6 +40,15 @@ struct napp_header
     // ABI 12 user-mode marker and ABI 13 Start Menu category.
     bool user_mode = false;
     char category[NAPP_CATEGORY_LENGTH] = {};
+
+    // Absolute pointers inside the flat image are stored as image-relative
+    // offsets. When reloc_offset is nonzero it locates a relocation table:
+    // a uint32 count followed by count uint32 image offsets, each marking a
+    // 64-bit pointer the loader must rebase onto the load address.
+    // Present only in binaries produced by the relocation-aware packer;
+    // older binaries leave both fields zero (header padding).
+    uint32_t reloc_offset = 0;
+    uint32_t reloc_count = 0;
 } __attribute__((packed));
 
 // Colors of the system theme, usable by graphical applications.

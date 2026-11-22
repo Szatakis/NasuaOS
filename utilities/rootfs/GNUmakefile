@@ -9,14 +9,6 @@ USER_IMAGES_DIR = $(DIR_FOLDER)/home/user/images
 all:
 	$(MAKE) -C ../applications
 	$(MAKE) -C ../system_functions
-	rm -f "$(DIR_FOLDER)/share/models/nai/SmolLM2-135M-Instruct-IQ4_XS.gguf" \
-		"$(DIR_FOLDER)/share/models/nai/LICENSE-2.0.txt" \
-		"$(DIR_FOLDER)/share/models/nai/NOTICE.md" \
-		"$(DIR_FOLDER)/share/models/nai/LLAMA-CPP-MIT.txt"
-	rm -f "$(DIR_FOLDER)/share/licenses/nai/LICENSE-2.0.txt" \
-		"$(DIR_FOLDER)/share/licenses/nai/NOTICE.md" \
-		"$(DIR_FOLDER)/share/licenses/nai/LLAMA-CPP-MIT.txt"
-
 	mkdir -p $(USER_IMAGES_DIR)
 	cp -v $(WALLPAPER_SOURCE)/background.png $(WALLPAPER_SOURCE)/background_dark.png $(USER_IMAGES_DIR)/
 
