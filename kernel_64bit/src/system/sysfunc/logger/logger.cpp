@@ -132,7 +132,10 @@ void log(LogLevel level, const char* subsystem, const char* message)
     Uart::puts(logs[id].message);
     Uart::putc('\n');
 
-    BootSplash::add_log(logs[id].subsystem, logs[id].message);
+    if (&BootSplash::add_log != nullptr)
+    {
+        BootSplash::add_log(logs[id].subsystem, logs[id].message);
+    }
 }
 
 static void print_time(Rtc::RtcTime time) 
