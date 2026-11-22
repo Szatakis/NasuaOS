@@ -85,7 +85,7 @@ The long-term goal is to create a modern, lightweight operating system capable o
 | [📚 Documentation](documentation/main_page.md) | Technical documentation |
 | [🔨 Build Instructions](documentation/build_instructions/build_instructions.md) | How to build NasuaOS |
 | [🤝 Contributing](CONTRIBUTING.md) | Contribution guidelines |
-| [📦 Download ISO/HDD builds](https://github.com/Szatakis/NasuaOS/tree/iso) | Prebuilt system images |
+| [📦 Download ISO/HDD builds](https://github.com/Szatakis/NasuaOS/releases#release-latest) | Prebuilt system images |
 
 ## Screenshots
 
@@ -111,7 +111,7 @@ For detailed build instructions, dependencies and configuration, see:
 
 ## Prebuilt Images
 
-Prebuilt NasuaOS images are available in the [`iso` branch](https://github.com/Szatakis/NasuaOS/tree/iso).
+Prebuilt NasuaOS images are available in the [`iso` branch](https://github.com/Szatakis/NasuaOS/releases#release-latest).
 
 The branch contains automatically generated builds:
 
@@ -120,7 +120,7 @@ The branch contains automatically generated builds:
 | `NasuaOS.iso` | Bootable ISO image for QEMU, VirtualBox and real hardware |
 | `NasuaOS.hdd` | HDD disk image for virtual machines |
 
-[![Download Builds](https://img.shields.io/badge/Download-ISO%20%2F%20HDD-blue?style=for-the-badge&logo=github)](https://github.com/Szatakis/NasuaOS/tree/iso)
+[![Download Builds](https://img.shields.io/badge/Download-ISO%20%2F%20HDD-blue?style=for-the-badge&logo=github)](https://github.com/Szatakis/NasuaOS/releases#release-latest)
 
 ## Contributing
 
