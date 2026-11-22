@@ -1,29 +1,74 @@
-![Logo](documentation/images/logo.png)
+ <div align="center">
 
-# NasuaOS
+# 🦝 NasuaOS
 
-Modern hobby operating system primarily targeting **x86_64** computers, written from scratch in **C++**.
+**A modern hobby operating system built from scratch.**
 
-Experimental support is planned for **AArch64**, and **RISC-V**. The architecture is designed to be portable, but these targets are currently untested.
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/Szatakis/NasuaOS?style=flat-square)](https://github.com/Szatakis/NasuaOS/commits)
+[![License](https://img.shields.io/github/license/Szatakis/NasuaOS?style=flat-square)](LICENSE.md)
+[![Build](https://img.shields.io/github/actions/workflow/status/Szatakis/NasuaOS/build.yml?style=flat-square&label=Build)](https://github.com/Szatakis/NasuaOS/actions/workflows/build.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/Szatakis/NasuaOS/checks.yml?style=flat-square&label=Tests)](https://github.com/Szatakis/NasuaOS/actions/workflows/checks.yml)
 
-NasuaOS is an experimental operating system focused on learning, low-level programming, kernel development, and building a complete system from the ground up.
+![Architecture](https://img.shields.io/badge/Architecture-x86__64%20%7C%20AArch64%20%7C%20RISC--V-orange?style=flat-square)
 
-## Community & Links
+[About](#about) · [Technologies](#technologies) · [Screenshots](#screenshots) · [Documentation](#documentation) · [Building](#building)
 
-[![Discord](https://img.shields.io/badge/Discord-@szatakis-5865F2?logo=discord&logoColor=white)](https://discord.com/users/1285981257498624062)
-&nbsp;&nbsp;
-[![YouTube](https://img.shields.io/badge/YouTube-@szatakis-FF0000?logo=youtube&logoColor=white&logoWidth=20)](https://www.youtube.com/@szatakis)
-&nbsp;&nbsp;
-[![TikTok](https://img.shields.io/badge/TikTok-@szatakis-000000?logo=tiktok&logoColor=white&logoWidth=20)](https://www.tiktok.com/@szatakis)
+</div>
+
+---
+
+## About
+
+NasuaOS is an experimental operating system developed from the ground up, focused on learning, low-level programming, kernel development, and building a complete system independently.
+
+The project primarily targets **x86_64** architecture, with portability in mind. Experimental support is planned for **AArch64** and **RISC-V**, although these targets remain untested.
+
+The project includes its own kernel, memory manager, drivers, graphical user interface, shell, filesystem, and applications. Every component is designed specifically for NasuaOS without relying on existing operating system kernels.
+
+The long-term goal is to create a modern, lightweight operating system capable of running on both virtual machines and real hardware.
 
 ## Project Information
 
-[![GitHub last commit](https://img.shields.io/github/last-commit/Szatakis/NasuaOS)](https://github.com/Szatakis/NasuaOS)
-[![Language](https://img.shields.io/badge/Language-C%2B%2B-00599C?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
-![Architecture](https://img.shields.io/badge/Architecture-x86%20%7C%20ARM64%20%7C%20RISC--V%20-FF8C00)
-[![License](https://img.shields.io/github/license/Szatakis/NasuaOS)](LICENSE.md)
+| Property | Details |
+|:---|:---|
+| Project type | Hobby operating system |
+| Primary architecture | x86_64 |
+| Additional architectures | AArch64, RISC-V |
+| Primary language | C++ |
+| Additional languages | C, Assembly |
+| Development tools | Python |
+| License | MIT |
+
+## Technologies
+
+| Technology | Usage |
+|:---|:---|
+| **C++** | Primary development language |
+| **C** | Additional low-level system code |
+| **Assembly (ASM)** | Hardware-specific and low-level routines |
+| **Python** | Development tools and build utilities |
+
+## Target Architectures
+
+| Architecture | Support |
+|:---|:---|
+| **x86_64** | Primary target |
+| **AArch64** | Experimental / untested |
+| **RISC-V** | Experimental / untested |
+
+## Community & Links
+
+<div align="center">
+
+[![Discord](https://img.shields.io/badge/Discord-@szatakis-5865F2?logo=discord&logoColor=white)](https://discord.com/users/1285981257498624062)
+[![YouTube](https://img.shields.io/badge/YouTube-@szatakis-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@szatakis)
+[![TikTok](https://img.shields.io/badge/TikTok-@szatakis-000000?logo=tiktok&logoColor=white)](https://www.tiktok.com/@szatakis)
+
+</div>
 
 ## Share NasuaOS
+
+<div align="center">
 
 [![X](https://img.shields.io/badge/Share%20on-X-000000?logo=x&logoColor=white)](https://x.com/intent/tweet?text=Check%20out%20NasuaOS%20-%20a%20hobby%20operating%20system%20written%20from%20scratch:%20https://github.com/Szatakis/NasuaOS%20%23OSDev%20%23OperatingSystem)
 [![Facebook](https://img.shields.io/badge/Share-Facebook-1877F2?logo=facebook&logoColor=white)](https://www.facebook.com/sharer/sharer.php?u=https://github.com/Szatakis/NasuaOS)
@@ -31,44 +76,26 @@ NasuaOS is an experimental operating system focused on learning, low-level progr
 [![Reddit](https://img.shields.io/badge/Share-Reddit-FF4500?logo=reddit&logoColor=white)](https://www.reddit.com/submit?title=Check%20out%20NasuaOS%20on%20GitHub&url=https://github.com/Szatakis/NasuaOS)
 [![Telegram](https://img.shields.io/badge/Share-Telegram-0088CC?logo=telegram&logoColor=white)](https://t.me/share/url?url=https://github.com/Szatakis/NasuaOS&text=Check%20out%20NasuaOS%20on%20GitHub)
 
+</div>
+
 ## Documentation & Development
 
-[📚 Documentation](documentation/main_page.md)  
-[🔨 Build Instructions](documentation/build_instructions/build_instructions.md)  
-[🤝 Contributing](CONTRIBUTING.md)  
-[📦 Download ISO/HDD builds](https://github.com/Szatakis/NasuaOS/tree/iso)
-
----
-
-## About
-
-NasuaOS is a hobby operating system developed from scratch with a focus on performance, simplicity, and learning low-level system programming.
-
-The project includes its own kernel, memory manager, drivers, graphical user interface, shell, filesystem, and applications. Every component is designed specifically for NasuaOS without relying on existing operating system kernels.
-
-The long-term goal is to create a modern, lightweight operating system capable of running on both virtual machines and real hardware.
+| Resource | Description |
+|:---|:---|
+| [📚 Documentation](documentation/main_page.md) | Technical documentation |
+| [🔨 Build Instructions](documentation/build_instructions/build_instructions.md) | How to build NasuaOS |
+| [🤝 Contributing](CONTRIBUTING.md) | Contribution guidelines |
+| [📦 Download ISO/HDD builds](https://github.com/Szatakis/NasuaOS/tree/iso) | Prebuilt system images |
 
 ## Screenshots
 
-![Desktop](documentation/images/screenshots/desktop.png)
+<div align="center">
 
-## Features
+![NasuaOS Desktop](documentation/images/screenshots/desktop.png)
 
-- Modern 64-bit kernel
-- Physical & Virtual Memory Manager (PMM/VMM)
-- Paging support
-- ACPI support
-- PCI device enumeration
-- ATA PIO storage driver
-- PS/2 keyboard
-- USB keyboard (in plans)
-- Framebuffer graphics
-- Desktop environment
-- Built-in shell
-- Bitmap font renderer
-- Hardware interrupt handling
-- Serial debugging (UART)
-- Runs in QEMU, VirtualBox and on real hardware
+*NasuaOS Desktop*
+
+</div>
 
 ## Documentation
 
@@ -80,38 +107,45 @@ Additional technical information, architecture notes and driver documentation wi
 
 Currently NasuaOS can be built on Linux using GCC and CMake.
 
-[🔨 Build Instructions](documentation/build_instructions/build_instructions.md)  
+For detailed build instructions, dependencies and configuration, see:
+
+[🔨 **Build Instructions**](documentation/build_instructions/build_instructions.md)
 
 ## Prebuilt Images
 
-Prebuilt NasuaOS images are available in the `iso` branch.
+Prebuilt NasuaOS images are available in the [`iso` branch](https://github.com/Szatakis/NasuaOS/tree/iso).
 
 The branch contains automatically generated builds:
 
-- `NasuaOS.iso` - bootable ISO image for QEMU, VirtualBox and real hardware
-- `NasuaOS.hdd` - HDD disk image for virtual machines
+| Image | Description |
+|:---|:---|
+| `NasuaOS.iso` | Bootable ISO image for QEMU, VirtualBox and real hardware |
+| `NasuaOS.hdd` | HDD disk image for virtual machines |
 
-You can download the latest images from:
+[![Download Builds](https://img.shields.io/badge/Download-ISO%20%2F%20HDD-blue?style=for-the-badge&logo=github)](https://github.com/Szatakis/NasuaOS/tree/iso)
 
-[📦 Download ISO/HDD builds](https://github.com/Szatakis/NasuaOS/tree/iso)
-
-# Contributing
+## Contributing
 
 Contributions, bug reports and feature suggestions are welcome.
 
 If you would like to contribute, please open an issue or submit a pull request.
 
+For contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-# Author
+## Author
 
 **Szatakis**
 
-# Acknowledgments & Credits
+## Acknowledgments & Credits
 
-This project includes components from the [bootloader](https://github.com/Szatakis/NasuaOS-Bootloader/) repository.
+This project includes components from the [NasuaOS Bootloader](https://github.com/Szatakis/NasuaOS-Bootloader/) repository.
 
-These components are part of my internal ecosystem. Please refer to the [bootloader](https://github.com/Szatakis/NasuaOS-Bootloader/) repository for full license information and original source documentation.
+These components are part of my internal ecosystem. Please refer to the [bootloader repository](https://github.com/Szatakis/NasuaOS-Bootloader/) for full license information and original source documentation.
 
-# License
+## License
 
-NasuaOS is released under the MIT License.
+NasuaOS is released under the **MIT License**.
+
+See [LICENSE.md](LICENSE.md) for details.
+
+---
