@@ -315,7 +315,6 @@ static void draw_terminal(napp_window* window)
         terminal.characters_per_line = 1;
     }
 
-    terminal_api->gui->draw_text("NasuaOS Terminal", left, content_y + 8, COLOR_ACCENT);
     char prompt[MAX_COMMAND_LENGTH + 96];
     uint32_t prompt_length = append_prompt_text(prompt, sizeof(prompt));
     const uint32_t prompt_prefix_length = prompt_length;
@@ -615,7 +614,7 @@ int _start(const napp_api* api)
         terminal.output[index][0] = '\0';
     }
     clear_output();
-    terminal_write_string("NasuaOS Terminal\nType a command and press Enter.\n");
+    terminal_write_string("Type a command and press Enter.\n");
     if (api->abi_version >= 11 && api->set_print_redirect_colored != nullptr)
     {
         api->set_print_redirect_colored(terminal_write_char_colored);
