@@ -5,6 +5,8 @@
 #include "drivers/rtc/driver.hpp"
 #include "drivers/uart/driver.hpp"
 
+#include "kernel/boot/boot_splash.hpp"
+
 #include "libs/libc/libc.hpp"
 
 
@@ -129,6 +131,8 @@ void log(LogLevel level, const char* subsystem, const char* message)
     Uart::puts(": ");
     Uart::puts(logs[id].message);
     Uart::putc('\n');
+
+    BootSplash::add_log(logs[id].subsystem, logs[id].message);
 }
 
 static void print_time(Rtc::RtcTime time) 

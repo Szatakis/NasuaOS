@@ -20,6 +20,7 @@
 #include "system/gui/gui.hpp"
 
 #include "system/sysfunc/logger/logger.hpp"
+#include "kernel/boot/boot_splash.hpp"
 #include "kernel/kernel_panic/kernel_panic.hpp"
 
 #include "libs/libc/libc.hpp"
@@ -87,18 +88,26 @@ namespace {
 
 void iqu_init()
 {
+    BootSplash::add_log("KERNEL", "Initializing UART and logger");
     Uart::init();
     logger_init();
 
+    BootSplash::set_progress(10);
+    BootSplash::add_log("CPU", "Loading GDT and IDT");
     Gdt::init();
     idt_init();
 
+    BootSplash::set_progress(25);
+    BootSplash::add_log("MEM", "Initializing memory management");
     Cpu::init_cores();
     Memory::init();
     Memory::paging::init();
     Memory::pmm::init();
     Memory::vmm::init();
     Memory::heap::init();
+
+    BootSplash::set_progress(45);
+    BootSplash::add_log("SCHED", "Starting scheduler and AP cores");
     Apic::controller_init();
     Timer::pit_init();
     Scheduler::init();
@@ -107,14 +116,20 @@ void iqu_init()
 
     asm volatile("sti");
 
+    BootSplash::set_progress(60);
+    BootSplash::add_log("DISK", "Initializing disk subsystem");
     Disk::init();
 
+    BootSplash::set_progress(75);
+    BootSplash::add_log("DRV", "Initializing PCI, network and USB");
     Pci::init();
     Network::init();
     Usb::init();
 
     Mouse::init();
 
+    BootSplash::set_progress(88);
+    BootSplash::add_log("PROC", "Initializing processes and applications");
     Process::init();
     napp_init(rootfs_module_address, rootfs_module_size);
     image_init();
@@ -216,7 +231,12 @@ extern "C" void kmain()
     Gpu::init_backbuffer(fb_info.width, fb_info.height, fb_info.pitch);
     Gpu::init_text_buffer();
 
+    BootSplash::init();
+
     iqu_init();
+
+    BootSplash::add_log("GUI", "Starting desktop environment");
+    BootSplash::finish();
 
     // Main loop
     for (;;) 
