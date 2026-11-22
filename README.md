@@ -11,7 +11,7 @@
 
 ![Architecture](https://img.shields.io/badge/Architecture-x86__64%20%7C%20AArch64%20%7C%20RISC--V-orange?style=flat-square)
 
-[About](#about) · [Technologies](#technologies) · [Screenshots](#screenshots) · [Documentation](#documentation) · [Building](#building)
+[About](#about) · [Project Information](#project-information) · [Screenshots](#screenshots) · [Documentation](#documentation) · [Building](#building)
 
 </div>
 
