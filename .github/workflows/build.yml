@@ -27,7 +27,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y \
-            curl\
+            curl \
             gcc \
             g++ \
             cmake \
@@ -59,40 +59,36 @@ jobs:
 
           cd release
 
-          printf "![Logo](https://raw.githubusercontent.com/Szatakis/NasuaOS/main/documentation/images/logo.png)\n\n" > README.md
-          printf "# NasuaOS Builds\n\n" >> README.md
-          printf "Prebuilt images are available for testing in QEMU, VirtualBox, or on real hardware.\n\n" >> README.md
+          printf "![Logo](https://raw.githubusercontent.com/Szatakis/NasuaOS/main/documentation/images/logo.png)\n\n" > release_notes.md
+          printf "# NasuaOS Builds\n\n" >> release_notes.md
+          printf "Prebuilt images are available for testing in QEMU, VirtualBox, or on real hardware.\n\n" >> release_notes.md
 
-          printf "## Available Images\n\n" >> README.md
-          printf "| Image | Description |\n" >> README.md
-          printf "|-------|-------------|\n" >> README.md
-          printf "| **NasuaOS.iso** | Bootable ISO image for CD/DVD or USB media. Compatible with QEMU, VirtualBox, and real hardware. |\n" >> README.md
-          printf "| **NasuaOS.hdd** | Virtual hard disk image intended primarily for QEMU and other virtual machines. |\n\n" >> README.md
+          printf "## Available Images\n\n" >> release_notes.md
+          printf "| Image | Description |\n" >> release_notes.md
+          printf "|-------|-------------|\n" >> release_notes.md
+          printf "| **NasuaOS.iso** | Bootable ISO image for CD/DVD or USB media. Compatible with QEMU, VirtualBox, and real hardware. |\n" >> release_notes.md
+          printf "| **NasuaOS.hdd** | Virtual hard disk image intended primarily for QEMU and other virtual machines. |\n\n" >> release_notes.md
 
-          printf "## Running in QEMU\n\n" >> README.md
-          printf "\`\`\`bash\n" >> README.md
-          printf "qemu-system-x86_64 -hda NasuaOS.hdd\n" >> README.md
-          printf "\`\`\`\n\n" >> README.md
+          printf "## Running in QEMU\n\n" >> release_notes.md
+          printf "\`\`\`bash\n" >> release_notes.md
+          printf "qemu-system-x86_64 -hda NasuaOS.hdd\n" >> release_notes.md
+          printf "\`\`\`\n\n" >> release_notes.md
 
-          printf "## Booting the ISO\n\n" >> README.md
-          printf "\`\`\`bash\n" >> README.md
-          printf "qemu-system-x86_64 -cdrom NasuaOS.iso -boot d\n" >> README.md
-          printf "\`\`\`\n\n" >> README.md
+          printf "## Booting the ISO\n\n" >> release_notes.md
+          printf "\`\`\`bash\n" >> release_notes.md
+          printf "qemu-system-x86_64 -cdrom NasuaOS.iso -boot d\n" >> release_notes.md
+          printf "\`\`\`\n\n" >> release_notes.md
 
-          printf "You can also write the ISO image to a USB flash drive and boot it on supported hardware.\n" >> README.md
+          printf "You can also write the ISO image to a USB flash drive and boot it on supported hardware.\n" >> release_notes.md
 
-      - name: Push builds to iso branch
-        run: |
-          cd release
-
-          git init
-          git checkout -b iso
-
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          git add .
-          git commit -m "Update NasuaOS builds"
-
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push --force origin iso
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: NasuaOS Latest Build
+          body_path: release/release_notes.md
+          prerelease: true
+          make_latest: true
+          files: |
+            release/NasuaOS.iso
+            release/NasuaOS.hdd
