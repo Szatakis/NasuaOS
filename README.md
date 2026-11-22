@@ -39,15 +39,6 @@ The long-term goal is to create a modern, lightweight operating system capable o
 | Development tools | Python |
 | License | MIT |
 
-## Technologies
-
-| Technology | Usage |
-|:---|:---|
-| **C++** | Primary development language |
-| **C** | Additional low-level system code |
-| **Assembly (ASM)** | Hardware-specific and low-level routines |
-| **Python** | Development tools and build utilities |
-
 ## Target Architectures
 
 | Architecture | Support |
