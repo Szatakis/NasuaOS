@@ -187,7 +187,7 @@ int _start(const napp_api* api)
     {
         "Task Manager", 560, 370, true, true, nullptr,
         draw_task_manager, task_manager_key, nullptr, nullptr,
-        nullptr, 0, nullptr, nullptr
+        nullptr, 0, nullptr, nullptr, false
     };
     return api->gui->open_window(&config) ? 0 : 1;
 }

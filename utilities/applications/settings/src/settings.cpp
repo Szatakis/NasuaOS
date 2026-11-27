@@ -345,7 +345,7 @@ int _start(const napp_api* api)
     const napp_window_config config =
     {
         "Settings", 500, 350, true, true, nullptr,
-        draw_settings, nullptr, settings_mouse, nullptr, nullptr, 0, nullptr, nullptr
+        draw_settings, nullptr, settings_mouse, nullptr, nullptr, 0, nullptr, nullptr, false
     };
     return api->gui->open_window(&config) ? 0 : 1;
 }

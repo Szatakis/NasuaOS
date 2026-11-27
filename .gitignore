@@ -8,6 +8,22 @@
 !utilities/applications/doom/payload/home/freedoom1.wad
 compile_commands.json
 
+# Compiled object files and build artifacts
+*.o
+*.obj
+*.a
+*.so
+*.d
+*.elf
+*.napp
+*.map
+
+# Build output directories
+obj/
+obj-*/
+bin/
+bin-*/
+
 # Generated application payload data inside the rootfs template
 /utilities/rootfs/dir/share/licenses/
 /utilities/rootfs/dir/share/models/

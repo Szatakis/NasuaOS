@@ -628,7 +628,7 @@ int _start(const napp_api* api)
     {
         "Terminal", 750, 500, true, true, nullptr,
         draw_terminal, terminal_key, nullptr, nullptr, nullptr, 0,
-        terminal_key_event, terminal_close
+        terminal_key_event, terminal_close, true
     };
     if (!api->gui->open_window(&config))
     {
