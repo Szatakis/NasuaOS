@@ -11,67 +11,237 @@ interface_rotation: 0
 
 wallpaper: boot():{WALLPAPER}
 wallpaper_style: stretched
+backdrop: 000000
+
+firmware_logo: no
+editor_enabled: no
+hash_mismatch_panic: no
 
 # Debug
 verbose: {VERBOSE}
 
-# Entries
-/NasuaOS 32-bit
+/Boot Kernel
     protocol: multiboot2
-    path: boot():/boot/kernel_32bit
+    if_arch: x86-64 ia-32
+    path: boot():/boot/utils/boot_mgr
+    module_path: boot():/boot/kernel_32bit/x86/kernel
+    module_string: kernel_32bit
+    module_path: boot():/boot/kernel_64bit/x86/kernel
+    module_string: kernel_64bit
     module_path: boot():/system/rootfs.img
+    module_string: rootfs.img
     module_path: boot():/config/boot_config.txt
+    module_string: boot_config.txt
     module_path: boot():/config/defaults.txt
+    module_string: defaults.txt
     resolution: {RESOLUTION}
-    comment: Basic console-only environment
+    comment: Configure and select available NasuaOS boot environments
 
-/NasuaOS 64-bit
+/Boot Kernel
     protocol: limine
-    path: boot():/boot/kernel_64bit
+    if_arch: aarch64
+    path: boot():/boot/utils/boot_mgr_arm64
+    module_path: boot():/boot/kernel_64bit/arm/kernel
+    module_string: kernel_64bit
     module_path: boot():/system/rootfs.img
+    module_string: rootfs.img
     module_path: boot():/config/boot_config.txt
+    module_string: boot_config.txt
     module_path: boot():/config/defaults.txt
+    module_string: defaults.txt
     resolution: {RESOLUTION}
-    comment: Full operating system with graphical interface (recommended)
+    comment: Universal boot manager for 64-bit ARM
+
+/Boot Kernel
+    protocol: limine
+    if_arch: riscv64
+    path: boot():/boot/utils/boot_mgr_riscv64
+    module_path: boot():/boot/kernel_64bit/risc-v/kernel
+    module_string: kernel_64bit
+    module_path: boot():/system/rootfs.img
+    module_string: rootfs.img
+    module_path: boot():/config/boot_config.txt
+    module_string: boot_config.txt
+    module_path: boot():/config/defaults.txt
+    module_string: defaults.txt
+    resolution: {RESOLUTION}
+    comment: Universal boot manager for 64-bit RISC-V
+
+# Kernel 32-bit architectures
+/Kernel 32-bit
+
+    //x86_32
+        protocol: multiboot2
+        path: boot():/boot/kernel_32bit/x86/kernel
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/defaults.txt
+        resolution: {RESOLUTION}
+        comment: Basic console-only environment
+
+    //aarch32
+        protocol: limine
+        path: boot():/boot/kernel_32bit/arm/kernel
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/defaults.txt
+        resolution: {RESOLUTION}
+        comment: Basic console-only environment
+
+    //riscv32
+        protocol: limine
+        path: boot():/boot/kernel_32bit/risc-v/kernel
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/defaults.txt
+        resolution: {RESOLUTION}
+        comment: Basic console-only environment
+
+# Kernel 64-bit architectures
+/Kernel 64-bit
+
+    //x86_64
+        protocol: limine
+        path: boot():/boot/kernel_64bit/x86/kernel
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/defaults.txt
+        resolution: {RESOLUTION}
+        comment: Full operating system with graphical interface
+
+    //aarch64
+        protocol: limine
+        path: boot():/boot/kernel_64bit/arm/kernel
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/defaults.txt
+        resolution: {RESOLUTION}
+        comment: Basic console-only environment
+
+    //riscv64
+        protocol: limine
+        path: boot():/boot/kernel_64bit/risc-v/kernel
+        module_path: boot():/system/rootfs.img
+        module_path: boot():/config/boot_config.txt
+        module_path: boot():/config/defaults.txt
+        resolution: {RESOLUTION}
+        comment: Basic console-only environment
 
 /Advanced Options
 
     // Safe Mode
-        ///Safe Mode 64-bit
-            protocol: limine
-            path: boot():/boot/kernel_64bit
-            module_path: boot():/system/rootfs.img
-            module_path: boot():/config/boot_config.txt
-            module_path: boot():/config/boot_config_sf.txt
-            module_path: boot():/config/defaults.txt
-            resolution: {RESOLUTION}
-            comment: Start NasuaOS 64-bit with safe mode configuration
+        ///NasuaOS 32-bit
+            ////x86_32
+                protocol: multiboot2
+                path: boot():/boot/kernel_32bit/x86/kernel
+                module_path: boot():/system/rootfs.img
+                module_path: boot():/config/boot_config.txt
+                module_path: boot():/config/boot_config_sf.txt
+                module_path: boot():/config/defaults.txt
+                resolution: {RESOLUTION}
+                comment: Start NasuaOS 32-bit x86 in safe mode
 
-        ///Safe Mode 32-bit
-            protocol: multiboot2
-            path: boot():/boot/kernel_32bit
-            module_path: boot():/system/rootfs.img
-            module_path: boot():/config/boot_config.txt
-            module_path: boot():/config/boot_config_sf.txt
-            module_path: boot():/config/defaults.txt
-            resolution: {RESOLUTION}
-            comment: Start NasuaOS 32-bit with safe mode configuration
+            ////aarch32
+                protocol: limine
+                path: boot():/boot/kernel_32bit/arm/kernel
+                module_path: boot():/system/rootfs.img
+                module_path: boot():/config/boot_config.txt
+                module_path: boot():/config/boot_config_sf.txt
+                module_path: boot():/config/defaults.txt
+                resolution: {RESOLUTION}
+                comment: Start NasuaOS 32-bit ARM in safe mode
 
+            ////riscv32
+                protocol: limine
+                path: boot():/boot/kernel_32bit/risc-v/kernel
+                module_path: boot():/system/rootfs.img
+                module_path: boot():/config/boot_config.txt
+                module_path: boot():/config/boot_config_sf.txt
+                module_path: boot():/config/defaults.txt
+                resolution: {RESOLUTION}
+                comment: Start NasuaOS 32-bit RISC-V in safe mode
+
+        ///NasuaOS 64-bit
+            ////x86_64
+                protocol: limine
+                path: boot():/boot/kernel_64bit/x86/kernel
+                module_path: boot():/system/rootfs.img
+                module_path: boot():/config/boot_config.txt
+                module_path: boot():/config/boot_config_sf.txt
+                module_path: boot():/config/defaults.txt
+                resolution: {RESOLUTION}
+                comment: Start NasuaOS 64-bit x86-64 in safe mode
+
+            ////aarch64
+                protocol: limine
+                path: boot():/boot/kernel_64bit/arm/kernel
+                module_path: boot():/system/rootfs.img
+                module_path: boot():/config/boot_config.txt
+                module_path: boot():/config/boot_config_sf.txt
+                module_path: boot():/config/defaults.txt
+                resolution: {RESOLUTION}
+                comment: Start NasuaOS 64-bit ARM in safe mode
+
+            ////riscv64
+                protocol: limine
+                path: boot():/boot/kernel_64bit/risc-v/kernel
+                module_path: boot():/system/rootfs.img
+                module_path: boot():/config/boot_config.txt
+                module_path: boot():/config/boot_config_sf.txt
+                module_path: boot():/config/defaults.txt
+                resolution: {RESOLUTION}
+                comment: Start NasuaOS 64-bit RISC-V in safe mode
 
     // Boot Tools
         ///Boot Manager
             protocol: multiboot2
+            if_arch: x86-64 ia-32
             path: boot():/boot/utils/boot_mgr
-            module_path: boot():/boot/kernel_32bit
-            module_path: boot():/boot/kernel_64bit
+            module_path: boot():/boot/kernel_32bit/x86/kernel
+            module_string: kernel_32bit
+            module_path: boot():/boot/kernel_64bit/x86/kernel
+            module_string: kernel_64bit
             module_path: boot():/system/rootfs.img
+            module_string: rootfs.img
             module_path: boot():/config/boot_config.txt
+            module_string: boot_config.txt
             module_path: boot():/config/defaults.txt
+            module_string: defaults.txt
             resolution: {RESOLUTION}
             comment: Configure and select available NasuaOS boot environments
 
+        ///Boot Manager
+            protocol: limine
+            if_arch: aarch64
+            path: boot():/boot/utils/boot_mgr_arm64
+            module_path: boot():/boot/kernel_64bit/arm/kernel
+            module_string: kernel_64bit
+            module_path: boot():/system/rootfs.img
+            module_string: rootfs.img
+            module_path: boot():/config/boot_config.txt
+            module_string: boot_config.txt
+            module_path: boot():/config/defaults.txt
+            module_string: defaults.txt
+            resolution: {RESOLUTION}
+            comment: Universal boot manager for 64-bit ARM
+
+        ///Boot Manager
+            protocol: limine
+            if_arch: riscv64
+            path: boot():/boot/utils/boot_mgr_riscv64
+            module_path: boot():/boot/kernel_64bit/risc-v/kernel
+            module_string: kernel_64bit
+            module_path: boot():/system/rootfs.img
+            module_string: rootfs.img
+            module_path: boot():/config/boot_config.txt
+            module_string: boot_config.txt
+            module_path: boot():/config/defaults.txt
+            module_string: defaults.txt
+            resolution: {RESOLUTION}
+            comment: Universal boot manager for 64-bit RISC-V
+
         /// Boot Installer
-            protocol:multiboot2
+            protocol: multiboot2
             path: boot():/boot/utils/installer
             resolution: {RESOLUTION}
             comment: Install NasuaOS on disk (Only ATA disk supported)
@@ -79,21 +249,25 @@ verbose: {VERBOSE}
     // Recovery & Diagnostics
         ///Recovery Environment
             protocol: multiboot2
+            if_arch: x86-64 ia-32
             path: boot():/boot/utils/recovery_tool
             comment: Start a minimal recovery environment for system repair
 
         ///Hardware Detection
             protocol: multiboot2
+            if_arch: x86-64 ia-32
             path: boot():/boot/utils/hdt
             comment: Detect and display installed hardware and system information
 
         ///Hardware Diagnostics
             protocol: multiboot2
+            if_arch: x86-64 ia-32
             path: boot():/boot/utils/hdtest
             comment: Run hardware diagnostics and system tests
 
         ///Kernel Debugger
             protocol: multiboot2
+            if_arch: x86-64 ia-32
             path: boot():/boot/utils/kdebug
             comment: Inspect kernel state, CPU registers, and debugging information
 
@@ -101,5 +275,6 @@ verbose: {VERBOSE}
     // File System Tools
         ///ClawFS Explorer
             protocol: multiboot2
+            if_arch: x86-64 ia-32
             path: boot():/boot/utils/clawfs_explorer
             comment: Browse, inspect, and manage ClawFS files and directories

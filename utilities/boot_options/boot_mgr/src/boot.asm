@@ -79,3 +79,36 @@ stack:
     resb 16384 ; 16 KiB kernel stack
 
 stack_top:
+
+
+section .text
+
+; Returns 1 in EAX when the CPU supports 64-bit long mode, 0 otherwise.
+global cpu_has_long_mode
+
+cpu_has_long_mode:
+    push ebx
+
+    mov eax, 0x80000000
+    cpuid
+    cmp eax, 0x80000001
+    jb .no
+
+    mov eax, 0x80000001
+    cpuid
+    test edx, 1 << 29        ; EDX.LM - long mode capable
+    jz .no
+
+    mov eax, 1
+    cpuid
+    test edx, 1 << 6         ; EDX.PAE - physical address extension
+    jz .no
+
+    mov eax, 1
+    pop ebx
+    ret
+
+.no:
+    xor eax, eax
+    pop ebx
+    ret

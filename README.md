@@ -9,7 +9,7 @@
 [![Build](https://img.shields.io/github/actions/workflow/status/Szatakis/NasuaOS/build.yml?style=flat-square&label=Build)](https://github.com/Szatakis/NasuaOS/actions/workflows/build.yml)
 [![Tests](https://img.shields.io/github/actions/workflow/status/Szatakis/NasuaOS/checks.yml?style=flat-square&label=Tests)](https://github.com/Szatakis/NasuaOS/actions/workflows/checks.yml)
 
-![Architecture](https://img.shields.io/badge/Architecture-x86__64%20%7C%20AArch64%20%7C%20RISC--V-orange?style=flat-square)
+![Architecture](https://img.shields.io/badge/Architecture-x86%20%7C%20AArch64%20%7C%20RISC--V-orange?style=flat-square)
 
 [About](#about) · [Project Information](#project-information) · [Screenshots](#screenshots) · [Documentation](#documentation) · [Building](#building)
 
@@ -21,7 +21,7 @@
 
 NasuaOS is an experimental operating system developed from the ground up, focused on learning, low-level programming, kernel development, and building a complete system independently.
 
-The project primarily targets **x86_64** architecture, with portability in mind. Experimental support is planned for **AArch64** and **RISC-V**, although these targets remain untested.
+The project primarily targets **x86** architecture, with portability in mind. Experimental support is planned for **AArch** and **RISC-V**, although these targets remain untested.
 
 The project includes its own kernel, memory manager, drivers, graphical user interface, shell, filesystem, and applications. Every component is designed specifically for NasuaOS without relying on existing operating system kernels.
 
@@ -32,7 +32,7 @@ The long-term goal is to create a modern, lightweight operating system capable o
 | Property | Details |
 |:---|:---|
 | Project type | Hobby operating system |
-| Primary architecture | x86_64 |
+| Primary architecture | x86 |
 | Additional architectures | AArch64, RISC-V |
 | Primary language | C++ |
 | Additional languages | C, Assembly |
@@ -44,8 +44,8 @@ The long-term goal is to create a modern, lightweight operating system capable o
 | Architecture | Support |
 |:---|:---|
 | **x86_64** | Primary target |
-| **AArch64** | Experimental / untested |
-| **RISC-V** | Experimental / untested |
+| **AArch64** | Experimental |
+| **RISC-V** | Experimental |
 
 ## Community & Links
 
@@ -102,7 +102,7 @@ For detailed build instructions, dependencies and configuration, see:
 
 ## Prebuilt Images
 
-Prebuilt NasuaOS images are available in the [`iso` branch](https://github.com/Szatakis/NasuaOS/releases#release-latest).
+Prebuilt NasuaOS images are available in the [releases](https://github.com/Szatakis/NasuaOS/releases#release-latest).
 
 The branch contains automatically generated builds:
 

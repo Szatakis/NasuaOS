@@ -281,6 +281,70 @@ namespace
         }
     }
 
+    void append_uint64(char* text, uint32_t* length, uint64_t value)
+    {
+        char digits[20];
+        uint32_t count = 0;
+        do
+        {
+            digits[count++] = static_cast<char>('0' + value % 10);
+            value /= 10;
+        } while (value != 0);
+        while (count > 0 && *length + 1 < MAX_MESSAGE_LENGTH)
+        {
+            text[(*length)++] = digits[--count];
+        }
+        text[*length] = '\0';
+    }
+
+    void append_literal(char* text, uint32_t* length, const char* literal)
+    {
+        while (*literal != '\0' && *length + 1 < MAX_MESSAGE_LENGTH)
+        {
+            text[(*length)++] = *literal++;
+        }
+        text[*length] = '\0';
+    }
+
+    void append_generation_stats()
+    {
+        if (state.api == nullptr ||
+            state.api->nai_generate_stats == nullptr)
+        {
+            return;
+        }
+        uint32_t tokens = 0;
+        uint64_t elapsed_ms = 0;
+        if (!state.api->nai_generate_stats(&tokens, &elapsed_ms) ||
+            elapsed_ms == 0)
+        {
+            return;
+        }
+
+        char stats[MAX_MESSAGE_LENGTH];
+        uint32_t length = 0;
+        stats[0] = '\0';
+        append_literal(stats, &length, "-- ");
+        append_uint64(stats, &length, tokens);
+        append_literal(stats, &length, " tokens in ");
+        append_uint64(stats, &length, elapsed_ms / 1000);
+        stats[length] = '.';
+        ++length;
+        stats[length] = static_cast<char>('0' + (elapsed_ms % 1000) / 100);
+        ++length;
+        stats[length] = '\0';
+        append_literal(stats, &length, " s (");
+        const uint64_t rate_x10 = tokens * 10000 / elapsed_ms;
+        append_uint64(stats, &length, rate_x10 / 10);
+        stats[length] = '.';
+        ++length;
+        stats[length] = static_cast<char>('0' + rate_x10 % 10);
+        ++length;
+        stats[length] = '\0';
+        append_literal(stats, &length, " tok/s)");
+        add_message(stats);
+    }
+
     void nai_tick(napp_window*)
     {
         if (!state.generating || state.api == nullptr ||
@@ -317,6 +381,7 @@ namespace
             }
             reply[length] = '\0';
             finish_thinking_message(reply);
+            append_generation_stats();
         }
         else
         {
@@ -611,6 +676,7 @@ namespace
                         }
                         reply[length] = '\0';
                         add_message(reply);
+                        append_generation_stats();
                     }
                     else
                     {

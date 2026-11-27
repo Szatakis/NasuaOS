@@ -11,6 +11,26 @@ make all    # Build the ISO
 make run    # Run in QEMU
 ```
 
+### Experimental Architectures
+
+Run the experimental architecture kernels in QEMU:
+
+```bash
+make run-aarch64
+make run-aarch32
+make run-riscv64
+make run-riscv32
+```
+
+The AArch64 and RISC-V64 targets boot the ISO through Limine using the matching
+EDK2 firmware from `edk2-bins`; select the matching entry in the Limine menu.
+The ARM32 and RISC-V32 targets boot directly because this workspace has no
+matching EDK2 firmware or Limine EFI loader for those 32-bit architectures.
+
+All four targets provide a QEMU GTK serial-console tab for shell input. Select
+the `Serial` tab in the QEMU window; input is handled there rather than in the
+host terminal.
+
 ### HDD Mode
 
 ```bash

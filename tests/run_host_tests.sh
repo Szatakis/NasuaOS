@@ -16,11 +16,11 @@ printf '[host-tests] compiling scheduler regression tests with %s\n' "${CXX:-c++
     -Wextra \
     -Werror \
     -DSCHEDULER_TEST \
-    -I"$repo_root/kernel_64bit/src" \
+    -I"$repo_root/kernel_64bit/x86/src" \
     -I"$repo_root/resources" \
     "$repo_root/tests/scheduler_test.cpp" \
-    "$repo_root/kernel_64bit/src/system/scheduler/functions/scheduler.cpp" \
-    "$repo_root/kernel_64bit/src/system/scheduler/pr_map/pr_map.cpp" \
+    "$repo_root/kernel_64bit/x86/src/system/scheduler/functions/scheduler.cpp" \
+    "$repo_root/kernel_64bit/x86/src/system/scheduler/pr_map/pr_map.cpp" \
     -o "$scheduler_binary"
 
 "$scheduler_binary"
@@ -35,8 +35,8 @@ printf '[host-tests] compiling memory regression tests with %s\n' "${CXX:-c++}"
     -Werror \
     -DHEAP_TEST \
     -I"$repo_root/tests/host_include" \
-    -I"$repo_root/kernel_64bit/src" \
-    -I"$repo_root/kernel_64bit/limine-protocol/include" \
+    -I"$repo_root/kernel_64bit/x86/src" \
+    -I"$repo_root/kernel_64bit/x86/limine-protocol/include" \
     -I"$repo_root/resources" \
     "$repo_root/tests/memory_test.cpp" \
     "$repo_root/resources/drivers/memory/functions/heap.cpp" \
@@ -68,10 +68,10 @@ printf '[host-tests] compiling logger regression tests with %s\n' "${CXX:-c++}"
     -Wall \
     -Wextra \
     -Werror \
-    -I"$repo_root/kernel_64bit/src" \
+    -I"$repo_root/kernel_64bit/x86/src" \
     -I"$repo_root/resources" \
     "$repo_root/tests/logger_test.cpp" \
-    "$repo_root/kernel_64bit/src/system/sysfunc/logger/logger.cpp" \
+    "$repo_root/kernel_64bit/x86/src/system/sysfunc/logger/logger.cpp" \
     -o "$logger_binary"
 
 "$logger_binary"

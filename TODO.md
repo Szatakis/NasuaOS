@@ -54,8 +54,8 @@
 10. Architektura i dodatkowe możliwości
 
 * [x]    Dodaj podczas kompilacji postemp np [1/120] czyli ktory z ilu krokow zrobiono np skompilowano 1 z 100 plikow
-* [ ]    Wsparcie AArch64 i AArch32
-* [ ]    Wsparcie RISC-V_32 i 64
+* [x]    Wsparcie AArch64 i AArch32
+* [x]    Wsparcie RISC-V64 i RISC-V32
 * [ ]    Testy automatyczne
 * [ ]    System debugowania
 * [ ]    Recovery Mode

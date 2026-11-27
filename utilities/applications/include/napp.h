@@ -10,7 +10,7 @@
 // napp_api structure.
 
 #define NAPP_MAGIC 0x5050414E // 'N' 'A' 'P' 'P'
-#define NAPP_ABI_VERSION 16
+#define NAPP_ABI_VERSION 17
 #define NAPP_ABI_MIN_VERSION 6
 #define NAPP_NAME_LENGTH 32
 #define NAPP_DESCRIPTION_LENGTH 48
@@ -281,6 +281,12 @@ struct napp_api
     uint32_t (*nai_generate_start)(const char* prompt, uint32_t max_tokens);
     int32_t (*nai_generate_poll)(uint32_t job, char* output,
                                  uint32_t output_capacity);
+
+    // ABI 17 addition. Returns statistics of the most recently finished NAI
+    // generation job: the number of generated tokens and the wall-clock
+    // time in milliseconds. Returns false when no completed job has stats
+    // recorded yet.
+    bool (*nai_generate_stats)(uint32_t* tokens, uint64_t* elapsed_ms);
 };
 
 typedef int (*napp_entry)(const struct napp_api* api);

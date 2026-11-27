@@ -59,7 +59,7 @@ jobs:
           rm -rf limine-binary
           rm -f limine-binary.tar.gz
 
-          curl -fL https://github.com/Szatakis/NasuaOS-Bootloader/raw/main/limine-binary.tar.gz -o limine-binary.tar.gz
+          curl -fL https://raw.githubusercontent.com/Szatakis/NasuaOS-Bootloader/main/limine-binary.tar.gz -o limine-binary.tar.gz
 
           echo "Limine archive:"
           file limine-binary.tar.gz

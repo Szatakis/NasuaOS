@@ -21,14 +21,15 @@ all:
 .PHONY: clean
 clean:
 	rm -f $(IMAGE)
-
+	rm -f $(USER_IMAGES_DIR)/background.png $(USER_IMAGES_DIR)/background_dark.png
 	$(MAKE) -C ../applications clean
 	$(MAKE) -C ../system_functions clean
 
 # Remove everything built and generated including downloaded dependencies.
 .PHONY: distclean
 distclean:
-	rm -f *.img
-
+	rm -f $(IMAGE) *.img
+	rm -f $(USER_IMAGES_DIR)/background.png $(USER_IMAGES_DIR)/background_dark.png
+	rm -f .app-payload-manifest
 	$(MAKE) -C ../applications distclean
 	$(MAKE) -C ../system_functions distclean

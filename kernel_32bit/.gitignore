@@ -1,4 +1,10 @@
-/bin-*
-/obj-*
-
-/.deps-obtained
+x86/bin-*/
+x86/obj-*/
+x86/.cache/
+x86/compile_commands.json
+arm/bin/
+arm/obj/
+risc-v/bin/
+risc-v/obj/
+longarch/bin/
+longarch/obj/

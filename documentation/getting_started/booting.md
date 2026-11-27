@@ -8,20 +8,38 @@ The boot configuration is generated from `.config/defaults.txt` by `config_gener
 
 ## Boot Menu
 
-On startup, Limine displays the boot menu with the following entries:
+On startup, Limine displays the boot menu with two top-level folders,
+**Kernel 64-bit** and **Kernel 32-bit**, each containing one entry per
+architecture:
 
-| Entry                   | Protocol   | Description                             |
-|-------------------------|------------|-----------------------------------------|
-| NasuaOS 32-bit          | Multiboot2 | Console-only 32-bit kernel              |
-| NasuaOS 64-bit          | Limine     | Full 64-bit kernel with graphics        |
-| Safe Mode 32-bit        | Multiboot2 | 32-bit kernel with `SAFE_MODE` flag     |
-| Safe Mode 64-bit        | Limine     | 64-bit kernel with `SAFE_MODE` flag     |
-| Boot Manager            | Multiboot2 | `boot_mgr` utility for kernel selection |
-| Recovery Tool           | Multiboot2 | `recovery_tool` for troubleshooting     |
-| ClawFS Explorer         | Multiboot2 | `clawfs_explorer` for browsing ClawFS   |
-| Hardware Detection Tool | Multiboot2 | `hdt` for viewing system info           |
-| Hardware Test           | Multiboot2 | `hdtest` for hardware diagnostics       |
-| Kernel Debugger         | Multiboot2 | `kdebug` for kernel inspection          |
+| Entry              | Protocol   | Description                                        |
+|--------------------|------------|----------------------------------------------------|
+| Kernel 64-bit      | —          | Folder: 64-bit kernels                             |
+| ├ x86-64           | Limine     | Full 64-bit kernel with graphics                   |
+| ├ aarch64          | Limine     | Simple UART shell (work in progress)               |
+| ├ riscv64          | Limine     | Simple UART shell (work in progress)               |
+| └ loongarch64      | Limine     | Simple UART shell (work in progress)               |
+| Kernel 32-bit      | —          | Folder: 32-bit kernels                             |
+| ├ x86               | Multiboot2 | Console-only 32-bit kernel                         |
+| ├ armv7             | Limine     | Simple UART shell (work in progress)               |
+| ├ riscv32           | Limine     | Simple UART shell (work in progress)               |
+| └ loongarch32       | Multiboot2 | Simple UART shell (work in progress)               |
+| Safe Mode 64-bit   | Limine     | x86-64 kernel with safe mode config                |
+| Safe Mode 32-bit   | Multiboot2 | x86-32 kernel with safe mode config                |
+| Boot Manager        | Multiboot2 | `boot_mgr` utility for kernel selection            |
+| Recovery Tool       | Multiboot2 | `recovery_tool` for troubleshooting                |
+| ClawFS Explorer     | Multiboot2 | `clawfs_explorer` for browsing ClawFS              |
+| Hardware Detection  | Multiboot2 | `hdt` for viewing system info                      |
+| Hardware Test       | Multiboot2 | `hdtest` for hardware diagnostics                  |
+| Kernel Debugger     | Multiboot2 | `kdebug` for kernel inspection                     |
+
+AArch64 and RISC-V64 boot the ISO through Limine with their matching EDK2
+firmware. ARMv7 and RISC-V32 kernels are shipped on the same ISO under
+`/boot/kernel_32bit/` with Limine protocol entries, and every `BOOT*.EFI`
+loader present in `limine-binary` is copied into `/EFI/BOOT`. QEMU still
+loads those 32-bit kernels directly (`make run-aarch32` / `make run-riscv32`)
+because the bundled EDK2 set has no 32-bit ARM or RISC-V firmware yet.
+Use the QEMU `Serial` tab to type into each experimental shell.
 
 ## Boot Modules
 

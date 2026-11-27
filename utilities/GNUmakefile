@@ -10,7 +10,7 @@ BOOT_OPTIONS := $(patsubst %/,%,$(BOOT_OPTIONS))
 .PHONY: clean
 clean:
 	@for dir in $(BOOT_OPTIONS); do \
-		$(MAKE) -C $$dir clean; \
+		$(MAKE) -C $$dir clean || exit 1; \
 	done
 	$(MAKE) -C rootfs clean
 
@@ -18,7 +18,6 @@ clean:
 .PHONY: distclean
 distclean:
 	@for dir in $(BOOT_OPTIONS); do \
-		$(MAKE) -C $$dir distclean; \
+		$(MAKE) -C $$dir distclean || exit 1; \
 	done
 	$(MAKE) -C rootfs distclean
-	

@@ -7,8 +7,8 @@ This document describes the project layout of NasuaOS.
 ```
 NasuaOS/
 ├── GNUmakefile                  # Top-level build system
-├── kernel_64bit/                # 64-bit kernel source (primary)
-├── kernel_32bit/                # 32-bit kernel source (legacy)
+├── kernel_64bit/                # 64-bit kernels, one directory per architecture
+├── kernel_32bit/                # 32-bit kernels, one directory per architecture
 ├── utilities/                   # User-space tools and rootfs
 ├── .config/                     # System configuration
 ├── documentation/               # This documentation
@@ -20,79 +20,53 @@ NasuaOS/
 └── limine/                      # Limine bootloader (submodule or copy)
 ```
 
-## kernel_64bit/ — 64-bit Kernel
+## kernel_64bit/ — 64-bit Kernels
+
+Each architecture has its own directory:
 
 ```
 kernel_64bit/
-├── GNUmakefile                 # Kernel build rules
-├── src/
-│   ├── kernel/
-│   │   └── kernel.cpp          # kmain() — kernel entry point
-│   │   └── kernel_panic/
-│   │       ├── kernel_panic.cpp    # Panic screen + QR code
-│   │       └── kernel_panic.hpp
-│   ├── applications/
-│   │   ├── shell/              # Shell: commands.cpp, terminal.cpp, etc.
-│   ├── system/
-│   │   ├── drivers/
-│   │   │   ├── gpu/            # Graphics, text, windows, framebuffer
-│   │   │   ├── keyboard/       # PS/2 keyboard
-│   │   │   ├── mouse/          # PS/2 mouse
-│   │   │   ├── rtc/            # Real-time clock
-│   │   │   ├── timer/          # PIT
-│   │   │   ├── disk/           # ATA
-│   │   │   ├── cpu/            # CPU detection
-│   │   │   ├── pci/
-│   │   │   ├── usb/
-│   │   │   ├── ethernet/
-│   │   │   ├── wifi/
-│   │   │   ├── audio/
-│   │   │   ├── acpi/
-│   │   │   ├── apic/
-│   │   │   └── hpet/
-│   │   ├── filesystem/
-│   │   │   ├── clawfs/         # Native filesystem
-│   │   │   ├── fat/            # FAT driver for ISO rootfs
-│   │   │   └── file_resolver/  # Overlay logic
-│   │   ├── applications/
-│   │   │   └── napp/           # NAPP application loader
-│   │   ├── interrupts/         # IDT, ISR, exceptions
-│   │   ├── memory/             # Paging, PMM, VMM
-│   │   ├── libs/
-│   │   │   ├── libc/           # Minimal C library
-│   │   │   └── asm/            # Inline assembly helpers
-│   │   ├── process/            # ELF loading
-│   │   ├── scheduler/
-│   │   ├── syscalls/
-│   │   └── sysfunc/
-│   │       ├── logger/
-│   │       ├── command_history/
-│   │       ├── info_vars/
-│   │       └── serial/
-│   ├── config/                 # Kernel compile-time config
-│   ├── linker/                 # Linker scripts
-│   └── bootloader/             # Boot-related code
-└── include/
-│   └── kernel.hpp              # Public kernel header
-```
+├── GNUmakefile                 # Builds every architecture below
+├── x86/                        # x86_64 — full NasuaOS kernel
+│   ├── GNUmakefile
+│   ├── src/                    # Full kernel + userspace sources
+│   ├── linker-scripts/         # Per-arch linker scripts
+│   ├── freestanding-c-hdrs/    # Freestanding C headers (per arch)
+│   ├── freestanding-cxx-hdrs/  # Freestanding C++ headers (per arch)
+│   ├── cc-runtime/             # Compiler runtime sources
+│   ├── limine-protocol/        # Limine boot protocol headers
+│   └── bin-x86_64/             # Build output
+├── arm/                        # aarch64 — simple UART shell (WIP)
+├── risc-v/                     # riscv64 — simple UART shell (WIP)
+└── longarch/                   # loongarch64 — simple UART shell (WIP)
 
-## kernel_32bit/ — 32-bit Kernel (Legacy)
+The non-x86 directories each contain a minimal `GNUmakefile`,
+`src/start.S` (architecture entry point) and `src/kernel.c`
+(UART shell with `help`, `uname`, `echo`, `about` commands).
+Built kernels are copied into the ISO under
+`/boot/kernel_64bit/<arch>/kernel`.
+
+## kernel_32bit/ — 32-bit Kernels
+
+Same layout as `kernel_64bit/`: `x86/` holds the full Multiboot2
+kernel, while `arm/` (armv7), `risc-v/` (riscv32) and `longarch/`
+(loongarch32) contain simple UART shells.
 
 ```
 kernel_32bit/
-├── src/
-│   ├── boot.asm                # Multiboot2 header
-│   ├── kernel.cpp              # kmain()
-│   ├── system/
-│   │   ├── filesystem/
-│   │   │   └── clawfs/
-│   │   └── drivers/
-│   │       └── video/
-│   └── applications/
-│       └── shell/
-│           └── shell.cpp       # Limited shell (8 commands, including ACPI shutdown)
-└── Makefile
+├── GNUmakefile                 # Builds every architecture below
+├── x86/                        # x86_32 — console kernel
+│   ├── src/
+│   │   ├── boot.asm            # Multiboot2 header
+│   │   ├── kernel.cpp          # kmain()
+│   │   └── applications/
+│   │       └── shell/          # Limited shell (8 commands)
+│   └── linker-scripts/
+├── arm/                        # armv7 — simple UART shell (WIP)
+├── risc-v/                     # riscv32 — simple UART shell (WIP)
+└── longarch/                   # loongarch32 — simple UART shell (WIP)
 ```
+
 
 ## utilities/
 

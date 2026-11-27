@@ -23,32 +23,39 @@ The top-level `GNUmakefile` orchestrates the entire build:
 
 | Variable     | Description                             |
 |--------------|-----------------------------------------|
-| `ARCH`       | Target architecture (default: `x86_64`) |
-| `SUB_ARCH`   | Sub-architecture                        |
-| `KERNEL_DIR` | Kernel source directory                 |
-| `UTIL_DIR`   | Utilities directory                     |
-| `ISO_DIR`    | ISO output directory                    |
-| `QEMU`       | QEMU executable path                    |
 | `QEMUFLAGS`  | QEMU flags (memory, drives, etc.)       |
+| `QEMU_NETDEV`| QEMU network device flags               |
+| `FS_DISK_SIZE` | Virtual disk size                     |
+
+There is no global `ARCH` variable anymore: every image contains all
+architectures. Kernel sources live in `kernel_64bit/<arch>/` and
+`kernel_32bit/<arch>/` with `<arch>` ∈ `x86`, `arm`, `risc-v`,
+`longarch`.
 
 ### Build Targets
 
-| Command          | Description                              |
-|------------------|------------------------------------------|
-| `make all`       | Build everything (kernel + rootfs + ISO) |
-| `make run`       | Build and run in QEMU (ISO mode)         |
-| `make run-hdd`   | Build and run in QEMU (HDD mode)         |
-| `make all-hdd`   | Build ISO and HDD images                 |
-| `make clean`     | Remove build artifacts (keeps downloads) |
-| `make clean-all` | Full clean (removes all generated files) |
-| `make all-bios`  | Build for BIOS boot mode                 |
-| `make run-bios`  | Run in QEMU with BIOS mode               |
+| Command             | Description                                      |
+|---------------------|--------------------------------------------------|
+| `make all`          | Build everything (all kernels + rootfs + ISO)    |
+| `make run`          | Run x86_64 image in QEMU (alias: `make run-x86_64`) |
+| `make run-x86_32`   | Run the same ISO; pick the 32-bit entry in Limine |
+| `make run-aarch64`  | Boot AArch64 through Limine and EDK2 in QEMU     |
+| `make run-aarch32`  | Boot the ARMv7 UART shell directly in QEMU       |
+| `make run-riscv64`  | Boot RISC-V64 through Limine and EDK2 in QEMU    |
+| `make run-riscv32`  | Boot the RISC-V32 UART shell directly in QEMU    |
+| `make run-loongarch64` | Boot the loongarch64 UART shell in QEMU       |
+| `make run-loongarch32` | Boot the loongarch32 UART shell in QEMU       |
+| `make run-hdd`      | Build and run in QEMU (HDD mode)                 |
+| `make all-hdd`      | Build ISO and HDD images                         |
+| `make clean`        | Remove build artifacts (keeps downloads)         |
+| `make distclean`    | Full clean (removes all generated files)         |
+| `make run-bios`     | Run in QEMU with BIOS mode                       |
 
 ### Build Order
 
 ```
 make all
-├── kernel (kernel_64bit/)        ← Compiled first
+├── kernels (kernel_64bit/, kernel_32bit/)  ← All architectures
 ├── rootfs.img (utilities/rootfs/)
 │   ├── bin/ (NAPP applications)
 │   ├── sbin/ (NAPP command flat binaries)
@@ -60,17 +67,21 @@ make all
 
 ## Kernel Build
 
-Source: `kernel_64bit/GNUmakefile`
+Sources: `kernel_64bit/GNUmakefile`, `kernel_32bit/GNUmakefile`
 
-The kernel is compiled as a freestanding C++20 binary:
+Each top-level kernel makefile iterates over its architecture
+directories (`x86`, `arm`, `risc-v`, `longarch`) and runs the
+per-architecture `GNUmakefile` inside each.
 
-```makefile
-CXXFLAGS = -std=gnu++20 -ffreestanding -nostdlib -fno-exceptions -fno-rtti
-ASFLAGS  = --64
-LDFLAGS  = -T linker.ld -nostdlib
-```
+- `kernel_64bit/x86/` and `kernel_32bit/x86/` build the full
+  freestanding kernels (C++20) for x86_64 and x86_32.
+- The other directories build minimal freestanding kernels with
+  `clang`/`ld.lld`: an architecture-specific `src/start.S` entry
+  point plus `src/kernel.c`, a simple UART shell.
 
-Output: An ELF64 binary loaded by the Limine bootloader.
+Built kernels are installed into the ISO at
+`/boot/kernel_64bit/<arch>/kernel` and
+`/boot/kernel_32bit/<arch>/kernel`.
 
 ### Kernel Debug Builds
 

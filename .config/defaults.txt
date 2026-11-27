@@ -11,7 +11,7 @@ Animations=true
 
 [Boot]
 Timeout=5
-DefaultEntry=NasuaOS 64-bit
+DefaultEntry=NasuaOS
 Verbose=true
 HelpHidden=true
 
