@@ -315,7 +315,7 @@ void kmain(void)
     if (!mods || !hh || !mm) for (;;) asm volatile("wfi");
     hhdm = hh->offset;
 
-    u64 kfile_addr = 0, kfile_size = 0;
+    u64 kfile_addr = 0;
     for (u64 i = 0; i < mods->module_count; i++) {
         struct limine_file *f = mods->modules[i];
         if (f->path && xcontains(f->path, "/kernel_64bit/risc-v/kernel")) {

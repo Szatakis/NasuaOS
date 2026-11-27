@@ -33,7 +33,7 @@ The long-term goal is to create a modern, lightweight operating system capable o
 |:---|:---|
 | Project type | Hobby operating system |
 | Primary architecture | x86 |
-| Additional architectures | AArch64, RISC-V |
+| Additional architectures | AArch, RISC-V |
 | Primary language | C++ |
 | Additional languages | C, Assembly |
 | Development tools | Python |
