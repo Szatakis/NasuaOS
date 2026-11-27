@@ -588,12 +588,27 @@ static void outb(uint16_t port, uint8_t value)
     asm volatile("outb %0, %1" : : "a"(value), "Nd"(port));
 }
 
+static void serial_init()
+{
+    outb(0x3F8 + 1, 0x00);    // Turn OFF interrupts
+    outb(0x3F8 + 3, 0x80);    // Turn ON DLAB
+    outb(0x3F8 + 0, 0x01);    // 115200 baud (low byte)
+    outb(0x3F8 + 1, 0x00);    // (high byte)
+    outb(0x3F8 + 3, 0x03);    // 8 bits, 1 stop bit, no parity
+    outb(0x3F8 + 2, 0xC7);    // Enable FIFO
+    outb(0x3F8 + 4, 0x0B);    // IRQs enabled, RTS/DSR set
+}
+
 static void serial_putc(char c)
 {
-    while ((inb(0x3FD) & 0x20) == 0)
+    for (int timeout = 0; timeout < 100000; timeout++)
     {
+        if ((inb(0x3FD) & 0x20) != 0)
+        {
+            outb(0x3F8, (uint8_t)c);
+            return;
+        }
     }
-    outb(0x3F8, (uint8_t)c);
 }
 
 static void serial_puts(const char* s)
@@ -737,7 +752,7 @@ static bool elf64_image_span(uint32_t file_addr, uint32_t file_size,
 // KERNEL_AND_MODULES, so we must protect it ourselves in the memmap we
 // hand to the 64-bit kernel.
 #define BOOTMGR_PHYS_BASE 0x8000000ULL
-#define BOOTMGR_PHYS_SPAN 0x200000ULL
+#define BOOTMGR_PHYS_SPAN 0xA00000ULL
 
 
 // Load an ELF64 higher-half kernel into physical memory. The virtual
@@ -825,7 +840,7 @@ static bool load_elf64(uint32_t file_addr, uint32_t file_size,
 // Page tables for the 64-bit handoff
 // ---------------------------------------------------------------------------
 
-#define PT_POOL_SIZE (1024 * 1024)
+#define PT_POOL_SIZE (8 * 1024 * 1024)
 static uint8_t pt_pool[PT_POOL_SIZE] __attribute__((aligned(4096)));
 static uint32_t pt_pool_used = 0;
 
@@ -1712,10 +1727,17 @@ static void boot_kernel64_path(uint32_t mb_info, int kernel_module)
         add_protected(modules[i].start, modules[i].end);
     }
 
-    // Compute how much low memory must be mapped (identity + HHDM).
+    // Compute how much low memory must be mapped (identity + HHDM). Only
+    // usable regions count: reserved entries can span up to the top of the
+    // physical address space and would needlessly exhaust the page table
+    // pool (each GiB costs one PD page per map).
     uint64_t cover = info.max_phys;
     for (uint32_t i = 0; i < mb2_memmap_count; i++)
     {
+        if (mb2_memmap[i].type != LIMINE_MEMMAP_USABLE)
+        {
+            continue;
+        }
         uint64_t end = mb2_memmap[i].base + mb2_memmap[i].length;
         if (end > cover)
         {
@@ -1813,6 +1835,9 @@ static void boot_kernel64_path(uint32_t mb_info, int kernel_module)
 
 extern "C" void kmain(uint32_t magic, uint32_t mb_info)
 {
+    serial_init();
+    serial_puts("[boot_mgr] entered kmain\n");
+
     if (magic != MULTIBOOT2_MAGIC)
     {
         for (;;)

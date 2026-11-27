@@ -23,7 +23,7 @@ verbose: {VERBOSE}
 /Boot Kernel
     protocol: multiboot2
     if_arch: x86-64 ia-32
-    path: boot():/boot/utils/boot_mgr
+    path: boot():/boot/utils/boot_mgr_x86
     module_path: boot():/boot/kernel_32bit/x86/kernel
     module_string: kernel_32bit
     module_path: boot():/boot/kernel_64bit/x86/kernel
@@ -40,7 +40,7 @@ verbose: {VERBOSE}
 /Boot Kernel
     protocol: limine
     if_arch: aarch64
-    path: boot():/boot/utils/boot_mgr_arm64
+    path: boot():/boot/utils/boot_mgr_arm
     module_path: boot():/boot/kernel_64bit/arm/kernel
     module_string: kernel_64bit
     module_path: boot():/system/rootfs.img
@@ -55,7 +55,7 @@ verbose: {VERBOSE}
 /Boot Kernel
     protocol: limine
     if_arch: riscv64
-    path: boot():/boot/utils/boot_mgr_riscv64
+    path: boot():/boot/utils/boot_mgr_riscv
     module_path: boot():/boot/kernel_64bit/risc-v/kernel
     module_string: kernel_64bit
     module_path: boot():/system/rootfs.img
@@ -196,7 +196,7 @@ verbose: {VERBOSE}
         ///Boot Manager
             protocol: multiboot2
             if_arch: x86-64 ia-32
-            path: boot():/boot/utils/boot_mgr
+            path: boot():/boot/utils/boot_mgr_x86
             module_path: boot():/boot/kernel_32bit/x86/kernel
             module_string: kernel_32bit
             module_path: boot():/boot/kernel_64bit/x86/kernel
@@ -213,7 +213,7 @@ verbose: {VERBOSE}
         ///Boot Manager
             protocol: limine
             if_arch: aarch64
-            path: boot():/boot/utils/boot_mgr_arm64
+            path: boot():/boot/utils/boot_mgr_arm
             module_path: boot():/boot/kernel_64bit/arm/kernel
             module_string: kernel_64bit
             module_path: boot():/system/rootfs.img
@@ -228,7 +228,7 @@ verbose: {VERBOSE}
         ///Boot Manager
             protocol: limine
             if_arch: riscv64
-            path: boot():/boot/utils/boot_mgr_riscv64
+            path: boot():/boot/utils/boot_mgr_riscv
             module_path: boot():/boot/kernel_64bit/risc-v/kernel
             module_string: kernel_64bit
             module_path: boot():/system/rootfs.img

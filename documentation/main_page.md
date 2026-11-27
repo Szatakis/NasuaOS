@@ -65,7 +65,7 @@ Located in `utilities/boot_options/`, these are 32-bit Multiboot2 applications a
 
 | Utility | Description |
 |---------|-------------|
-| `boot_mgr` | Boot manager for selecting kernels |
+| `boot_mgr_x86` / `boot_mgr_arm` / `boot_mgr_riscv` | Boot managers for selecting kernels |
 | `clawfs_explorer` | File browser for ClawFS partitions |
 | `hdtest` | Hard disk diagnostic tool |
 | `hdt` | Hardware detection tool |

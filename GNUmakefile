@@ -286,9 +286,9 @@ $(IMAGE_NAME).iso: limine-binary/limine kernels utilities fs_sys $(GENERATED_LIM
 		cp -v kernel_32bit/$$arch/bin/kernel iso_root/boot/kernel_32bit/$$arch/kernel; \
 	done
 
-	cp -v utilities/boot_options/boot_mgr/bin-x86_32/boot_mgr iso_root/boot/utils
-	cp -v utilities/boot_options/boot_mgr_arm64/bin-aarch64/boot_mgr iso_root/boot/utils/boot_mgr_arm64
-	cp -v utilities/boot_options/boot_mgr_riscv64/bin-riscv64/boot_mgr iso_root/boot/utils/boot_mgr_riscv64
+	cp -v utilities/boot_options/boot_mgr_x86/bin-x86_32/boot_mgr iso_root/boot/utils/boot_mgr_x86
+	cp -v utilities/boot_options/boot_mgr_arm/bin-aarch64/boot_mgr iso_root/boot/utils/boot_mgr_arm
+	cp -v utilities/boot_options/boot_mgr_riscv/bin-riscv64/boot_mgr iso_root/boot/utils/boot_mgr_riscv
 	cp -v utilities/boot_options/clawfs_explorer/bin-x86_32/clawfs_explorer iso_root/boot/utils
 	cp -v utilities/boot_options/hd_test/bin-x86_32/hdtest iso_root/boot/utils
 	cp -v utilities/boot_options/hdt/bin-x86_32/hdt iso_root/boot/utils
@@ -344,7 +344,7 @@ $(IMAGE_NAME).hdd: limine-binary/limine kernels utilities fs_sys $(GENERATED_LIM
 	mcopy -i $(IMAGE_NAME).hdd@@1M .config/boot_config_rc.txt ::/config
 	mcopy -i $(IMAGE_NAME).hdd@@1M .config/defaults.txt ::/config
 
-	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/boot_mgr/bin-x86_32/boot_mgr ::/boot/utils
+	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/boot_mgr_x86/bin-x86_32/boot_mgr ::/boot/utils/boot_mgr_x86
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/clawfs_explorer/bin-x86_32/clawfs_explorer ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/hd_test/bin-x86_32/hdtest ::/boot/utils
 	mcopy -i $(IMAGE_NAME).hdd@@1M utilities/boot_options/hdt/bin-x86_32/hdt ::/boot/utils

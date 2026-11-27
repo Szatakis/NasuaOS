@@ -26,7 +26,7 @@ architecture:
 | └ loongarch32       | Multiboot2 | Simple UART shell (work in progress)               |
 | Safe Mode 64-bit   | Limine     | x86-64 kernel with safe mode config                |
 | Safe Mode 32-bit   | Multiboot2 | x86-32 kernel with safe mode config                |
-| Boot Manager        | Multiboot2 | `boot_mgr` utility for kernel selection            |
+| Boot Manager        | Multiboot2 | `boot_mgr_x86`/`boot_mgr_arm`/`boot_mgr_riscv` utilities for kernel selection            |
 | Recovery Tool       | Multiboot2 | `recovery_tool` for troubleshooting                |
 | ClawFS Explorer     | Multiboot2 | `clawfs_explorer` for browsing ClawFS              |
 | Hardware Detection  | Multiboot2 | `hdt` for viewing system info                      |
@@ -91,7 +91,7 @@ make run-hdd-bios   # HDD via BIOS
 
 ## Boot Manager
 
-The **Boot Manager** (`boot_mgr`) is a 32-bit Multiboot2 application that:
+The **Boot Manager** (`boot_mgr_x86`) is a 32-bit Multiboot2 application (with `boot_mgr_arm`/`boot_mgr_riscv` Limine-protocol variants for ARM/RISC-V) that:
 - Detects CPU architecture (x86-64 vs IA-32)
 - Selects the appropriate kernel based on CPU capabilities
 - Loads kernel modules (rootfs, boot config, defaults)
