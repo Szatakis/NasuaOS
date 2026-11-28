@@ -928,13 +928,35 @@ static int fw_cfg_setup_ramfb(void)
 /* Shell                                                                */
 /* ------------------------------------------------------------------ */
 
+/* SiFive test finisher (QEMU virt, phys 0x100000):
+ * 0x7777 = reset, 0x5555 = power off. */
+#define RV_FINISHER_PHYS 0x100000UL
+
+static void machine_reboot(void)
+{
+    fb_print("rebooting...\r\n");
+    *(volatile uint *)RV_FINISHER_PHYS = 0x7777;
+    for (;;)
+        ;
+}
+
+static void machine_shutdown(void)
+{
+    fb_print("powering off...\r\n");
+    *(volatile uint *)RV_FINISHER_PHYS = 0x5555;
+    for (;;)
+        ;
+}
+
 static void help(void)
 {
     fb_print("commands:\r\n");
-    fb_print("  help   - show this message\r\n");
-    fb_print("  uname  - print system name and architecture\r\n");
-    fb_print("  echo   - echo the rest of the line\r\n");
-    fb_print("  about  - print build information\r\n");
+    fb_print("  help    - show this message\r\n");
+    fb_print("  uname   - print system name and architecture\r\n");
+    fb_print("  echo    - echo the rest of the line\r\n");
+    fb_print("  about   - print build information\r\n");
+    fb_print("  reboot  - restart the machine\r\n");
+    fb_print("  shutdown - power off the machine\r\n");
 }
 
 void kmain(uptr dtb)
@@ -1023,6 +1045,10 @@ void kmain(uptr dtb)
             fb_print(BITS == 64 ? "64\r\n" : "32\r\n");
             fb_print("display: ");
             fb_print(have_fb ? "framebuffer\r\n" : "uart only\r\n");
+        } else if (xstreq(line, "reboot")) {
+            machine_reboot();
+        } else if (xstreq(line, "shutdown")) {
+            machine_shutdown();
         } else {
             fb_print("unknown command: ");
             fb_print(line);

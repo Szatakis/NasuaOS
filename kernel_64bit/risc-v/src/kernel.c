@@ -226,6 +226,24 @@ static volatile struct limine_exec_addr_request limine_exec_addr_request = {
     0, 0
 };
 
+/* Limine HHDM request: direct map of physical memory, needed to reach
+ * the SiFive test finisher at physical 0x100000 while the MMU is on. */
+struct limine_hhdm_response {
+    ull revision;
+    ull offset;
+};
+struct limine_hhdm_request {
+    ull id[4];
+    ull revision;
+    struct limine_hhdm_response *response;
+};
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_hhdm_request limine_hhdm_request = {
+    { 0xc7b1dd30df4c8b88ULL, 0x0a82e883a194f07bULL,
+      0x48dcf1cb8ad2b852ULL, 0x63984e959a98244bULL },
+    0, 0
+};
+
 static int kbd_present(void)
 {
     for (uint i = 0; i < VIRTIO_MMIO_MAX; i++) {
@@ -929,13 +947,44 @@ static int fw_cfg_setup_ramfb(void)
 /* Shell                                                                */
 /* ------------------------------------------------------------------ */
 
+/* SiFive test finisher (QEMU virt, phys 0x100000):
+ * 0x7777 = reset, 0x5555 = power off. Reached through the Limine HHDM
+ * so the physical address works while the MMU is enabled. */
+#define RV_FINISHER_PHYS 0x100000UL
+
+static volatile uint *rv_finisher(void)
+{
+    if (limine_hhdm_request.response)
+        return (volatile uint *)(limine_hhdm_request.response->offset +
+                                 RV_FINISHER_PHYS);
+    return (volatile uint *)RV_FINISHER_PHYS;
+}
+
+static void machine_reboot(void)
+{
+    fb_print("rebooting...\r\n");
+    *rv_finisher() = 0x7777;
+    for (;;)
+        ;
+}
+
+static void machine_shutdown(void)
+{
+    fb_print("powering off...\r\n");
+    *rv_finisher() = 0x5555;
+    for (;;)
+        ;
+}
+
 static void help(void)
 {
     fb_print("commands:\r\n");
-    fb_print("  help   - show this message\r\n");
-    fb_print("  uname  - print system name and architecture\r\n");
-    fb_print("  echo   - echo the rest of the line\r\n");
-    fb_print("  about  - print build information\r\n");
+    fb_print("  help    - show this message\r\n");
+    fb_print("  uname   - print system name and architecture\r\n");
+    fb_print("  echo    - echo the rest of the line\r\n");
+    fb_print("  about   - print build information\r\n");
+    fb_print("  reboot  - restart the machine\r\n");
+    fb_print("  shutdown - power off the machine\r\n");
 }
 
 void kmain(uptr dtb)
@@ -1024,6 +1073,10 @@ void kmain(uptr dtb)
             fb_print(BITS == 64 ? "64\r\n" : "32\r\n");
             fb_print("display: ");
             fb_print(have_fb ? "framebuffer\r\n" : "uart only\r\n");
+        } else if (xstreq(line, "reboot")) {
+            machine_reboot();
+        } else if (xstreq(line, "shutdown")) {
+            machine_shutdown();
         } else {
             fb_print("unknown command: ");
             fb_print(line);

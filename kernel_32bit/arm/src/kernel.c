@@ -918,13 +918,45 @@ static int fw_cfg_setup_ramfb(void)
 /* Shell                                                                */
 /* ------------------------------------------------------------------ */
 
+/* Power / reset via PSCI (QEMU virt uses the HVC conduit). */
+static void psci_call(ull fid)
+{
+#if BITS == 64
+    register ull x0 asm("x0") = fid;
+    asm volatile("hvc #0" : "+r"(x0) :: "memory");
+#else
+    register uint r0 asm("r0") = (uint)fid;
+    register uint r1 asm("r1") = 0;
+    /* hvc #0 -- encoded directly because the build targets generic armv7 */
+    asm volatile(".inst 0xE1400070" : "+r"(r0), "+r"(r1) :: "memory");
+#endif
+}
+
+static void machine_reboot(void)
+{
+    fb_print("rebooting...\r\n");
+    psci_call(0x84000009ULL); /* PSCI_0_2_FN_SYSTEM_RESET */
+    for (;;)
+        ;
+}
+
+static void machine_shutdown(void)
+{
+    fb_print("powering off...\r\n");
+    psci_call(0x84000008ULL); /* PSCI_0_2_FN_SYSTEM_OFF */
+    for (;;)
+        ;
+}
+
 static void help(void)
 {
     fb_print("commands:\r\n");
-    fb_print("  help   - show this message\r\n");
-    fb_print("  uname  - print system name and architecture\r\n");
-    fb_print("  echo   - echo the rest of the line\r\n");
-    fb_print("  about  - print build information\r\n");
+    fb_print("  help    - show this message\r\n");
+    fb_print("  uname   - print system name and architecture\r\n");
+    fb_print("  echo    - echo the rest of the line\r\n");
+    fb_print("  about   - print build information\r\n");
+    fb_print("  reboot  - restart the machine\r\n");
+    fb_print("  shutdown - power off the machine\r\n");
 }
 
 void kmain(uptr dtb)
@@ -1013,6 +1045,10 @@ void kmain(uptr dtb)
             fb_print(BITS == 64 ? "64\r\n" : "32\r\n");
             fb_print("display: ");
             fb_print(have_fb ? "framebuffer\r\n" : "uart only\r\n");
+        } else if (xstreq(line, "reboot")) {
+            machine_reboot();
+        } else if (xstreq(line, "shutdown")) {
+            machine_shutdown();
         } else {
             fb_print("unknown command: ");
             fb_print(line);
