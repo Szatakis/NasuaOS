@@ -16,6 +16,11 @@
 
 2. GUI i pulpit
 * [ ]    System powiadomień
+* [ ]    Panel powiadomień w prawym dolnym rogu (otwierany kliknięciem w zegar): po prawej lista powiadomień, po lewej przyciski (np. głośność +/−/wycisz, tryb ciemny, ustawienia) — na razie mogą być wizualne z pustymi funkcjami
+* [ ]    Menu kontekstowe (prawy przycisk myszy): kopiuj, wklej, nowy folder/plik, rename, delete, właściwości — w File Explorerze, Terminalu i na pulpicie
+* [ ]    Systemowy schowek (clipboard): kopiuj/wklej w Terminalu i SuaEdit
+* [ ]    Kosz (Trash): usuwanie plików do kosza zamiast bezpośredniego kasowania, przywracanie i opróżnianie
+* [ ]    Pasek zadań / alt-tab: lista otwartych okien
 * [x]    Ikony pulpitu z `/home/<użytkownik>/desktop`, otwieranie plików w SuaEdit i folderów w File Explorer oraz menu kontekstowe: delete, new, rename, open, open with, properties
 3. Wbudowane aplikacje
 * [x]    Kalkulator w ring 3 przez ograniczone API GUI
