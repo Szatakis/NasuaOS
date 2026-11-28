@@ -119,37 +119,285 @@ static void uart_putc(char c)
 #endif
 }
 
-static int uart_getc(void)
+static int uart_getc_nb(void)
 {
 #if UART_PL011
-    while (uart[6] & 0x10) { }
+    if (uart[6] & 0x10) return -1;
     return uart[0] & 0xff;
 #else
-    while (!(uart[5] & 0x01)) { }
+    if (!(uart[5] & 0x01)) return -1;
     return uart[0];
 #endif
 }
 
-static void uart_puts_dbg(const char *s)
+/* Keyboard input: virtio-mmio (QEMU -device virtio-keyboard-device)   */
+/* ------------------------------------------------------------------ */
+
+#ifndef VIRTIO_MMIO_BASE
+#define VIRTIO_MMIO_BASE 0x0a000000UL
+#endif
+#ifndef VIRTIO_MMIO_STEP
+#define VIRTIO_MMIO_STEP 0x200u
+#endif
+#ifndef VIRTIO_MMIO_MAX
+#define VIRTIO_MMIO_MAX  32u
+#endif
+
+#define VM_MAGIC      0x000u
+#define VM_VERSION    0x004u
+#define VM_DEVID      0x008u
+#define VM_DEV_FEAT   0x010u
+#define VM_DEV_FEAT_S 0x014u
+#define VM_DRV_FEAT   0x020u
+#define VM_DRV_FEAT_S 0x024u
+#define VM_GUEST_PAGE 0x028u
+#define VM_QSEL       0x030u
+#define VM_QNUM_MAX   0x034u
+#define VM_QNUM       0x038u
+#define VM_QALIGN     0x03cu
+#define VM_QPFN       0x040u
+#define VM_QNOTIFY    0x050u
+#define VM_STATUS     0x070u
+
+#define VIRTIO_ID_INPUT 18u
+#define VIRTIO_F_VERSION_1 (1u << 0)
+
+#define VS_ACK       1u
+#define VS_DRIVER    2u
+#define VS_DRIVER_OK 4u
+#define VS_FEAT_OK   8u
+
+#define VRING_F_WRITE 2u
+
+#define VQ_N 32u
+
+struct vq_desc { ull addr; uint len; ushort flags; ushort next; };
+struct vq_avail { ushort flags; ushort idx; ushort ring[VQ_N]; };
+struct vq_used_elem { uint id; uint len; };
+struct vq_used { ushort flags; ushort idx; struct vq_used_elem ring[VQ_N]; };
+struct vin_event { ushort type; ushort code; uint value; };
+
+/* Legacy virtio-mmio: one queue = contiguous page-aligned region holding
+ * desc[num] + avail + pad + used (used aligned up to VM_QALIGN=4096). */
+#define VQ_AREA_SIZE 8192u
+static uchar vq_area[VQ_AREA_SIZE] __attribute__((aligned(4096)));
+static struct vq_desc *lg_desc;
+static struct vq_avail *lg_avail;
+static struct vq_used *lg_used;
+static struct vin_event vq_events[VQ_N] __attribute__((aligned(8)));
+
+static uptr kbd_mmio;
+static uint kbd_qn;
+static ushort kbd_used_last, kbd_used_pos, kbd_avail_pos;
+static int kbd_shift, kbd_caps, have_kbd;
+
+static uint vm_rd(uint off) { return *(volatile uint *)(kbd_mmio + off); }
+static void vm_wr(uint off, uint v) { *(volatile uint *)(kbd_mmio + off) = v; }
+
+void *memset(void *d, int c, uptr n);
+
+/* Limine executable-address request: lets us translate the virtqueue
+ * buffer's virtual address to a physical one when booted via Limine
+ * (MMU enabled, higher-half). Without Limine the response stays NULL
+ * and we fall back to identity mapping. */
+struct limine_exec_addr_response {
+    ull revision;
+    ull physical_base;
+    ull virtual_base;
+};
+struct limine_exec_addr_request {
+    ull id[4];
+    ull revision;
+    struct limine_exec_addr_response *response;
+};
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_exec_addr_request limine_exec_addr_request = {
+    { 0xc7b1dd30df4c8b88ULL, 0x0a82e883a194f07bULL,
+      0x71ba76863cc55f63ULL, 0xb2644a48c516a487ULL },
+    0, 0
+};
+
+static int kbd_present(void)
 {
-    while (*s)
-        uart_putc(*s++);
+    for (uint i = 0; i < VIRTIO_MMIO_MAX; i++) {
+        uptr b = VIRTIO_MMIO_BASE + (uptr)i * VIRTIO_MMIO_STEP;
+        if (*(volatile uint *)(b + VM_MAGIC) == 0x74726976u &&
+            *(volatile uint *)(b + VM_VERSION) == 1u &&
+            *(volatile uint *)(b + VM_DEVID) == VIRTIO_ID_INPUT) {
+            kbd_mmio = b;
+            return 1;
+        }
+    }
+    return 0;
 }
 
-static void uart_puts_dbg_num(uint v)
+static ull kvirt2phys(uptr v)
 {
-    char b[11];
-    int i = 10;
-    b[i] = '\0';
-    if (!v) {
-        uart_putc('0');
-        return;
+    if (limine_exec_addr_request.response)
+        return (ull)v - limine_exec_addr_request.response->virtual_base +
+               limine_exec_addr_request.response->physical_base;
+    return (ull)v;
+}
+
+static void vq_post(uint id)
+{
+    lg_desc[id].addr = kvirt2phys((uptr)&vq_events[id]);
+    lg_desc[id].len = sizeof(struct vin_event);
+    lg_desc[id].flags = VRING_F_WRITE;
+    lg_desc[id].next = 0;
+    __sync_synchronize();
+    lg_avail->ring[kbd_avail_pos] = (ushort)id;
+    __sync_synchronize();
+    lg_avail->idx++;
+    if (++kbd_avail_pos >= kbd_qn)
+        kbd_avail_pos = 0;
+}
+
+static void vq_setup(void)
+{
+    uint qmax;
+    vm_wr(VM_QSEL, 0);
+    qmax = vm_rd(VM_QNUM_MAX);
+    kbd_qn = qmax && qmax < VQ_N ? qmax : VQ_N;
+
+    memset(vq_area, 0, VQ_AREA_SIZE);
+    uptr base = (uptr)vq_area;
+    lg_desc = (struct vq_desc *)base;
+    lg_avail = (struct vq_avail *)(base + kbd_qn * sizeof(struct vq_desc));
+    lg_used = (struct vq_used *)(((base + kbd_qn * sizeof(struct vq_desc)
+                    + 4 + 2 * kbd_qn) + 4095u) & ~(uptr)4095u);
+
+    ull phys = (ull)base;
+    if (limine_exec_addr_request.response) {
+        phys = (ull)base - limine_exec_addr_request.response->virtual_base +
+               limine_exec_addr_request.response->physical_base;
     }
-    while (v && i > 0) {
-        b[--i] = (char)('0' + (v % 10));
-        v /= 10;
+    vm_wr(VM_QNUM, kbd_qn);
+    vm_wr(VM_QALIGN, 4096u);
+    vm_wr(VM_QPFN, (uint)(phys >> 12));
+}
+
+static int kbd_init(void)
+{
+    if (!kbd_present())
+        return 0;
+
+    vm_wr(VM_STATUS, 0);
+    vm_wr(VM_DRV_FEAT_S, 0);
+    vm_wr(VM_DRV_FEAT, 0);
+    vm_wr(VM_GUEST_PAGE, 4096u);
+    vm_wr(VM_STATUS, VS_ACK | VS_DRIVER);
+    vq_setup();
+    for (uint i = 0; i < kbd_qn; i++)
+        vq_post(i);
+    vm_wr(VM_QNOTIFY, 0);
+    vm_wr(VM_STATUS, VS_ACK | VS_DRIVER | VS_FEAT_OK | VS_DRIVER_OK);
+    kbd_used_last = lg_used->idx;
+    have_kbd = 1;
+    return 1;
+}
+
+/* Linux input event types/codes (subset). */
+#define EV_KEY 0x0001u
+#define KEY_BACKSPACE 14u
+#define KEY_TAB       15u
+#define KEY_ENTER     28u
+#define KEY_LEFTCTRL  29u
+#define KEY_LEFTSHIFT 42u
+#define KEY_RIGHTSHIFT 54u
+#define KEY_LEFTALT   56u
+#define KEY_SPACE     57u
+#define KEY_CAPSLOCK  58u
+#define KEY_RIGHTCTRL 97u
+#define KEY_RIGHTALT  100u
+#define KEY_RIGHTMETA 126u
+#define KEY_LEFTMETA  125u
+
+static int kbd_map(uint code, int upper)
+{
+    /* QWERTY rows: KEY_Q..P =16..25, KEY_A..L =30..38, KEY_Z..M =44..50 */
+    if (code >= 16 && code <= 25) {
+        static const char lo[] = "qwertyuiop";
+        static const char hi[] = "QWERTYUIOP";
+        return upper ? hi[code - 16] : lo[code - 16];
     }
-    uart_puts_dbg(&b[i]);
+    if (code >= 30 && code <= 38) {
+        static const char lo[] = "asdfghjkl";
+        static const char hi[] = "ASDFGHJKL";
+        return upper ? hi[code - 30] : lo[code - 30];
+    }
+    if (code >= 44 && code <= 50) {
+        static const char lo[] = "zxcvbnm";
+        static const char hi[] = "ZXCVBNM";
+        return upper ? hi[code - 44] : lo[code - 44];
+    }
+    if (code >= 2 && code <= 11) {           /* digits 1..0 */
+        static const char d[] = "1234567890";
+        static const char ds[] = "!@#$%^&*()";
+        return upper ? ds[code - 2] : d[code - 2];
+    }
+    switch (code) {
+    case 12:  return upper ? '_' : '-';
+    case 13:  return upper ? '+' : '=';
+    case 26:  return upper ? '{' : '[';
+    case 27:  return upper ? '}' : ']';
+    case 39:  return upper ? ':' : ';';
+    case 40:  return upper ? '"' : '\'';
+    case 41:  return upper ? '~' : '`';
+    case 43:  return upper ? '|' : '\\';
+    case 51:  return upper ? '<' : ',';
+    case 52:  return upper ? '>' : '.';
+    case 53:  return upper ? '?' : '/';
+    }
+    return -1;
+}
+
+static int kbd_translate(ushort code, uint value)
+{
+    if (code == KEY_LEFTSHIFT || code == KEY_RIGHTSHIFT) {
+        kbd_shift = value ? 1 : 0;
+        return -1;
+    }
+    if (code == KEY_CAPSLOCK) {
+        if (value == 1) kbd_caps = !kbd_caps;
+        return -1;
+    }
+    if (code == KEY_LEFTCTRL || code == KEY_RIGHTCTRL ||
+        code == KEY_LEFTALT || code == KEY_RIGHTALT ||
+        code == KEY_LEFTMETA || code == KEY_RIGHTMETA)
+        return -1;
+    if (!value)                       /* key release */
+        return -1;
+    if (code == KEY_ENTER)    return '\r';
+    if (code == KEY_BACKSPACE) return '\b';
+    if (code == KEY_TAB)      return '\t';
+    if (code == KEY_SPACE)    return ' ';
+    return kbd_map(code, kbd_shift ^ kbd_caps);
+}
+
+static int kbd_getc(void)
+{
+    if (!have_kbd)
+        return -1;
+    for (;;) {
+        ushort idx = lg_used->idx;
+        if (idx == kbd_used_last)
+            return -1;
+        __sync_synchronize();
+        struct vq_used_elem *e = &lg_used->ring[kbd_used_pos];
+        struct vin_event ev = vq_events[e->id];
+        kbd_used_last++;
+        if (++kbd_used_pos >= kbd_qn)
+            kbd_used_pos = 0;
+        vq_post(e->id);
+        __sync_synchronize();
+        vm_wr(VM_QNOTIFY, 0);
+        if (ev.type == EV_KEY) {
+            int c = kbd_translate(ev.code, ev.value);
+            if (c >= 0)
+                return c;
+        }
+    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -475,7 +723,15 @@ static void fb_print(const char *s)
 
 static int fb_getc(void)
 {
-    return uart_getc();
+    for (;;) {
+        int c = kbd_getc();
+        if (c >= 0)
+            return c;
+        c = uart_getc_nb();
+        if (c >= 0)
+            return c;
+        for (volatile int i = 0; i < 2000; i++) { }
+    }
 }
 
 static int fb_getline(char *buf, int max)
@@ -553,7 +809,10 @@ struct fw_dma_access {
 /* All fields are big-endian on the wire. */
 static int fw_cfg_dma(uint control, uint len, void *buf)
 {
-    struct fw_dma_access d;
+    /* volatile: QEMU reads this struct when the DMA register write
+     * below triggers the transfer, so every field must be stored before
+     * that write; plain stores may be reordered after it. */
+    volatile struct fw_dma_access d;
     d.control = bswap32(control);
     d.length = bswap32(len);
     d.address = bswap64((ull)buf);
@@ -647,21 +906,8 @@ static int fw_cfg_setup_ramfb(void)
         cfg.height = bswap32(FB_HEIGHT);
         cfg.stride = bswap32(FB_WIDTH * 4);
         int wrc = fw_cfg_dma((sel << 16) | 0x08 | 0x10, (uint)sizeof(cfg), &cfg);
-#ifdef FW_CFG_DEBUG
-        {
-            char rb[32];
-            memset(rb, 0, sizeof(rb));
-            int rrc = fw_cfg_dma((sel << 16) | 0x08 | 0x02, (uint)sizeof(rb), rb);
-            uart_puts_dbg("wrc="); uart_puts_dbg_num(wrc);
-            uart_puts_dbg(" rrc="); uart_puts_dbg_num(rrc);
-            uart_puts_dbg(" rb=");
-            for (uint i = 0; i < 8; i++) {
-                uint v = ((uint)(uchar)rb[i*4]<<24)|((uint)(uchar)rb[i*4+1]<<16)|((uint)(uchar)rb[i*4+2]<<8)|(uchar)rb[i*4+3];
-                uart_puts_dbg_num(v); uart_putc(' ');
-            }
-            uart_putc('\n');
-        }
-#endif
+        if (wrc)
+            return 0;
         fb_init(FB_PHYS, FB_WIDTH, FB_HEIGHT, FB_WIDTH * 4, 1);
         return have_fb;
     }
@@ -689,6 +935,7 @@ void kmain(uptr dtb)
     uint fb_w = 0, fb_h = 0, fb_stride = 0, fb_format = 0;
 
     uart_init();
+    have_kbd = kbd_init();
 
     {
         static const char banner[] = "NasuaOS kernel boot\r\n";

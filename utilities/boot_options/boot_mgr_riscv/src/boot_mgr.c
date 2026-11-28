@@ -67,6 +67,7 @@ static const u64 ID_MODULE[4] = {MAG0, MAG1, 0x3e7e279702be32afULL, 0xca1c4f3bd1
 static const u64 ID_MEMMAP[4] = {MAG0, MAG1, 0x67cf3d9d378a806fULL, 0xe304acdfc50c3c62ULL};
 static const u64 ID_HHDM[4]   = {MAG0, MAG1, 0x48dcf1cb8ad2b852ULL, 0x63984e959a98244bULL};
 static const u64 ID_FB[4]     = {MAG0, MAG1, 0x9d5827dcd881dd75ULL, 0xa3148604f6fab11bULL};
+static const u64 ID_EXECADDR[4] = {MAG0, MAG1, 0x71ba76863cc55f63ULL, 0xb2644a48c516a487ULL};
 static const u64 ID_BASEREV[2] = {0xf9562b2d5c95a6c8ULL, 0x6a7b384944536bdcULL};
 
 __attribute__((used, section(".limine_requests_start")))
@@ -268,6 +269,7 @@ static int id4_eq(const u64 *a, const u64 *b) {
 }
 
 static u64 fb_resp_copy[4];
+static u64 execaddr_resp_copy[3];
 static u64 fb_ptr_copy[2];
 static u8  fb_struct_copy[128];
 
@@ -293,6 +295,12 @@ static void fill_kernel_requests(u64 kphys, u64 ksize)
                         memcpy(fb_struct_copy, src->framebuffers[0], 128);
                         img[j+5] = (u64)fb_resp_copy;
                     }
+                }
+                if (j + 6 <= n && id4_eq(&img[j], ID_EXECADDR)) {
+                    execaddr_resp_copy[0] = 0;
+                    execaddr_resp_copy[1] = kphys;
+                    execaddr_resp_copy[2] = kmin_v;
+                    img[j+5] = (u64)execaddr_resp_copy;
                 }
                 j += 6;
             }

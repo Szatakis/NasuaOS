@@ -11,7 +11,7 @@ CC := clang
 LD := ld.lld
 
 CFLAGS := -target $(LLVM_TRIPLE) -ffreestanding -fno-builtin -nostdinc \
-	-ffunction-sections -fdata-sections -fno-stack-protector -mcmodel=medany -O1 -Wall -Wextra 	-DARCH_NAME=$(ARCH_NAME) -DBITS=$(BITS) -DUART_BASE=$(UART_BASE) -DSCAN_BASE=0x80000000UL -DSCAN_SIZE=0UL
+	-ffunction-sections -fdata-sections -fno-stack-protector -mcmodel=medany -O1 -Wall -Wextra 	-DARCH_NAME=$(ARCH_NAME) -DBITS=$(BITS) -DUART_BASE=$(UART_BASE) -DSCAN_BASE=0x80000000UL -DSCAN_SIZE=0UL -DVIRTIO_MMIO_BASE=0x10001000UL -DVIRTIO_MMIO_STEP=0x1000u -DVIRTIO_MMIO_MAX=8u
 LDFLAGS := -nostdlib -static --gc-sections -z noseparate-code -T link.ld
 
 SRCS := $(shell find src -type f \( -name '*.c' -o -name '*.S' \) | LC_ALL=C sort)

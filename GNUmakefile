@@ -158,6 +158,9 @@ run-aarch64: edk2-bins $(IMAGE_NAME).iso
 		-cdrom $(IMAGE_NAME).iso \
 		-boot order=d \
 		-device ramfb \
+		-device virtio-keyboard-device \
+		-device qemu-xhci \
+		-device usb-kbd \
 		-display gtk,show-tabs=on \
 		-serial vc:80Cx24C \
 		$(QEMUFLAGS)
@@ -170,6 +173,7 @@ run-aarch32: kernel_32bit/arm/bin/kernel
 		-m 256 \
 		-kernel $< \
 		-device ramfb \
+		-device virtio-keyboard-device \
 		-display gtk,show-tabs=on \
 		-serial vc:80Cx24C \
 		$(QEMUFLAGS)
@@ -186,6 +190,7 @@ run-riscv64: edk2-bins
 		-drive if=pflash,format=raw,unit=1,file=edk2-bins/vars-riscv64.fd \
 		-drive file=$(IMAGE_NAME).iso,format=raw,if=virtio,readonly=on \
 		-device ramfb \
+		-device virtio-keyboard-device \
 		-device qemu-xhci \
 		-device usb-kbd \
 		-device usb-mouse \
@@ -201,6 +206,7 @@ run-riscv32: kernel_32bit/risc-v/bin/kernel
 		-m 256 \
 		-kernel $< \
 		-device ramfb \
+		-device virtio-keyboard-device \
 		-display gtk,show-tabs=on \
 		-serial vc:80Cx24C \
 		$(QEMUFLAGS)

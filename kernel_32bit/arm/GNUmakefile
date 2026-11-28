@@ -13,7 +13,7 @@ LD := ld.lld
 CFLAGS := -target $(LLVM_TRIPLE) -ffreestanding -fno-builtin -nostdinc \
 	-ffunction-sections -fdata-sections -fno-stack-protector -O1 -Wall -Wextra \
 	-DARCH_NAME=$(ARCH_NAME) -DBITS=$(BITS) -DUART_BASE=$(UART_BASE) \
-	-DUSE_FW_CFG_RAMFB -DFW_CFG_BASE=0x09020000UL -DFB_PHYS=0x48000000UL -DFW_CFG_DEBUG
+	-DUSE_FW_CFG_RAMFB -DFW_CFG_BASE=0x09020000UL -DFB_PHYS=0x48000000UL
 LDFLAGS := -nostdlib -static --gc-sections -z noseparate-code -T link.ld
 
 SRCS := $(shell find src -type f \( -name '*.c' -o -name '*.S' \) | LC_ALL=C sort)
